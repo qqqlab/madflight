@@ -27,6 +27,30 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/esp32-S3-DevKitC-1-original-pinout-high.png)
 
 # RP2040
+| function | GPIO | | GPIO | function |
+| --: | :-- | -- |--: | :-- |
+| tx0 | 0 | | VBUS | -
+| rx0 | 1 | | VSYS | diode + 5V in
+| - | GND | | GND | GND in
+| tx2 | 2 | | EN | -
+| rx2 | 3 | | 3.3V out | -
+| tx1 | 4 | | VREF | -
+| rx1 | 5 | | 28 |
+| - | GND | | GND | -
+| m1 | 6 | | 27 |
+| m2 | 7 | | 26 |
+| m3 | 8 | | RUN | -
+| m4 | 9 | | 22 |
+| - | GND | | GND | -
+| s1 | 10 | | 21 | I2C_SCL
+| s2 | 11 | | 20 | I2C_SDA
+| s3 | 12 | | 19 | SPI_MOSI
+| s4 | 13 | | 18 | SPI_SCLK
+| - | GND | | GND | -
+| | 14 | | 17 | SPI_CS
+| | 15 | | 16 | SPI_MISO
+    
+
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
