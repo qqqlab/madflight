@@ -18,6 +18,7 @@ Flash | 2-16M QuadSPI | 2-16M OctalSPI | 2M QuadSPI | 512K internal (CE)<br>256K
 PSRAM | 0-8M | 0-8M | 0 | 0
 Board price single piece | $4 | $5 | $4 | $3
 
+![](doc/img/boards.jpeg)
 
 # ESP32
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
