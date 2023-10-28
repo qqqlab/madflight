@@ -5,7 +5,7 @@ Board Weight | 6.9 g<br>(9.1 g with headers) | 8.4 g<br>(10.9 g with headers) | 
 Board Pins | 38 pins | 44 pins | 40 pins | 40 pins
 Available external GPIO pins | 21<br>+ 4 input only<br>+ 1 button: 0<br>Note: strap pin restictions | 25<br>+ 7 external pins but used:<br>Button: 0<br>OSPI: 35, 36, 37<br>RGB LED: 38<br>USB: 19, 20<br>Note: strap pin restictions | 26<br>Internal only:<br>Power save: 23<br>VBUS monitor: 24<br>LED: 25<br>VSYS voltage: 29 ADC3 | 30<br>+ 2 external but used:<br>Button: PA0<br>LED: PC13
 PWM | 16<br>(8 timers each with 2 output pins) | 16<br>(8 timers each with 2 output pins) | 16<br>(8 timers each with 2 output pins) | 25<br>(6 * 16bit + 2 * 32bit timers)
-Available UART | 3 | 3 | 10 (2 + 4*PIO)<br>+USB Serial debug | 3
+Available UART | 3 | 3 | 6 (2 + 4*PIO)<br>+USB Serial debug | 3
 Available SPI | 2 | 2 | 2 | 5
 Available I2C | 2 | 2 | 2 | 2
 Available ADC pins | 16 (12bit) | 20 (12bit) | 3 (12bit) | 10 (12bit)
