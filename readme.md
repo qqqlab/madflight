@@ -41,26 +41,26 @@ Board price single piece | $4 | $5 | $4 | $3
 # RP2040
 | function | GPIO | | GPIO | function |
 | --: | :-- | -- |--: | :-- |
-| TX0_DEBUG | 0 | | VBUS | nc
-| RX0_DEBUG | 1 | | VSYS | 5V_in via diode
-| M1_GND | GND | | GND | GND_in
-| nc | 2 | | EN | nc
-| M1 | 3 | | 3.3V out | I2C_VCC, SPI_VCC
-| TX1_RC | 4 | | VREF | nc
-| RX1_RC | 5 | | 28 |
-| M2_GND | GND | | GND | nc
-| nc | 6 | | 27 | nc
-| M2 | 7 | | 26 | nc
-| nc | 8 | | RUN | nc
-| nc | 9 | | 22 | nc
-| M3_GND | GND | | GND | I2C_GND
-| nc | 10 | | 21 | I2C_SCL
-| M3 | 11 | | 20 | I2C_SDA
-| nc | 12 | | 19 | SPI_MOSI
-| nc | 13 | | 18 | SPI_SCLK
-| M4_GND | GND | | GND | SPI_GND
-| nc | 14 | | 17 | SPI_CS
-| M4 | 15 | | 16 | SPI_MISO
+| RADIO_RX(tx0) | 0 | | VBUS | nc
+| RADIO_TX(rx0) | 1 | | VSYS | 5V_in via diode
+| - | GND | | GND | -
+| PWM1 | 2 | | EN | nc
+| PWM2 | 3 | | 3.3V out | 3V3
+| PWM3 | 4 | | VREF | nc
+| PWM4 | 5 | | 28 | FREE
+| - | GND | | GND | -
+| PWM5 | 6 | | 27 | GPS_RX(pio)
+| PWM6 | 7 | | 26 | GPS_TX(pio)
+| PWM7 | 8 | | RUN | -
+| PWM8 | 9 | | 22 | RADIO_PPM
+| - | GND | | GND | -
+| PWM9 | 10 | | 21 | I2C0_SCL
+| PWM10| 11 | | 20 | I2C0_SDA
+| PWM11 | 12 | | 19 | SPI0_MOSI
+| PWM12 | 13 | | 18 | SPI0_SCLK
+| - | GND | | GND | -
+| PWM13 | 14 | | 17 | SPI0_CS
+| PWM14 | 15 | | 16 | SPI0_MISO
     
 
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
