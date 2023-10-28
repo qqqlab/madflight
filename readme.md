@@ -1,3 +1,12 @@
+- 6 pins 3x UART: Receiver, GPS, spare/debug
+- 2 pins 1x I2C: Mag, Baro, Current sensor, IMU
+- 4 pins 1x SPI: IMU
+- 8 pins 8x PWM: Motor, Servo
+
+TOTAL: 20 pins
+
+
+
 | Board | ESP32 DevKitC | ESP32-S3 DevKitC | Raspberry Pi Pico (W) | Black Pill |
 | --- | :-: | :-: | :-: | :-: |
 Board Size | 55 * 28 mm | 69 * 26 mm | 51 * 21 mm | 53 * 21 mm
