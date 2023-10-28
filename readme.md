@@ -13,6 +13,7 @@ On Board Peripherals | WIFI + BT + Button | WIFI + BT + Button + RGB LED | LED<b
 MCU | ESP32 | ESP32S3 | RP2040 | STM32F411CE/CC
 MCU GPIO | 34 | 45 | 30 | 32
 Processor | 2 * 240MHz LX6 | 2 * 240MHz LX7 | 2 * 133MHz M0+ | 1 * 100MHz M4
+Coremark (single core) | 351 | | 228 | 172
 FPU | FPU | FPU | no FPU | FPU
 RAM | 520K | 512K | 264K | 128K
 Flash | 2-16M QuadSPI | 2-16M OctalSPI | 2M QuadSPI | 512K internal (CE)<br>256K internal (CC)
