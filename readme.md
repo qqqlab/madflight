@@ -33,9 +33,9 @@ Board price single piece | $4 | $5 | $4 | $3
 
 # ESP32
 ## ESP32 DevKitC (38 pin) Board Connections 
-| function | GPIO | | GPIO | function |
+| Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| 3V3 out | 3V3 | | GND | GND
+| 3V3 out | 3V3 | Antenna side | GND | GND
 | nc | EN | | 23 | I2C_SDA
 | rcin_PPM | 36 input only (VP) | | 22 | I2C_SCL
 | FREE | 39 input only (VN) | | TX | USB Serial Debug TX
@@ -53,7 +53,7 @@ Board price single piece | $4 | $5 | $4 | $3
 | nc | 9 flash (D2) | | 15 strap | SPI_CLK
 | nc | 10 flash (D3) | | 8 flash (D1) | nc
 | nc | 11 flash (CMD) | | 7 flash (D0) | nc
-| 5V in via diode | 5V | | 6 flash (CLK) | nc
+| 5V in via diode | 5V | USB connector | 6 flash (CLK) | nc
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](doc/img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
@@ -64,9 +64,9 @@ Board price single piece | $4 | $5 | $4 | $3
 # RP2040
 
 ## Raspberry Pi Pico Board Connections
-| function | GPIO | | GPIO | function |
+| Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| RADIO_RX(tx0) | 0 | | VBUS | nc
+| RADIO_RX(tx0) | 0 | USB connector | VBUS | nc
 | RADIO_TX(rx0) | 1 | | VSYS | 5V in via diode
 | - | GND | | GND | -
 | PWM1 | 2 | | EN | nc
@@ -85,7 +85,7 @@ Board price single piece | $4 | $5 | $4 | $3
 | PWM12 | 13 | | 18 | SPI0_SCLK
 | - | GND | | GND | -
 | PWM13 | 14 | | 17 | SPI0_CS
-| PWM14 | 15 | | 16 | SPI0_MISO
+| PWM14 | 15 | JTAG pins| 16 | SPI0_MISO
     
 
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
