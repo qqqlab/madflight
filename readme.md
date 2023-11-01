@@ -32,29 +32,28 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/boards.jpeg)
 
 # ESP32
-## ESP32 DevKitC Board Connections
+## ESP32 DevKitC (38 pin) Board Connections 
 | function | GPIO | | GPIO | function |
 | --: | :-- | -- |--: | :-- |
-| RADIO_RX(tx0) | 0 | | VBUS | nc
-| RADIO_TX(rx0) | 1 | | VSYS | 5V_in via diode
-| - | GND | | GND | -
-| PWM1 | 2 | | EN | nc
-| PWM2 | 3 | | 3.3V out | 3V3
-| PWM3 | 4 | | VREF | nc
-| PWM4 | 5 | | 28 | FREE
-| - | GND | | GND | -
-| PWM5 | 6 | | 27 | GPS_RX(pio)
-| PWM6 | 7 | | 26 | GPS_TX(pio)
-| PWM7 | 8 | | RUN | -
-| PWM8 | 9 | | 22 | RADIO_PPM
-| - | GND | | GND | -
-| PWM9 | 10 | | 21 | I2C0_SCL
-| PWM10| 11 | | 20 | I2C0_SDA
-| PWM11 | 12 | | 19 | SPI0_MOSI
-| PWM12 | 13 | | 18 | SPI0_SCLK
-| - | GND | | GND | -
-| PWM13 | 14 | | 17 | SPI0_CS
-| PWM14 | 15 | | 16 | SPI0_MISO
+| 3V3 out | 3V3 | | GND | GND
+| nc | EN | | 23 | I2C_SDA
+| rcin_PPM | 36 input only (VP) | | 22 | I2C_SCL
+| SPI_MISO | 39 input only (VN) | | TX | USB Serial Debug TX
+| FREE (current sense?) | 34 input only | | RX | USB Serial Debug RX
+| FREE (voltage sense?) | 35 input only | | 21 | RCIN_TX
+| PWM1 | 32 | | GND | GND
+| PWM2 | 33 | | 19 | RCIN_RX
+| PWM3 | 25 | | 18 | PMW13
+| PWM4 | 26 | | 5 strap | PMW12
+| PWM5 | 27 | | 17 | PMW11
+| PWM6 | 14 | | 16 | PMW10
+| PWM7 | 12 | | 4 | PMW9
+| GND | GND | | 0 boot | SPI_MISO 
+| PWM8 | 13 | | 2 strap | SPI_MISO
+| nc | 9 flash (D2) | | 15 strap | SPI_CLK
+| nc | 10 flash (D3) | | 8 flash (D1) | nc
+| nc | 11 flash (CMD) | | 7 flash (D0) | nc
+| 5V in | 5V | | 6 flash (CLK) | nc
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](doc/img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
