@@ -32,6 +32,30 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/boards.jpeg)
 
 # ESP32
+## ESP32 DevKitC Board Connections
+| function | GPIO | | GPIO | function |
+| --: | :-- | -- |--: | :-- |
+| RADIO_RX(tx0) | 0 | | VBUS | nc
+| RADIO_TX(rx0) | 1 | | VSYS | 5V_in via diode
+| - | GND | | GND | -
+| PWM1 | 2 | | EN | nc
+| PWM2 | 3 | | 3.3V out | 3V3
+| PWM3 | 4 | | VREF | nc
+| PWM4 | 5 | | 28 | FREE
+| - | GND | | GND | -
+| PWM5 | 6 | | 27 | GPS_RX(pio)
+| PWM6 | 7 | | 26 | GPS_TX(pio)
+| PWM7 | 8 | | RUN | -
+| PWM8 | 9 | | 22 | RADIO_PPM
+| - | GND | | GND | -
+| PWM9 | 10 | | 21 | I2C0_SCL
+| PWM10| 11 | | 20 | I2C0_SDA
+| PWM11 | 12 | | 19 | SPI0_MOSI
+| PWM12 | 13 | | 18 | SPI0_SCLK
+| - | GND | | GND | -
+| PWM13 | 14 | | 17 | SPI0_CS
+| PWM14 | 15 | | 16 | SPI0_MISO
+
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](doc/img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
 
@@ -39,6 +63,8 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/esp32-S3-DevKitC-1-original-pinout-high.png)
 
 # RP2040
+
+## Raspberry Pi Pico Board Connections
 | function | GPIO | | GPIO | function |
 | --: | :-- | -- |--: | :-- |
 | RADIO_RX(tx0) | 0 | | VBUS | nc
