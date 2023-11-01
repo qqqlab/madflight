@@ -38,16 +38,16 @@ Board price single piece | $4 | $5 | $4 | $3
 | 3V3 out | 3V3 | | GND | GND
 | nc | EN | | 23 | I2C_SDA
 | rcin_PPM | 36 input only (VP) | | 22 | I2C_SCL
-| SPI_MISO | 39 input only (VN) | | TX | USB Serial Debug TX
-| FREE (current sense?) | 34 input only | | RX | USB Serial Debug RX
-| FREE (voltage sense?) | 35 input only | | 21 | RCIN_TX
+| FREE | 39 input only (VN) | | TX | USB Serial Debug TX
+| FREE | 34 input only | | RX | USB Serial Debug RX
+| FREE | 35 input only | | 21 | RCIN_TX
 | PWM1 | 32 | | GND | GND
 | PWM2 | 33 | | 19 | RCIN_RX
-| PWM3 | 25 | | 18 | PMW13
-| PWM4 | 26 | | 5 strap | PMW12
-| PWM5 | 27 | | 17 | PMW11
-| PWM6 | 14 | | 16 | PMW10
-| PWM7 | 12 | | 4 | PMW9
+| PWM3 | 25 | | 18 | PMW12
+| PWM4 | 26 | | 5 strap | PMW11
+| PWM5 | 27 | | 17 | PMW10
+| PWM6 | 14 | | 16 | PMW9
+| PWM7 | 12 | | 4 | SPI_MISO
 | GND | GND | | 0 boot | SPI_MISO 
 | PWM8 | 13 | | 2 strap | SPI_MISO
 | nc | 9 flash (D2) | | 15 strap | SPI_CLK
