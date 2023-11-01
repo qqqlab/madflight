@@ -53,7 +53,7 @@ Board price single piece | $4 | $5 | $4 | $3
 | nc | 9 flash (D2) | | 15 strap | SPI_CLK
 | nc | 10 flash (D3) | | 8 flash (D1) | nc
 | nc | 11 flash (CMD) | | 7 flash (D0) | nc
-| 5V in | 5V | | 6 flash (CLK) | nc
+| 5V in via diode | 5V | | 6 flash (CLK) | nc
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](doc/img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
@@ -67,15 +67,15 @@ Board price single piece | $4 | $5 | $4 | $3
 | function | GPIO | | GPIO | function |
 | --: | :-- | -- |--: | :-- |
 | RADIO_RX(tx0) | 0 | | VBUS | nc
-| RADIO_TX(rx0) | 1 | | VSYS | 5V_in via diode
+| RADIO_TX(rx0) | 1 | | VSYS | 5V in via diode
 | - | GND | | GND | -
 | PWM1 | 2 | | EN | nc
 | PWM2 | 3 | | 3.3V out | 3V3
 | PWM3 | 4 | | VREF | nc
-| PWM4 | 5 | | 28 | FREE
+| PWM4 | 5 | | 28_A2 | FREE
 | - | GND | | GND | -
-| PWM5 | 6 | | 27 | GPS_RX(pio)
-| PWM6 | 7 | | 26 | GPS_TX(pio)
+| PWM5 | 6 | | 27_A1 | FREE
+| PWM6 | 7 | | 26_A0 | FREE
 | PWM7 | 8 | | RUN | -
 | PWM8 | 9 | | 22 | RADIO_PPM
 | - | GND | | GND | -
