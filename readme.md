@@ -91,6 +91,52 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
+
+6-axis IMU
+==========
+| Part    | Breakout Board Availaible? | Interface | Notes |
+| ------- | --- | --- | --- |
+MPU6000   | yes | SPI, I2C | 8k gyro, WHO_AM_I=0x68 6-bit I2C address of the MPU-60X0, Released 2011 (EOL)
+MPU6050   | yes | I2C | 8k gyro, WHO_AM_I=0x68 6-bit I2C address of the MPU-60X0, Released 2011 (EOL)
+MPU6500   | yes $2 | SPI, I2C | 32k gyro, Released 2014
+BMI160    | yes $2
+BMI270    | | SPI | 6k gyro, Used in current commercial FC
+LSM6DS3   | yes $2
+LSM6DSO   | yes $10
+MPU3000   | no | | Released 2011 (EOL)
+MPU3050   | no | | Released 2011 (EOL)
+MPU6886   | no | | Released
+ICM20602  | no
+ICM20608  | no
+ICM20689  | no 
+ICM42688P | no | | 32k gyro, Used in current commercial FC
+
+
+9-axis IMU
+==========
+| Part    | Breakout Board Availaible? | Interface | Notes |
+| ------- | --- | --- | --- |
+MPU-9150  | yes $7 | I2C | 8k gyro, WHO_AM_I=0x68 or 0x69 depending on AD0 pin, MPU6050 + AK8975, (EOL)
+MPU-9250  | yes $4 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x71, MPU6000 + AK8963, Released 2014 (EOL)
+MPU-9255  | yes $9 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x73, MPU6000 + AK8963
+ICM-20948 | yes $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
+
+
+Barometer
+=========
+| Part    | Breakout Board Availaible? | Interface | Notes |
+| ------- | --- | --- | --- |
+DPS310    | yes $3 | SPI, I2C | Relative precision: 6Pa 0.5m, Resolution 0.06Pa, Used in current commercial FC
+BMP280    | yes $2 | | Used in current commercial FC
+BMP388    | | SPI, I2C | Relative precision: 
+MS5611    | yes $4
+SPL06-001 |
+
+Table Remarks
+* Breakout Board Availaible? is "yes" if an cheap & easy to find board is available.
+* Prices aliexpress incl shipping.
+* Table created Oct 2023
+
 # STM32F411
 ![](doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png)
 
