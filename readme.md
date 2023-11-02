@@ -91,6 +91,9 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
+# STM32F411
+![](doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png)
+
 
 6-axis IMU
 ==========
@@ -120,6 +123,7 @@ MPU-9150  | yes $7 | I2C | 8k gyro, WHO_AM_I=0x68 or 0x69 depending on AD0 pin, 
 MPU-9250  | yes $4 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x71, MPU6000 + AK8963, Released 2014 (EOL)
 MPU-9255  | yes $9 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x73, MPU6000 + AK8963
 ICM-20948 | yes $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
+LSM9DSO   |
 
 
 Barometer
@@ -137,7 +141,6 @@ Table Remarks
 * Prices aliexpress incl shipping.
 * Table created Oct 2023
 
-# STM32F411
-![](doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png)
+
 
 
