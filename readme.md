@@ -136,6 +136,15 @@ BMP388    | | SPI, I2C | Relative precision:
 MS5611    | yes $4
 SPL06-001 |
 
+Modules
+=========
+GY-85 9DOF ITG3205 + ADXL345 + HMC5883L
+GY-86 10DOF MPU6050 HMC5883L MS5611
+GY-87 10DOF MPU6050 HMC5883L BMP180 $4
+GY-91 10DOF MPU9250 BMP280 10DOF $8
+GY-521 6DOf MPU6050 $2
+GY-912 10DOF ICM20948 BMP388 $11
+
 Table Remarks
 * Breakout Board Availaible? is "yes" if an cheap & easy to find board is available.
 * Prices aliexpress incl shipping.
