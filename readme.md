@@ -1,4 +1,4 @@
-This is an Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but adds ESP32 and RP2040 support.
+This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but adds ESP32 and RP2040 support.
 
 # Getting Started
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw.h
@@ -71,7 +71,9 @@ This is an Arduino based flight controller, forked from [dRehmFlight](https://gi
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 
 # Software Design
-- The full plain C controller is in the main .ino file.
+- Keep it simple
+- The main .ino is the full controller running standard setup() and loop().
+- Plain C with minimal function arguments.
 - The code uses global variables to communicate between the different functions.
 - Each function is prefixed with the module it belongs to:
   - ```loop_``` Main loop control
@@ -86,19 +88,16 @@ This is an Arduino based flight controller, forked from [dRehmFlight](https://gi
 # Hardware Considerations
 
 ## UAV Controller Requirements
-### Processor
-- 32 bit
-- Arduino support
-- Preferably dual core: (easy to setup without interrupts/rtos: core1 for control loop, core2 for user application)
-  
-### Interfaces
-- 6 pins 3x UART: Receiver, GPS, spare/debug (6 pins)
-- 4 pins 1x SPI: fast IMU (4 pins)
-- 2 pins 1x I2C: Magnetometer, Barometer, Current sensor, slow IMU (2 pins)
-- 8 pins 8x PWM: Motor, Servo (8 pins)
-  
-TOTAL: minimum 20 pins
 
+- Arduino support
+- 32 bit processor
+- Preferably dual core: (makes it easy to setup without interrupts/rtos: core1 for control loop, core2 for user application)
+- At least 20 GPIO pins for:
+  - 3x UART: Receiver, GPS, spare/debug (6 pins)
+  - 1x SPI: fast IMU (4 pins)
+  - 1x I2C: Magnetometer, Barometer, Current sensor, slow IMU (2 pins)
+  - 8x PWM: Motor, Servo (8 pins)
+  
 ## Considered UAV Controller Boards
 
 | Board | ESP32 DevKitC | ESP32-S3 DevKitC | Raspberry Pi Pico (W) | Black Pill |
