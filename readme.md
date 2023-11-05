@@ -1,11 +1,18 @@
-- 6 pins 3x UART: Receiver, GPS, spare/debug
-- 2 pins 1x I2C: Mag, Baro, Current sensor, IMU
-- 4 pins 1x SPI: IMU
-- 8 pins 8x PWM: Motor, Servo
+# UAV Controller Requirements
+## Processor
+- 32 bit
+- Arduino support
+- Preferably dual core: (easy to setup without interrupts/rtos: core1 for control loop, core2 for user application)
+  
+## Interfaces
+- 6 pins 3x UART: Receiver, GPS, spare/debug (6 pins)
+- 4 pins 1x SPI: fast IMU (4 pins)
+- 2 pins 1x I2C: Magnetometer, Barometer, Current sensor, slow IMU (2 pins)
+- 8 pins 8x PWM: Motor, Servo (8 pins)
+  
+TOTAL: minimum 20 pins
 
-TOTAL: 20 pins
-
-
+# UAV Controller Boards
 
 | Board | ESP32 DevKitC | ESP32-S3 DevKitC | Raspberry Pi Pico (W) | Black Pill |
 | --- | :-: | :-: | :-: | :-: |
