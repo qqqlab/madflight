@@ -4,7 +4,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw.h
 2. Connect the IMU sensor and radio receiver to your development board according to the selected pinout.
-3. Setup the RC RECEIVER CONFIG in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. Uncomment print_rcin_RadioPWM() to check.
+3. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. Uncomment print_rcin_RadioPWM() to check.
 4. Uncomment print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. Use the diverse calibrate options in Setup() to correct as needed.
 5. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
 6. Mount props, go to an wide open space, and FLY!
@@ -38,8 +38,8 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| RADIO_RX(tx0) | 0 | USB connector | VBUS | nc
-| RADIO_TX(rx0) | 1 | | VSYS | 5V in via diode
+| RCIN_RX(tx0) | 0 | USB connector | VBUS | nc
+| RCIN_TX(rx0) | 1 | | VSYS | 5V input via diode (if not using a diode take care not connect USB and the battery at the same time)
 | - | GND | | GND | -
 | PWM1 | 2 | | EN | nc
 | PWM2 | 3 | | 3.3V out | 3V3
@@ -49,7 +49,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | PWM5 | 6 | | 27_A1 | FREE
 | PWM6 | 7 | | 26_A0 | FREE
 | PWM7 | 8 | | RUN | -
-| PWM8 | 9 | | 22 | RADIO_PPM
+| PWM8 | 9 | | 22 | RCIN_PPM
 | - | GND | | GND | -
 | PWM9 | 10 | | 21 | I2C0_SCL
 | PWM10| 11 | | 20 | I2C0_SDA
@@ -68,7 +68,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | --: | :-- | -- |--: | :-- |
 | 3V3 out | 3V3 | Antenna side | GND | GND
 | nc | EN | | 23 | I2C_SDA
-| rcin_PPM | 36 input only (VP) | | 22 | I2C_SCL
+| RCIN_PPM | 36 input only (VP) | | 22 | I2C_SCL
 | FREE | 39 input only (VN) | | TX | USB Serial Debug TX
 | FREE | 34 input only | | RX | USB Serial Debug RX
 | FREE | 35 input only | | 21 | RCIN_TX
@@ -84,7 +84,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | nc | 9 flash (D2) | | 15 strap | SPI_CLK
 | nc | 10 flash (D3) | | 8 flash (D1) | nc
 | nc | 11 flash (CMD) | | 7 flash (D0) | nc
-| 5V in via diode | 5V | USB connector | 6 flash (CLK) | nc
+| 5V input via diode (if not using a diode take care not connect USB and the battery at the same time) | 5V | USB connector | 6 flash (CLK) | nc
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 
