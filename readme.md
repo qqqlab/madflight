@@ -1,12 +1,30 @@
 This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but adds ESP32 and RP2040 support.
 
 # Getting Started
+
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw.h
 2. Connect the IMU sensor and radio receiver to your development board according to the selected pinout.
 3. Setup the RC RECEIVER CONFIG in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. Uncomment print_rcin_RadioPWM() to check.
 4. Uncomment print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. Use the diverse calibrate options in Setup() to correct as needed.
 5. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
 6. Mount props, go to an wide open space, and FLY!
+
+# Software Design
+
+- Keep it simple!!!
+- No external dependencies, all library code included ```src``` directory
+- The main .ino is the full flight controller running standard ```setup()``` and ```loop()```.
+- Plain C with minimal function arguments.
+- Global variables to communicate between the different functions.
+- Each function is prefixed with the module it belongs to:
+  - ```loop_``` Main loop control
+  - ```print_``` Prints debugging info
+  - ```calibrate_``` Calibration
+  - ```imu_``` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
+  - ```ahrs_``` Attitude Heading Reference System, estimates roll, yaw, pitch
+  - ```rcin_``` RC INput, retrieves RC receiver data
+  - ```control_``` PID controller and output mixer
+  - ```out_``` Output to motors and servos
 
 # Supported Hardware
 
@@ -69,21 +87,6 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | 5V in via diode | 5V | USB connector | 6 flash (CLK) | nc
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
-
-# Software Design
-- Keep it simple
-- The main .ino is the full controller running standard setup() and loop().
-- Plain C with minimal function arguments.
-- The code uses global variables to communicate between the different functions.
-- Each function is prefixed with the module it belongs to:
-  - ```loop_``` Main loop control
-  - ```print_``` Prints debugging info
-  - ```calibrate_``` Calibration
-  - ```imu_``` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
-  - ```ahrs_``` Attitude Heading Reference System, estimates roll, yaw, pitch
-  - ```rcin_``` RC INput, retrieves RC receiver data
-  - ```control_``` PID controller and output mixer
-  - ```out_``` Output to motors and servos
 
 # Hardware Considerations
 
