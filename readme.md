@@ -210,7 +210,7 @@ Hardware Table Remarks
 * Table created Oct 2023
 
 # Other Flight Controllers
-- https://github.com/nickrehm/dRehmFlight dRehmFlight Arduino Teensy 4)
+- (dRehmFlight)[https://github.com/nickrehm/dRehmFlight] Arduino Teensy 4
 - https://github.com/bitcraze/crazyflie-firmware STM32F405
 - https://github.com/espressif/esp-drone.git ESP32, fork from Crazyflie
 - https://github.com/betaflight/betaflight Betaflight
