@@ -1,4 +1,4 @@
-This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but adds ESP32 and RP2040 support.
+This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but supports ESP32 and RP2040 boards.
 
 # Getting Started
 
@@ -18,17 +18,17 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 - Global variables to communicate between the different functions.
 - Each function is prefixed with the module it belongs to:
   - ```loop_``` Main loop control
-  - ```print_``` Prints debugging info
-  - ```calibrate_``` Calibration
   - ```imu_``` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - ```ahrs_``` Attitude Heading Reference System, estimates roll, yaw, pitch
   - ```rcin_``` RC INput, retrieves RC receiver data
   - ```control_``` PID controller and output mixer
   - ```out_``` Output to motors and servos
+  - ```print_``` Prints debugging info
+  - ```calibrate_``` Calibration
 
 # Supported Hardware
 
-- Development board: RP2040 (Raspberry Pi Pico) or ESP32 (Espressiv DevKitC) 
+- Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
 - SPI or I2C IMU sensor: MPU6050, MPU9150, or MPU9250
 - RC Receiver: PPM, SBUS, DMX
 - ESC: OneShot125 or 50-490Hz PWM
