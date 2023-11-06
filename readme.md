@@ -59,7 +59,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 |        PWM13 | 14  |               | 17       | SPI0_CS
 |        PWM14 | 15  | JTAG pins     | 16       | SPI0_MISO
 
-(*) 5V input via diode: if not using a diode take care not connect USB and the battery at the same time
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
     
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
@@ -88,9 +88,19 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | nc | CMD 11 flash |                   | flash 7 D0 | nc
 | 5V input via diode (*) | 5V | USB connector | flash 6 CLK | nc
 
-(*) 5V input via diode: if not using a diode take care not connect USB and the battery at the same time
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
+
+# Changes from dRehmFlight
+
+- Add support for RP2040 and ESP32
+- Dropped Teensy support (but could be re-added, I just don't have the hardware to test on)
+- Moved all hardware specific code to hw.h and added hardware specific libraries
+- Reduced the number of global variables
+- Oneshot is implemented as PWM up to 3.9kHz
+- New libs for IMU sensors
+- Changed arming logic
 
 # Hardware Considerations
 
