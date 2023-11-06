@@ -1,3 +1,5 @@
+# dreamflight
+
 This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but supports ESP32 and RP2040 boards.
 
 # Getting Started
@@ -203,7 +205,7 @@ GY-521 | $2 | 6DOF MPU6050
 GY-912 | $11 | 10DOF ICM20948 BMP388
 
 Hardware Table Remarks
-* Breakout Board? lists price if cheap & easy to find board.
+* The "Breakout Board?" column lists price if cheap & easy to find board.
 * Prices aliexpress incl shipping.
 * Table created Oct 2023
 
@@ -211,6 +213,7 @@ Hardware Table Remarks
 - https://github.com/nickrehm/dRehmFlight Arduino Teensy 4
 - https://github.com/bitcraze/crazyflie-firmware STM32F405
 - https://github.com/espressif/esp-drone.git ESP32, fork from Crazyflie
+- https://github.com/betaflight/betaflight Betaflight
 
 
 
