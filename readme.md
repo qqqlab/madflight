@@ -70,23 +70,23 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | --: | :-- | -- |--: | :-- |
 | 3V3 out | 3V3 | Antenna side            | GND | GND
 | reset button | EN |                     | 23 | I2C_SDA
-| VSPI_MISO | 36 input only (VP) |        | 22 | I2C_SCL
-| FREE | 39 input only (VN) |             | 1 (TX) | USB Serial Debug TX
-| FREE | 34 input only |                  | 3 (RX) | USB Serial Debug RX
+| VSPI_MISO | VP 36 input only |          | 22 | I2C_SCL
+| FREE | VN 39 input only |               | 1 TX | USB Serial Debug TX
+| FREE | 34 input only |                  | 3 RX | USB Serial Debug RX
 | RCIN_PPM/RCIN_RX | 35 input only |      | 21 | VSPI_MOSI
 | RCIN_TX | 32 |                          | GND | GND
 | PWM1 | 33 |                             | 19 | VSPI_SCLK
 | PWM2 | 25 |                             | 18 | VSPI_CS
-| PWM3 | 26 |                             | 5 strap | PMW13
+| PWM3 | 26 |                             | strap 5 | PMW13
 | PWM4 | 27 |                             | 17 | PMW12
 | PWM5 | 14 |                             | 16 | PWM11
 | PWM6 | 12 |                             | 4 | PWM10
-| GND | GND |                             | 0 boot | PWM9
-| PWM7 | 13 |                             | 2 strap | LED     
-| nc | 9 flash (D2) |                     | 15 strap | PWM8
-| nc | 10 flash (D3) |                    | 8 flash (D1) | nc
-| nc | 11 flash (CMD) |                   | 7 flash (D0) | nc
-| 5V input via diode (*) | 5V | USB connector | 6 flash (CLK) | nc
+| GND | GND |                             | boot 0 | PWM9
+| PWM7 | 13 |                             | strap 2 | LED     
+| nc | D2 9 flash |                     | strap 15 | PWM8
+| nc | D3 10 flash |                    | flash 8 D1 | nc
+| nc | CMD 11 flash |                   | flash 7 D0 | nc
+| 5V input via diode (*) | 5V | USB connector | flash 6 CLK | nc
 
 (*) 5V input via diode: if not using a diode take care not connect USB and the battery at the same time
 
