@@ -38,26 +38,28 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| RCIN_RX(tx0) | 0 | USB connector | VBUS | nc
-| RCIN_TX(rx0) | 1 | | VSYS | 5V input via diode (if not using a diode take care not connect USB and the battery at the same time)
-| - | GND | | GND | -
-| PWM1 | 2 | | EN | nc
-| PWM2 | 3 | | 3.3V out | 3V3
-| PWM3 | 4 | | VREF | nc
-| PWM4 | 5 | | 28_A2 | FREE
-| - | GND | | GND | -
-| PWM5 | 6 | | 27_A1 | FREE
-| PWM6 | 7 | | 26_A0 | FREE
-| PWM7 | 8 | | RUN | -
-| PWM8 | 9 | | 22 | RCIN_PPM
-| - | GND | | GND | -
-| PWM9 | 10 | | 21 | I2C0_SCL
-| PWM10| 11 | | 20 | I2C0_SDA
-| PWM11 | 12 | | 19 | SPI0_MOSI
-| PWM12 | 13 | | 18 | SPI0_SCLK
-| - | GND | | GND | -
-| PWM13 | 14 | | 17 | SPI0_CS
-| PWM14 | 15 | JTAG pins| 16 | SPI0_MISO
+| RCIN_RX(tx0) | 0   | USB connector | VBUS     | nc
+| RCIN_TX(rx0) | 1   |               | VSYS     | 5V input via diode (*)
+|            - | GND |               | GND      | -
+|         PWM1 | 2   |               | EN       | nc
+|         PWM2 | 3   |               | 3.3V out | 3V3
+|         PWM3 | 4   |               | VREF     | nc
+|         PWM4 | 5   |               | 28_A2    | FREE
+|            - | GND |               | GND      | -
+|         PWM5 | 6   |               | 27_A1    | FREE
+|         PWM6 | 7   |               | 26_A0    | FREE
+|         PWM7 | 8   |               | RUN      | reset button to GND
+|         PWM8 | 9   |               | 22       | RCIN_PPM
+|            - | GND |               | GND      | -
+|         PWM9 | 10  |               | 21       | I2C0_SCL
+|         PWM10| 11  |               | 20       | I2C0_SDA
+|        PWM11 | 12  |               | 19       | SPI0_MOSI
+|        PWM12 | 13  |               | 18       | SPI0_SCLK
+|            - | GND |               | GND      | -
+|        PWM13 | 14  |               | 17       | SPI0_CS
+|        PWM14 | 15  | JTAG pins     | 16       | SPI0_MISO
+
+(*) 5V input via diode: if not using a diode take care not connect USB and the battery at the same time
     
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
@@ -66,25 +68,27 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| 3V3 out | 3V3 | Antenna side | GND | GND
-| nc | EN | | 23 | I2C_SDA
-| RCIN_PPM | 36 input only (VP) | | 22 | I2C_SCL
-| FREE | 39 input only (VN) | | TX | USB Serial Debug TX
-| FREE | 34 input only | | RX | USB Serial Debug RX
-| FREE | 35 input only | | 21 | RCIN_TX
-| PWM1 | 32 | | GND | GND
-| PWM2 | 33 | | 19 | RCIN_RX
-| PWM3 | 25 | | 18 | PMW12
-| PWM4 | 26 | | 5 strap | PMW11
-| PWM5 | 27 | | 17 | PMW10
-| PWM6 | 14 | | 16 | PMW9
-| PWM7 | 12 | | 4 | SPI_MISO
-| GND | GND | | 0 boot | SPI_MISO 
-| PWM8 | 13 | | 2 strap | SPI_MISO
-| nc | 9 flash (D2) | | 15 strap | SPI_CLK
-| nc | 10 flash (D3) | | 8 flash (D1) | nc
-| nc | 11 flash (CMD) | | 7 flash (D0) | nc
-| 5V input via diode (if not using a diode take care not connect USB and the battery at the same time) | 5V | USB connector | 6 flash (CLK) | nc
+| 3V3 out | 3V3 | Antenna side            | GND | GND
+| reset button | EN |                     | 23 | I2C_SDA
+| VSPI_MISO | 36 input only (VP) |        | 22 | I2C_SCL
+| FREE | 39 input only (VN) |             | 1 (TX) | USB Serial Debug TX
+| FREE | 34 input only |                  | 3 (RX) | USB Serial Debug RX
+| RCIN_PPM/RCIN_RX | 35 input only |      | 21 | VSPI_MOSI
+| RCIN_TX | 32 |                          | GND | GND
+| PWM1 | 33 |                             | 19 | VSPI_SCLK
+| PWM2 | 25 |                             | 18 | VSPI_CS
+| PWM3 | 26 |                             | 5 strap | PMW13
+| PWM4 | 27 |                             | 17 | PMW12
+| PWM5 | 14 |                             | 16 | PWM11
+| PWM6 | 12 |                             | 4 | PWM10
+| GND | GND |                             | 0 boot | PWM9
+| PWM7 | 13 |                             | 2 strap | LED     
+| nc | 9 flash (D2) |                     | 15 strap | PWM8
+| nc | 10 flash (D3) |                    | 8 flash (D1) | nc
+| nc | 11 flash (CMD) |                   | 7 flash (D0) | nc
+| 5V input via diode (*) | 5V | USB connector | 6 flash (CLK) | nc
+
+(*) 5V input via diode: if not using a diode take care not connect USB and the battery at the same time
 
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 
