@@ -214,7 +214,7 @@ Hardware Table Remarks
 - [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
 - [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, fork from Crazyflie
 - [Betaflight](https://github.com/betaflight/betaflight) STM32
-- [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32, Raspberry Pi
+- [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 or Linux based
 
 
 
