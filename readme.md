@@ -210,11 +210,11 @@ Hardware Table Remarks
 * Table created Oct 2023
 
 # Other Flight Controllers
-- (dRehmFlight)[https://github.com/nickrehm/dRehmFlight] Arduino Teensy 4
-- https://github.com/bitcraze/crazyflie-firmware STM32F405
-- https://github.com/espressif/esp-drone.git ESP32, fork from Crazyflie
-- https://github.com/betaflight/betaflight Betaflight
-- https://github.com/ArduPilot/ardupilot Ardupilot
+- [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
+- [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
+- [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, fork from Crazyflie
+- [Betaflight](https://github.com/betaflight/betaflight) STM32
+- [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32, Raspberry Pi
 
 
 
