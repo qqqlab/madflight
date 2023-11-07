@@ -40,8 +40,8 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| RCIN_RX(tx0) | 0   | USB connector | VBUS     | nc
-| RCIN_TX(rx0) | 1   |               | VSYS     | 5V input via diode (*)
+| RCIN_TX(tx0) | 0   | USB connector | VBUS     | nc
+| RCIN_RX(rx0) | 1   |               | VSYS     | 5V input via diode (*)
 |            - | GND |               | GND      | -
 |         PWM1 | 2   |               | EN       | nc
 |         PWM2 | 3   |               | 3.3V out | 3V3
