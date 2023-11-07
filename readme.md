@@ -2,6 +2,14 @@
 
 This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but supports ESP32 and RP2040 boards.
 
+# Required Hardware
+
+- Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
+- SPI or I2C IMU sensor: MPU6050, MPU9150, or MPU9250
+- RC Receiver: PPM, SBUS, or DMX
+- ESC: OneShot125 or 50-490Hz PWM
+- Optional servos: 50-490Hz PWM
+
 # Getting Started
 
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw.h
@@ -27,14 +35,6 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
   - ```out_``` Output to motors and servos
   - ```print_``` Prints debugging info
   - ```calibrate_``` Calibration
-
-# Supported Hardware
-
-- Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
-- SPI or I2C IMU sensor: MPU6050, MPU9150, or MPU9250
-- RC Receiver: PPM, SBUS, DMX
-- ESC: OneShot125 or 50-490Hz PWM
-- Servo: 50-490Hz PWM
 
 ## Default Pinout for Raspberry Pi Pico
 
