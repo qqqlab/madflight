@@ -211,6 +211,7 @@ Hardware Table Remarks
 
 # Other Flight Controllers
 - [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
+- [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino UNO single ino file
 - [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
 - [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, fork from Crazyflie
 - [Betaflight](https://github.com/betaflight/betaflight) STM32
