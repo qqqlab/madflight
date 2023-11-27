@@ -136,7 +136,7 @@ MCU GPIO | 34 | 45 | 30 | 32
 Processor | 2 * 240MHz LX6 | 2 * 240MHz LX7 | 2 * 133MHz M0+ | 1 * 100MHz M4
 Coremark (single core) | 351 | | 228 | 172
 FPU | FPU | FPU | no FPU | FPU
-RAM | 320K data<br>132K instruction<br>64K cache | 320K data<br128K instruction<br>64K cache | 264K data/instr.<br>16K XIP cache | 128K
+RAM | 320K data<br>132K instruction<br>64K cache | 320K data<br>128K instruction<br>64K cache | 264K data/instr.<br>16K XIP cache | 128K
 Flash | 2-16M QuadSPI | 2-16M OctalSPI | 2M QuadSPI | 512K internal (CE)<br>256K internal (CC)
 PSRAM | 0-8M | 0-8M | 0 | 0
 Board price single piece | $4 | $5 | $4 | $3
