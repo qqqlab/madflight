@@ -212,11 +212,11 @@ Hardware Table Remarks
 
 In increasing order of complexity.
 
-- [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino UNO single ino file
+- [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino ATmega328P, single 700 line ino file, no libs
 - [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
-- Badflight Arduono RP2040/ESP32
+- Badflight Arduino RP2040/ESP32
 - [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
-- [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, fork from Crazyflie
+- [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, forked from Crazyflie
 - [Betaflight](https://github.com/betaflight/betaflight) STM32
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 or Linux based
 
