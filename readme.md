@@ -62,9 +62,6 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 |        PWM14 | 15  | JTAG pins     | 16       | SPI0_MISO
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
-    
-![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
-![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
@@ -92,6 +89,8 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
+![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
+![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 ![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 
 # Changes from dRehmFlight
@@ -110,10 +109,9 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 
 - Arduino support
 - 32 bit processor
-- Preferably dual core: (makes it easy to setup without interrupts/rtos: core1 for control loop, core2 for user application)
-- At least 20 GPIO pins for:
+- At least 21 GPIO pins for:
   - 3x UART: Receiver, GPS, spare/debug (6 pins)
-  - 1x SPI: fast IMU (4 pins)
+  - 1x SPI: fast IMU (4 pins + 1 interrupt pin)
   - 1x I2C: Magnetometer, Barometer, Current sensor, slow IMU (2 pins)
   - 8x PWM: Motor, Servo (8 pins)
   
