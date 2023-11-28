@@ -15,7 +15,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw.h
 2. Connect the IMU sensor and radio receiver to your development board according to the selected pinout.
 3. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. Uncomment print_rcin_RadioPWM() to check.
-4. Uncomment print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. Uncomment lines in Setup() to calibate the sensor.
+4. Uncomment print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. Uncomment lines in setup() to calibate the sensor.
 5. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
 6. Mount props, go to an wide open space, and FLY!
 
@@ -26,7 +26,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 - The main .ino is the full flight controller running standard ```setup()``` and ```loop()```.
 - Plain C with minimal function arguments.
 - Global variables to communicate between the different functions.
-- Each function is prefixed with the module it belongs to:
+- Function names are prefixed with the module it belongs to:
   - ```loop_``` Main loop control
   - ```imu_``` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - ```ahrs_``` Attitude Heading Reference System, estimates roll, yaw, pitch
