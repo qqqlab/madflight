@@ -179,13 +179,14 @@ MPU9150  | $7 | I2C | 8k gyro, WHO_AM_I=0x68 or 0x69 depending on AD0 pin, MPU60
 MPU9250  | $4 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, WHO_AM_I=0x71, MPU6000 + AK8963, Released 2014 (EOL)
 MPU9255  | $9 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x73, MPU6000 + AK8963
 ICM20948 | $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
-LSM9DSO   | no
+LSM9DSO  | no
 
 ## Barometer
 
 | Part    | Breakout Board? | Interface | Notes |
 | ------- | --- | --- | --- |
 DPS310    | $3 | SPI, I2C | Relative precision: 6Pa 0.5m, Resolution 0.06Pa, Used in current commercial FC
+BMP180    | $2
 BMP280    | $2 | | Used in current commercial FC
 BMP388    | $8 | SPI, I2C | Relative precision: 
 MS5611    | $4
@@ -207,9 +208,13 @@ Hardware Table Remarks
 * Prices aliexpress incl shipping.
 * Table created Oct 2023
 
-# Other Flight Controllers
-- [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
+# Flight Controllers in Github
+
+In approximate order of complexity.
+
 - [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino UNO single ino file
+- [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
+- Badflight Arduono RP2040/ESP32
 - [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
 - [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, fork from Crazyflie
 - [Betaflight](https://github.com/betaflight/betaflight) STM32
