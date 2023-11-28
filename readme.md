@@ -204,13 +204,13 @@ GY-521 | $2 | 6DOF MPU6050
 GY-912 | $11 | 10DOF ICM20948 BMP388
 
 Hardware Table Remarks
-* The "Breakout Board?" column lists price if cheap & easy to find board.
+* The "Breakout Board?" column lists price if board is cheap & easy to procure.
 * Prices aliexpress incl shipping.
 * Table created Oct 2023
 
-# Flight Controllers in Github
+# Flight Controllers on Github
 
-In approximate order of complexity.
+In increasing order of complexity.
 
 - [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino UNO single ino file
 - [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
