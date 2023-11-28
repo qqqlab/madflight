@@ -1,11 +1,11 @@
-# dreamflight
+# Badflight
 
 This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but supports ESP32 and RP2040 boards.
 
 # Required Hardware
 
 - Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
-- SPI or I2C IMU sensor: MPU6050, MPU9150, or MPU9250
+- SPI or I2C IMU sensor: MPU6050, MP6500, MPU9150, or MPU9250
 - RC Receiver: PPM, SBUS, or DMX
 - ESC: OneShot125 or 50-490Hz PWM
 - Optional servos: 50-490Hz PWM
