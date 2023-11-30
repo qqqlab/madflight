@@ -29,7 +29,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 - Function names are prefixed with the module it belongs to:
   - `loop_` Main loop control
   - `imu_` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
-  - ```ahrs_` Attitude Heading Reference System, estimates roll, yaw, pitch
+  - `ahrs_` Attitude Heading Reference System, estimates roll, yaw, pitch
   - `rcin_` RC INput, retrieves RC receiver data
   - `control_` PID controller and output mixer
   - `out_` Output to motors and servos
