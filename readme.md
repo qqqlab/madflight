@@ -22,19 +22,19 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 # Software Design
 
 - Keep it simple!!!
-- No external dependencies, all library code included ```src``` directory
-- The main .ino is the full flight controller running standard ```setup()``` and ```loop()```.
+- No external dependencies, all library code included `src` directory
+- The main .ino is the full flight controller running standard `setup()` and `loop()`.
 - Plain C with minimal function arguments.
 - Global variables to communicate between the different functions.
 - Function names are prefixed with the module it belongs to:
-  - ```loop_``` Main loop control
-  - ```imu_``` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
-  - ```ahrs_``` Attitude Heading Reference System, estimates roll, yaw, pitch
-  - ```rcin_``` RC INput, retrieves RC receiver data
-  - ```control_``` PID controller and output mixer
-  - ```out_``` Output to motors and servos
-  - ```print_``` Prints debugging info
-  - ```calibrate_``` Calibration
+  - `loop_` Main loop control
+  - `imu_` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
+  - ```ahrs_` Attitude Heading Reference System, estimates roll, yaw, pitch
+  - `rcin_` RC INput, retrieves RC receiver data
+  - `control_` PID controller and output mixer
+  - `out_` Output to motors and servos
+  - `print_` Prints debugging info
+  - `calibrate_` Calibration
 
 ## Default Pinout for Raspberry Pi Pico
 
