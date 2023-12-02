@@ -51,7 +51,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 |         PWM5 | 6   |               | 27_A1    | FREE
 |         PWM6 | 7   |               | 26_A0    | FREE
 |         PWM7 | 8   |               | RUN      | reset button to GND
-|         PWM8 | 9   |               | 22       | GYRO_INT
+|         PWM8 | 9   |               | 22       | IMU_INT
 |            - | GND |               | GND      | -
 |         PWM9 | 10  |               | 21       | I2C0_SCL
 |         PWM10| 11  |               | 20       | I2C0_SDA
@@ -70,7 +70,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
 | reset button | EN |                            | 23 | I2C_SDA
 | VSPI_MISO    | VP 36 input only |              | 22 | I2C_SCL
-| GYRO_INT     | VN 39 input only |            | 1 TX | USB Serial Debug TX
+| IMU_INT     | VN 39 input only |            | 1 TX | USB Serial Debug TX
 | FREE         | 34 input only |               | 3 RX | USB Serial Debug RX
 | RCIN_RX      | 35 input only |                 | 21 | VSPI_MOSI
 | RCIN_TX      | 32 |                           | GND | GND
