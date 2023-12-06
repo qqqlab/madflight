@@ -231,7 +231,6 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 void setup1() {
   Serial.println("setup1()");
 }
-
 void loop1() {
   Serial.println("loop1()"); delay(100);
 }

@@ -62,22 +62,22 @@ void yieldIfNecessary(void){
     uint32_t now = millis();
     if((now - lastYield) > 2000) {
         lastYield = now;
-        vTaskDelay(portTICK_PERIOD_MS); //delay 1 RTOS tick
+        vTaskDelay(1); //delay 1 RTOS tick to let IDLE task reset the task watchdog
     }
 }
 
 void loop1Task(void *pvParameters) {
-  setup1();
+  if(setup1) setup1();
   for(;;) {
-    yieldIfNecessary();    
-    loop1();
+    yieldIfNecessary();
+    if (loop1) loop1();
   }
 }
 
 void startLoop1Task() {
 #ifndef CONFIG_FREERTOS_UNICORE
   //start setup1() and loop1() on second core
-  if (setup1 || loop1) {
+  if(setup1 || loop1) {
     Serial.println("Starting loop1Task");
     xTaskCreateUniversal(loop1Task, "loop1Task", getArduinoLoopTaskStackSize(), NULL, 1, &loop1TaskHandle, ((ARDUINO_RUNNING_CORE)+1)%2);
   }
