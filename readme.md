@@ -1,6 +1,6 @@
 # madflight
 
-This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). It keeps the simple one file design of the excellent original project, but supports ESP32 and RP2040 boards.
+This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
 
 # Required Hardware
 
@@ -8,6 +8,7 @@ This is a 1500 line Arduino based flight controller, forked from [dRehmFlight](h
 - SPI or I2C IMU sensor: MPU6050, MP6500, MPU9150, or MPU9250
 - RC Receiver: PPM, SBUS, or DMX
 - ESC: OneShot125 or 50-490Hz PWM
+- BEC or DC-DC converter to power your board from a battery
 - Optional servos: 50-490Hz PWM
 
 # Getting Started
