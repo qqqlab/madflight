@@ -96,6 +96,11 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 ![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
 ![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
+# Change Log
+
+2023-12-06 Add IMU orientation setting  
+2023-12-05 Initial release  
+
 # Changes from dRehmFlight
 
 - Add support for RP2040 and ESP32

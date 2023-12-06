@@ -70,6 +70,17 @@ blink interval longer than 1 second - loop() is taking too much time
 
 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
 #define IMU_ACCEL_G 2
+
+//Uncomment only one sensor orientation. The labels is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
+//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
+//#define IMU_ROTATE_NONE
+#define IMU_ROTATE_YAW90
+//#define IMU_ROTATE_YAW180
+//#define IMU_ROTATE_YAW270
+//#define IMU_ROTATE_ROLL180
+//#define IMU_ROTATE_YAW90_ROLL180
+//#define IMU_ROTATE_YAW180_ROLL180
+//#define IMU_ROTATE_YAW270_ROLL180
 #include "src/sensor/IMU.h" //first define IMU_xxx then include IMO.h
 
 //========================================================================================================================//
@@ -319,7 +330,7 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu took too long
+    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long
     if(print_need_newline) Serial.println();
   }
 

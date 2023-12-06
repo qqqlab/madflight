@@ -3,7 +3,9 @@ This file contains all necessary functions and code used for IMU sensors to avoi
 
 Each USE_IMU_xxx section in this file defines:
  - int imu_Setup() - init, returns 0 on success.
- - void imu_Read() - returns a sample: acc (g), gyro (deg/s), and when has_mag=true magneto (uT) 
+ - void imu_Read() - returns a sample: acc (g), gyro (deg/s), and when has_mag=true magneto (uT)
+
+Body frame is NED: x-axis North(front), y-axis East(right), z-axis Down
 
 MPU-6XXX and MPU-9XXX sensor family
 ===================================
@@ -11,6 +13,24 @@ These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kH
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 ========================================================================================================================*/
 
+//handle rotation for different mounting positions
+#if defined IMU_ROTATE_YAW90
+  #define IMO_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=tmp;   tmp=*gx; *gx=-*gy; *gy=tmp;   tmp=*mx; *mx=-*my; *my=tmp; }while(0)
+#elif defined IMU_ROTATE_YAW180
+  #define IMO_ROTATE() do{ *ax=-*ax; *ay=-*ay;   *gx=-*gx; *gy=-*gy;   *mx=-*mx; *my=-*my; }while(0)
+#elif defined IMU_ROTATE_YAW270
+  #define IMO_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=-tmp;   tmp=*gx; *gx=*gy; *gy=-tmp;   tmp=*mx; *mx=*my; *my=-tmp; }while(0)
+#elif defined IMU_ROTATE_ROLL180
+  #define IMO_ROTATE() do{ *ay=-*ay; *az=-*az;   *gy=-*gy; *gz=-*gz;   *my=-*my; *mz=-*mz; }while(0)
+#elif defined IMU_ROTATE_YAW90_ROLL180
+  #define IMO_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=tmp; *az=-*az;   tmp=*gx; *gx=*gy; *gy=tmp; *gz=-*gz;   tmp=*mx; *mx=*my; *my=tmp; *mz=-*mz; }while(0)
+#elif defined IMU_ROTATE_YAW180_ROLL180
+  #define IMO_ROTATE() do{ *ax=-*ax; *az=-*az;   *gx=-*gx; *gz=-*gz;   *mx=-*mx; *mz=-*mz; }while(0)
+#elif defined IMU_ROTATE_YAW270_ROLL180
+  #define IMO_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=-tmp; *az=-*az;   tmp=*gx; *gx=-*gy; *gy=-tmp; *gz=-*gz;   tmp=*mx; *mx=-*my; *my=-tmp; *mz=-*mz; }while(0)
+#elif 
+  #define IMO_ROTATE()
+#endif
 
 //========================================================================================================================
 // MPU6050 I2C gyro/acc
@@ -30,11 +50,11 @@ int imu_Setup() {
   return status;
 }
 
-void imu_Read(float *AcX, float *AcY, float *AcZ, float *GyX, float *GyY, float *GyZ, float *MgX, float *MgY, float *MgZ) {
-  (void)(MgX); (void)(MgY); (void)(MgZ); //suppress compiler warnings
-  mpu.getMotion6NED(AcX, AcY, AcZ, GyX, GyY, GyZ);
+void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
+  (void)(mx); (void)(my); (void)(mz); //suppress compiler warnings
+  mpu.getMotion6NED(ax, ay, az, gx, gy, gz);
+  IMO_ROTATE();
 }
-
 
 //========================================================================================================================
 // MPU9150 I2C gyro/acc/mag
@@ -54,8 +74,9 @@ int imu_Setup() {
   return status;
 }
 
-void imu_Read(float *AcX, float *AcY, float *AcZ, float *GyX, float *GyY, float *GyZ, float *MgX, float *MgY, float *MgZ) {
-  mpu.getMotion9NED(AcX, AcY, AcZ, GyX, GyY, GyZ, MgX, MgY, MgZ);
+void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
+  mpu.getMotion9NED(ax, ay, az, gx, gy, gz, mx, my, mz);
+  IMO_ROTATE();
 }
 
 
@@ -83,8 +104,9 @@ int imu_Setup() {
   return status;
 }
 
-void imu_Read(float *AcX, float *AcY, float *AcZ, float *GyX, float *GyY, float *GyZ, float *MgX, float *MgY, float *MgZ) {
-  mpu.getMotion9NED(AcX, AcY, AcZ, GyX, GyY, GyZ, MgX, MgY, MgZ); 
+void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
+  mpu.getMotion9NED(ax, ay, az, gx, gy, gz, mx, my, mz);
+  IMO_ROTATE();
 }
 
 
@@ -112,8 +134,9 @@ int imu_Setup() {
   return status;
 }
 
-void imu_Read(float *AcX, float *AcY, float *AcZ, float *GyX, float *GyY, float *GyZ, float *MgX, float *MgY, float *MgZ) {
-  mpu.getMotion9NED(AcX, AcY, AcZ, GyX, GyY, GyZ, MgX, MgY, MgZ); 
+void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
+  mpu.getMotion9NED(ax, ay, az, gx, gy, gz, mx, my, mz);
+  IMO_ROTATE();
 }
 
 #else
