@@ -1,6 +1,6 @@
 # Low-pass Filter
 
-$Output_i = \beta Output_{i-1} + (\beta-1) Sample_i$
+$Output_i = \beta Output_{i-1} + (1-\beta) Sample_i$
 
 $\beta = e^{-2 \pi \frac{F_0}{F_S}}$
 
