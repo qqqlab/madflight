@@ -9,9 +9,8 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 - Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
 - SPI or I2C IMU sensor: MPU6050, MP6500, MPU9150, or MPU9250
 - RC Receiver: PPM, SBUS, or DMX
-- ESC: OneShot125 or 50-490Hz PWM
 - BEC or DC-DC converter to power your board from a battery
-- Optional servos: 50-490Hz PWM
+- ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
 
 # Getting Started
 
