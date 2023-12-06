@@ -4,7 +4,7 @@
 
 This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
 
-<img src="doc/img/madflight RP2040 flight controller.jpeg" width="25%" /> <img src="doc/img/madflight drone.jpeg" width="19.6%" />
+<img src="doc/img/madflight RP2040 flight controller.jpeg" width="25%" /> <img src="doc/img/madflight drone.jpeg" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" width="19.1%" />
 
 # Required Hardware
 
@@ -26,10 +26,10 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 # Software Design
 
 - Keep it simple!!!
-- No external dependencies, all library code included `src` directory
+- No external dependencies, all library code included in `src` directory
 - The main .ino is the full flight controller running standard `setup()` and `loop()`.
 - Plain C with minimal function arguments.
-- Global variables to communicate between the different functions.
+- Global variables to communicate between the different modules.
 - Function names are prefixed with the module it belongs to:
   - `loop_` Main loop control
   - `imu_` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
