@@ -34,21 +34,21 @@ Flash | 2-16M QuadSPI | 2-16M OctalSPI | 2M QuadSPI | 512K internal (CE)<br>256K
 PSRAM | 0-8M | 0-8M | 0 | 0
 Board price single piece | $4 | $5 | $4 | $3
 
-![](doc/img/boards.jpeg)
+![](img/boards.jpeg)
 
 ### ESP32
-![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
-![](doc/img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
+![](img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
+![](img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
 
 ### ESP32S3
-![](doc/img/esp32-S3-DevKitC-1-original-pinout-high.png)
+![](img/esp32-S3-DevKitC-1-original-pinout-high.png)
 
 ### RP2040
-![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
-![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
+![](img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
+![](img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
 
 ### STM32F411
-![](doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png)
+![](img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png)
 
 ## 6-axis IMU
 
