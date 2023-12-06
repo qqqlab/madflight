@@ -1,5 +1,7 @@
 # madflight
 
+*Manless Autonomous Device*
+
 This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
 
 # Required Hardware
