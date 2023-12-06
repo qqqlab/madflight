@@ -87,8 +87,8 @@ LSM9DSO  | no
 DPS310    | $3 | SPI, I2C | Relative precision: 6Pa 0.5m, Resolution 0.06Pa, Used in current commercial FC
 BMP180    | $2
 BMP280    | $2 | | Used in current commercial FC
-BMP388    | $8 | SPI, I2C | Relative precision: 
-MS5611    | $4
+BMP388    | $8 | SPI, I2C 
+MS5611    | $4 | SPI 20MHz, I2C | Resolution RMS: 0.012mbar, 1.2Pa, 10cm @ 100Hz
 SPL06-001 | no
 
 ## Sensor Modules
