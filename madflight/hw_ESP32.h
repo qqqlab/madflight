@@ -50,7 +50,44 @@ SPIClass *spi = new SPIClass(VSPI); // VSPI(default) or HSPI
 #define hw_OUT_COUNT 13
 const int8_t out_PIN[hw_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16,17,5}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
 
-void hw_setup() 
+//--------------------------------------------------------------------
+// RTOS task for setup1() and loop1() on second core
+//--------------------------------------------------------------------
+TaskHandle_t loop1TaskHandle = NULL;
+extern void setup1() __attribute__((weak));
+extern void loop1() __attribute__((weak));
+
+void yieldIfNecessary(void){
+    static uint32_t lastYield = 0;
+    uint32_t now = millis();
+    if((now - lastYield) > 2000) {
+        lastYield = now;
+        vTaskDelay(portTICK_PERIOD_MS); //delay 1 RTOS tick
+    }
+}
+
+void loop1Task(void *pvParameters) {
+  setup1();
+  for(;;) {
+    yieldIfNecessary();    
+    loop1();
+  }
+}
+
+void startLoop1Task() {
+#ifndef CONFIG_FREERTOS_UNICORE
+  //start setup1() and loop1() on second core
+  if (setup1 || loop1) {
+    Serial.println("Starting loop1Task");
+    xTaskCreateUniversal(loop1Task, "loop1Task", getArduinoLoopTaskStackSize(), NULL, 1, &loop1TaskHandle, ((ARDUINO_RUNNING_CORE)+1)%2);
+  }
+#endif
+}
+
+//--------------------------------------------------------------------
+// hw_setup()
+//--------------------------------------------------------------------
+void hw_setup()
 {
   delay(1000);
   Serial.println("USE_HW_ESP32");
@@ -61,4 +98,6 @@ void hw_setup()
   i2c->setTimeout(1); //timeout in milliseconds, default 50 ms  
 
   spi->begin(spi_MOSI_PIN, spi_MISO_PIN, spi_SCLK_PIN, spi_CS_PIN);
+
+  startLoop1Task();
 }
