@@ -4,6 +4,8 @@
 
 This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
 
+<img src="madflight RP2040 flight controller.jpeg" width="25%" />
+
 # Required Hardware
 
 - Development board: RP2040 (e.g. Raspberry Pi Pico) or ESP32 (e.g. Espressiv DevKitC) 
@@ -64,7 +66,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-![](doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
+<img src="doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
 ## Default Pinout for Raspberry Pi Pico
 
@@ -93,8 +95,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-![](doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png)
-![](doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png)
+<img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
 # Change Log
 2023-12-06 Add setup1() and loop1() for ESP32  
