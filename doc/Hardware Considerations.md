@@ -75,7 +75,7 @@ ICM42688P | no | | 32k gyro, Used in current commercial FC
 | Part    | Breakout Board? | Interface | Notes |
 | ------- | --- | --- | --- |
 MPU9150  | $7 | I2C | 8k gyro, WHO_AM_I=0x68 or 0x69 depending on AD0 pin, MPU6050 + AK8975, (EOL)
-MPU9250  | $4 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, WHO_AM_I=0x71, MPU6000 + AK8963, Released 2014 (EOL)
+MPU9250  | $7 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, WHO_AM_I=0x71, MPU6500 + AK8963, Released 2014 (EOL) Note: many fake relabelled MPU6500 boards on the market for $4 or less.
 MPU9255  | $9 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x73, MPU6000 + AK8963
 ICM20948 | $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
 LSM9DSO  | no
