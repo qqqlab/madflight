@@ -4,7 +4,7 @@
 
 This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
 
-<img src="doc/img/madflight RP2040 flight controller.jpeg" width="25%" /> <img src="doc/img/madflight drone.jpeg" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" width="19.1%" />
+<img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
 # Required Hardware
 
