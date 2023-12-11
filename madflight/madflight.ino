@@ -31,11 +31,9 @@ blink interval longer than 1 second - loop() is taking too much time
 ##########################################################################################################################*/
 
 //========================================================================================================================//
-//                                                 USER-SPECIFIED DEFINES                                                 //                                                                 
+//                                                 INCLUDES                                                               //
 //========================================================================================================================//
-
-//-------------------------------------
-//Include hardware architecture dependent definitions
+//include hardware specific code
 #if defined ARDUINO_ARCH_ESP32
   #include "hw_ESP32.h"
 #elif defined ARDUINO_ARCH_RP2040
@@ -44,6 +42,19 @@ blink interval longer than 1 second - loop() is taking too much time
   #error "Unknown hardware architecture"
 #endif
 
+#include "ahrs.h"
+
+//========================================================================================================================//
+//                                                 USER-SPECIFIED DEFINES                                                 //
+//========================================================================================================================//
+
+//-------------------------------------
+// APPLICATION SETTINGS
+//-------------------------------------
+#define USE_IMU_INTERRUPT //Uncomment to use interrupt pin and not loop() to trigger loop_imu()
+
+//-------------------------------------
+// RC RECEIVER
 //-------------------------------------
 //Uncomment only one receiver type
 #define USE_RCIN_PPM
@@ -53,9 +64,11 @@ blink interval longer than 1 second - loop() is taking too much time
 #include "src/RCIN/RCIN.h" //first define USE_RCIN_xxx then include RCIN.h
 
 //-------------------------------------
+// IMU SENSOR
+//-------------------------------------
 //Uncomment only one IMU
-#define USE_IMU_MPU6050_I2C  //acc/gyro
-//#define USE_IMU_MPU9150_I2C  //acc/gyro/mag
+//#define USE_IMU_MPU6050_I2C  //acc/gyro
+#define USE_IMU_MPU9150_I2C  //acc/gyro/mag
 //#define USE_IMU_MPU6500_I2C  //acc/gyro      Note: SPI interface is faster
 //#define USE_IMU_MPU9250_I2C  //acc/gyro/mag  Note: SPI interface is faster
 //#define USE_IMU_MPU6500_SPI  //acc/gyro
@@ -146,14 +159,16 @@ const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
 
-uint32_t loop_freq = 2000; //Loop frequency in Hz. Do not change, all filter parameters tuned to 2000Hz by default
+uint32_t loop_freq = 1000; //Loop frequency in Hz. Do not touch unless you know what you are doing.
 
-//Low Pass Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
+//Low Pass Filter parameters. Do not touch unless you know what you are doing.
+float LP_accel = 70;          //Accelerometer lowpass filter cutoff frequency in Hz (default MPU6050: 50Hz, MPU9250: 70Hz)
+float LP_gyro = 60;           //Gyro lowpass filter cutoff frequency in Hz (default MPU6050: 35Hz, MPU9250: 60Hz)
+float LP_mag = 1e10;          //Magnetometer lowpass filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering)
+float LP_radio = 400;         //Radio input lowpass filter cutoff frequency in Hz (default 400Hz)
+
+//AHRS Parameters
 float B_madgwick = 0.041;     //ahrs_Madgwick filter parameter
-float B_accel = 0.2;          //Accelerometer LP filter paramter, (MPU6050 default: 0.14. MPU9250 default: 0.2)
-float B_gyro = 0.17;          //Gyro LP filter parameter, (MPU6050 default: 0.1. MPU9250 default: 0.17)
-float B_mag = 1.0;            //Magnetometer LP filter parameter
-float B_radio = 0.7;          //Radio input filter parameter. Lower=slower, higher=noiser
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit = 25.0;         //Integrator saturation level, mostly for safety (default 25.0)
@@ -189,10 +204,12 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 //General stuff
 float loop_dt;
-uint32_t loop_time, loop_cnt=0;
+uint32_t loop_time; //loop timestamp
+uint32_t loop_cnt = 0; //loop counter
 uint32_t print_time;
 bool print_need_newline;
 uint32_t loop_rt, loop_rt_imu; //runtime of loop and imu sensor retrieval
+int imu_err_cnt = 0; //debugging: number of times imu took too long
 
 //Radio communication:
 int rcin_pwm[16]; //raw PWM values
@@ -204,10 +221,6 @@ int rcin_aux; // six position switch connected to aux channel, values 0-5
 //IMU:
 float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ;
 float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in degrees. Positive angles are: roll right, yaw right, pitch up
-float q0 = 1.0f; //Initialize quaternion for madgwick filter (shared between ahrs_Madgwick6DOF and ahrs_Madgwick9DOF)
-float q1 = 0.0f;
-float q2 = 0.0f;
-float q3 = 0.0f;
 
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
@@ -220,8 +233,42 @@ PWM out[hw_OUT_COUNT]; //ESC and Servo outputs
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
 
-//converson
+//conversion
+float lowpass_to_beta(float,float); //prototype
 const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
+float B_accel = lowpass_to_beta(LP_accel, loop_freq);
+float B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
+float B_mag = lowpass_to_beta(LP_mag, loop_freq);
+float B_radio = lowpass_to_beta(LP_radio, loop_freq);
+
+//========================================================================================================================//
+//                                          IMU INTERRUPT HANDLER                                                          //
+//========================================================================================================================//
+#ifdef USE_IMU_INTERRUPT
+TaskHandle_t imu_task_handle;
+
+void imu_task_setup() {
+  xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
+  //vTaskCoreAffinitySet(IsrTaskHandle, 0);
+  attachInterrupt(digitalPinToInterrupt(imu_INT_PIN), imu_interrupt_handler, RISING); 
+}
+
+void imu_task(void*) {
+  for(;;) {
+    ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+    imu_loop();
+  }
+}
+
+void imu_interrupt_handler() {
+  //let imu_task handle the interrupt
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+#else
+void imu_task_setup() {}
+#endif
 
 //========================================================================================================================//
 //                                          SETUP1() LOOP1() EXECUTING ON SECOND CORE                                     //
@@ -252,7 +299,7 @@ void setup() {
     delay(500); //delay to get Arduino debugger connected
   }
 
-  //hardware specific setup for spi and Wire (see hw.h)
+  //hardware specific setup for spi and Wire (see hw_xxx.h)
   hw_setup();
 
   //debug i2c
@@ -293,7 +340,7 @@ void setup() {
   } 
 
   //Get IMU error to zero accelerometer and gyro readings, assuming vehicle is level when powered up
-  //calibrate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out. (Or.. keep this active to calibrate on every startup.)
+  calibrate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out. (Or.. keep this active to calibrate on every startup.)
 
   //If using IMU with magnetometer, uncomment for one-time magnetometer calibration (may need to repeat for new locations)
   //calibrate_Magnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
@@ -307,25 +354,23 @@ void setup() {
   //set times for loop
   loop_RateBegin();
 
+  //start IMU task (only if USE_IMU_INTERRUPT is defined)
+  imu_task_setup();
+
   //Set built in LED off to signal end of startup
   digitalWrite(led_PIN, LOW);
 }
 
-
-
 //========================================================================================================================//
 //                                                            LOOP()                                                      //
 //========================================================================================================================//
+
 void loop() {
-  //debugging: number of times imu took too long
-  static int imu_err_cnt = 0;
-  if(loop_rt_imu > 500) imu_err_cnt++;
-
-  //Keeps loop sample rate constant. Keeps track of loop_time (starting time of loop), and loop_dt (elapsed time since the last loop).
-  loop_Rate();
-
-  //Blink LED
-  loop_Blink();
+  //only call imu_loop here if we're not using interrupts
+  #ifndef USE_IMU_INTERRUPT
+    while ( (micros() - loop_time) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
+    imu_loop();
+  #endif
 
   //Debugging - Print data at 50hz, uncomment line(s) for troubleshooting
   if (loop_time - print_time > 20000) {
@@ -343,9 +388,34 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long
+    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;            
     if(print_need_newline) Serial.println();
   }
+}
+
+//========================================================================================================================//
+//                                                            IMU_LOOP()                                                      //
+//========================================================================================================================//
+  /*
+   * It's good to operate at a constant loop rate for filters to remain stable and whatnot. Interrupt routines running in the
+   * background cause the loop rate to fluctuate. This function basically just waits at the end of every loop iteration until 
+   * the correct time has passed since the start of the current loop for the desired loop rate in Hz. 2kHz is a good rate to 
+   * be at because the loop nominally will run between 2.8kHz - 4.2kHz. This lets us have a little room to add extra computations
+   * and remain above 2kHz, without needing to retune all of our filtering parameters.
+   */
+   
+void imu_loop() {
+  //debugging: number of times imu took too long
+  if(loop_rt_imu > 500) imu_err_cnt++;
+
+  //update loop_ variables
+  uint32_t now = micros();
+  loop_dt = (now - loop_time)/1000000.0;
+  loop_time = now;
+  loop_cnt++;
+
+  //Blink LED
+  loop_Blink();
 
   //Get vehicle state
   imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
@@ -370,31 +440,14 @@ void loop() {
   //Command actuators
   out_KillSwitch(); //Cut all motor outputs if DISARMED.
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
+
+  //record runtime of last loop
+  loop_rt = micros() - loop_time; 
 }
 
 //========================================================================================================================//
-//                        LOOP() FUNCTIONS - in same order as they are called from loop()                                 //
+//                      IMU_LOOP() FUNCTIONS - in same order as they are called from imu_loop()                           //
 //========================================================================================================================//
-
-void loop_Rate() {
-  //DESCRIPTION: Regulate main loop rate to specified frequency in Hz
-  /*
-   * It's good to operate at a constant loop rate for filters to remain stable and whatnot. Interrupt routines running in the
-   * background cause the loop rate to fluctuate. This function basically just waits at the end of every loop iteration until 
-   * the correct time has passed since the start of the current loop for the desired loop rate in Hz. 2kHz is a good rate to 
-   * be at because the loop nominally will run between 2.8kHz - 4.2kHz. This lets us have a little room to add extra computations
-   * and remain above 2kHz, without needing to retune all of our filtering parameters.
-   */
-
-  loop_rt = micros() - loop_time; //record runtime of last loop
-  
-  //Waste time until sample time has passed.
-  while ( (micros() - loop_time) < (1000000U / loop_freq) );
-  uint32_t now = micros();
-  loop_dt = (now - loop_time)/1000000.0;
-  loop_time = now;
-  loop_cnt++;
-}
 
 void loop_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
@@ -472,186 +525,6 @@ void ahrs_Madgwick() {
   ahrs_roll = atan2(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2) * rad_to_deg; //degrees
   ahrs_pitch = asin(constrain(-2.0f * (q1*q3 - q0*q2), -1.0, 1.0)) * rad_to_deg; //degrees - use constrain() to prevent NaN due to rounding
   ahrs_yaw = atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3) * rad_to_deg; //degrees
-}
-
-void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
-  //DESCRIPTION: Attitude estimation through sensor fusion - 9DOF
-  /*
-   * This function fuses the accelerometer gyro, and magnetometer readings AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, and MagZ for attitude estimation.
-   * Don't worry about the math. There is a tunable parameter B_madgwick in the user specified variable section which basically
-   * adjusts the weight of gyro data in the state estimate. Higher beta leads to noisier estimate, lower 
-   * beta leads to slower to respond estimate. It is currently tuned for 2kHz loop rate. This function updates the ahrs_roll,
-   * ahrs_pitch, and ahrs_yaw variables which are in degrees.
-   */
-  float recipNorm;
-  float s0, s1, s2, s3;
-  float qDot1, qDot2, qDot3, qDot4;
-  float hx, hy;
-  float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
-
-  //Convert gyroscope degrees/sec to radians/sec
-  gx *= 0.0174533f;
-  gy *= 0.0174533f;
-  gz *= 0.0174533f;
-
-  //Rate of change of quaternion from gyroscope
-  qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
-  qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
-  qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
-  qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
-
-  //Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-  if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(ax * ax + ay * ay + az * az);
-    ax *= recipNorm;
-    ay *= recipNorm;
-    az *= recipNorm;
-
-    //Normalise magnetometer measurement
-    recipNorm = 1.0/sqrtf(mx * mx + my * my + mz * mz);
-    mx *= recipNorm;
-    my *= recipNorm;
-    mz *= recipNorm;
-
-    //Auxiliary variables to avoid repeated arithmetic
-    _2q0mx = 2.0f * q0 * mx;
-    _2q0my = 2.0f * q0 * my;
-    _2q0mz = 2.0f * q0 * mz;
-    _2q1mx = 2.0f * q1 * mx;
-    _2q0 = 2.0f * q0;
-    _2q1 = 2.0f * q1;
-    _2q2 = 2.0f * q2;
-    _2q3 = 2.0f * q3;
-    _2q0q2 = 2.0f * q0 * q2;
-    _2q2q3 = 2.0f * q2 * q3;
-    q0q0 = q0 * q0;
-    q0q1 = q0 * q1;
-    q0q2 = q0 * q2;
-    q0q3 = q0 * q3;
-    q1q1 = q1 * q1;
-    q1q2 = q1 * q2;
-    q1q3 = q1 * q3;
-    q2q2 = q2 * q2;
-    q2q3 = q2 * q3;
-    q3q3 = q3 * q3;
-
-    //Reference direction of Earth's magnetic field
-    hx = mx * q0q0 - _2q0my * q3 + _2q0mz * q2 + mx * q1q1 + _2q1 * my * q2 + _2q1 * mz * q3 - mx * q2q2 - mx * q3q3;
-    hy = _2q0mx * q3 + my * q0q0 - _2q0mz * q1 + _2q1mx * q2 - my * q1q1 + my * q2q2 + _2q2 * mz * q3 - my * q3q3;
-    _2bx = sqrtf(hx * hx + hy * hy);
-    _2bz = -_2q0mx * q2 + _2q0my * q1 + mz * q0q0 + _2q1mx * q3 - mz * q1q1 + _2q2 * my * q3 - mz * q2q2 + mz * q3q3;
-    _4bx = 2.0f * _2bx;
-    _4bz = 2.0f * _2bz;
-
-    //Gradient decent algorithm corrective step
-    s0 = -_2q2 * (2.0f * q1q3 - _2q0q2 - ax) + _2q1 * (2.0f * q0q1 + _2q2q3 - ay) - _2bz * q2 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q3 + _2bz * q1) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q2 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s1 = _2q3 * (2.0f * q1q3 - _2q0q2 - ax) + _2q0 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q1 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + _2bz * q3 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s2 = -_2q0 * (2.0f * q1q3 - _2q0q2 - ax) + _2q3 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q2 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s3 = _2q1 * (2.0f * q1q3 - _2q0q2 - ax) + _2q2 * (2.0f * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    recipNorm = 1.0/sqrtf(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
-    s0 *= recipNorm;
-    s1 *= recipNorm;
-    s2 *= recipNorm;
-    s3 *= recipNorm;
-
-    //Apply feedback step
-    qDot1 -= B_madgwick * s0;
-    qDot2 -= B_madgwick * s1;
-    qDot3 -= B_madgwick * s2;
-    qDot4 -= B_madgwick * s3;
-  }
-
-  //Integrate rate of change of quaternion to yield quaternion
-  q0 += qDot1 * dt;
-  q1 += qDot2 * dt;
-  q2 += qDot3 * dt;
-  q3 += qDot4 * dt;
-
-  //Normalize quaternion
-  recipNorm = 1.0/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-  q0 *= recipNorm;
-  q1 *= recipNorm;
-  q2 *= recipNorm;
-  q3 *= recipNorm;
-}
-
-void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
-  //DESCRIPTION: Attitude estimation through sensor fusion - 6DOF
-  /*
-   * See description of ahrs_Madgwick() for more information. This is a 6DOF implimentation for when magnetometer data is not
-   * available (for example when using the recommended MPU6050 IMU for the default setup).
-   */
-  float recipNorm;
-  float s0, s1, s2, s3;
-  float qDot1, qDot2, qDot3, qDot4;
-  float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
-
-  //Convert gyroscope degrees/sec to radians/sec
-  gx *= 0.0174533f;
-  gy *= 0.0174533f;
-  gz *= 0.0174533f;
-
-  //Rate of change of quaternion from gyroscope
-  qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
-  qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
-  qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
-  qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
-
-  //Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-  if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(ax * ax + ay * ay + az * az);
-    ax *= recipNorm;
-    ay *= recipNorm;
-    az *= recipNorm;
-
-    //Auxiliary variables to avoid repeated arithmetic
-    _2q0 = 2.0f * q0;
-    _2q1 = 2.0f * q1;
-    _2q2 = 2.0f * q2;
-    _2q3 = 2.0f * q3;
-    _4q0 = 4.0f * q0;
-    _4q1 = 4.0f * q1;
-    _4q2 = 4.0f * q2;
-    _8q1 = 8.0f * q1;
-    _8q2 = 8.0f * q2;
-    q0q0 = q0 * q0;
-    q1q1 = q1 * q1;
-    q2q2 = q2 * q2;
-    q3q3 = q3 * q3;
-
-    //Gradient decent algorithm corrective step
-    s0 = _4q0 * q2q2 + _2q2 * ax + _4q0 * q1q1 - _2q1 * ay;
-    s1 = _4q1 * q3q3 - _2q3 * ax + 4.0f * q0q0 * q1 - _2q0 * ay - _4q1 + _8q1 * q1q1 + _8q1 * q2q2 + _4q1 * az;
-    s2 = 4.0f * q0q0 * q2 + _2q0 * ax + _4q2 * q3q3 - _2q3 * ay - _4q2 + _8q2 * q1q1 + _8q2 * q2q2 + _4q2 * az;
-    s3 = 4.0f * q1q1 * q3 - _2q1 * ax + 4.0f * q2q2 * q3 - _2q2 * ay;
-    recipNorm = 1.0/sqrtf(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); //normalise step magnitude
-    s0 *= recipNorm;
-    s1 *= recipNorm;
-    s2 *= recipNorm;
-    s3 *= recipNorm;
-
-    //Apply feedback step
-    qDot1 -= B_madgwick * s0;
-    qDot2 -= B_madgwick * s1;
-    qDot3 -= B_madgwick * s2;
-    qDot4 -= B_madgwick * s3;
-  }
-
-  //Integrate rate of change of quaternion to yield quaternion
-  q0 += qDot1 * dt;
-  q1 += qDot2 * dt;
-  q2 += qDot3 * dt;
-  q3 += qDot4 * dt;
-
-  //Normalise quaternion
-  recipNorm = 1.0/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-  q0 *= recipNorm;
-  q1 *= recipNorm;
-  q2 *= recipNorm;
-  q3 *= recipNorm;
 }
 
 void rcin_GetCommands() {
@@ -1122,10 +995,11 @@ void calibrate_ESCs() {
    *  power up with throttle at full, let ESCs begin arming sequence, and lower throttle to zero. This function should only be
    *  uncommented when performing an ESC calibration.
    */
-  loop_RateBegin();
+  uint32_t ts = micros();
   while (true) {
-    loop_Rate();
-  
+    while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
+    ts = micros();
+
     digitalWrite(led_PIN, HIGH); //LED on to indicate we are not in main loop
 
     rcin_GetCommands(); //Pulls current available radio commands
@@ -1329,6 +1203,12 @@ void print_i2c_scan() {
 
 //===============================================================================================
 // HELPERS
+//===============================================================================================
+
+//lowpass frequency to filter beta constant
+float lowpass_to_beta(float f0, float fs) {
+  return 1 - exp(-2 * PI * f0 / fs);
+}
 
 void die(String msg) {
   int cnt = 0;

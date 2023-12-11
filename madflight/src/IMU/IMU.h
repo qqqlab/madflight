@@ -68,9 +68,8 @@ MPU9150 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9150_I2C");
-  mpu.setI2C(i2c, IMU_I2C_ADR);  
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
-  mpu.set_acc_scale_g(IMU_ACCEL_G); 
+  mpu.set_acc_scale_g(IMU_ACCEL_G);
   int status = mpu.begin();
   return status;
 }
@@ -92,7 +91,6 @@ MPU9250 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9250_I2C");
-  mpu.setI2C(i2c, IMU_I2C_ADR);
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
   mpu.set_acc_scale_g(IMU_ACCEL_G);
   int status = mpu.begin();
@@ -123,16 +121,15 @@ MPU9150 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9250_SPI");
-  mpu.setSPI(spi, spi_CS_PIN);
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
   mpu.set_acc_scale_g(IMU_ACCEL_G);
-  int status = mpu.begin();  
+  int status = mpu.begin();
 #if defined USE_IMU_MPU9250_SPI
   if(status == -1112) {
     Serial.println("WARNING: MPU9250 is actually MPU6500 without magnetometer");
     return 0;
   }
-#endif  
+#endif
   return status;
 }
 

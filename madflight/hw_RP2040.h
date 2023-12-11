@@ -35,7 +35,8 @@ SerialUART *rcin_Serial = new SerialUART(uart0, rcin_TX_PIN, rcin_RX_PIN); //uar
 //SerialPIO *rcin_Serial = new SerialPIO(rcin_TX_PIN, rcin_RX_PIN, 32); //PIO uarts, any pin allowed
 
 //IMU:
-const int imu_INT_PIN  = 22;
+const int imu_INT_PIN  = 22; //only used when USE_IMU_INTERRUPT is defined
+#define HW_RTOS_IMUTASK_PRIORITY 7 //IMU Interrupt task priority. RP2040 max priority is 7. 
 
 //I2C:
 const int i2c_SDA_PIN  = 20; //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)

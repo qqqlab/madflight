@@ -46,13 +46,13 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 | --: | :-- | -- |--: | :-- |
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
 | reset button | EN |                            | 23 | I2C_SDA
-| VSPI_MISO    | VP 36 input only |              | 22 | I2C_SCL
+| SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
 | IMU_INT      | VN 39 input only |            | 1 TX | USB Serial Debug TX
 | FREE         | 34 input only |               | 3 RX | USB Serial Debug RX
-| RCIN_RX      | 35 input only |                 | 21 | VSPI_MOSI
+| RCIN_RX      | 35 input only |                 | 21 | SPI_MOSI
 | RCIN_TX      | 32 |                           | GND | GND
-| PWM1         | 33 |                            | 19 | VSPI_SCLK
-| PWM2         | 25 |                            | 18 | VSPI_CS
+| PWM1         | 33 |                            | 19 | SPI_SCLK
+| PWM2         | 25 |                            | 18 | SPI_CS
 | PWM3         | 26 |                       | strap 5 | PMW13
 | PWM4         | 27 |                            | 17 | PMW12
 | PWM5         | 14 |                            | 16 | PWM11
@@ -85,19 +85,28 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 |         PWM7 | 8   |               | RUN      | reset button to GND
 |         PWM8 | 9   |               | 22       | IMU_INT
 |            - | GND |               | GND      | -
-|         PWM9 | 10  |               | 21       | I2C0_SCL
-|         PWM10| 11  |               | 20       | I2C0_SDA
-|        PWM11 | 12  |               | 19       | SPI0_MOSI
-|        PWM12 | 13  |               | 18       | SPI0_SCLK
+|         PWM9 | 10  |               | 21       | I2C_SCL
+|         PWM10| 11  |               | 20       | I2C_SDA
+|        PWM11 | 12  |               | 19       | SPI_MOSI
+|        PWM12 | 13  |               | 18       | SPI_SCLK
 |            - | GND |               | GND      | -
-|        PWM13 | 14  |               | 17       | SPI0_CS
-|        PWM14 | 15  | JTAG pins     | 16       | SPI0_MISO
+|        PWM13 | 14  |               | 17       | SPI_CS
+|        PWM14 | 15  | JTAG pins     | 16       | SPI_MISO
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
+# Connecting IMU Sensors
+
+Connect sensor VCC and GND pins to dev board 3.3V and GND.
+
+For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
+
+For SPI sensors: connect sensor SCL/SCLK to dev board SPI_SCLK, SDA/SDI to SPI_MOSI, ADD/SDO to SPI_MISO, NCS to SPI_CS, and INT to IMU_INT.
+
 # Change Log
+2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation
 2023-12-11 Use C++ template for flexible I2C implementations
 2023-12-06 Add setup1() and loop1() for ESP32  
 2023-12-06 Add IMU orientation setting  
@@ -112,6 +121,8 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 - Oneshot is implemented as PWM up to 3.9kHz
 - New libs for IMU sensors
 - Changed arming logic
+- Loop rate set to 1kHz to match IMU sensor rate
+- Add option for interrupt driven operation
 
 # Flight Controllers on Github
 

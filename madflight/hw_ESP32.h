@@ -32,7 +32,8 @@ const int rcin_TX_PIN  = 32;
 HardwareSerial *rcin_Serial = &Serial1; // can use &Serial, &Serial1, or &Serial2
 
 //IMU:
-const int imu_INT_PIN = 39;
+const int imu_INT_PIN = 39; //only used when USE_IMU_INTERRUPT is defined
+#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority. ESP32 max priority is 31.
 
 //I2C:
 const int i2c_SDA_PIN  = 23; //default: Wire 21
