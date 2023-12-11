@@ -5,9 +5,9 @@
 
 #include "MPU_Interface.h"
 
-class MPU6050 : public MPU_Interface {
+class MPU6050 {
 public:
-    MPU6050(uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
+    MPU6050(MPU_Interface *iface, uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
 
     //MPU6050
     bool begin();
@@ -25,7 +25,7 @@ public:
     float gyro_multiplier;    
 
 private:
-    uint8_t _i2c_adr;
+    MPU_Interface *_iface;
     uint8_t _low_pass_filter;
     uint8_t _low_pass_filter_acc;
 };

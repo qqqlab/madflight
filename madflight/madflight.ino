@@ -81,7 +81,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //#define IMU_ROTATE_YAW90_ROLL180
 //#define IMU_ROTATE_YAW180_ROLL180
 //#define IMU_ROTATE_YAW270_ROLL180
-#include "src/sensor/IMU.h" //first define IMU_xxx then include IMO.h
+#include "src/IMU/IMU.h" //first define IMU_xxx then include IMO.h
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //

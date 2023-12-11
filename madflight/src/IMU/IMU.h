@@ -39,11 +39,11 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 
 #include "MPU6050.h"
 
-MPU6050 mpu;
+MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+MPU6050 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU6050_I2C");
-  mpu.setI2C(i2c, IMU_I2C_ADR);
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
   mpu.set_acc_scale_g(IMU_ACCEL_G); 
   int status = mpu.begin();
@@ -63,7 +63,8 @@ void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, 
 
 #include "MPU9150.h"
 
-MPU9150 mpu;
+MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+MPU9150 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9150_I2C");
@@ -79,7 +80,6 @@ void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, 
   IMO_ROTATE();
 }
 
-
 //========================================================================================================================
 // MPU9250 I2C gyro/acc/mag or MPU6500 I2C gyro/acc
 //========================================================================================================================
@@ -87,7 +87,8 @@ void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, 
 
 #include "MPU9250.h"
 
-MPU9250_I2C mpu;
+MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+MPU9250 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9250_I2C");
@@ -117,7 +118,8 @@ void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, 
 
 #include "MPU9250.h"
 
-MPU9250 mpu();
+MPU_InterfaceSPI mpu_iface(spi, spi_CS_PIN);
+MPU9150 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9250_SPI");

@@ -6,6 +6,7 @@ This file defines:
   *rcin_Serial -> Serial port for RCIN
   *spi -> SPI port
   *i2c -> I2C port
+  HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
 ########################################################################################################################*/
 
@@ -39,7 +40,8 @@ const int imu_INT_PIN  = 22;
 //I2C:
 const int i2c_SDA_PIN  = 20; //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
 const int i2c_SCL_PIN  = 21; //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
-TwoWire *i2c = &Wire; //&Wire or &Wire1
+typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
+HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 
 //SPI:
 const int spi_MISO_PIN = 16; //spi0: 0, 4, 16(default)   spi1:  8, 12(default)

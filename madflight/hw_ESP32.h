@@ -6,6 +6,7 @@ This file defines:
   *rcin_Serial -> Serial port for RCIN
   *spi -> SPI port
   *i2c -> I2C port
+  HW_WIRETYPE -> the class to use for I2C  
   hw_Setup() -> function to init the hardware
 ########################################################################################################################*/
 
@@ -15,7 +16,7 @@ This file defines:
 //ESP32 - Most pins can be assigned freely
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 
-#include "src/sensor/WireAlternative.h"     //I2C communication - ESP32 has a bug in I2C which causes the bus to hang for 1 second after a failed read, makes I2C for this project unusable... --> https://github.com/espressif/esp-idf/issues/4999
+#include "src/HW_ESP32/ESP32_SoftWire.h" //I2C communication - ESP32 has a bug in I2C which causes the bus to hang for 1 second after a failed read, makes I2C for this project unusable... --> https://github.com/espressif/esp-idf/issues/4999
 #include <SPI.h>                         //SPI communication
 #include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
 
@@ -36,8 +37,9 @@ const int imu_INT_PIN = 39;
 //I2C:
 const int i2c_SDA_PIN  = 23; //default: Wire 21
 const int i2c_SCL_PIN  = 22; //default: Wire 22
+typedef SoftWire HW_WIRETYPE; //define the class to use for I2C
 //TwoWire *i2c = &Wire; //&Wire or &Wire1 - when using <Wire.h>
-TwoWire *i2c = new TwoWire();  //create a ESP32_SoftWire instance
+HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 
 //SPI:
 const int spi_MOSI_PIN = 21; //default: VSPI 23, HSPI 13

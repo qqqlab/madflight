@@ -35,10 +35,9 @@
 
 #define AK8975_uT_per_LSB ((float)0.3f)
 
-
-class MPU9150 : public MPU_Interface {
+class MPU9150 {
 public:
-    MPU9150(uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
+    MPU9150(MPU_Interface *iface, uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
 
     //MPU9150
     bool begin();
@@ -65,6 +64,7 @@ public:
     float mag_multiplier[3];
 
 private:
+    MPU_Interface *_iface;
     uint8_t _low_pass_filter;
     uint8_t _low_pass_filter_acc;
 };

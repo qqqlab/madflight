@@ -3,28 +3,29 @@
  
  #include "MPU6050.h"
 
-MPU6050::MPU6050(uint8_t low_pass_filter, uint8_t low_pass_filter_acc)
-{
+MPU6050::MPU6050(MPU_Interface *iface, uint8_t low_pass_filter, uint8_t low_pass_filter_acc) {
+  _iface = iface;
   _low_pass_filter = low_pass_filter;
   _low_pass_filter_acc = low_pass_filter_acc;
   acc_multiplier = 1.0 / 2048.0; //default 2G after reset
   gyro_multiplier = 1.0 / 131.0; //default 250 deg/s after reset
 }
 
-bool MPU6050::begin()
-{
-  WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // MPU6050 Reset
+bool MPU6050::begin() {
+  _iface->begin();
+
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // MPU6050 Reset
   delay(10);
-  WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // MPU6050 Clock Source XGyro
-  WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // MPU6050 Enable Acc & Gyro
-  WriteReg(MPUREG_CONFIG, _low_pass_filter);       // MPU6050 Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
-  WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);    // MPU6050 +-250dps
-  WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);       // MPU6050 +-2G        
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // MPU6050 Clock Source XGyro
+  _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // MPU6050 Enable Acc & Gyro
+  _iface->WriteReg(MPUREG_CONFIG, _low_pass_filter);       // MPU6050 Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
+  _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);    // MPU6050 +-250dps
+  _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);       // MPU6050 +-2G        
 
   //enable 50us data ready pulse on int pin
-  WriteReg(MPUREG_INT_PIN_CFG, 0x00);
-  WriteReg(MPUREG_INT_ENABLE, 0x01);
-  
+  _iface->WriteReg(MPUREG_INT_PIN_CFG, 0x00);
+  _iface->WriteReg(MPUREG_INT_ENABLE, 0x01);
+
   return 0;
 }
 
@@ -40,7 +41,7 @@ bool MPU6050::begin()
 int MPU6050::set_acc_scale(int scale)
 {
     int temp_scale;
-    WriteReg(MPUREG_ACCEL_CONFIG, scale);
+    _iface->WriteReg(MPUREG_ACCEL_CONFIG, scale);
     
     switch (scale){
         case BITS_FS_2G:
@@ -56,7 +57,7 @@ int MPU6050::set_acc_scale(int scale)
             acc_multiplier = 1.0 / 2048.0;
         break;   
     }
-    temp_scale = ReadReg(MPUREG_ACCEL_CONFIG);
+    temp_scale = _iface->ReadReg(MPUREG_ACCEL_CONFIG);
     
     switch (temp_scale){
         case BITS_FS_2G:
@@ -101,7 +102,7 @@ int MPU6050::set_acc_scale_g(int scale_in_g)
 int MPU6050::set_gyro_scale(int scale)
 {
     int temp_scale;
-    WriteReg(MPUREG_GYRO_CONFIG, scale);
+    _iface->WriteReg(MPUREG_GYRO_CONFIG, scale);
 
     switch (scale){
         case BITS_FS_250DPS:   gyro_multiplier = 1.0 / 131.0; break;
@@ -110,7 +111,7 @@ int MPU6050::set_gyro_scale(int scale)
         case BITS_FS_2000DPS:  gyro_multiplier = 1.0 / 16.4; break;   
     }
 
-    temp_scale = ReadReg(MPUREG_GYRO_CONFIG);
+    temp_scale = _iface->ReadReg(MPUREG_GYRO_CONFIG);
 
     switch (temp_scale){
         case BITS_FS_250DPS:   temp_scale = 250;    break;
@@ -137,7 +138,7 @@ int MPU6050::set_gyro_scale_dps(int scale_in_dps)
 // MPU6050 should return 0x68
 unsigned int MPU6050::whoami()
 {
-    return ReadReg(MPUREG_WHOAMI);
+    return _iface->ReadReg(MPUREG_WHOAMI);
 }
 
 
@@ -168,7 +169,7 @@ void MPU6050::read()
     float data;
     int i,pos;
 
-    ReadRegs(MPUREG_ACCEL_XOUT_H,response,14);
+    _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,14);
     // Get accelerometer value (6 bytes)
     pos = 0;
     for(i = 0; i < 3; i++) {

@@ -98,6 +98,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
 # Change Log
+2023-12-11 Use C++ template for flexible I2C implementations
 2023-12-06 Add setup1() and loop1() for ESP32  
 2023-12-06 Add IMU orientation setting  
 2023-12-05 Initial release  
@@ -106,13 +107,11 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 - Add support for RP2040 and ESP32
 - Dropped Teensy support, but could be re-added by creating a hw_TEENSY.h file. (I just don't have the hardware to test on)
-- Moved all(*) hardware specific code to hw_ESP32.h and hw_RP2040.h and added hardware specific libraries
+- Moved all hardware specific code to hw_ESP32.h and hw_RP2040.h and added hardware specific libraries
 - Reduced the number of global variables
 - Oneshot is implemented as PWM up to 3.9kHz
 - New libs for IMU sensors
 - Changed arming logic
-
-(*) Because of bugs in the ESP32 Wire.h a custom lib sensor/WireAlternative.h is used.
 
 # Flight Controllers on Github
 

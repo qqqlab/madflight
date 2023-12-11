@@ -1,7 +1,3 @@
-//replace Wire.h with ESP32 bit-bang variant because ESP32 Wire.h lib is buggy, see below.
-#ifndef ARDUINO_ARCH_ESP32
-#include "Wire.h"
-#else
 /*==========================================================================================
 ESP32_SoftWire
 
@@ -46,7 +42,7 @@ SOFTWARE.
 // Read:  M(start) M(adr|0)S(ack) S(data)M(ack) S(data)M(nack) M(stop)
 //-----------------------------------------------------------------------------------------
 
-#include "WireAlternative.h"
+#include "ESP32_SoftWire.h"
 
 #define SDA_HI() GPIO.out_w1ts = _sda_mask // Do not drive SDA (set pin high-impedance)
 #define SDA_LO() GPIO.out_w1tc = _sda_mask // Actively drive SDA signal low
@@ -57,7 +53,7 @@ SOFTWARE.
 
 #define DELAY_OVERHEAD_CYCLES 26  //26 cycles overhead for PIN_CLR(); _delay();
 
-TwoWire::TwoWire() {
+SoftWire::SoftWire() {
   _sda = -1;
   _scl = -1;
   _scl_mask = 0;
@@ -67,7 +63,7 @@ TwoWire::TwoWire() {
   _ll_stop_cond();
 }
 
-bool TwoWire::setPins(int sda, int scl) {
+bool SoftWire::setPins(int sda, int scl) {
   if(sda<0 || sda>31 || scl<0 || scl>31) return false;
   pinMode(sda, OUTPUT_OPEN_DRAIN);
   pinMode(scl, OUTPUT_OPEN_DRAIN);
@@ -78,43 +74,43 @@ bool TwoWire::setPins(int sda, int scl) {
   return true;
 }
 
-bool TwoWire::begin(int sda, int scl, uint32_t frequency) {
+bool SoftWire::begin(int sda, int scl, uint32_t frequency) {
   setPins(sda, scl);
   setClock(frequency);
   return true;
 }
 
-bool TwoWire::setClock(uint32_t frequency) {
+bool SoftWire::setClock(uint32_t frequency) {
   if(frequency == 0) return false;
   _delay_cycles = ESP.getCpuFreqMHz() * 500000 / frequency;
   if(_delay_cycles>DELAY_OVERHEAD_CYCLES) _delay_cycles -= DELAY_OVERHEAD_CYCLES; else _delay_cycles = 0;
   return true;
 }
 
-void TwoWire::_delay() {
+void SoftWire::_delay() {
   uint32_t t = ESP.getCycleCount();
   while(ESP.getCycleCount() - t < _delay_cycles);
 }
 
-uint8_t TwoWire::beginTransmission(uint8_t address) {
+uint8_t SoftWire::beginTransmission(uint8_t address) {
   _ll_start_cond();
   _ack = _ll_write_byte(address<<1);
   return _ack;
 }
 
-size_t TwoWire::write(uint8_t data) {
+size_t SoftWire::write(uint8_t data) {
   _ack = _ll_write_byte(data);
   return _ack;
 }
 
-uint8_t TwoWire::endTransmission(bool sendStop) {
+uint8_t SoftWire::endTransmission(bool sendStop) {
   if(sendStop) {
     _ll_stop_cond();
   }
   return _ack;
 }
 
-size_t TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit) {
+size_t SoftWire::requestFrom(uint8_t address, size_t len, bool stopBit) {
   int i;
   _ll_start_cond();
   _ll_write_byte(address<<1 | 1);
@@ -128,24 +124,24 @@ size_t TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit) {
   return i;
 }
 
-int TwoWire::available(void) {
+int SoftWire::available(void) {
   return _data_len - _data_i;
 }
 
-int TwoWire::read(void) {
+int SoftWire::read(void) {
   return _data[_data_i++];
 }
 
-int TwoWire::peek(void) {
+int SoftWire::peek(void) {
   return _data[_data_i];
 } 
 
-void TwoWire::flush(void) { 
+void SoftWire::flush(void) { 
   _data_len = 0;
   _data_i = 0;
 } 
 
-size_t TwoWire::write(const uint8_t *data, size_t n) {
+size_t SoftWire::write(const uint8_t *data, size_t n) {
   size_t cnt = 0;
   for(size_t i=0;i<n;i++) {
     cnt += write(data[i]);
@@ -159,7 +155,7 @@ size_t TwoWire::write(const uint8_t *data, size_t n) {
 
 //TODO void arbitration_lost(void);
 
-void TwoWire::_ll_start_cond(void) {
+void SoftWire::_ll_start_cond(void) {
   if (_started) { 
     // if started, do a restart condition
     // set SDA to 1
@@ -186,7 +182,7 @@ void TwoWire::_ll_start_cond(void) {
   _started = true;
 }
 
-void TwoWire::_ll_stop_cond(void) {
+void SoftWire::_ll_stop_cond(void) {
   // set SDA to 0
   SDA_LO();
   _delay();
@@ -212,7 +208,7 @@ void TwoWire::_ll_stop_cond(void) {
 }
 
 // Write a bit to I2C bus
-void TwoWire::_ll_write_bit(bool bit) {
+void SoftWire::_ll_write_bit(bool bit) {
   if (bit) {
     SDA_HI();
   } else {
@@ -243,7 +239,7 @@ void TwoWire::_ll_write_bit(bool bit) {
 }
 
 // Read a bit from I2C bus
-uint8_t TwoWire::_ll_read_bit(void) {
+uint8_t SoftWire::_ll_read_bit(void) {
   uint8_t bit;
 
   // Let the target drive data
@@ -272,7 +268,7 @@ uint8_t TwoWire::_ll_read_bit(void) {
 }
 
 // Write a byte to I2C bus. Return 1 if ack by the target.
-uint8_t TwoWire::_ll_write_byte(uint8_t byte) {
+uint8_t SoftWire::_ll_write_byte(uint8_t byte) {
   for (uint8_t bit = 0; bit < 8; ++bit) {
     _ll_write_bit((byte & 0x80) != 0);
     byte <<= 1;
@@ -284,7 +280,7 @@ uint8_t TwoWire::_ll_write_byte(uint8_t byte) {
 }
 
 // Read a byte from I2C bus
-uint8_t TwoWire::_ll_read_byte(bool ack) {
+uint8_t SoftWire::_ll_read_byte(bool ack) {
   uint8_t byte = 0;
   uint8_t bit;
 
@@ -296,4 +292,3 @@ uint8_t TwoWire::_ll_read_byte(bool ack) {
 
   return byte;
 }
-#endif

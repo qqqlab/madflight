@@ -1,7 +1,3 @@
-//replace Wire.h with ESP32 bit-bang variant because ESP32 Wire.h lib is buggy, see below.
-#ifndef ARDUINO_ARCH_ESP32
-#include "Wire.h"
-#else
 /*==========================================================================================
 ESP32_SoftWire
 
@@ -44,10 +40,10 @@ SOFTWARE.
 
 #include <Arduino.h>
 
-class TwoWire : public Stream {
+class SoftWire : public Stream {
   public:
-    TwoWire();
-    //TODO ~TwoWire();
+    SoftWire();
+    //TODO ~SoftWire();
     bool setPins(int sda, int scl); //call setPins() first, so that begin() can be called without arguments from libraries
     bool begin(int sda, int scl, uint32_t frequency=0); // returns true, if successful init of i2c bus
     inline bool begin() { return begin(-1, -1, static_cast<uint32_t>(0)); } // Explicit Overload for Arduino MainStream API compatibility
@@ -93,4 +89,3 @@ class TwoWire : public Stream {
 
     void _delay();
 };
-#endif

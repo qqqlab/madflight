@@ -1,44 +1,112 @@
-#ifndef MPU_INTERFACE_h
-#define MPU_INTERFACE_h
+#pragma once
 
 #include "Arduino.h"
 #include <SPI.h>
-#include "WireAlternative.h"  //use custom lib for ESP32, as of Dec 2023 Wire.h is buggy
-
 
 class MPU_Interface {
   public:
-    void setSPI(SPIClass *spi, uint8_t cs) {
-        _use_spi = true;
+    virtual void begin() = 0;
+    virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) = 0;
+    virtual void ReadRegs( uint8_t reg, uint8_t *data, uint8_t n ) = 0;
+    unsigned int ReadReg(uint8_t reg) {
+        uint8_t data = 0;
+        ReadRegs(reg, &data, 1);
+        return data;
+    }
+};
+
+//================================================================
+// SPI
+//================================================================
+#define READ_FLAG 0x80
+
+class MPU_InterfaceSPI : public MPU_Interface {
+  public:
+    // Using 8MHz as it appears to work for both reg ops as reading data. Datasheet: spi clock up to 1MHz for register operations, up to 20MHz allowed for reading data.
+    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, int freq = 800000) {
         _spi = spi; 
         _spi_cs = cs;
+        set_spi_freq(freq);
     }
-    void setI2C(TwoWire *i2c, uint8_t i2c_adr) {
-        _use_spi = false;
-        _i2c = i2c;
-        _i2c_adr = i2c_adr;
-    }
-  protected:
-    //Interface
-    void set_spi_freq(int freq);
-    unsigned int WriteReg(uint8_t reg, uint8_t data);
-    unsigned int ReadReg(uint8_t reg);
-    void ReadRegs(uint8_t reg, uint8_t *buf, int n);
 
-    //SPI
-    bool _use_spi;
+    virtual void begin() {
+        pinMode(_spi_cs, OUTPUT);
+        digitalWrite(_spi_cs, HIGH);
+    }
+
+    void set_spi_freq(int freq) {
+        _spi_freq = freq;
+    }
+
+    virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) {
+        _spi->beginTransaction(SPISettings(_spi_freq, MSBFIRST, SPI_MODE3));
+        digitalWrite(_spi_cs, LOW);
+        _spi->transfer(reg);
+        unsigned int temp_val = _spi->transfer(data);
+        digitalWrite(_spi_cs, HIGH);
+        _spi->endTransaction();
+        return temp_val;
+    }
+
+    virtual void ReadRegs( uint8_t reg, uint8_t *data, uint8_t n ) {
+        _spi->beginTransaction(SPISettings(_spi_freq, MSBFIRST, SPI_MODE3));
+        digitalWrite(_spi_cs, LOW);
+        _spi->transfer(reg | READ_FLAG);
+        for(int i = 0; i < n; i++) {
+            data[i] = _spi->transfer(0x00);
+        }
+        digitalWrite(_spi_cs, HIGH);
+        _spi->endTransaction();
+    }
+
+private:
     SPIClass * _spi;
     int _spi_freq;  
     uint8_t _spi_cs;
     unsigned int _WriteReg_SPI(uint8_t reg, uint8_t data);
     void _ReadRegs_SPI(uint8_t reg, uint8_t *buf, int n);
+};
 
-    //I2C
-    TwoWire *_i2c;
+//================================================================
+// I2C
+//================================================================
+
+template <typename WireType>
+class MPU_InterfaceI2C : public MPU_Interface{
+  public:
+    MPU_InterfaceI2C(WireType *i2c, uint8_t i2c_adr) {
+        _i2c = i2c;
+        _i2c_adr = i2c_adr;
+    }
+
+    virtual void begin() {
+    }
+
+    virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) {
+      _i2c->beginTransmission(_i2c_adr); 
+      _i2c->write(reg);
+      _i2c->write(data);
+      _i2c->endTransmission();
+      return 0;
+    }
+
+    virtual void ReadRegs( uint8_t reg, uint8_t *data, uint8_t n ) {
+      _i2c->beginTransmission(_i2c_adr); 
+      _i2c->write(reg);
+      _i2c->endTransmission(false); //false = repeated start
+      uint8_t bytesReceived = _i2c->requestFrom(_i2c_adr, n);
+      if(bytesReceived == n) {
+        _i2c->readBytes(data, bytesReceived);
+      }
+    }
+
+private:
+    WireType *_i2c;
     uint8_t _i2c_adr;
     unsigned int _WriteReg_I2C(uint8_t reg, uint8_t data);
     void _ReadRegs_I2C(uint8_t reg, uint8_t *buf, uint8_t n);
 };
+
 
 
 
@@ -205,6 +273,3 @@ class MPU_Interface {
  
  
 #define MPU9250T_85degC   ((float)0.002995177763f) // 0.002995177763 degC/LSB
-
-
-#endif

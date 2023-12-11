@@ -34,9 +34,9 @@
 #define AK8963_ASAY                 0x11
 #define AK8963_ASAZ                 0x12
 
-class MPU9250 : public MPU_Interface {
+class MPU9250 {
 public:
-    MPU9250(uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
+    MPU9250(MPU_Interface *iface, uint8_t low_pass_filter = BITS_DLPF_CFG_188HZ, uint8_t low_pass_filter_acc = BITS_DLPF_CFG_188HZ);
     
     //MPU9250
     int begin();
@@ -65,6 +65,7 @@ public:
 private:
     void _init(uint8_t low_pass_filter, uint8_t low_pass_filter_acc);
 
+    MPU_Interface *_iface;
     uint8_t _low_pass_filter;
     uint8_t _low_pass_filter_acc;
 };

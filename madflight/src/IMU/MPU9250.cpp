@@ -2,14 +2,12 @@
  
  #include "MPU9250.h"
 
-MPU9250::MPU9250(uint8_t low_pass_filter, uint8_t low_pass_filter_acc)
-{
-  _spi_freq = 8000000; // Using 8MHz as it appears to work for both reg ops as reading data. Datasheet: spi clock up to 1MHz for register operations, up to 20MHz allowed for reading data.
+MPU9250::MPU9250(MPU_Interface *iface, uint8_t low_pass_filter, uint8_t low_pass_filter_acc) {
+  _iface = iface;
   _init(low_pass_filter, low_pass_filter_acc);
 }
 
-void MPU9250::_init(uint8_t low_pass_filter, uint8_t low_pass_filter_acc)
-{
+void MPU9250::_init(uint8_t low_pass_filter, uint8_t low_pass_filter_acc) {
   _low_pass_filter = low_pass_filter;
   _low_pass_filter_acc = low_pass_filter_acc;
   acc_multiplier = 1.0 / 2048.0; //default 2G after reset
@@ -19,32 +17,28 @@ void MPU9250::_init(uint8_t low_pass_filter, uint8_t low_pass_filter_acc)
   mag_multiplier[2] = AK8963_uT_per_LSB;    
 }
 
-int MPU9250::begin()
-{
-  if(_use_spi) {
-    pinMode(_spi_cs, OUTPUT);
-    digitalWrite(_spi_cs, HIGH);
-  }
+int MPU9250::begin() {
+  _iface->begin();
 
-  WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // Reset MPU9250
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // Reset MPU9250
   delay(10);
   
   int rv = 0;
   int id = MPU9250::whoami();
   if(id!=0x71) rv = -(1000 + id);  //0x70 (112) = MPU6500, 0x71 (113) = MPU9250
   
-  WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source
-  WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
-  WriteReg(MPUREG_CONFIG, _low_pass_filter);       // Use DLPF set Gyroscope bandwidth 184Hz, temperature bandwidth 188Hz
-  WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);    // +-250dps
-  WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);       // +-2G        
-  WriteReg(MPUREG_ACCEL_CONFIG_2, _low_pass_filter_acc); // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
-  WriteReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
-  WriteReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus  
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source
+  _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
+  _iface->WriteReg(MPUREG_CONFIG, _low_pass_filter);       // Use DLPF set Gyroscope bandwidth 184Hz, temperature bandwidth 188Hz
+  _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);    // +-250dps
+  _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);       // +-2G        
+  _iface->WriteReg(MPUREG_ACCEL_CONFIG_2, _low_pass_filter_acc); // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
+  _iface->WriteReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
+  _iface->WriteReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus  
 
   //enable 50us data ready pulse on int pin
-  WriteReg(MPUREG_INT_PIN_CFG, 0x00);
-  WriteReg(MPUREG_INT_ENABLE, 0x01);
+  _iface->WriteReg(MPUREG_INT_PIN_CFG, 0x00);
+  _iface->WriteReg(MPUREG_INT_ENABLE, 0x01);
 
   set_acc_scale(BITS_FS_2G);
   set_gyro_scale(BITS_FS_250DPS);
@@ -63,10 +57,9 @@ int MPU9250::begin()
  * BITS_FS_16G
  * returns the range set (2,4,8 or 16)
  */
-int MPU9250::set_acc_scale(int scale)
-{
+int MPU9250::set_acc_scale(int scale) {
     int temp_scale;
-    WriteReg(MPUREG_ACCEL_CONFIG, scale);
+    _iface->WriteReg(MPUREG_ACCEL_CONFIG, scale);
     
     switch (scale){
         case BITS_FS_2G:
@@ -82,7 +75,7 @@ int MPU9250::set_acc_scale(int scale)
             acc_multiplier = 1.0 / 2048.0;
         break;   
     }
-    temp_scale = ReadReg(MPUREG_ACCEL_CONFIG);
+    temp_scale = _iface->ReadReg(MPUREG_ACCEL_CONFIG);
     
     switch (temp_scale){
         case BITS_FS_2G:
@@ -101,8 +94,7 @@ int MPU9250::set_acc_scale(int scale)
     return temp_scale;
 }
 
-int MPU9250::set_acc_scale_g(int scale_in_g)
-{
+int MPU9250::set_acc_scale_g(int scale_in_g) {
     if(scale_in_g <= 2) {
       return set_acc_scale(BITS_FS_2G);
     }else if(scale_in_g <= 4) { 
@@ -124,10 +116,9 @@ int MPU9250::set_acc_scale_g(int scale_in_g)
  * BITS_FS_2000DPS
  * returns the range set (250,500,1000 or 2000)
  */
-int MPU9250::set_gyro_scale(int scale)
-{
+int MPU9250::set_gyro_scale(int scale) {
     int temp_scale;
-    WriteReg(MPUREG_GYRO_CONFIG, scale);
+    _iface->WriteReg(MPUREG_GYRO_CONFIG, scale);
 
     switch (scale){
         case BITS_FS_250DPS:   gyro_multiplier = 1.0 / 131.0; break;
@@ -136,7 +127,7 @@ int MPU9250::set_gyro_scale(int scale)
         case BITS_FS_2000DPS:  gyro_multiplier = 1.0 / 16.4; break;   
     }
 
-    temp_scale = ReadReg(MPUREG_GYRO_CONFIG);
+    temp_scale = _iface->ReadReg(MPUREG_GYRO_CONFIG);
 
     switch (temp_scale){
         case BITS_FS_250DPS:   temp_scale = 250;    break;
@@ -161,9 +152,8 @@ int MPU9250::set_gyro_scale_dps(int scale_in_dps)
 }
 
 // MPU9250 should return 0x71
-unsigned int MPU9250::whoami()
-{
-    return ReadReg(MPUREG_WHOAMI|READ_FLAG);
+unsigned int MPU9250::whoami() {
+    return _iface->ReadReg(MPUREG_WHOAMI|READ_FLAG);
 }
 
 
@@ -199,7 +189,7 @@ void MPU9250::read()
     float data;
     int i,pos;
 
-    ReadRegs(MPUREG_ACCEL_XOUT_H,response,20);
+    _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,20);
     // Get accelerometer value (6 bytes)
     pos = 0;
     for(i = 0; i < 3; i++) {
@@ -251,9 +241,9 @@ int MPU9250::AK8963_begin()
 
   // Send I2C command to get Mag data, this command is repeated with the sample rate (1kHz) 
   // as long as these MPU registers are not overwritten with an another command
-  WriteReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
-  WriteReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
-  WriteReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
+  _iface->WriteReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
+  _iface->WriteReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
+  _iface->WriteReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
   // must start your read from AK8963A register 0x03 and read seven bytes so that upon read of ST2 register 0x09 the AK8963A will unlatch the data registers for the next measurement.
 
   return rv;
@@ -283,14 +273,14 @@ uint8_t MPU9250::AK8963_whoami(){
 
 int MPU9250::AK8963_ReadReg(uint8_t reg)
 {
-  WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
-  WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-  WriteReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
+  _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
+  _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+  _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
   uint32_t now = micros();
   while(micros() - now < 2000) {
     //wait for I2C_SLV4_DONE
-    if( ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
-      return ReadReg(MPUREG_I2C_SLV4_DI);
+    if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+      return _iface->ReadReg(MPUREG_I2C_SLV4_DI);
     }
   }
   return -1;
@@ -298,14 +288,14 @@ int MPU9250::AK8963_ReadReg(uint8_t reg)
 
 bool MPU9250::AK8963_WriteReg(uint8_t reg, uint8_t data) 
 {
-  WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
-  WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-  WriteReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
-  WriteReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
+  _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
+  _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+  _iface->WriteReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
+  _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
   uint32_t now = micros();
   while(micros() - now < 2000) {
     //wait for I2C_SLV4_DONE 
-    if( ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+    if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
       return true;
     }
   }
