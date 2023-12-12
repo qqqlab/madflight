@@ -1,3 +1,4 @@
+#if defined ARDUINO_ARCH_ESP32
 /*==========================================================================================
 ESP32_SoftWire
 
@@ -292,3 +293,4 @@ uint8_t SoftWire::_ll_read_byte(bool ack) {
 
   return byte;
 }
+#endif

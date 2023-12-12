@@ -38,6 +38,8 @@ blink interval longer than 1 second - loop() is taking too much time
   #include "hw_ESP32.h"
 #elif defined ARDUINO_ARCH_RP2040
   #include "hw_RP2040.h"
+  #include <FreeRTOS.h>  //FreeRTOS
+  #include <semphr.h>    //FreeRTOS
 #else 
   #error "Unknown hardware architecture"
 #endif
@@ -68,11 +70,11 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 //Uncomment only one IMU
 //#define USE_IMU_MPU6050_I2C  //acc/gyro
-#define USE_IMU_MPU9150_I2C  //acc/gyro/mag
+//#define USE_IMU_MPU9150_I2C  //acc/gyro/mag
 //#define USE_IMU_MPU6500_I2C  //acc/gyro      Note: SPI interface is faster
 //#define USE_IMU_MPU9250_I2C  //acc/gyro/mag  Note: SPI interface is faster
 //#define USE_IMU_MPU6500_SPI  //acc/gyro
-//#define USE_IMU_MPU9250_SPI    //acc/gyro/mag
+#define USE_IMU_MPU9250_SPI  //acc/gyro/mag
 
 //Uncomment one I2C address. If unknown, see output of print_i2c_scan()
 //#define IMU_I2C_ADR 0x68 //MPU9250
@@ -377,13 +379,13 @@ void loop() {
     print_time = micros();
     print_need_newline = false;
     //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
-    print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
+    //print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
     //print_rcin_RadioPWM();     //Prints radio pwm values (expected: 1000 to 2000)
     //print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)    
-    //print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
-    //print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
-    //print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
-    //print_ahrs_RollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from ahrs_Madgwick filter (expected: degrees, 0 when level)
+    print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
+    print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
+    print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
+    print_ahrs_RollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from ahrs_Madgwick filter (expected: degrees, 0 when level)
     //print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
@@ -973,6 +975,13 @@ void calibrate_IMU_error() {
   Serial.printf("float GyroErrorZ = %+f;\n",GyroErrorZ);
 
   Serial.println("Paste these values in user specified variables section and comment out calculate_IMU_error() in void setup.");
+
+  //only apply reasonable errors
+  if(AccErrorX<-0.1 || AccErrorX>0.1 || AccErrorY<-0.1 || AccErrorY>0.1 || AccErrorZ<-0.1 || AccErrorZ>0.1 ) {
+    AccErrorX = 0.0;
+    AccErrorY = 0.0;
+    AccErrorZ = 0.0;    
+  }
 }
 
 /*
@@ -1116,9 +1125,9 @@ int _calibrate_Magnetometer(float bias[3], float scale[3])
 void print_overview() {
   Serial.printf("CH%d:%d\t",1,rcin_pwm[0]);  
   Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
-  Serial.printf("GyroX:%+.2f\t",GyroX);
-  Serial.printf("AccX:%+.2f\t",AccX);
-  Serial.printf("MagX:%+.2f\t",MagX);
+  Serial.printf("gx:%+.2f\t",GyroX);
+  Serial.printf("ax:%+.2f\t",AccX);
+  Serial.printf("mx:%+.2f\t",MagX);
   Serial.printf("ahrs_roll:%+.1f\t",ahrs_roll);
   Serial.printf("roll_PID:%+.3f\t",roll_PID);  
   Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
@@ -1143,22 +1152,22 @@ void print_rcin_RadioScaled() {
 }
 
 void print_imu_GyroData() {
-  Serial.printf("GyroX:%+.2f\tGyroY:%+.2f\tGyroZ:%+.2f\t",GyroX,GyroY,GyroZ);
+  Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t",GyroX,GyroY,GyroZ);
   print_need_newline = true;
 }
 
 void print_imu_AccData() {
-  Serial.printf("AccX:%+.2f\tAccY:%+.2f\tAccZ:%+.2f\t",AccX,AccY,AccZ);
+  Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t",AccX,AccY,AccZ);
   print_need_newline = true;
 }
 
 void print_imu_MagData() {
-  Serial.printf("MagX:%+.2f\tMagY:%+.2f\tMagZ:%+.2f\t",MagX,MagY,MagZ);
+  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t",MagX,MagY,MagZ);
   print_need_newline = true;  
 }
 
 void print_ahrs_RollPitchYaw() {
-  Serial.printf("ahrs_roll:%+.1f\tahrs_pitch:%+.1f\tahrs_yaw:%+.1f\t",ahrs_roll,ahrs_pitch,ahrs_yaw);
+  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t",ahrs_roll,ahrs_pitch,ahrs_yaw);
   Serial.printf("yaw_mag:%+.1f\t",-atan2(MagY, MagX) * rad_to_deg);
   print_need_newline = true;
 }

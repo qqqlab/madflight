@@ -32,7 +32,7 @@ const int rcin_TX_PIN  = 32;
 HardwareSerial *rcin_Serial = &Serial1; // can use &Serial, &Serial1, or &Serial2
 
 //IMU:
-const int imu_INT_PIN = 39; //only used when USE_IMU_INTERRUPT is defined
+const int imu_INT_PIN = 39; //VN only used when USE_IMU_INTERRUPT is defined
 #define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority. ESP32 max priority is 31.
 
 //I2C:
@@ -43,10 +43,10 @@ typedef SoftWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 
 //SPI:
-const int spi_MOSI_PIN = 21; //default: VSPI 23, HSPI 13
-const int spi_MISO_PIN = 36; //default: VSPI 19, HSPI 12
-const int spi_SCLK_PIN = 19; //default: VSPI 18, HSPI 14
-const int spi_CS_PIN   = 18; //default: VSPI  5, HSPI 15
+const int spi_MOSI_PIN = 21; //   default: VSPI 23, HSPI 13
+const int spi_MISO_PIN = 36; //VP default: VSPI 19, HSPI 12
+const int spi_SCLK_PIN = 19; //   default: VSPI 18, HSPI 14
+const int spi_CS_PIN   = 18; //   default: VSPI  5, HSPI 15
 SPIClass *spi = new SPIClass(VSPI); // VSPI(default) or HSPI
 
 //Outputs:

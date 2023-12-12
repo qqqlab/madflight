@@ -106,8 +106,8 @@ For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT
 For SPI sensors: connect sensor SCL/SCLK to dev board SPI_SCLK, SDA/SDI to SPI_MOSI, ADD/SDO to SPI_MISO, NCS to SPI_CS, and INT to IMU_INT.
 
 # Change Log
-2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation
-2023-12-11 Use C++ template for flexible I2C implementations
+2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation  
+2023-12-11 Use C++ template for flexible I2C implementations  
 2023-12-06 Add setup1() and loop1() for ESP32  
 2023-12-06 Add IMU orientation setting  
 2023-12-05 Initial release  

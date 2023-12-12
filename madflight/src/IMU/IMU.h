@@ -117,7 +117,7 @@ void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, 
 #include "MPU9250.h"
 
 MPU_InterfaceSPI mpu_iface(spi, spi_CS_PIN);
-MPU9150 mpu(&mpu_iface);
+MPU9250 mpu(&mpu_iface);
 
 int imu_Setup() {
   Serial.println("USE_IMU_MPU9250_SPI");
