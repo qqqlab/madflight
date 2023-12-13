@@ -57,7 +57,7 @@ const int8_t out_PIN[hw_OUT_COUNT] = {2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
 void hw_setup() 
 { 
-  //Uncomment for overclocking,supposedly works up to 270 MHz. Use with care! 
+  //Uncomment for overclocking, supposedly works up to 270 MHz.
   //set_sys_clock_khz(200000, true); 
 
   Serial.println("USE_HW_RP2040");

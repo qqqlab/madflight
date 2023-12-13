@@ -136,7 +136,7 @@ int rcin_cfg_aux_max = 1945; //higest switch position
 //                                               CALIBRATION PARAMETERS                                                   //
 //========================================================================================================================//
 
-//Magnetometer calibration parameters - if using MPU9250, uncomment calibrate_Magnetometer() in void setup() to get these values, else just ignore these
+//Magnetometer calibration parameters - if using magnetometer, uncomment calibrate_Magnetometer() in void setup() to get these values, else just ignore these
 float MagErrorX = 0.0;
 float MagErrorY = 0.0; 
 float MagErrorZ = 0.0;
@@ -170,7 +170,9 @@ float LP_mag = 1e10;          //Magnetometer lowpass filter cutoff frequency in 
 float LP_radio = 400;         //Radio input lowpass filter cutoff frequency in Hz (default 400Hz)
 
 //AHRS Parameters
-float B_madgwick = 0.041;     //ahrs_Madgwick filter parameter
+float ahrs_MadgwickB = 0.041;     //ahrs_Madgwick filter parameter
+float ahrs_Mahony2KP = (2.0f * 0.5f);		// Mahony: 2 * proportional gain (Kp)
+float ahrs_Mahony2KI = (2.0f * 0.0f);		// Mahony: 2 * integral gain (Ki)
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit = 25.0;         //Integrator saturation level, mostly for safety (default 25.0)
@@ -350,7 +352,7 @@ void setup() {
   //calibrate_ESCs(); //PROPS OFF. Uncomment this to calibrate your ESCs by setting throttle stick to max, powering on, and lowering throttle to zero after the beeps
   //Code will not proceed past here if this function is uncommented!
 
-  //set quarterion to initial yaw, so that madgwick settles faster
+  //set quarterion to initial yaw, so that Madgwick settles faster
   ahrs_Setup();
 
   //set times for loop
@@ -379,13 +381,13 @@ void loop() {
     print_time = micros();
     print_need_newline = false;
     //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
-    //print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
+    print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
     //print_rcin_RadioPWM();     //Prints radio pwm values (expected: 1000 to 2000)
     //print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)    
-    print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
-    print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
-    print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
-    print_ahrs_RollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from ahrs_Madgwick filter (expected: degrees, 0 when level)
+    //print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
+    //print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
+    //print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
+    //print_ahrs_RollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from ahrs_Madgwick filter (expected: degrees, 0 when level)
     //print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
@@ -421,8 +423,11 @@ void imu_loop() {
 
   //Get vehicle state
   imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
-  ahrs_Madgwick(); //Updates ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees)
- 
+  //ahrs method - SELECT ONE:
+  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Madgwick filter quaterion update
+  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Mahony filter quaterion update
+  ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw); //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaterion
+
   //Get radio state
   rcin_GetCommands(); //Pulls current available radio commands
   rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
@@ -513,20 +518,6 @@ void imu_GetData() {
     MagY = (1.0 - B_mag) * MagY + B_mag * my;
     MagZ = (1.0 - B_mag) * MagZ + B_mag * mz;
   }
-}
-
-void ahrs_Madgwick() {
-  //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
-  if( (MagX == 0.0f) && (MagY == 0.0f) && (MagZ == 0.0f) ) {
-    _ahrs_Madgwick6DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, loop_dt);
-  }else{
-    _ahrs_Madgwick9DOF(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt);
-  }
-
-  //compute angles - NWU
-  ahrs_roll = atan2(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2) * rad_to_deg; //degrees
-  ahrs_pitch = asin(constrain(-2.0f * (q1*q3 - q0*q2), -1.0, 1.0)) * rad_to_deg; //degrees - use constrain() to prevent NaN due to rounding
-  ahrs_yaw = atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3) * rad_to_deg; //degrees
 }
 
 void rcin_GetCommands() {
@@ -997,7 +988,7 @@ void ahrs_warmup() {
 }
 */
 
-void calibrate_ESCs() {
+void calibrate_ESCs() { //TODO
   //DESCRIPTION: Used in void setup() to allow standard ESC calibration procedure with the radio to take place.
   /*  
    *  Simulates the void loop(), but only for the purpose of providing throttle pass through to the motors, so that you can
@@ -1013,9 +1004,6 @@ void calibrate_ESCs() {
 
     rcin_GetCommands(); //Pulls current available radio commands
     rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
-    rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
-    imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
-    ahrs_Madgwick(); //Updates ahrs_roll, ahrs_pitch, and ahrs_yaw (degrees)
     rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
     
     //set all motors

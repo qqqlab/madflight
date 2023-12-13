@@ -43,11 +43,11 @@ typedef SoftWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 
 //SPI:
-const int spi_MOSI_PIN = 21; //   default: VSPI 23, HSPI 13
-const int spi_MISO_PIN = 36; //VP default: VSPI 19, HSPI 12
-const int spi_SCLK_PIN = 19; //   default: VSPI 18, HSPI 14
-const int spi_CS_PIN   = 18; //   default: VSPI  5, HSPI 15
-SPIClass *spi = new SPIClass(VSPI); // VSPI(default) or HSPI
+const int spi_MOSI_PIN = 21; //   defaults: VSPI 23, HSPI 13
+const int spi_MISO_PIN = 36; //VP defaults: VSPI 19, HSPI 12
+const int spi_SCLK_PIN = 19; //   defaults: VSPI 18, HSPI 14
+const int spi_CS_PIN   = 18; //   defaults: VSPI  5, HSPI 15
+SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
 
 //Outputs:
 #define hw_OUT_COUNT 13

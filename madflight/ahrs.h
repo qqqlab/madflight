@@ -1,17 +1,40 @@
 //ahrs code moved here to declutter main .ino file
 
-extern float B_madgwick;
+extern const float rad_to_deg;
 
-float q0 = 1.0f; //Initialize quaternion for madgwick filter (shared between ahrs_Madgwick6DOF and ahrs_Madgwick9DOF)
+float q0 = 1.0f; //Initialize quaternion for Madgwick filter (shared between ahrs_Madgwick6DOF and ahrs_Madgwick9DOF)
 float q1 = 0.0f;
 float q2 = 0.0f;
 float q3 = 0.0f;
+
+void ahrs_ComputeAngles(float *roll, float *pitch, float *yaw) {
+  //compute angles - NWU
+  *roll = atan2(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2) * rad_to_deg; //degrees
+  *pitch = asin(constrain(-2.0f * (q1*q3 - q0*q2), -1.0, 1.0)) * rad_to_deg; //degrees - use constrain() to prevent NaN due to rounding
+  *yaw = atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3) * rad_to_deg; //degrees
+}
+
+//==============================================================================================================
+//  Madgwick
+//==============================================================================================================
+extern float ahrs_MadgwickB;
+void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt);
+void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt);
+
+void ahrs_Madgwick(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
+  //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
+  if( (mx == 0.0f) && (my == 0.0f) && (mz == 0.0f) ) {
+    _ahrs_Madgwick6DOF(gx, gy, gz, ax, ay, az, dt);
+  }else{
+    _ahrs_Madgwick9DOF(gx, gy, gz, ax, ay, az, mx, my, mz, dt);
+  }
+}
 
 void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
   //DESCRIPTION: Attitude estimation through sensor fusion - 9DOF
   /*
    * This function fuses the accelerometer gyro, and magnetometer readings AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, and MagZ for attitude estimation.
-   * Don't worry about the math. There is a tunable parameter B_madgwick in the user specified variable section which basically
+   * Don't worry about the math. There is a tunable parameter ahrs_MadgwickB in the user specified variable section which basically
    * adjusts the weight of gyro data in the state estimate. Higher beta leads to noisier estimate, lower 
    * beta leads to slower to respond estimate. It is currently tuned for 2kHz loop rate. This function updates the ahrs_roll,
    * ahrs_pitch, and ahrs_yaw variables which are in degrees.
@@ -90,10 +113,10 @@ void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float 
     s3 *= recipNorm;
 
     //Apply feedback step
-    qDot1 -= B_madgwick * s0;
-    qDot2 -= B_madgwick * s1;
-    qDot3 -= B_madgwick * s2;
-    qDot4 -= B_madgwick * s3;
+    qDot1 -= ahrs_MadgwickB * s0;
+    qDot2 -= ahrs_MadgwickB * s1;
+    qDot3 -= ahrs_MadgwickB * s2;
+    qDot4 -= ahrs_MadgwickB * s3;
   }
 
   //Integrate rate of change of quaternion to yield quaternion
@@ -167,10 +190,10 @@ void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float 
     s3 *= recipNorm;
 
     //Apply feedback step
-    qDot1 -= B_madgwick * s0;
-    qDot2 -= B_madgwick * s1;
-    qDot3 -= B_madgwick * s2;
-    qDot4 -= B_madgwick * s3;
+    qDot1 -= ahrs_MadgwickB * s0;
+    qDot2 -= ahrs_MadgwickB * s1;
+    qDot3 -= ahrs_MadgwickB * s2;
+    qDot4 -= ahrs_MadgwickB * s3;
   }
 
   //Integrate rate of change of quaternion to yield quaternion
@@ -185,4 +208,199 @@ void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float 
   q1 *= recipNorm;
   q2 *= recipNorm;
   q3 *= recipNorm;
+}
+
+//==============================================================================================================
+//  Mahony
+//==============================================================================================================
+extern float ahrs_Mahony2KP;		// 2 * proportional gain (Kp)
+extern float ahrs_Mahony2KI;		// 2 * integral gain (Ki)
+//float q0, q1, q2, q3;	// quaternion of sensor frame relative to auxiliary frame (defined above)
+float integralFBx = 0, integralFBy = 0, integralFBz = 0;  // integral error terms scaled by Ki
+
+void _ahrs_Mahony9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt);
+void _ahrs_Mahony6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt);
+
+void ahrs_Mahony(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
+  //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
+  if( (mx == 0.0f) && (my == 0.0f) && (mz == 0.0f) ) {
+    _ahrs_Mahony6DOF(gx, gy, gz, ax, ay, az, dt);
+  }else{
+    _ahrs_Mahony9DOF(gx, gy, gz, ax, ay, az, mx, my, mz, dt);
+  }
+}
+
+void _ahrs_Mahony9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
+	float recipNorm;
+	float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+	float hx, hy, bx, bz;
+	float halfvx, halfvy, halfvz, halfwx, halfwy, halfwz;
+	float halfex, halfey, halfez;
+	float qa, qb, qc;
+
+	// Convert gyroscope degrees/sec to radians/sec
+	gx *= 0.0174533f;
+	gy *= 0.0174533f;
+	gz *= 0.0174533f;
+
+	// Compute feedback only if accelerometer measurement valid
+	// (avoids NaN in accelerometer normalisation)
+	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+
+		// Normalise accelerometer measurement
+		recipNorm = 1.0f/sqrtf(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
+
+		// Normalise magnetometer measurement
+		recipNorm = 1.0f/sqrtf(mx * mx + my * my + mz * mz);
+		mx *= recipNorm;
+		my *= recipNorm;
+		mz *= recipNorm;
+
+		// Auxiliary variables to avoid repeated arithmetic
+		q0q0 = q0 * q0;
+		q0q1 = q0 * q1;
+		q0q2 = q0 * q2;
+		q0q3 = q0 * q3;
+		q1q1 = q1 * q1;
+		q1q2 = q1 * q2;
+		q1q3 = q1 * q3;
+		q2q2 = q2 * q2;
+		q2q3 = q2 * q3;
+		q3q3 = q3 * q3;
+
+		// Reference direction of Earth's magnetic field
+		hx = 2.0f * (mx * (0.5f - q2q2 - q3q3) + my * (q1q2 - q0q3) + mz * (q1q3 + q0q2));
+		hy = 2.0f * (mx * (q1q2 + q0q3) + my * (0.5f - q1q1 - q3q3) + mz * (q2q3 - q0q1));
+		bx = sqrtf(hx * hx + hy * hy);
+		bz = 2.0f * (mx * (q1q3 - q0q2) + my * (q2q3 + q0q1) + mz * (0.5f - q1q1 - q2q2));
+
+		// Estimated direction of gravity and magnetic field
+		halfvx = q1q3 - q0q2;
+		halfvy = q0q1 + q2q3;
+		halfvz = q0q0 - 0.5f + q3q3;
+		halfwx = bx * (0.5f - q2q2 - q3q3) + bz * (q1q3 - q0q2);
+		halfwy = bx * (q1q2 - q0q3) + bz * (q0q1 + q2q3);
+		halfwz = bx * (q0q2 + q1q3) + bz * (0.5f - q1q1 - q2q2);
+
+		// Error is sum of cross product between estimated direction
+		// and measured direction of field vectors
+		halfex = (ay * halfvz - az * halfvy) + (my * halfwz - mz * halfwy);
+		halfey = (az * halfvx - ax * halfvz) + (mz * halfwx - mx * halfwz);
+		halfez = (ax * halfvy - ay * halfvx) + (mx * halfwy - my * halfwx);
+
+		// Compute and apply integral feedback if enabled
+		if(ahrs_Mahony2KI > 0.0f) {
+			// integral error scaled by Ki
+			integralFBx += ahrs_Mahony2KI * halfex * dt;
+			integralFBy += ahrs_Mahony2KI * halfey * dt;
+			integralFBz += ahrs_Mahony2KI * halfez * dt;
+			gx += integralFBx;	// apply integral feedback
+			gy += integralFBy;
+			gz += integralFBz;
+		} else {
+			integralFBx = 0.0f;	// prevent integral windup
+			integralFBy = 0.0f;
+			integralFBz = 0.0f;
+		}
+
+		// Apply proportional feedback
+		gx += ahrs_Mahony2KP * halfex;
+		gy += ahrs_Mahony2KP * halfey;
+		gz += ahrs_Mahony2KP * halfez;
+	}
+
+	// Integrate rate of change of quaternion
+	gx *= 0.5f * dt;		// pre-multiply common factors
+	gy *= 0.5f * dt;
+	gz *= 0.5f * dt;
+	qa = q0;
+	qb = q1;
+	qc = q2;
+	q0 += (-qb * gx - qc * gy - q3 * gz);
+	q1 += (qa * gx + qc * gz - q3 * gy);
+	q2 += (qa * gy - qb * gz + q3 * gx);
+	q3 += (qa * gz + qb * gy - qc * gx);
+
+	// Normalise quaternion
+	recipNorm = 1.0f/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
+}
+
+void _ahrs_Mahony6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
+	float recipNorm;
+	float halfvx, halfvy, halfvz;
+	float halfex, halfey, halfez;
+	float qa, qb, qc;
+
+	// Convert gyroscope degrees/sec to radians/sec
+	gx *= 0.0174533f;
+	gy *= 0.0174533f;
+	gz *= 0.0174533f;
+
+	// Compute feedback only if accelerometer measurement valid
+	// (avoids NaN in accelerometer normalisation)
+	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+
+		// Normalise accelerometer measurement
+		recipNorm = 1.0f/sqrtf(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
+
+		// Estimated direction of gravity
+		halfvx = q1 * q3 - q0 * q2;
+		halfvy = q0 * q1 + q2 * q3;
+		halfvz = q0 * q0 - 0.5f + q3 * q3;
+
+		// Error is sum of cross product between estimated
+		// and measured direction of gravity
+		halfex = (ay * halfvz - az * halfvy);
+		halfey = (az * halfvx - ax * halfvz);
+		halfez = (ax * halfvy - ay * halfvx);
+
+		// Compute and apply integral feedback if enabled
+		if(ahrs_Mahony2KI > 0.0f) {
+			// integral error scaled by Ki
+			integralFBx += ahrs_Mahony2KI * halfex * dt;
+			integralFBy += ahrs_Mahony2KI * halfey * dt;
+			integralFBz += ahrs_Mahony2KI * halfez * dt;
+			gx += integralFBx;	// apply integral feedback
+			gy += integralFBy;
+			gz += integralFBz;
+		} else {
+			integralFBx = 0.0f;	// prevent integral windup
+			integralFBy = 0.0f;
+			integralFBz = 0.0f;
+		}
+
+		// Apply proportional feedback
+		gx += ahrs_Mahony2KP * halfex;
+		gy += ahrs_Mahony2KP * halfey;
+		gz += ahrs_Mahony2KP * halfez;
+	}
+
+	// Integrate rate of change of quaternion
+	gx *= 0.5f * dt;		// pre-multiply common factors
+	gy *= 0.5f * dt;
+	gz *= 0.5f * dt;
+	qa = q0;
+	qb = q1;
+	qc = q2;
+	q0 += (-qb * gx - qc * gy - q3 * gz);
+	q1 += (qa * gx + qc * gz - q3 * gy);
+	q2 += (qa * gy - qb * gz + q3 * gx);
+	q3 += (qa * gz + qb * gy - qc * gx);
+
+	// Normalise quaternion
+	recipNorm = 1.0f/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
 }
