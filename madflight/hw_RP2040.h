@@ -63,11 +63,13 @@ void hw_setup()
   Serial.println("USE_HW_RP2040");
   
   //I2C
+  Serial.printf("I2C: SDA=%d SCL=%d\n", i2c_SDA_PIN, i2c_SCL_PIN);
   i2c->setSDA(i2c_SDA_PIN);
   i2c->setSCL(i2c_SCL_PIN);
   i2c->setClock(1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max...
   i2c->begin();
 
   //SPI
+  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", spi_MOSI_PIN, spi_MISO_PIN, spi_SCLK_PIN, spi_CS_PIN);  
   spi->begin();
 }

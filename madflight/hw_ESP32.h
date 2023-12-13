@@ -97,10 +97,11 @@ void hw_setup()
 
   rcin_Serial->setPins(rcin_RX_PIN, rcin_TX_PIN);
 
-  i2c->begin(i2c_SDA_PIN, i2c_SCL_PIN, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max...
-  i2c->setTimeout(1); //timeout in milliseconds, default 50 ms  
+  Serial.printf("I2C: SDA=%d SCL=%d\n", i2c_SDA_PIN, i2c_SCL_PIN);
+  i2c->begin(i2c_SDA_PIN, i2c_SCL_PIN, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max... 
 
-  spi->begin(spi_MOSI_PIN, spi_MISO_PIN, spi_SCLK_PIN, spi_CS_PIN);
+  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", spi_MOSI_PIN, spi_MISO_PIN, spi_SCLK_PIN, spi_CS_PIN);
+  spi->begin(spi_SCLK_PIN, spi_MISO_PIN, spi_MOSI_PIN, spi_CS_PIN);
 
   startLoop1Task();
 }
