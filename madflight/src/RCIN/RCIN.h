@@ -3,19 +3,51 @@ This file contains all necessary functions and code used for radio communication
 
 Each USE_RCIN_xxx section in this file defines:
 rcin_Setup() -> init
-rcin_GetPWM() -> fills global vars channel_1_pwm..channel_6_pwm with received PWM values, returns false on error
+rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, returns true if new data was received
 
-Uses rcin_Serial and rcin_PPM_PIN
+Uses: rcin_Serial, HW_PIN_RCIN_PPM, RCIN_NUM_CHANNELS
 ========================================================================================================================*/
 
 
 //========================================================================================================================
+//CRSF Receiver 
+//========================================================================================================================
+#if defined USE_RCIN_CRSF
+
+#include "crsf/crsf.h"
+CRSF crsf;
+
+void rcin_Setup() {
+  Serial.println("USE_RCIN_CRSF");
+  rcin_Serial->begin(CRSF_BAUD);
+}
+
+bool rcin_GetPWM(int *pwm) {
+    bool rv = false;
+    while(rcin_Serial->available()) {
+        int c = rcin_Serial->read();
+        //print received data
+        //if(c == CRSF_ADDRESS_FLIGHT_CONTROLLER) Serial.printf("\nreceived: "); Serial.printf("%02x ",c);
+        if(crsf.update(c)) {
+            //print decoded rc data
+            //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,crsf.channel[i]); Serial.println();
+            rv = true;
+        }
+    }
+    
+    for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
+        pwm[i] = (int)crsf.channel[i];
+    }
+    return rv;
+}
+
+//========================================================================================================================
 //SBUS Receiver 
 //========================================================================================================================
-#if defined USE_RCIN_SBUS
-#warning "USE_RX_SBUS not ported/tested - see src/RCIN/RCIN.h"
+#elif defined USE_RCIN_SBUS
+#warning "USE_RX_SBUS not ported/tested - see src/RCIN/RCIN.h" //TODO
 
-#include "SBUS/SBUS.h"   //sBus interface
+#include "SBUS/SBUS.h" //sBus interface
 
 SBUS sbus(*rcin_Serial);
 uint16_t sbusChannels[16];
@@ -28,28 +60,24 @@ void rcin_Setup() {
 }
 
 bool rcin_GetPWM(int *pwm) {
-    if (sbus.read(&sbusChannels[0], &sbusFailSafe, &sbusLostFrame))
+    if (sbus.read(sbusChannels, &sbusFailSafe, &sbusLostFrame))
     {
-      //sBus scaling below is for Taranis-Plus and X4R-SB
-      float scale = 0.615;  
-      float bias  = 895.0; 
-      pwm[0] = sbusChannels[0] * scale + bias;
-      pwm[1] = sbusChannels[1] * scale + bias;
-      pwm[2] = sbusChannels[2] * scale + bias;
-      pwm[3] = sbusChannels[3] * scale + bias;
-      pwm[4] = sbusChannels[4] * scale + bias;
-      pwm[5] = sbusChannels[5] * scale + bias;
-      return true;
+        //sBus scaling below is for Taranis-Plus and X4R-SB
+        float scale = 0.615;
+        float bias  = 895.0;
+        for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
+            pwm[i] = sbusChannels[i] * scale + bias;
+        }
+        return true;
     }
     return false;
 }
-
 
 //========================================================================================================================
 //DSM Receiver
 //========================================================================================================================
 #elif defined USE_RCIN_DSM
-#warning "USE_RX_DSM not ported/tested - see src/RCIN/RCIN.h"
+#warning "USE_RX_DSM not ported/tested - see src/RCIN/RCIN.h" //TODO
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
 
 #include "DSMRX/DSMRX.h"  
@@ -68,16 +96,12 @@ void rcin_GetPWM(int *pwm) {
     else if (DSM.gotNewFrame()) {
         uint16_t values[num_DSM_channels];
         DSM.getChannelValues(values, num_DSM_channels);
-
-        pwm[0] = values[0];
-        pwm[1] = values[1];
-        pwm[2] = values[2];
-        pwm[3] = values[3];
-        pwm[4] = values[4];
-        pwm[5] = values[5];
+        for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
+            pwm[i] = values[i];
+        }
         return true;
     }
-    return false;    
+    return false;
 }
 
 void serialEvent3(void)
@@ -86,7 +110,6 @@ void serialEvent3(void)
       DSM.handleSerialEvent(Serial3.read(), micros());
   }
 }
-
 
 //========================================================================================================================
 //PPM Receiver 
@@ -99,7 +122,7 @@ void getPPM() {
   static uint32_t ppm_counter = 0;
   static uint32_t tpulse_last = 0;
   uint32_t tpulse = micros();
-  int trig = digitalRead(rcin_PPM_PIN);
+  int trig = digitalRead(HW_PIN_RCIN_PPM);
   if (trig==1) { //Only care about rising edge
     uint32_t dt_ppm = tpulse - tpulse_last;
     tpulse_last = tpulse;
@@ -139,12 +162,12 @@ void getPPM() {
 }
 
 void rcin_Setup() {
-  Serial.printf("USE_RX_PPM pin=%d\n",rcin_PPM_PIN);
+  Serial.printf("USE_RX_PPM pin=%d\n",HW_PIN_RCIN_PPM);
   //Declare interrupt pin
-  pinMode(rcin_PPM_PIN, INPUT_PULLUP);
+  pinMode(HW_PIN_RCIN_PPM, INPUT_PULLUP);
   delay(20);
   //Attach interrupt and point to corresponding ISR function
-  attachInterrupt(digitalPinToInterrupt(rcin_PPM_PIN), getPPM, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_PPM), getPPM, CHANGE);
 }
 
 bool rcin_GetPWM(int *pwm) {

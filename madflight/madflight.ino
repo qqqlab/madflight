@@ -58,8 +58,10 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // RC RECEIVER
 //-------------------------------------
+#define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
 //Uncomment only one receiver type
-#define USE_RCIN_PPM
+#define USE_RCIN_CRSF
+//#define USE_RCIN_PPM
 //#define USE_RCIN_PWM 
 //#define USE_RCIN_SBUS
 //#define USE_RCIN_DSM
@@ -105,7 +107,6 @@ blink interval longer than 1 second - loop() is taking too much time
 const int rcin_pwm_fs[] = {1000,1500,1500,1500,1000,1000}; //failsafe pwm values
 
 //set channels
-const int rcin_channels = 6;
 const int rcin_cfg_thro_channel  = 1; //low pwm = zero throttle/stick back, high pwm = full throttle/stick forward
 const int rcin_cfg_roll_channel  = 2; //low pwm = left, high pwm = right
 const int rcin_cfg_pitch_channel = 3; //low pwm = pitch up/stick back, high pwm = pitch down/stick forward
@@ -156,7 +157,7 @@ float GyroErrorZ = 0.0;
 //                                               USER-SPECIFIED VARIABLES                                                 //                           
 //========================================================================================================================//
 
-//number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..hw_OUT_COUNT-1] are servos
+//number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..HW_OUT_COUNT-1] are servos
 const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
@@ -216,7 +217,7 @@ uint32_t loop_rt, loop_rt_imu; //runtime of loop and imu sensor retrieval
 int imu_err_cnt = 0; //debugging: number of times imu took too long
 
 //Radio communication:
-int rcin_pwm[16]; //raw PWM values
+int rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
 float rcin_thro, rcin_roll, rcin_pitch, rcin_yaw; //rcin_thro 0(cutoff) to 1(full); rcin_roll, rcin_pitch, rcin_yaw -1(left,down) to 1(right,up) with 0 center stick
 bool rcin_armed; //status of arm switch, true = armed
 bool rcin_thro_is_low; //status of throttle stick, true = throttle low
@@ -231,8 +232,8 @@ float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
 //Mixer output (motor and servo values are scaled 0.0 to 1.0)
 //Outputs:
-float out_command[hw_OUT_COUNT] = {0}; //Mixer outputs
-PWM out[hw_OUT_COUNT]; //ESC and Servo outputs
+float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs
+PWM out[HW_OUT_COUNT]; //ESC and Servo outputs
 
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
@@ -254,7 +255,7 @@ TaskHandle_t imu_task_handle;
 void imu_task_setup() {
   xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
   //vTaskCoreAffinitySet(IsrTaskHandle, 0);
-  attachInterrupt(digitalPinToInterrupt(imu_INT_PIN), imu_interrupt_handler, RISING); 
+  attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
 }
 
 void imu_task(void*) {
@@ -293,8 +294,8 @@ void loop1() {
 
 void setup() {
   //Set built in LED to turn on to signal startup
-  pinMode(led_PIN, OUTPUT);
-  digitalWrite(led_PIN, HIGH);
+  pinMode(HW_PIN_LED, OUTPUT);
+  digitalWrite(HW_PIN_LED, HIGH);
 
   //debug serial
   Serial.begin(115200);
@@ -313,7 +314,7 @@ void setup() {
   rcin_Setup();
   //calibrateRadio();   //generates the rcin_cal_ calibration constants
   //Set radio channels to default (safe) values before entering main loop
-  for(int i=0;i<rcin_channels;i++) rcin_pwm[i] = rcin_pwm_fs[i];
+  for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
 
   //Initialize IMU communication
   for(int i=0;i<10;i++) {
@@ -326,11 +327,11 @@ void setup() {
   //Init Motors & servos
   for(int i=0;i<out_MOTOR_COUNT;i++) {
     //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
-    out[i].begin(out_PIN[i], 400, 900, 2000); //Standard PWM: 400Hz, 900-2000 us
-    //out[i].begin(out_PIN[i], 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
+    out[i].begin(HW_PIN_OUT[i], 400, 900, 2000); //Standard PWM: 400Hz, 900-2000 us
+    //out[i].begin(HW_PIN_OUT[i], 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
   }
-  for(int i=out_MOTOR_COUNT;i<hw_OUT_COUNT;i++) {
-    out[i].begin(out_PIN[i], 50, 1000, 2000); //Standard servo at 50Hz
+  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
+    out[i].begin(HW_PIN_OUT[i], 50, 1000, 2000); //Standard servo at 50Hz
   }
   //Arm motors
   for(int i=0;i<out_MOTOR_COUNT;i++) {
@@ -338,7 +339,7 @@ void setup() {
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
   //Arm servo channels
-  for(int i=out_MOTOR_COUNT;i<hw_OUT_COUNT;i++) {
+  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
     out_command[i] = 0; //keep at 0 if you are using servo outputs for motors
     out[i].writeFactor(out_command[i]); //start the PWM output to the servos
   } 
@@ -362,7 +363,7 @@ void setup() {
   imu_task_setup();
 
   //Set built in LED off to signal end of startup
-  digitalWrite(led_PIN, LOW);
+  digitalWrite(HW_PIN_LED, LOW);
 }
 
 //========================================================================================================================//
@@ -392,7 +393,7 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;            
+    //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;            
     if(print_need_newline) Serial.println();
   }
 }
@@ -423,9 +424,9 @@ void imu_loop() {
 
   //Get vehicle state
   imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
-  //ahrs method - SELECT ONE:
-  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Madgwick filter quaterion update
-  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Mahony filter quaterion update
+  //ahrs filter method: Madgwick or Mahony - SELECT ONE:
+  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Madgwick filter quaternion update
+  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Mahony filter quaternion update
   ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw); //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaterion
 
   //Get radio state
@@ -460,9 +461,9 @@ void loop_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
   //DISARMED: long off, short on, ARMED: long on, short off
   if(loop_cnt % loop_freq <= loop_freq / 10) 
-    digitalWrite(led_PIN,!out_armed);
+    digitalWrite(HW_PIN_LED,!out_armed);
   else
-    digitalWrite(led_PIN,out_armed); 
+    digitalWrite(HW_PIN_LED,out_armed); 
 }
 
 void imu_GetData() {
@@ -529,12 +530,16 @@ void rcin_GetCommands() {
    * The raw radio commands are filtered with a first order low-pass filter to eliminate any really high frequency noise. 
    */
 
-  int pwm_new[16];
-  rcin_GetPWM(pwm_new);
+  int pwm_new[RCIN_NUM_CHANNELS];
+  bool got_new_data = rcin_GetPWM(pwm_new);
 
   //Low-pass the critical commands and update previous values
-  for(int i=0;i<rcin_channels;i++) {
-    rcin_pwm[i] = (1.0 - B_radio)*rcin_pwm[i] + B_radio*pwm_new[i];
+  for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
+    rcin_pwm[i] = lrintf( (1.0 - B_radio)*rcin_pwm[i] + B_radio*pwm_new[i] );
+  }
+
+  if(got_new_data) {
+    //Serial.print("rcin_GetCommands() "); for(int i=0; i<RCIN_NUM_CHANNELS; i++) Serial.printf("CH%d:%d->%d ",i+1,pwm_new[i],rcin_pwm[i]); Serial.println(); //uncomment for debugging
   }
 }
 
@@ -549,10 +554,10 @@ void rcin_Failsafe() {
    */
   int minVal = 800;
   int maxVal = 2200;
-  for(int i=0;i<rcin_channels;i++) {
+  for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
     if (rcin_pwm[i] > maxVal || rcin_pwm[i] < minVal) {
       //If any failures, set to default failsafe values
-      for(int i=0;i<rcin_channels;i++) rcin_pwm[i] = rcin_pwm_fs[i];
+      for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
       return;
     }
   }  
@@ -865,7 +870,7 @@ void out_KillSwitch() {
 
 void out_SetCommands() {
   //DESCRIPTION: Send pulses to motor pins, oneshot125 or PWM protocol and set servos
-  for(int i=0;i<hw_OUT_COUNT;i++) out[i].writeFactor( out_command[i] );
+  for(int i=0;i<HW_OUT_COUNT;i++) out[i].writeFactor( out_command[i] );
 }
 
 //========================================================================================================================//
@@ -1000,7 +1005,7 @@ void calibrate_ESCs() { //TODO
     while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
     ts = micros();
 
-    digitalWrite(led_PIN, HIGH); //LED on to indicate we are not in main loop
+    digitalWrite(HW_PIN_LED, HIGH); //LED on to indicate we are not in main loop
 
     rcin_GetCommands(); //Pulls current available radio commands
     rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
@@ -1124,7 +1129,7 @@ void print_overview() {
 }
 
 void print_rcin_RadioPWM() {
-  for(int i=0;i<rcin_channels;i++) Serial.printf("pwm%d:%d\t",i+1,rcin_pwm[i]);
+  for(int i=0;i<RCIN_NUM_CHANNELS;i++) Serial.printf("pwm%d:%d\t",i+1,rcin_pwm[i]);
   print_need_newline = true;
 }
 
@@ -1172,7 +1177,7 @@ void print_out_MotorCommands() {
 }
 
 void print_out_ServoCommands() {
-  for(int i=out_MOTOR_COUNT;i<hw_OUT_COUNT;i++) Serial.printf("s%d%%:%1.0f\t", i-out_MOTOR_COUNT+1, 100*out_command[i]);
+  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) Serial.printf("s%d%%:%1.0f\t", i-out_MOTOR_COUNT+1, 100*out_command[i]);
   print_need_newline = true;  
 }
 
@@ -1204,7 +1209,7 @@ void print_i2c_scan() {
 
 //lowpass frequency to filter beta constant
 float lowpass_to_beta(float f0, float fs) {
-  return 1 - exp(-2 * PI * f0 / fs);
+  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
 
 void die(String msg) {
@@ -1213,9 +1218,9 @@ void die(String msg) {
     Serial.print(msg);
     Serial.printf(" [%d]\n",cnt++);
     for(int i=0;i<10;i++) {
-      digitalWrite(led_PIN, HIGH);
+      digitalWrite(HW_PIN_LED, HIGH);
       delay(50);
-      digitalWrite(led_PIN, LOW);
+      digitalWrite(HW_PIN_LED, LOW);
       delay(50);
     }
   }

@@ -213,6 +213,8 @@ void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float 
 //==============================================================================================================
 //  Mahony
 //==============================================================================================================
+//source: https://github.com/PaulStoffregen/MahonyAHRS
+
 extern float ahrs_Mahony2KP;		// 2 * proportional gain (Kp)
 extern float ahrs_Mahony2KI;		// 2 * integral gain (Ki)
 //float q0, q1, q2, q3;	// quaternion of sensor frame relative to auxiliary frame (defined above)

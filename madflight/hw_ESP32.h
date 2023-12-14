@@ -2,12 +2,13 @@
 This file contains all necessary functions and code for specific hardware platforms to avoid cluttering the main code
 
 This file defines:
-  xxx_PIN -> The pin assignments
+  HW_PIN_xxx -> The pin assignments
   *rcin_Serial -> Serial port for RCIN
   *spi -> SPI port
   *i2c -> I2C port
-  HW_WIRETYPE -> the class to use for I2C  
+  HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
+  HW_xxx and hw_xxx -> all other hardware platform specifi stuff
 ########################################################################################################################*/
 
 //======================================================================================================================//
@@ -21,37 +22,37 @@ This file defines:
 #include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
 
 //LED
-const int led_PIN      =  2; //Note: ESP32 DevKitC has no on-board LED
+const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
 
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 
 //RC Receiver:
-const int rcin_PPM_PIN = 35; //can be same as rcin_RX_PIN
-const int rcin_RX_PIN  = 35;
-const int rcin_TX_PIN  = 32;
-HardwareSerial *rcin_Serial = &Serial1; // can use &Serial, &Serial1, or &Serial2
+const int HW_PIN_RCIN_PPM = 35; //can be same as HW_PIN_RCIN_RX
+const int HW_PIN_RCIN_RX  = 35;
+const int HW_PIN_RCIN_TX  = 32;
+HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
 
 //IMU:
-const int imu_INT_PIN = 39; //VN only used when USE_IMU_INTERRUPT is defined
-#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority. ESP32 max priority is 31.
+const int HW_PIN_IMU_INT = 39; //VN only used when USE_IMU_INTERRUPT is defined
+#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
 
 //I2C:
-const int i2c_SDA_PIN  = 23; //default: Wire 21
-const int i2c_SCL_PIN  = 22; //default: Wire 22
+const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
+const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
 typedef SoftWire HW_WIRETYPE; //define the class to use for I2C
 //TwoWire *i2c = &Wire; //&Wire or &Wire1 - when using <Wire.h>
 HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 
 //SPI:
-const int spi_MOSI_PIN = 21; //   defaults: VSPI 23, HSPI 13
-const int spi_MISO_PIN = 36; //VP defaults: VSPI 19, HSPI 12
-const int spi_SCLK_PIN = 19; //   defaults: VSPI 18, HSPI 14
-const int spi_CS_PIN   = 18; //   defaults: VSPI  5, HSPI 15
+const int HW_PIN_SPI_MOSI = 21; //   defaults: VSPI 23, HSPI 13
+const int HW_PIN_SPI_MISO = 36; //VP defaults: VSPI 19, HSPI 12
+const int HW_PIN_SPI_SCLK = 19; //   defaults: VSPI 18, HSPI 14
+const int HW_PIN_SPI_CS   = 18; //   defaults: VSPI  5, HSPI 15
 SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
 
 //Outputs:
-#define hw_OUT_COUNT 13
-const int8_t out_PIN[hw_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16,17,5}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+#define HW_OUT_COUNT 13
+const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16,17,5}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
 
 //--------------------------------------------------------------------
 // RTOS task for setup1() and loop1() on second core
@@ -95,13 +96,13 @@ void hw_setup()
   delay(1000);
   Serial.println("USE_HW_ESP32");
 
-  rcin_Serial->setPins(rcin_RX_PIN, rcin_TX_PIN);
+  rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
 
-  Serial.printf("I2C: SDA=%d SCL=%d\n", i2c_SDA_PIN, i2c_SCL_PIN);
-  i2c->begin(i2c_SDA_PIN, i2c_SCL_PIN, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max... 
+  Serial.printf("I2C: SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
+  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max... 
 
-  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", spi_MOSI_PIN, spi_MISO_PIN, spi_SCLK_PIN, spi_CS_PIN);
-  spi->begin(spi_SCLK_PIN, spi_MISO_PIN, spi_MOSI_PIN, spi_CS_PIN);
+  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK, HW_PIN_SPI_CS);
+  spi->begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_SPI_CS);
 
   startLoop1Task();
 }

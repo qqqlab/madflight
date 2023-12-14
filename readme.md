@@ -17,11 +17,27 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 # Getting Started
 
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_ESP32.h or hw_RP2040.h
-2. Connect the IMU sensor and radio receiver to your development board according to the selected pinout.
-3. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. Uncomment print_rcin_RadioPWM() to check.
-4. Uncomment print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. Uncomment lines in setup() to calibate the sensor.
-5. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
-6. Mount props, go to an wide open space, and FLY!
+2. Connect your IMU sensor including the INT pin according to the configured pins:
+    - Connect sensor VCC and GND pins to dev board 3.3V and GND.
+    - For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
+    - For SPI sensors: connect sensor SCL/SCLK to dev board SPI_SCLK, SDA/SDI to SPI_MOSI, ADD/SDO to SPI_MISO, NCS to SPI_CS, and INT to IMU_INT.
+5. Uncomment print_imu_GyroData(), print_imu_AccData(), print_imu_MagData(), and/or print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. 
+6. Uncomment lines in setup() to calibate the sensor.
+7. Connect radio receiver to your development board according to the configured pins.
+8. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
+9. Uncomment print_rcin_RadioPWM() to check your radio setup.
+11. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
+12. Mount props, go to an wide open space, and FLY!
+
+# Change Log
+
+2023-12-14 Add CRSF/ELRS radio receiver  
+2023-12-13 Add Mahony AHRS  
+2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation  
+2023-12-11 Use C++ template for flexible I2C implementations  
+2023-12-06 Add setup1() and loop1() for ESP32  
+2023-12-06 Add IMU orientation setting  
+2023-12-05 Initial release  
 
 # Software Design
 
@@ -96,22 +112,6 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
-
-# Connecting IMU Sensors
-
-Connect sensor VCC and GND pins to dev board 3.3V and GND.
-
-For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
-
-For SPI sensors: connect sensor SCL/SCLK to dev board SPI_SCLK, SDA/SDI to SPI_MOSI, ADD/SDO to SPI_MISO, NCS to SPI_CS, and INT to IMU_INT.
-
-# Change Log
-2023-12-13 Add Mahony AHRS  
-2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation  
-2023-12-11 Use C++ template for flexible I2C implementations  
-2023-12-06 Add setup1() and loop1() for ESP32  
-2023-12-06 Add IMU orientation setting  
-2023-12-05 Initial release  
 
 # Changes from dRehmFlight
 
