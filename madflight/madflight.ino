@@ -247,8 +247,12 @@ float B_mag = lowpass_to_beta(LP_mag, loop_freq);
 float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 
 //========================================================================================================================//
-//                                          IMU INTERRUPT HANDLER                                                          //
+//                                          IMU INTERRUPT HANDLER                                                         //
 //========================================================================================================================//
+//This runs the IMU updates in separate task triggered from pin HW_PIN_IMU_INT interrupt. By doing this, unused time can be 
+//used in loop() for other functionality. Without USE_IMU_INTERRUPT any unused time in loop() is wasted. Instead of running 
+//the IMU update directly in the interrupt handler, a high priority task is used. This prevents RTOS watchdog resets.
+//The delay (latency) from rising edge INT pin to start of imu_loop is approx. 10 us on ESP32 and 50 us on RP2040.
 #ifdef USE_IMU_INTERRUPT
 TaskHandle_t imu_task_handle;
 

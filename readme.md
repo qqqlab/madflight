@@ -16,7 +16,8 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 # Getting Started
 
-1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_ESP32.h or hw_RP2040.h
+0. Open madflight/madflight.ino in the Arduino IDE.
+1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_ESP32.h or hw_RP2040.h (see below for default pinouts)
 2. Connect your IMU sensor including the INT pin according to the configured pins:
     - Connect sensor VCC and GND pins to dev board 3.3V and GND.
     - For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
@@ -43,7 +44,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 - Keep it simple!!!
 - No external dependencies, all library code included in `src` directory
-- The main .ino is the full flight controller running standard `setup()` and `loop()`.
+- The flight controller madflight.ino runs standard `setup()` and `loop()`.
 - Plain C with minimal function arguments.
 - Global variables to communicate between the different modules.
 - Function names are prefixed with the module it belongs to:
