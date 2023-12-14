@@ -6,8 +6,9 @@
 - 32 bit processor
 - At least 21 GPIO pins for:
   - 3x UART: Receiver, GPS, spare/debug (6 pins)
-  - 1x SPI: fast IMU (4 pins + 1 interrupt pin)
+  - 1x SPI: fast IMU (4 pins)
   - 1x I2C: Magnetometer, Barometer, Current sensor, slow IMU (2 pins)
+  - 1x IMU interrupt pin
   - 8x PWM: Motor, Servo (8 pins)
   
 ## Considered UAV Controller Boards
@@ -17,7 +18,7 @@
 Board Size | 55 * 28 mm | 69 * 26 mm | 51 * 21 mm | 53 * 21 mm
 Board Weight | 6.9 g<br>(9.1 g with headers) | 8.4 g<br>(10.9 g with headers) | 3.0 g | 4.5 g
 Board Pins | 38 pins | 44 pins | 40 pins | 40 pins
-Available external GPIO pins | 21<br>+ 4 input only<br>+ 1 button: 0<br>Note: strap pin restictions | 25<br>+ 7 external pins but used:<br>Button: 0<br>OSPI: 35, 36, 37<br>RGB LED: 38<br>USB: 19, 20<br>Note: strap pin restictions | 26<br>Internal only:<br>Power save: 23<br>VBUS monitor: 24<br>LED: 25<br>VSYS voltage: 29 ADC3 | 30<br>+ 2 external but used:<br>Button: PA0<br>LED: PC13
+Available external GPIO pins | 21<br>+ 4 input only<br>+ 1 button: 0<br>Note: strap pin restrictions | 25<br>+ 7 external pins but used:<br>Button: 0<br>OSPI: 35, 36, 37<br>RGB LED: 38<br>USB: 19, 20<br>Note: strap pin restrictions | 26<br>Internal only:<br>Power save: 23<br>VBUS monitor: 24<br>LED: 25<br>VSYS voltage: 29 ADC3 | 30<br>+ 2 external but used:<br>Button: PA0<br>LED: PC13
 PWM | 16<br>(8 timers each with 2 output pins) | 16<br>(8 timers each with 2 output pins) | 16<br>(8 timers each with 2 output pins) | 25<br>(6 * 16bit + 2 * 32bit timers)
 Available UART | 3 | 3 | 6 (2 + 4*PIO)<br>+USB Serial debug | 3
 Available SPI | 2 | 2 | 2 | 5
