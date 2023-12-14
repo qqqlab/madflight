@@ -40,6 +40,7 @@ Board price single piece | $4 | $5 | $4 | $3
 ### ESP32
 ![](img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
+![](ESP32-WeMos-LOLIN32-Lite-pinout-mischianti.png)
 
 ### ESP32S3
 ![](img/esp32-S3-DevKitC-1-original-pinout-high.png)
