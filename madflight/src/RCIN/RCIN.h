@@ -5,7 +5,7 @@ Each USE_RCIN_xxx section in this file defines:
 rcin_Setup() -> init
 rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, returns true if new data was received
 
-Uses: rcin_Serial, HW_PIN_RCIN_PPM, RCIN_NUM_CHANNELS
+Uses: rcin_Serial, HW_PIN_RCIN_RX, RCIN_NUM_CHANNELS
 ========================================================================================================================*/
 
 
@@ -122,7 +122,7 @@ void getPPM() {
   static uint32_t ppm_counter = 0;
   static uint32_t tpulse_last = 0;
   uint32_t tpulse = micros();
-  int trig = digitalRead(HW_PIN_RCIN_PPM);
+  int trig = digitalRead(HW_PIN_RCIN_RX);
   if (trig==1) { //Only care about rising edge
     uint32_t dt_ppm = tpulse - tpulse_last;
     tpulse_last = tpulse;
@@ -162,12 +162,12 @@ void getPPM() {
 }
 
 void rcin_Setup() {
-  Serial.printf("USE_RX_PPM pin=%d\n",HW_PIN_RCIN_PPM);
+  Serial.printf("USE_RX_PPM pin=%d\n",HW_PIN_RCIN_RX);
   //Declare interrupt pin
-  pinMode(HW_PIN_RCIN_PPM, INPUT_PULLUP);
+  pinMode(HW_PIN_RCIN_RX, INPUT_PULLUP);
   delay(20);
   //Attach interrupt and point to corresponding ISR function
-  attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_PPM), getPPM, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_RX), getPPM, CHANGE);
 }
 
 bool rcin_GetPWM(int *pwm) {

@@ -21,14 +21,15 @@ This file defines:
 #include <SPI.h>                         //SPI communication
 #include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
 
+//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
+
 //LED
 const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
 
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 
 //RC Receiver:
-const int HW_PIN_RCIN_PPM = 35; //can be same as HW_PIN_RCIN_RX
-const int HW_PIN_RCIN_RX  = 35;
+const int HW_PIN_RCIN_RX  = 35; //also used as PPM input
 const int HW_PIN_RCIN_TX  = 32;
 HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
 
@@ -98,10 +99,8 @@ void hw_setup()
 
   rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
 
-  Serial.printf("I2C: SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
   i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max... 
 
-  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK, HW_PIN_SPI_CS);
   spi->begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_SPI_CS);
 
   startLoop1Task();

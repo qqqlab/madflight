@@ -311,6 +311,16 @@ void setup() {
   //hardware specific setup for spi and Wire (see hw_xxx.h)
   hw_setup();
 
+  //print pin config
+  Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
+  Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);   
+  Serial.printf("HW_PIN_IMU_INT=%d\n",HW_PIN_IMU_INT);
+  Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
+  Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d CS=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK, HW_PIN_SPI_CS);
+  Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);
+  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
+  Serial.println();
+
   //debug i2c
   print_i2c_scan();
   

@@ -22,14 +22,15 @@ This file defines:
 #include "src/HW_RP2040/RP2040_PWM.h"  //Servo and onshot
 #include <pico/stdlib.h>               //set_sys_clock_khz()
 
+//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
+
 //LED:
 const int HW_PIN_LED      = 25; //internal on Raspberry Pi Pico
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-const int HW_PIN_RCIN_PPM = 1; //can be same as HW_PIN_RCIN_RX
-const int HW_PIN_RCIN_RX  = 1; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
+const int HW_PIN_RCIN_RX  = 1; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default) , this pin is also used as PPM input
 const int HW_PIN_RCIN_TX  = 0; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
 //uncomment one line only
 SerialUART *rcin_Serial = new SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //uart0 or uart1
@@ -64,13 +65,11 @@ void hw_setup()
   Serial.println("USE_HW_RP2040");
   
   //I2C
-  Serial.printf("I2C: SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
   i2c->setSDA(HW_PIN_I2C_SDA);
   i2c->setSCL(HW_PIN_I2C_SCL);
   i2c->setClock(1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max...
   i2c->begin();
 
-  //SPI
-  Serial.printf("SPI: MOSI=%d MISO=%d SCLK=%d CS=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK, HW_PIN_SPI_CS);  
+  //SPI 
   spi->begin();
 }
