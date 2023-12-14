@@ -136,4 +136,5 @@ In increasing order of complexity.
 - [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
 - [esp-drone](https://github.com/espressif/esp-drone.git) ESP32, forked from Crazyflie
 - [Betaflight](https://github.com/betaflight/betaflight) STM32
+- [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 or Linux based
