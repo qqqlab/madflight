@@ -17,7 +17,10 @@ This file defines:
 //ESP32 - Most pins can be assigned freely
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 
-#include "src/HW_ESP32/ESP32_SoftWire.h" //I2C communication - ESP32 has a bug in I2C which causes the bus to hang for 1 second after a failed read, makes I2C for this project unusable... --> https://github.com/espressif/esp-idf/issues/4999
+//I2C communication - ESP32 Wire has a bug in I2C which causes the bus to hang for 1 second after a failed read, makes I2C for this project unusable... --> https://github.com/espressif/esp-idf/issues/4999
+//Comment out USE_ESP32_SOFTWIRE to use regular Wire.h library - you have been warned...
+#define USE_ESP32_SOFTWIRE
+
 #include <SPI.h>                         //SPI communication
 #include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
 
@@ -40,9 +43,16 @@ const int HW_PIN_IMU_INT = 39; //VN only used when USE_IMU_INTERRUPT is defined
 //I2C:
 const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
 const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
-typedef SoftWire HW_WIRETYPE; //define the class to use for I2C
-//TwoWire *i2c = &Wire; //&Wire or &Wire1 - when using <Wire.h>
-HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
+
+#ifdef USE_ESP32_SOFTWIRE
+  #include "src/HW_ESP32/ESP32_SoftWire.h"
+  typedef SoftWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
+  HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
+#else
+  #include <Wire.h>
+  typedef TwoWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
+  HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
+#endif
 
 //SPI:
 const int HW_PIN_SPI_MOSI = 21; //   defaults: VSPI 23, HSPI 13
