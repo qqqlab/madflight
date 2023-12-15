@@ -221,7 +221,7 @@ int MPU9150::AK8975_begin()
   //warm up AK8975
   for(int i=0;i<10;i++) {
       int wai = AK8975_whoami();
-      Serial.printf("AK8975_whoami()=0x%x\n",wai);
+      //Serial.printf("AK8975_whoami()=0x%x\n",wai);
       if(wai == 0x48) break;
       delay(10);
   }
@@ -260,10 +260,10 @@ void MPU9150::AK8975_getASA()
 
     for(int i = 0; i < 3; i++) {
         int ASA = AK8975_ReadReg(AK8975_ASAX + i);
-        Serial.printf("AK8975_ASA%d=%d ",i,ASA);
+        //Serial.printf("AK8975_ASA%d=%d ",i,ASA);
         mag_multiplier[i] = 1.0;
         if(ASA>=0) mag_multiplier[i] = (((float)ASA+128)/256) * AK8975_uT_per_LSB;
-        Serial.printf("mag_multiplier%d=%f\n",i,mag_multiplier[i]);
+        //Serial.printf("mag_multiplier%d=%f\n",i,mag_multiplier[i]);
     }
     AK8975_WriteReg(AK8975_CNTL, 0x00);                               // set AK8975 to Power Down
     delayMicroseconds(1000);                                    // datasheet: 100us

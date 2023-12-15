@@ -17,10 +17,6 @@ This file defines:
 //ESP32 - Most pins can be assigned freely
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 
-//I2C communication - ESP32 Wire has a bug in I2C which causes the bus to hang for 1 second after a failed read, makes I2C for this project unusable... --> https://github.com/espressif/esp-idf/issues/4999
-//Comment out USE_ESP32_SOFTWIRE to use regular Wire.h library - you have been warned...
-#define USE_ESP32_SOFTWIRE
-
 #include <SPI.h>                         //SPI communication
 #include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
 
@@ -44,9 +40,23 @@ const int HW_PIN_IMU_INT = 39; //VN only used when USE_IMU_INTERRUPT is defined
 const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
 const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
 
+/*--------------------------------------------------------------------------------------------------
+  IMPORTANT
+  
+  ESP32 Wire has a bug in I2C which causes the bus to hang for 1 second after a failed read, which can 
+  happen a couple times per minute. This makes Wire I2C for IMU not a real option... 
+  See --> https://github.com/espressif/esp-idf/issues/4999
+
+  Uncomment USE_ESP32_SOFTWIRE to use software I2C, but this does not work well with all sensors...
+  
+  So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
+----------------------------------------------------------------------------------------------------*/  
+//#define USE_ESP32_SOFTWIRE
+
 #ifdef USE_ESP32_SOFTWIRE
   #include "src/HW_ESP32/ESP32_SoftWire.h"
-  typedef SoftWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
+  typedef SoftWire HW_WIRETYPE; //typedef to force IMU to use SoftWire
+  typedef SoftWire TwoWire; //typedef to force BARO to use SoftWire
   HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 #else
   #include <Wire.h>

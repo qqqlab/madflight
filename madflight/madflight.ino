@@ -44,7 +44,7 @@ blink interval longer than 1 second - loop() is taking too much time
   #error "Unknown hardware architecture"
 #endif
 
-#include "ahrs.h"
+#include "src/ahrs/ahrs.h"
 
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
@@ -59,7 +59,7 @@ blink interval longer than 1 second - loop() is taking too much time
 // RC RECEIVER
 //-------------------------------------
 #define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
-//Uncomment only one receiver type
+//Uncomment only one USE_RCIN_xxx receiver type
 #define USE_RCIN_CRSF
 //#define USE_RCIN_PPM
 //#define USE_RCIN_PWM 
@@ -70,17 +70,18 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // IMU SENSOR
 //-------------------------------------
-//Uncomment only one IMU
-//#define USE_IMU_MPU6050_I2C  //acc/gyro
-//#define USE_IMU_MPU9150_I2C  //acc/gyro/mag
-//#define USE_IMU_MPU6500_I2C  //acc/gyro      Note: SPI interface is faster
-//#define USE_IMU_MPU9250_I2C  //acc/gyro/mag  Note: SPI interface is faster
-//#define USE_IMU_MPU6500_SPI  //acc/gyro
-#define USE_IMU_MPU9250_SPI  //acc/gyro/mag
+//Uncomment only one USE_IMU_xxx
+//#define USE_IMU_MPU6050    //I2C only
+//#define USE_IMU_MPU9150    //I2C only, has magnetometer
+//#define USE_IMU_MPU6500    //I2C or SPI
+#define USE_IMU_MPU9250    //I2C or SPI, has magnetometer
 
-//Uncomment one I2C address. If unknown, see output of print_i2c_scan()
-//#define IMU_I2C_ADR 0x68 //MPU9250
-#define IMU_I2C_ADR 0x69 //MPU9150
+//Uncomment one USE_IMU_BUS - use SPI if available
+#define USE_IMU_BUS_SPI
+//#define USE_IMU_BUS_I2C
+
+//Set I2C address. If unknown, see output of print_i2c_scan()
+#define IMU_I2C_ADR 0x69 //MPU9150=0x69 MPU9250=0x68
 
 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
 #define IMU_GYRO_DPS 500
@@ -99,6 +100,17 @@ blink interval longer than 1 second - loop() is taking too much time
 //#define IMU_ROTATE_YAW180_ROLL180
 //#define IMU_ROTATE_YAW270_ROLL180
 #include "src/IMU/IMU.h" //first define IMU_xxx then include IMO.h
+
+//-------------------------------------
+// BAROMETER SENSOR
+//-------------------------------------
+//Uncomment only one USE_BARO_xxx
+#define USE_BARO_BMP280
+//#define USE_BARO_MS5611
+//#define USE_BARO_NONE
+//set barometer I2C address. If unknown, see output of print_i2c_scan()
+#define BARO_I2C_ADR 0x76 
+#include "src/baro/baro.h" //first define BARO_xxx then include baro.h
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
@@ -227,6 +239,10 @@ int rcin_aux; // six position switch connected to aux channel, values 0-5
 float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ;
 float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in degrees. Positive angles are: roll right, yaw right, pitch up
 
+//BARO:
+float baro_press_pa;
+float baro_temp_c;
+
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
@@ -334,9 +350,12 @@ void setup() {
   for(int i=0;i<10;i++) {
     int rv = imu_Setup();
     if(rv==0) break;
-    Serial.printf("IMU init failed rv=%d. Retrying...\n", rv);
+    Serial.printf("IMU: init failed rv=%d. Retrying...\n", rv);
     delay(500);
   }
+
+  //barometer
+  baro_Setup();
 
   //Init Motors & servos
   for(int i=0;i<out_MOTOR_COUNT;i++) {
@@ -391,6 +410,12 @@ void loop() {
     imu_loop();
   #endif
 
+#ifdef USE_IMU_BUS_SPI
+  //if BARO uses different bus as IMU then get barometer reading in the loop() to keep imu_loop() fast
+  baro_Read(&baro_press_pa, &baro_temp_c);
+#endif
+
+
   //Debugging - Print data at 50hz, uncomment line(s) for troubleshooting
   if (loop_time - print_time > 20000) {
     print_time = micros();
@@ -407,8 +432,10 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;            
+    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
+    Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
     if(print_need_newline) Serial.println();
+    loop_rt = 0; //reset maximum
   }
 }
 
@@ -424,8 +451,8 @@ void loop() {
    */
    
 void imu_loop() {
-  //debugging: number of times imu took too long
-  if(loop_rt_imu > 500) imu_err_cnt++;
+  //debugging: number of times imu took more thatn 10 ms
+  if(loop_rt_imu > 10000) imu_err_cnt++;
 
   //update loop_ variables
   uint32_t now = micros();
@@ -463,8 +490,14 @@ void imu_loop() {
   out_KillSwitch(); //Cut all motor outputs if DISARMED.
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
-  //record runtime of last loop
-  loop_rt = micros() - loop_time; 
+#ifdef USE_IMU_BUS_I2C
+  //if BARO uses same bus as IMU then get barometer reading in the imu_loop
+  baro_Read(&baro_press_pa, &baro_temp_c);
+#endif
+
+  //record max runtime loop
+  uint32_t rt = micros() - loop_time;
+  if(loop_rt < rt) loop_rt = rt; 
 }
 
 //========================================================================================================================//
