@@ -32,6 +32,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 
 # Change Log
 
+2023-12-15 Add BMP280 and MS5611 barometers
 2023-12-14 Add CRSF/ELRS radio receiver  
 2023-12-13 Add Mahony AHRS  
 2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation  
