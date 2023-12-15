@@ -94,12 +94,12 @@ int imu_Setup() {
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
   mpu.set_acc_scale_g(IMU_ACCEL_G);
   int status = mpu.begin();
-#if defined USE_IMU_MPU9250_I2C
   if(status == -1112) {
+#if defined USE_IMU_MPU9250_I2C
     Serial.println("WARNING: MPU9250 is actually MPU6500 without magnetometer");
+#endif
     return 0;
   }
-#endif
   return status;
 }
 
@@ -124,12 +124,12 @@ int imu_Setup() {
   mpu.set_gyro_scale_dps(IMU_GYRO_DPS);
   mpu.set_acc_scale_g(IMU_ACCEL_G);
   int status = mpu.begin();
-#if defined USE_IMU_MPU9250_SPI
   if(status == -1112) {
+#if defined USE_IMU_MPU9250_SPI
     Serial.println("WARNING: MPU9250 is actually MPU6500 without magnetometer");
+#endif
     return 0;
   }
-#endif
   return status;
 }
 
