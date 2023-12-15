@@ -51,6 +51,8 @@ da le ty  1  2  3  4  5  6  7  8  9 10 crc
 C8 0C 14 33 00 64 0D 00 04 01 00 00 00 96 --> 0x0c:len 12 bytes (frame len is 14 byte), 0x14=type link statistics
 ==========================================================================================*/
 
+#pragma once
+
 #define CRSF_BAUD 420000
 #define CRSF_FRAME_SIZE_MAX 64 //max number of bytes of a frame
 #define CRSF_FRAME_LEN_MAX (CRSF_FRAME_SIZE_MAX-2) //max value of the <length> field
