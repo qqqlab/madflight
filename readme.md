@@ -2,7 +2,11 @@
 
 ***M**anless **A**erial **D**evice*
 
-This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight).
+This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A working flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
+
+`madflight.ini` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
+
+The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino IDE. It mainly uses plain Arduino functionality: Serial, Wire, and SPI. A custom controller dependen library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 
 <img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
@@ -17,7 +21,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 # Getting Started
 
 0. Open madflight/madflight.ino in the Arduino IDE.
-1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_ESP32.h or hw_RP2040.h (see below for default pinouts)
+1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_esp32.h or hw_rp2040.h (see below for default pinouts)
 2. Connect your IMU sensor including the INT pin according to the configured pins:
     - Connect sensor VCC and GND pins to dev board 3.3V and GND.
     - For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
@@ -26,7 +30,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 6. Uncomment lines in setup() to calibate the sensor.
 7. Connect radio receiver to your development board according to the configured pins.
 8. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
-9. Uncomment print_rcin_RadioPWM() to check your radio setup.
+9. Uncomment print_rcin_RadioPWM() and print_rcin_RadioScaled() to check your radio setup.
 11. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
 12. Mount props, go to an wide open space, and FLY!
 
@@ -48,7 +52,7 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
 - The flight controller madflight.ino runs standard `setup()` and `loop()`.
 - Plain C with minimal function arguments.
 - Global variables to communicate between the different modules.
-- Function names are prefixed with the module it belongs to:
+- Function names are prefixed with the module they belong to:
   - `loop_` Main loop control
   - `imu_` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - `ahrs_` Attitude Heading Reference System, estimates roll, yaw, pitch
@@ -57,6 +61,8 @@ This is a 1500 line Arduino ESP32 & RP2040 flight controller, forked from [dRehm
   - `out_` Output to motors and servos
   - `print_` Prints debugging info
   - `calibrate_` Calibration
+- Module source code is in subdirectories of the `src` directory. Here you find a .h file with the same name (e.g. `src/imu/imu.h`) which is the interface between the main program and the module. There might also be an .ino example program, e.g. `src/imu/imu.ino`.
+- The module files are usually header only, i.e. the header also includes the implemention. Even though this is not common C/C++ programming practice, it has some advantages. For example, it is easier to use a custom Wire library: include the custom lib in the main program, then include the module and it will use the custom lib.
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
