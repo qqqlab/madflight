@@ -77,8 +77,8 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 | RCIN_TX      | 32 |                           | GND | GND
 | PWM1         | 33 |                            | 19 | SPI_SCLK
 | PWM2         | 25 |                            | 18 | SPI_CS
-| PWM3         | 26 |                       | strap 5 | GPS_RX
-| PWM4         | 27 |                            | 17 | GPS_TX
+| PWM3         | 26 |                       | strap 5 | GPS_TX
+| PWM4         | 27 |                            | 17 | GPS_RX
 | PWM5         | 14 |                            | 16 | PWM11
 | PWM6         | 12 |                             | 4 | PWM10
 | GND          | GND |                       | boot 0 | PWM9
