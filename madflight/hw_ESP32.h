@@ -18,7 +18,7 @@ This file defines:
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 
 #include <SPI.h>                         //SPI communication
-#include "src/HW_ESP32/ESP32_PWM.h"      //Servo and onshot
+#include "src/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 

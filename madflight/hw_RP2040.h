@@ -19,7 +19,7 @@ This file defines:
 
 #include <Wire.h>                      //I2C communication
 #include <SPI.h>                       //SPI communication
-#include "src/HW_RP2040/RP2040_PWM.h"  //Servo and onshot
+#include "src/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
 #include <pico/stdlib.h>               //set_sys_clock_khz()
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.

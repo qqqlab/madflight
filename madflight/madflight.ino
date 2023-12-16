@@ -65,7 +65,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //#define USE_RCIN_PWM 
 //#define USE_RCIN_SBUS
 //#define USE_RCIN_DSM
-#include "src/RCIN/RCIN.h" //first define USE_RCIN_xxx then include RCIN.h
+#include "src/rcin/rcin.h" //first define USE_RCIN_xxx then include RCIN.h
 
 //-------------------------------------
 // IMU SENSOR
@@ -99,7 +99,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //#define IMU_ROTATE_YAW90_ROLL180
 //#define IMU_ROTATE_YAW180_ROLL180
 //#define IMU_ROTATE_YAW270_ROLL180
-#include "src/IMU/IMU.h" //first define IMU_xxx then include IMO.h
+#include "src/imu/imu.h" //first define IMU_xxx then include IMO.h
 
 //-------------------------------------
 // BAROMETER SENSOR
@@ -432,8 +432,8 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
-    Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
+    //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
+    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
     if(print_need_newline) Serial.println();
     loop_rt = 0; //reset maximum
   }
@@ -451,8 +451,11 @@ void loop() {
    */
    
 void imu_loop() {
-  //debugging: number of times imu took more thatn 10 ms
-  if(loop_rt_imu > 10000) imu_err_cnt++;
+  //debugging: number of times imu took more than 10 ms
+  if(loop_rt_imu > 10000) {
+    imu_err_cnt++;
+    Serial.printf("IMU took too long: cnt=%d rt=%d\n",imu_err_cnt,loop_rt_imu);
+  }
 
   //update loop_ variables
   uint32_t now = micros();
