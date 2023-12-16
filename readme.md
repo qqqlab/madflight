@@ -21,7 +21,7 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 # Getting Started
 
 0. Open madflight/madflight.ino in the Arduino IDE.
-1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_esp32.h or hw_rp2040.h (see below for default pinouts)
+1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_ESP32.h or hw_RP2040.h (see below for default pinouts)
 2. Connect your IMU sensor including the INT pin according to the configured pins:
     - Connect sensor VCC and GND pins to dev board 3.3V and GND.
     - For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
