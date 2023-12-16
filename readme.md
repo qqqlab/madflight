@@ -96,8 +96,8 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
-| RCIN_TX(tx0) | 0   | USB connector | VBUS     | nc
-| RCIN_RX(rx0) | 1   |               | VSYS     | 5V input via diode (*)
+|      RCIN_TX | 0   | USB connector | VBUS     | nc
+|      RCIN_RX | 1   |               | VSYS     | 5V input via diode (*)
 |            - | GND |               | GND      | -
 |         PWM1 | 2   |               | EN       | nc
 |         PWM2 | 3   |               | 3.3V out | 3V3
@@ -106,12 +106,12 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 |            - | GND |               | GND      | -
 |         PWM5 | 6   |               | 27_A1    | FREE
 |         PWM6 | 7   |               | 26_A0    | FREE
-|         PWM7 | 8   |               | RUN      | reset button to GND
-|         PWM8 | 9   |               | 22       | IMU_INT
+|       GPS_TX | 8   |               | RUN      | reset button to GND
+|       GPS_RX | 9   |               | 22       | IMU_INT
 |            - | GND |               | GND      | -
-|         PWM9 | 10  |               | 21       | I2C_SCL
-|       GPS_TX | 11  |               | 20       | I2C_SDA
-|       GPS_RX | 12  |               | 19       | SPI_MOSI
+|         PWM7 | 10  |               | 21       | I2C_SCL
+|         PWM8 | 11  |               | 20       | I2C_SDA
+|         PWM9 | 12  |               | 19       | SPI_MOSI
 |        PWM10 | 13  |               | 18       | SPI_SCLK
 |            - | GND |               | GND      | -
 |        PWM11 | 14  |               | 17       | SPI_CS
