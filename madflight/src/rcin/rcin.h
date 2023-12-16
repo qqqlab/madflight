@@ -47,7 +47,7 @@ bool rcin_GetPWM(int *pwm) {
 #elif defined USE_RCIN_SBUS
 #warning "USE_RX_SBUS not ported/tested - see src/RCIN/RCIN.h" //TODO
 
-#include "SBUS/SBUS.h" //sBus interface
+#include "sbus/SBUS.h" //sBus interface
 
 SBUS sbus(*rcin_Serial);
 uint16_t sbusChannels[16];
@@ -80,7 +80,7 @@ bool rcin_GetPWM(int *pwm) {
 #warning "USE_RX_DSM not ported/tested - see src/RCIN/RCIN.h" //TODO
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
 
-#include "DSMRX/DSMRX.h"  
+#include "dsmrx/DSMRX.h"  
 
 DSM1024 DSM;
 
