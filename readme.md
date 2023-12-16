@@ -72,13 +72,13 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 | reset button | EN |                            | 23 | I2C_SDA
 | SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
 | IMU_INT      | VN 39 input only |            | 1 TX | USB Serial Debug TX
-| FREE         | 34 input only |               | 3 RX | USB Serial Debug RX
+| BAT_ADC      | 34 input only |               | 3 RX | USB Serial Debug RX
 | RCIN_RX      | 35 input only |                 | 21 | SPI_MOSI
 | RCIN_TX      | 32 |                           | GND | GND
 | PWM1         | 33 |                            | 19 | SPI_SCLK
 | PWM2         | 25 |                            | 18 | SPI_CS
-| PWM3         | 26 |                       | strap 5 | PMW13
-| PWM4         | 27 |                            | 17 | PMW12
+| PWM3         | 26 |                       | strap 5 | GPS_RX
+| PWM4         | 27 |                            | 17 | GPS_TX
 | PWM5         | 14 |                            | 16 | PWM11
 | PWM6         | 12 |                             | 4 | PWM10
 | GND          | GND |                       | boot 0 | PWM9
@@ -102,7 +102,7 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 |         PWM1 | 2   |               | EN       | nc
 |         PWM2 | 3   |               | 3.3V out | 3V3
 |         PWM3 | 4   |               | VREF     | nc
-|         PWM4 | 5   |               | 28_A2    | FREE
+|         PWM4 | 5   |               | 28_A2    | BAT_ADC
 |            - | GND |               | GND      | -
 |         PWM5 | 6   |               | 27_A1    | FREE
 |         PWM6 | 7   |               | 26_A0    | FREE
@@ -110,12 +110,12 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 |         PWM8 | 9   |               | 22       | IMU_INT
 |            - | GND |               | GND      | -
 |         PWM9 | 10  |               | 21       | I2C_SCL
-|         PWM10| 11  |               | 20       | I2C_SDA
-|        PWM11 | 12  |               | 19       | SPI_MOSI
-|        PWM12 | 13  |               | 18       | SPI_SCLK
+|       GPS_TX | 11  |               | 20       | I2C_SDA
+|       GPS_RX | 12  |               | 19       | SPI_MOSI
+|        PWM10 | 13  |               | 18       | SPI_SCLK
 |            - | GND |               | GND      | -
-|        PWM13 | 14  |               | 17       | SPI_CS
-|        PWM14 | 15  | JTAG pins     | 16       | SPI_MISO
+|        PWM11 | 14  |               | 17       | SPI_CS
+|        PWM12 | 15  | JTAG pins     | 16       | SPI_MISO
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
