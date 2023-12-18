@@ -22,10 +22,18 @@ This file defines:
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
-//LED
+//LED:
 const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
 
+//Battery voltage divider:
+const int HW_PIN_BAT_ADC  = 34;
+
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
+
+//GPS:
+const int HW_PIN_GPS_RX   = 17;
+const int HW_PIN_GPS_TX   =  5;
+HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
 
 //RC Receiver:
 const int HW_PIN_RCIN_RX  = 35; //also used as PPM input
@@ -72,8 +80,8 @@ const int HW_PIN_SPI_CS   = 18; //   defaults: VSPI  5, HSPI 15
 SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
 
 //Outputs:
-#define HW_OUT_COUNT 13
-const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16,17,5}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+#define HW_OUT_COUNT 11
+const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
 
 //--------------------------------------------------------------------
 // RTOS task for setup1() and loop1() on second core
@@ -116,6 +124,8 @@ void hw_setup()
 {
   delay(1000);
   Serial.println("USE_HW_ESP32");
+
+  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
 
   rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
 

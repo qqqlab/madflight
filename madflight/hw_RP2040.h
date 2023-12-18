@@ -27,7 +27,17 @@ This file defines:
 //LED:
 const int HW_PIN_LED      = 25; //internal on Raspberry Pi Pico
 
+//Battery voltage divider:
+const int HW_PIN_BAT_ADC = 28; //A2
+
 //Serial debug on USB Serial port (no GPIO pins)
+
+//GPS:
+const int HW_PIN_GPS_RX   = 9; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
+const int HW_PIN_GPS_TX   = 8; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
+//uncomment one line only
+SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //uart0 or uart1
+//SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed
 
 //RC Receiver:
 const int HW_PIN_RCIN_RX  = 1; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default) , this pin is also used as PPM input
@@ -54,8 +64,8 @@ const int HW_PIN_SPI_MOSI = 19; //spi0: 3, 7, 19(default)   spi1: 11, 15(default
 SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_SPI_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
 
 //Outputs:
-#define HW_OUT_COUNT 14
-const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+#define HW_OUT_COUNT 12
+const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {2,3,4,5,6,7,10,11,12,13,14,15};
 
 void hw_setup() 
 { 

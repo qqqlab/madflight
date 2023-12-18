@@ -36,6 +36,7 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 
 # Change Log
 
+2023-12-18 Add GPS  
 2023-12-15 Add BMP280 and MS5611 barometers  
 2023-12-14 Add CRSF/ELRS radio receiver  
 2023-12-13 Add Mahony AHRS  
@@ -77,8 +78,8 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 | RCIN_TX      | 32 |                           | GND | GND
 | PWM1         | 33 |                            | 19 | SPI_SCLK
 | PWM2         | 25 |                            | 18 | SPI_CS
-| PWM3         | 26 |                       | strap 5 | GPS_RX
-| PWM4         | 27 |                            | 17 | GPS_TX / PWM12
+| PWM3         | 26 |                       | strap 5 | GPS_TX
+| PWM4         | 27 |                            | 17 | GPS_RX
 | PWM5         | 14 |                            | 16 | PWM11
 | PWM6         | 12 |                             | 4 | PWM10
 | GND          | GND |                       | boot 0 | PWM9
@@ -87,6 +88,8 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 | nc           | D3 10 flash |           | flash 8 D1 | nc
 | nc           | CMD 11 flash |          | flash 7 D0 | nc
 | 5V in (*)    | 5V | USB connector     | flash 6 CLK | nc
+
+Note: During boot the input voltage levels (pull up/pull down) on strap pins have a configuration function, therefor these pins are used as output only.
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 

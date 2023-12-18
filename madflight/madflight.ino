@@ -102,6 +102,12 @@ blink interval longer than 1 second - loop() is taking too much time
 #include "src/imu/imu.h" //first define IMU_xxx then include IMO.h
 
 //-------------------------------------
+// GPS
+//-------------------------------------
+#define GPS_BAUD 115200
+#include "src/gps/gps.h"
+
+//-------------------------------------
 // BAROMETER SENSOR
 //-------------------------------------
 //Uncomment only one USE_BARO_xxx
@@ -317,9 +323,11 @@ void setup() {
   pinMode(HW_PIN_LED, OUTPUT);
   digitalWrite(HW_PIN_LED, HIGH);
 
-  //debug serial
+  //start console serial
   Serial.begin(115200);
-  for(int i=6;i>0;i--) {
+  while(!Serial);
+
+  for(int i=3;i>0;i--) {
     Serial.printf("madflight starting %d ...\n",i);
     delay(500); //delay to get Arduino debugger connected
   }
@@ -329,6 +337,8 @@ void setup() {
 
   //print pin config
   Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
+  Serial.printf("HW_PIN_BAT_ADC=%d\n", HW_PIN_BAT_ADC);
+  Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
   Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);   
   Serial.printf("HW_PIN_IMU_INT=%d\n",HW_PIN_IMU_INT);
   Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
@@ -337,12 +347,16 @@ void setup() {
   for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
   Serial.println();
 
+  //start gps serial
+  gps_Serial.begin(GPS_BAUD);
+  //debug_gps(); //uncomment to debug gps messages
+
   //debug i2c
   print_i2c_scan();
   
-  //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. (function defined in rcin.h, but normally changes needed there.)
+  //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
   rcin_Setup();
-  //calibrateRadio();   //generates the rcin_cal_ calibration constants
+
   //Set radio channels to default (safe) values before entering main loop
   for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
 
@@ -1253,6 +1267,27 @@ void print_i2c_scan() {
   Serial.printf("I2C: Found %d device(s)\n", count);      
 }
 
+void debug_gps() {
+  gps_Serial.begin(GPS_BAUD);
+  char buffer[255]; //PUBX messages can be longer than gps standard 85 char
+  GPS gps(buffer, sizeof(buffer));
+  uint32_t gps_ts = 0;
+  while(1) {
+    if(millis() - gps_ts > 1000) {
+      gps_ts = millis();
+      Serial.println("Waiting for GPS data...");
+    }    
+    while(gps_Serial.available()) {
+      gps_ts = millis();
+      char c = gps_Serial.read();
+      Serial.print(c);
+      if (gps.process(c)) {
+        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", gps.time, gps.fix, gps.lat, gps.lon, gps.alt, gps.sep, gps.sog, gps.cog, gps.sat, gps.hacc, gps.vacc, gps.veld);
+      }
+    }
+  }
+}
+
 //===============================================================================================
 // HELPERS
 //===============================================================================================
@@ -1261,6 +1296,8 @@ void print_i2c_scan() {
 float lowpass_to_beta(float f0, float fs) {
   return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
+
+
 
 void die(String msg) {
   int cnt = 0;
