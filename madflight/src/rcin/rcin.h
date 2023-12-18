@@ -280,3 +280,60 @@ void getCh6() {
 #else
   #error "uncomment one USE_RCIN_xxx"
 #endif
+
+
+
+
+//########################################################################################################################
+//  TELEMETRY
+//########################################################################################################################
+
+
+//========================================================================================================================
+//  CRSF
+//========================================================================================================================
+#if defined USE_RCIN_CRSF
+
+#include "crsf/crsf_telemetry.h"
+void rcin_telemetry_gps(int32_t lat, int32_t lon, uint16_t sog_kmh, uint16_t cog_deg, uint16_t alt_m, uint8_t sats) {
+    uint8_t buf[65];
+    int len = CRSF_Telemetry::telemetry_gps(buf, lat, lon, sog_kmh, cog_deg, alt_m, sats);
+    rcin_Serial->write(buf, len);
+}
+
+void rcin_telemetry_flight_mode(const char *flight_mode) {
+    uint8_t buf[65];
+    int len = CRSF_Telemetry::telemetry_flight_mode(buf, flight_mode);
+    rcin_Serial->write(buf, len);
+}
+
+void rcin_telemetry_attitude(int16_t pitch, int16_t roll, int16_t yaw) {
+    uint8_t buf[65];
+    int len = CRSF_Telemetry::telemetry_attitude(buf, pitch, roll, yaw);
+    rcin_Serial->write(buf, len);
+}
+
+void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {
+    uint8_t buf[65];
+    int len = CRSF_Telemetry::telemetry_battery(buf, voltage, current, fuel, remaining);
+    rcin_Serial->write(buf, len);
+}
+
+//========================================================================================================================
+//  OTHERS
+//========================================================================================================================
+#else
+    
+void rcin_telemetry_gps(int32_t latitude, int32_t longitude, uint16_t groundspeed, uint16_t gps_heading, uint16_t altitude, uint8_t num_satellites) {
+}
+
+void rcin_telemetry_flight_mode(const char *flight_mode) {
+}
+
+void rcin_telemetry_attitude(int16_t pitch, int16_t roll, int16_t yaw) {
+}
+
+void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {
+}
+
+#endif

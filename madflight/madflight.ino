@@ -347,9 +347,9 @@ void setup() {
   for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
   Serial.println();
 
-  //start gps serial
-  gps_Serial.begin(GPS_BAUD);
-  //debug_gps(); //uncomment to debug gps messages
+  //gps
+  gps_setup();   
+  //gps_debug(); //uncomment to debug gps messages
 
   //debug i2c
   print_i2c_scan();
@@ -424,11 +424,23 @@ void loop() {
     imu_loop();
   #endif
 
-#ifdef USE_IMU_BUS_SPI
-  //if BARO uses different bus as IMU then get barometer reading in the loop() to keep imu_loop() fast
-  baro_Read(&baro_press_pa, &baro_temp_c);
-#endif
+  #ifdef USE_IMU_BUS_SPI
+    //if BARO uses different bus as IMU then get barometer reading in the loop() to keep imu_loop() fast
+    baro_Read(&baro_press_pa, &baro_temp_c);
+  #endif
 
+  //update gps
+  gps_loop();
+
+  //send telemetry
+  static uint32_t rcin_telem_ts = 0;
+  if(millis() - rcin_telem_ts > 1000) {
+    rcin_telem_ts = millis();
+    rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, gps.alt/1000, gps.sat); // sog/278 is conversion from mm/s to km/h 
+    rcin_telemetry_flight_mode("madflight");
+    //rcin_telemetry_attitude(100, 200, 300);  //TODO
+    //rcin_telemetry_battery(6000, 2000, 5000, 20); //TODO
+  }
 
   //Debugging - Print data at 50hz, uncomment line(s) for troubleshooting
   if (loop_time - print_time > 20000) {
@@ -1267,26 +1279,7 @@ void print_i2c_scan() {
   Serial.printf("I2C: Found %d device(s)\n", count);      
 }
 
-void debug_gps() {
-  gps_Serial.begin(GPS_BAUD);
-  char buffer[255]; //PUBX messages can be longer than gps standard 85 char
-  GPS gps(buffer, sizeof(buffer));
-  uint32_t gps_ts = 0;
-  while(1) {
-    if(millis() - gps_ts > 1000) {
-      gps_ts = millis();
-      Serial.println("Waiting for GPS data...");
-    }    
-    while(gps_Serial.available()) {
-      gps_ts = millis();
-      char c = gps_Serial.read();
-      Serial.print(c);
-      if (gps.process(c)) {
-        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", gps.time, gps.fix, gps.lat, gps.lon, gps.alt, gps.sep, gps.sog, gps.cog, gps.sat, gps.hacc, gps.vacc, gps.veld);
-      }
-    }
-  }
-}
+
 
 //===============================================================================================
 // HELPERS
