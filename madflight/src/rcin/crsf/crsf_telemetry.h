@@ -1,41 +1,6 @@
 //telemetry_xxx() fills buffer with crsf command and returns length
 
 
-
-//based on: https://github.com/PX4/PX4-Autopilot
-
-/*
-BSD 3-Clause License
-
-Copyright (c) 2012 - 2023, PX4 Development Team
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 #define CRSF_SYNC_BYTE 0xC8
 
 enum class crsf_frame_type_t : uint8_t {
@@ -67,6 +32,14 @@ class CRSF_Telemetry {
 public:
 
 
+/*
+0x08 Battery sensor
+Payload:
+uint16_t    Voltage ( 0.1 V )
+uint16_t    Current ( 0.1 A )
+uint24_t    Fuel ( drawn mAh )
+uint8_t     Battery remaining ( percent )
+*/
 static int telemetry_battery(uint8_t *buf, uint16_t voltage, uint16_t current, int fuel, uint8_t remaining)
 {
 	int offset = 0;
@@ -75,10 +48,20 @@ static int telemetry_battery(uint8_t *buf, uint16_t voltage, uint16_t current, i
 	write_uint16_t(buf, offset, current);
 	write_uint24_t(buf, offset, fuel);
 	write_uint8_t(buf, offset, remaining);
-	write_frame_crc(buf, offset, sizeof(buf));
+	write_frame_crc(buf, offset);
 	return offset;
 }
 
+/*
+0x02 GPS
+Payload:
+int32_t     Latitude ( degree / 10`000`000 )
+int32_t     Longitude (degree / 10`000`000 )
+uint16_t    Groundspeed ( km/h / 10 )
+uint16_t    GPS heading ( degree / 100 )
+uint16      Altitude ( meter ­1000m offset )
+uint8_t     Satellites in use ( counter )
+*/
 static int telemetry_gps(uint8_t *buf, int32_t latitude, int32_t longitude, uint16_t groundspeed, uint16_t gps_heading, uint16_t altitude, uint8_t num_satellites)
 {
 	int offset = 0;
@@ -87,12 +70,42 @@ static int telemetry_gps(uint8_t *buf, int32_t latitude, int32_t longitude, uint
 	write_int32_t(buf, offset, longitude);
 	write_uint16_t(buf, offset, groundspeed);
 	write_uint16_t(buf, offset, gps_heading);
-	write_uint16_t(buf, offset, altitude);
+	write_uint16_t(buf, offset, altitude + 1000);
 	write_uint8_t(buf, offset, num_satellites);
-	write_frame_crc(buf, offset, sizeof(buf));
+	write_frame_crc(buf, offset);
 	return offset;
 }
 
+// convert angle in degrees to radians/10000 with reducing angle to +/-180 degree range
+static int16_t degrees2Radians10000(float angle_deg)
+{
+    while (angle_deg > 180) {
+        angle_deg -= 360;
+    }
+    while (angle_deg < -180) {
+        angle_deg += 360;
+    }
+    return (int16_t)(174.532925f * angle_deg);
+}
+
+/*
+0x1E Attitude
+Payload:
+int16_t     Pitch angle ( rad / 10000 )
+int16_t     Roll angle ( rad / 10000 )
+int16_t     Yaw angle ( rad / 10000 )
+*/
+static int telemetry_attitude(uint8_t *buf, float pitch, float roll, float yaw)
+{
+	int offset = 0;
+	write_frame_header(buf, offset, crsf_frame_type_t::attitude, (uint8_t)crsf_payload_size_t::attitude);
+	write_uint16_t(buf, offset, degrees2Radians10000(pitch));
+	write_uint16_t(buf, offset, degrees2Radians10000(roll));
+	write_uint16_t(buf, offset, degrees2Radians10000(yaw));
+	write_frame_crc(buf, offset);
+	return offset;
+}
+/*
 static int telemetry_attitude(uint8_t *buf, int16_t pitch, int16_t roll, int16_t yaw)
 {
 	int offset = 0;
@@ -103,7 +116,7 @@ static int telemetry_attitude(uint8_t *buf, int16_t pitch, int16_t roll, int16_t
 	write_frame_crc(buf, offset, sizeof(buf));
 	return offset;
 }
-
+*/
 static int telemetry_flight_mode(uint8_t *buf, const char *flight_mode)
 {
 	const int max_length = 16;
@@ -115,7 +128,7 @@ static int telemetry_flight_mode(uint8_t *buf, const char *flight_mode)
 	memcpy(buf + offset, flight_mode, length);
 	offset += length;
 	buf[offset - 1] = 0; // ensure null-terminated string
-	write_frame_crc(buf, offset, length + 4);
+	write_frame_crc(buf, offset);
 	return offset;
 }
 
@@ -170,13 +183,10 @@ static inline void write_frame_header(uint8_t *buf, int &offset, crsf_frame_type
 	write_uint8_t(buf, offset, payload_size + 2);
 	write_uint8_t(buf, offset, (uint8_t)type);
 }
-static inline void write_frame_crc(uint8_t *buf, int &offset, int buf_size)
+static inline void write_frame_crc(uint8_t *buf, int &offset)
 {
 	// CRC does not include the address and length
-	write_uint8_t(buf, offset, crc8_dvb_s2_buf(buf + 2, buf_size - 3));
-
-	// check correctness of buffer size (only needed during development)
-	//if (buf_size != offset) { PX4_ERR("frame size mismatch (%i != %i)", buf_size, offset); }
+	write_uint8_t(buf, offset, crc8_dvb_s2_buf(buf + 2, offset - 2));
 }
 
 static uint8_t crc8_dvb_s2(uint8_t crc, uint8_t a)

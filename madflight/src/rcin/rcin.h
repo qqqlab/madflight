@@ -305,12 +305,16 @@ void rcin_telemetry_flight_mode(const char *flight_mode) {
     uint8_t buf[65];
     int len = CRSF_Telemetry::telemetry_flight_mode(buf, flight_mode);
     rcin_Serial->write(buf, len);
+    //Serial.printf("\nFM(len=%d) ",len);
+    //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
 }
 
-void rcin_telemetry_attitude(int16_t pitch, int16_t roll, int16_t yaw) {
+void rcin_telemetry_attitude(float pitch, float roll, float yaw) {
     uint8_t buf[65];
     int len = CRSF_Telemetry::telemetry_attitude(buf, pitch, roll, yaw);
     rcin_Serial->write(buf, len);
+    //Serial.printf("\natt(len=%d) ",len);
+    //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
 }
 
 void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {
@@ -323,14 +327,16 @@ void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_
 //  OTHERS
 //========================================================================================================================
 #else
-    
+
+
+
 void rcin_telemetry_gps(int32_t latitude, int32_t longitude, uint16_t groundspeed, uint16_t gps_heading, uint16_t altitude, uint8_t num_satellites) {
 }
 
 void rcin_telemetry_flight_mode(const char *flight_mode) {
 }
 
-void rcin_telemetry_attitude(int16_t pitch, int16_t roll, int16_t yaw) {
+void rcin_telemetry_attitude(float pitch, float roll, float yaw) {
 }
 
 void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {

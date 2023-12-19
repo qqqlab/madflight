@@ -434,12 +434,14 @@ void loop() {
 
   //send telemetry
   static uint32_t rcin_telem_ts = 0;
-  if(millis() - rcin_telem_ts > 1000) {
+  static uint32_t rcin_telem_cnt = 0;
+  if(millis() - rcin_telem_ts > 100) {
     rcin_telem_ts = millis();
-    rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, gps.alt/1000, gps.sat); // sog/278 is conversion from mm/s to km/h 
-    rcin_telemetry_flight_mode("madflight");
-    //rcin_telemetry_attitude(100, 200, 300);  //TODO
-    //rcin_telemetry_battery(6000, 2000, 5000, 20); //TODO
+    rcin_telem_cnt++;
+    rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
+    rcin_telemetry_attitude(ahrs_pitch, ahrs_roll, ahrs_yaw);
+    if(rcin_telem_cnt % 5 == 0) rcin_telemetry_battery(118, 100, 5000, 20); //TODO
+    if(rcin_telem_cnt % 10 == 0) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
 
   //Debugging - Print data at 50hz, uncomment line(s) for troubleshooting
@@ -1200,6 +1202,7 @@ void print_overview() {
   Serial.printf("ahrs_roll:%+.1f\t",ahrs_roll);
   Serial.printf("roll_PID:%+.3f\t",roll_PID);  
   Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
+  Serial.printf("sats:%d\t",gps.sat);
   Serial.printf("loop_rt:%d\t",(int)loop_rt);  
   print_need_newline = true;    
 }
