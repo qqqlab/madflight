@@ -5,14 +5,15 @@ Example
 -------
 #include "ESP32_PWM.h"
 
-PWM motor(12,2000,125,250); //pin 12: Oneshot motor ESC 2000Hz pulse 125-250 us
-PWM servo(22,50,1000,2000); //pin 22: regular servo 50Hz pulse 1000-2000 us
+PWM motor;
+PWM servo;
 
 float motor_pwm = 125;
 float servo_pwm = 1000;
 
 void setup() {
- 
+  motor.begin(12,2000,125,250); //pin 12: Oneshot motor ESC 2000Hz pulse 125-250 us
+  servo.begin(22,50,1000,2000); //pin 22: regular servo 50Hz pulse 1000-2000 us 
 }
 
 void loop() {
