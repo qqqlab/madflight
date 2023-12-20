@@ -34,7 +34,6 @@ void loop() {
 //Maximum number of PWM outputs - NOTE: some ESP32 chips have less than this
 #define PWM_MAX 16
 
-#include "ESP32_PWM.h"
 #include "esp32-hal-ledc.h"
 #include "Arduino.h"
 #include <driver/ledc.h> //defines LEDC_TIMER_BIT_MAX
