@@ -28,17 +28,22 @@ $fn=60;  //number of facets
 out1 = dia1+2*wall; //outside diameter
 
 difference() {
-  if(use_hull)
-    hull() SolidCross();
-  else
-    union() SolidCross();
+  HullOrUnion() {
+    //outline
+    //rotate([0,0,45]) cube([(socket+dia1/2-1)*sqrt(2),(socket+dia1/2-1)*sqrt(2),plate_thickness],center=true);
+    translate([0,socket1,-z_offset/2]) rotate([90,0,0]) cylinder(h=socket1*2,d=out1);
+    translate([socket2,0,z_offset/2]) rotate([0,-90,0]) cylinder(h=socket2*2,d=out1);
+  }
 
+  //drill holes
   translate([0,socket1*2,-z_offset/2]) rotate([90,0,0]) cylinder(h=socket1*4,d=dia1);
   translate([socket2*2,0,z_offset/2]) rotate([0,-90,0]) cylinder(h=socket2*4,d=dia1);
 }
 
-module SolidCross() {
-  //rotate([0,0,45]) cube([(socket+dia1/2-1)*sqrt(2),(socket+dia1/2-1)*sqrt(2),plate_thickness],center=true);
-  translate([0,socket1,-z_offset/2]) rotate([90,0,0]) cylinder(h=socket1*2,d=out1);
-  translate([socket2,0,z_offset/2]) rotate([0,-90,0]) cylinder(h=socket2*2,d=out1);
+module HullOrUnion() {
+  if(use_hull) {
+    hull() children();
+  }
+  else
+    union() children();
 }
