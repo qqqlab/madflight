@@ -3,7 +3,7 @@
 An overview of available sensor boards.
 
 * The "Breakout Board?" column lists price if board is cheap & easy to procure.
-* Prices in USD from Aliexpress incl shipping.
+* Prices in USD from online platforms incl shipping.
 * Table created Dec 2023
 
 ## 6-axis IMU
