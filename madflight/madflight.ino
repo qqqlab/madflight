@@ -141,7 +141,7 @@ const int rcin_cfg_thro_max      = 1900;
 const int rcin_cfg_pwm_min       = 1150;
 const int rcin_cfg_pwm_center    = 1500;
 const int rcin_cfg_pwm_max       = 1900;
-const int rcin_cfg_pwm_deadband  = 15; //Amount of deadband around center, center-deadband to center+deadband will be interpreted as central stick. Set to 0 for jitter-free serial protocol receivers.
+const int rcin_cfg_pwm_deadband  = 0; //Amount of deadband around center, center-deadband to center+deadband will be interpreted as central stick. Set to 15 for PPM or 0 for jitter-free serial protocol receivers.
 
 //config pwm range for ARMED on arm channel
 const int rcin_cfg_arm_min       = 1600;
