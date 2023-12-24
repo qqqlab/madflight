@@ -181,6 +181,18 @@ void MPU9250::getMotion9NED(float *ax, float *ay, float *az, float *gx, float *g
   *mz = mag[2];    //D
 }
 
+void MPU9250::getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz)
+{
+  read();
+  //sensor orientation for acc/gyro is NWU
+  *ax = -accel[0]; //-N
+  *ay = accel[1];  //-E
+  *az = accel[2];  //-D
+  *gx = gyro[0];   //N
+  *gy = -gyro[1];  //E
+  *gz = -gyro[2];  //D
+}
+
 //read sensor data (axis as defined by sensor)
 void MPU9250::read()
 {

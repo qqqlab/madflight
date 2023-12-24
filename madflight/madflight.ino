@@ -91,8 +91,8 @@ blink interval longer than 1 second - loop() is taking too much time
 
 //Uncomment only one sensor orientation. The labels is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
-//#define IMU_ROTATE_NONE
-#define IMU_ROTATE_YAW90
+#define IMU_ROTATE_NONE
+//#define IMU_ROTATE_YAW90
 //#define IMU_ROTATE_YAW180
 //#define IMU_ROTATE_YAW270
 //#define IMU_ROTATE_ROLL180
@@ -118,6 +118,15 @@ blink interval longer than 1 second - loop() is taking too much time
 #define BARO_I2C_ADR 0x76 
 #include "src/baro/baro.h" //first define BARO_xxx then include baro.h
 
+//-------------------------------------
+// MAGNETOMETER SENSOR
+//-------------------------------------
+//Uncomment only one USE_MAG_xxx
+#define USE_MAG_QMC5883L
+//#define USE_MAG_NONE
+//set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
+#define MAG_I2C_ADR 0 
+#include "src/mag/mag.h" //first define MAG_xxx then include mag.h
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
 //========================================================================================================================//
@@ -245,9 +254,11 @@ int rcin_aux; // six position switch connected to aux channel, values 0-5
 float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ;
 float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in degrees. Positive angles are: roll right, yaw right, pitch up
 
-//BARO:
-float baro_press_pa;
-float baro_temp_c;
+//External magnetometer:
+float mag_x = 0, mag_y = 0, mag_z = 0;
+
+//Barometer:
+float baro_press_pa = 0, baro_temp_c = 0;
 
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
@@ -368,8 +379,9 @@ void setup() {
     delay(500);
   }
 
-  //barometer
+  //barometer and magnetometer
   baro_Setup();
+  mag_Setup();
 
   //Init Motors & servos
   for(int i=0;i<out_MOTOR_COUNT;i++) {
@@ -425,8 +437,8 @@ void loop() {
   #endif
 
   #ifdef USE_IMU_BUS_SPI
-    //if BARO uses different bus as IMU then get barometer reading in the loop() to keep imu_loop() fast
-    baro_Read(&baro_press_pa, &baro_temp_c);
+    //if IMU uses SPI bus, then read slower i2c sensors here in loop() to keep imu_loop() as fast as possible
+    i2c_sensors_update();
   #endif
 
   //update gps
@@ -467,6 +479,11 @@ void loop() {
   }
 }
 
+void i2c_sensors_update() {
+  baro_Read(&baro_press_pa, &baro_temp_c);
+  mag_Read(&mag_x, &mag_y, &mag_z);
+}
+
 //========================================================================================================================//
 //                                                            IMU_LOOP()                                                      //
 //========================================================================================================================//
@@ -495,7 +512,7 @@ void imu_loop() {
   loop_Blink();
 
   //Get vehicle state
-  imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
+  imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and applies low-pass filters to remove noise
   //ahrs filter method: Madgwick or Mahony - SELECT ONE:
   //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Madgwick filter quaternion update
   ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Mahony filter quaternion update
@@ -522,8 +539,8 @@ void imu_loop() {
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
 #ifdef USE_IMU_BUS_I2C
-  //if BARO uses same bus as IMU then get barometer reading in the imu_loop
-  baro_Read(&baro_press_pa, &baro_temp_c);
+  //if IMU uses i2c bus, then get i2c sensor readings in the imu_loop to prevent i2c bus collisions
+  i2c_sensors_update();
 #endif
 
   //record max runtime loop
@@ -582,7 +599,14 @@ void imu_GetData() {
   GyroY = (1.0 - B_gyro) * GyroY + B_gyro * gy;
   GyroZ = (1.0 - B_gyro) * GyroZ + B_gyro * gz;
 
-  //Magnetometer
+  //Magnetometer 
+  //use external (if present), then internal mag
+  if(!(mag_x == 0 && mag_y == 0 && mag_z == 0)) {
+    mx = mag_x;
+    my = mag_y;
+    mz = mag_z;
+
+  }
   if(mx == 0 && my == 0 && mz == 0) {
     MagX = 0;
     MagY = 0;
@@ -1261,10 +1285,12 @@ void print_out_ServoCommands() {
 }
 
 void print_loop_Rate() {
+  static uint32_t loop_cnt_last = 0;
   Serial.printf("loop_dt:%d\t",(int)(loop_dt * 1000000.0));
   Serial.printf("loop_rt:%d\t",(int)loop_rt);
   Serial.printf("loop_rt_imu:%d\t",(int)loop_rt_imu);
-  Serial.printf("loop_cnt:%d\t",(int)loop_cnt);  
+  Serial.printf("loops:%d\t",(int)(loop_cnt - loop_cnt_last));  
+  loop_cnt_last = loop_cnt;
   print_need_newline = true;
 }
 

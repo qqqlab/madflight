@@ -46,6 +46,7 @@ public:
     int set_gyro_scale_dps(int scale_in_dps);
     unsigned int whoami();
     void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz);
+    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz);
     void read();
     float accel[3];
     float gyro[3];

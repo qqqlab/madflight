@@ -1,40 +1,6 @@
-## Configuration of u-blox GPS Receivers
+# GPS Messages
 
-Folow these instructions to enable 10Hz messages on u-blox M8 receivers.
-
-1. Download and install u-center software from u-blox
-2. Menu: Receiver -> Connection: set serial port
-3. Menu: Receiver -> Baudrate: set baud rate
-4. Menu: View -> Text Console: should have output now
-5. Menu: View -> Configuration: View
-
-PRT: 
- - baudrate: 115200
- 
-MSG: (switch only GGA, RMC, PUBX00 on)
- - F0-01 NMEA GxGGL --> OFF + send
- - F0-02 NMEA GxGSA --> OFF + send
- - F0-03 NMEA GxGSV --> OFF + send
- - F0-05 NMEA GxVTG --> OFF + send
- - F0-00 NMEA GxGGA --> ON + send
- - F0-02 NMEA GxGSA --> ON + send
- - F1-00 PUBX00 --> ON + send
-
-RATE: 
- - Measurement Period: 100 ms
-
-CFG:
- - save current configuration
- - devices: select all (BBR, FLASH, I2C-EEPROM, SPI-FLASH)
- - press send
-
-Disconnect, reconnect, wait up to 30 seconds and receiver output should be according new settings.
-
-If it didn't work, try a factory reset: in CFG set "Revert to default configuration" and press send.
-
-## GPS NMEA Messages
-
-What information is send with each NMEA message?
+What information is send with each NMEA/PUBX message?
 
 |Message|Data Types|
 |-|-|
@@ -57,7 +23,7 @@ Data Types
  - P: DOP
  - V: Vertical velocity
 
-## PUBX00 Message
+## PUBX00 u-blox Proprietary Message
  
 `$PUBX,00,081350.00,4717.113210,N,00833.915187,E,546.589,G3,2.1,2.0,0.007,77.52,0.007,,0.92,1.19,0.77,9,0,0*5F`
 

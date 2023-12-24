@@ -1,4 +1,4 @@
-# Low-pass Filter
+# Digital Low-pass Filter
 
 $Output_i = (1-\beta) Output_{i-1} + \beta Sample_i$
 
@@ -11,7 +11,7 @@ $F_0$ Cutoff frequency (Hz)
 $F_S$ Sample Frequency (Hz)  
 $\beta$ Filter factor (0 to 1, higher $\beta$ gives higher $F_0$)  
 
-## Alternate form
+## Alternate Form
 
 $\alpha = 1 - \beta$
 

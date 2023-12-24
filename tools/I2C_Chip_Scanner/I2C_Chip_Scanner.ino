@@ -18,8 +18,12 @@ I2C: Found address: 0x77 (decimal 119)
 I2C: Found 4 device(s)
 ====================================================================*/
 
-#define SDA_PIN 23
-#define SCL_PIN 22
+#define ESP32_SDA_PIN 23
+#define ESP32_SCL_PIN 22
+
+#define RP2040_SDA_PIN 20
+#define RP2040_SCL_PIN 21
+
 #define I2C_FRQ 400000
 
 #include "Wire.h"
@@ -29,14 +33,14 @@ void setup() {
 
   //start Wire
   #if defined ARDUINO_ARCH_ESP32
-    Wire.begin(SDA_PIN, SCL_PIN, I2C_FRQ);
+    Wire.begin(ESP32_SDA_PIN, ESP32_SCL_PIN, I2C_FRQ);
   #elif defined ARDUINO_ARCH_RP2040
-    Wire.setSDA(SDA_PIN);
-    Wire.setSCL(SCL_PIN);
+    Wire.setSDA(RP2040_SDA_PIN);
+    Wire.setSCL(RP2040_SCL_PIN);
     Wire.setClock(I2C_FRQ);
     Wire.begin();
   #else 
-    #error "Using default I2C pins"
+    #warning "Using default I2C pins"
     Wire.begin();
   #endif
 }
@@ -47,7 +51,7 @@ void loop() {
   Serial.printf("I2C: Scanning ...\n");
   int num_adr_found = 0;
   for (uint8_t adr = 8; adr < 120; adr++) {
-    Wire.beginTransmission(adr);          // Begin I2C transmission Address (i)
+    Wire.beginTransmission(adr);       // Begin I2C transmission Address (i)
     if (Wire.endTransmission() == 0) { // Receive 0 = success (ACK response) 
       Serial.printf("I2C: Found address: 0x%02X (decimal %d)\n",adr,adr);
       num_adr_found++;
@@ -62,7 +66,7 @@ struct test_struct{
     uint8_t adr1;
     uint8_t adr2;    
     uint8_t reg;
-    int len;
+    uint8_t len;
     uint32_t expected;
     char descr[60];
 };
@@ -70,7 +74,7 @@ struct test_struct{
 //table of addresses, register and expected reply
 test_struct tests[] = {
 // adr1  adr2  reg  len exp       descr
-  {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L (GY-271)"},
+  {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L"},
   {0x1E, 0x1E, 0x0A, 3, 0x483433, "HMC5883L"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
   {0x40, 0x4F, 0x00, 2, 0x399F, "INA219"},
   {0x40, 0x4F, 0x00, 2, 0x4127, "INA226"},
@@ -115,11 +119,11 @@ void i2c_identify_chip(uint8_t adr) {
   //try adr,reg,result match
   int i = 0;
   while(tests[i].adr1) {
-    int adr1 = tests[i].adr1;
-    int adr2 = tests[i].adr2;    
-    int reg = tests[i].reg;
-    int len = tests[i].len;    
-    int expected = tests[i].expected;
+    uint8_t adr1 = tests[i].adr1;
+    uint8_t adr2 = tests[i].adr2;    
+    uint8_t reg = tests[i].reg;
+    uint8_t len = tests[i].len;    
+    uint32_t expected = tests[i].expected;
     uint32_t received = 0;
     if(adr1<=adr && adr<=adr2) {
       uint8_t data[4];
