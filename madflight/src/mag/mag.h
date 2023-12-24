@@ -12,9 +12,9 @@ Body frame is NED: x-axis North(front), y-axis East(right), z-axis Down
 
 uint32_t mag_time = 0;
 
-void mag_Read2(float *mx,float *mz,float *my);
+void mag_Read2(float *mx, float *my, float *mz);
 
-bool mag_Read(float *mx,float *mz,float *my) {
+bool mag_Read(float *mx, float *my, float *mz) {
   if(micros() - mag_time < 10000) return false;
   mag_time = micros();
   mag_Read2(mx, my, mz);
@@ -35,7 +35,7 @@ int mag_Setup() {
   return 0;
 }
 
-void mag_Read2(float *mx,float *mz,float *my) {
+void mag_Read2(float *mx, float *my, float *mz) {
   mag.read_uT(mx, my, mz);
 }
 
@@ -48,7 +48,7 @@ int mag_Setup() {
   return 0;
 }
 
-void mag_Read2(float *mx,float *mz,float *my) {
+void mag_Read2(float *mx, float *my, float *mz) {
   *mx = 0;
   *my = 0;
   *mz = 0;

@@ -20,7 +20,7 @@ void gps_debug() {
       char c = gps_Serial.read();
       Serial.print(c);
       if (gps.process(c)) {
-        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", gps.time, gps.fix, gps.lat, gps.lon, gps.alt, gps.sep, gps.sog, gps.cog, gps.sat, gps.hacc, gps.vacc, gps.veld);
+        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", (int)gps.time, (int)gps.fix, (int)gps.lat, (int)gps.lon, (int)gps.alt, (int)gps.sep, (int)gps.sog, (int)gps.cog, (int)gps.sat, (int)gps.hacc, (int)gps.vacc, (int)gps.veld);
       }
     }
   }

@@ -499,7 +499,7 @@ void imu_loop() {
   //debugging: number of times imu took more than 10 ms
   if(loop_rt_imu > 10000) {
     imu_err_cnt++;
-    Serial.printf("IMU took too long: cnt=%d rt=%d\n",imu_err_cnt,loop_rt_imu);
+    Serial.printf("IMU took too long: cnt=%d rt=%d\n", (int)imu_err_cnt, (int)loop_rt_imu);
   }
 
   //update loop_ variables
@@ -1003,9 +1003,12 @@ void ahrs_Setup()
   //estimate yaw based on mag only (assumes vehicle is horizontal)
 
   //warm up imu by getting 100 samples
+  
   for(int i=0;i<100;i++) {
+    uint32_t start = micros();
+    mag_Read(&mag_x, &mag_y, &mag_z);
     imu_GetData();
-    delayMicroseconds(1000000/loop_freq);
+    while(micros() - start < 1000000/loop_freq); //wait until next sample time
   }
 
   //calculate yaw angle
@@ -1226,7 +1229,7 @@ void print_overview() {
   Serial.printf("ahrs_roll:%+.1f\t",ahrs_roll);
   Serial.printf("roll_PID:%+.3f\t",roll_PID);  
   Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
-  Serial.printf("sats:%d\t",gps.sat);
+  Serial.printf("sats:%d\t",(int)gps.sat);
   Serial.printf("loop_rt:%d\t",(int)loop_rt);  
   print_need_newline = true;    
 }
