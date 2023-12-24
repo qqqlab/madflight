@@ -36,6 +36,7 @@ The source code is tested on ESP32 and RP2040 microcontrollers with the Arduino 
 
 # Change Log
 
+2023-12-24 Add external magnetometer  
 2023-12-18 Add CRSF telemetry  
 2023-12-18 Add GPS  
 2023-12-15 Add BMP280 and MS5611 barometers  
