@@ -40,40 +40,28 @@ bool MPU6050::begin() {
  */
 int MPU6050::set_acc_scale(int scale)
 {
-    int temp_scale;
     _iface->WriteReg(MPUREG_ACCEL_CONFIG, scale);
-    
-    switch (scale){
+
+    int read_scale = _iface->ReadReg(MPUREG_ACCEL_CONFIG) & BITS_FS_16G;
+    switch (read_scale){
         case BITS_FS_2G:
+            read_scale=2;
             acc_multiplier = 1.0 / 16384.0;
-        break;
+            break;
         case BITS_FS_4G:
+            read_scale=4;
             acc_multiplier = 1.0 / 8192.0;
-        break;
+            break;
         case BITS_FS_8G:
+            read_scale=8;
             acc_multiplier = 1.0 / 4096.0;
-        break;
+            break;
         case BITS_FS_16G:
+            read_scale=16;
             acc_multiplier = 1.0 / 2048.0;
-        break;   
+            break;   
     }
-    temp_scale = _iface->ReadReg(MPUREG_ACCEL_CONFIG);
-    
-    switch (temp_scale){
-        case BITS_FS_2G:
-            temp_scale=2;
-        break;
-        case BITS_FS_4G:
-            temp_scale=4;
-        break;
-        case BITS_FS_8G:
-            temp_scale=8;
-        break;
-        case BITS_FS_16G:
-            temp_scale=16;
-        break;   
-    }
-    return temp_scale;
+    return read_scale;
 }
 
 int MPU6050::set_acc_scale_g(int scale_in_g)
@@ -101,25 +89,28 @@ int MPU6050::set_acc_scale_g(int scale_in_g)
  */
 int MPU6050::set_gyro_scale(int scale)
 {
-    int temp_scale;
     _iface->WriteReg(MPUREG_GYRO_CONFIG, scale);
 
-    switch (scale){
-        case BITS_FS_250DPS:   gyro_multiplier = 1.0 / 131.0; break;
-        case BITS_FS_500DPS:   gyro_multiplier = 1.0 / 65.5; break;
-        case BITS_FS_1000DPS:  gyro_multiplier = 1.0 / 32.8; break;
-        case BITS_FS_2000DPS:  gyro_multiplier = 1.0 / 16.4; break;   
+    int read_scale = _iface->ReadReg(MPUREG_GYRO_CONFIG) & BITS_FS_2000DPS;
+    switch (read_scale){
+        case BITS_FS_250DPS:
+            read_scale = 250;
+            gyro_multiplier = 1.0 / 131.0;
+            break;
+        case BITS_FS_500DPS:
+            read_scale = 500;
+            gyro_multiplier = 1.0 / 65.5;
+            break;
+        case BITS_FS_1000DPS:
+            read_scale = 1000;
+            gyro_multiplier = 1.0 / 32.8;
+            break;
+        case BITS_FS_2000DPS:
+            read_scale = 2000;
+            gyro_multiplier = 1.0 / 16.4;
+            break;   
     }
-
-    temp_scale = _iface->ReadReg(MPUREG_GYRO_CONFIG);
-
-    switch (temp_scale){
-        case BITS_FS_250DPS:   temp_scale = 250;    break;
-        case BITS_FS_500DPS:   temp_scale = 500;    break;
-        case BITS_FS_1000DPS:  temp_scale = 1000;   break;
-        case BITS_FS_2000DPS:  temp_scale = 2000;   break;   
-    }
-    return temp_scale;
+    return read_scale;
 }
 
 int MPU6050::set_gyro_scale_dps(int scale_in_dps)

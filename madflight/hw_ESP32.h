@@ -17,6 +17,8 @@ This file defines:
 //ESP32 - Most pins can be assigned freely
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 
+#define HW_USE_FREERTOS //ESP32 always uses FreeRTOS
+
 #include <SPI.h>                         //SPI communication
 #include "src/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
 
@@ -24,6 +26,7 @@ This file defines:
 
 //LED:
 const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
+#define LED_ON 1 //high = on
 
 //Battery voltage divider:
 const int HW_PIN_BAT_ADC  = 34;

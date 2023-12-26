@@ -24,6 +24,9 @@ I2C: Found 4 device(s)
 #define RP2040_SDA_PIN 20
 #define RP2040_SCL_PIN 21
 
+#define STM32_SDA_PIN PB9
+#define STM32_SCL_PIN PB8
+
 #define I2C_FRQ 400000
 
 #include "Wire.h"
@@ -39,6 +42,11 @@ void setup() {
     Wire.setSCL(RP2040_SCL_PIN);
     Wire.setClock(I2C_FRQ);
     Wire.begin();
+  #elif defined ARDUINO_ARCH_STM32
+    Wire.setSDA(STM32_SDA_PIN);
+    Wire.setSCL(STM32_SCL_PIN);
+    Wire.setClock(I2C_FRQ);
+    Wire.begin();    
   #else 
     #warning "Using default I2C pins"
     Wire.begin();

@@ -17,15 +17,22 @@ This file defines:
 //RP2040 - not all pin combinations are allowed, see datasheet
 //This pin layout is optimized for Raspberry Pi Pico board: UART, PWM on side; I2C, SPI, PPM on the other side
 
+#define HW_USE_FREERTOS //RP2040 optionally uses FreeRTOS
+
 #include <Wire.h>                      //I2C communication
 #include <SPI.h>                       //SPI communication
 #include "src/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
 #include <pico/stdlib.h>               //set_sys_clock_khz()
+#ifdef HW_USE_FREERTOS
+  #include <FreeRTOS.h>  //FreeRTOS
+  #include <semphr.h>    //FreeRTOS
+#endif
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
 const int HW_PIN_LED      = 25; //internal on Raspberry Pi Pico
+#define LED_ON 1 //high = on
 
 //Battery voltage divider:
 const int HW_PIN_BAT_ADC = 28; //A2
