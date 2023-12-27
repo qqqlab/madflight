@@ -72,8 +72,8 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 //Uncomment only one USE_IMU_xxx
 //#define USE_IMU_SPI_MPU6000
-//#define USE_IMU_SPI_MPU6500
-#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
+#define USE_IMU_SPI_MPU6500
+//#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
 //#define USE_IMU_I2C_MPU6000
 //#define USE_IMU_I2C_MPU6050
 //#define USE_IMU_I2C_MPU6500

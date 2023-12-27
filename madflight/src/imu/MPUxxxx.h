@@ -7,26 +7,31 @@
 #include "AK8963.h"
 #include "AK8975.h"
 
-enum MPU_Type {
-  MPU6000,
-  MPU6050,
-  MPU6500,
-  MPU9150,
-  MPU9250
-};
-
 class MPUXXXX {
-  private:
-    MPU_Interface *_iface;
-    MPU_Type _type;
 
   public:
+
+    enum MPU_Type {
+        MPU6000,
+        MPU6050,
+        MPU6500,
+        MPU9150,
+        MPU9250
+    };
+
     float accel[3];
     float gyro[3];
     float mag[3];
     float temperature;
     float acc_multiplier;
     float gyro_multiplier;
+
+  private:
+  
+    MPU_Interface *_iface;
+    MPU_Type _type;
+
+  public:
 
     //some MPU6000/6050 revisions have half acc resolution
     uint8_t rev1 = 0;
@@ -249,6 +254,7 @@ class MPUXXXX {
         float data;
         int i,pos;
 
+        _iface->setFreqFast();
         _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,20);
         // Get accelerometer value (6 bytes)
         pos = 0;
