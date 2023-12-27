@@ -8,7 +8,7 @@ This file defines:
   *i2c -> I2C port
   HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
-  HW_xxx and hw_xxx -> all other hardware platform specifi stuff
+  HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
 //======================================================================================================================//

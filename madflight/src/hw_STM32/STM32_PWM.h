@@ -1,14 +1,8 @@
 
-
-
-//TODO: this file does not do anything yet
-
-
+//Note: this implementation does not check if frequency overwrites the frequency of previously started PWM instances
 
 /*=============================================================================
 Minimal Servo / PWM library for STM32
-
-NOTE: no checking is done on overlapping slices - user should take care not to assign different frequencies to two pins in the same slice.
 
 Example
 -------
@@ -41,34 +35,53 @@ void loop() {
 
 #pragma once
 
-//Maximum number of PWM outputs
-#define PWM_MAX 16
-
 class PWM
 {
   public:
     PWM() {};
+    
     bool begin(int pin, int freq, float min_us, float max_us) {
-        (void)pin;(void)freq;(void)min_us;(void)max_us;
-        return true;
+        this->pin = pin;         
+        this->freq = freq;
+        this->min_us = min_us;
+        this->max_us = max_us;
+
+        // Automatically retrieve TIM instance and channel associated to pin
+        // This is used to be compatible with all STM32 series automatically.
+        Instance = (TIM_TypeDef *)pinmap_peripheral(digitalPinToPinName(pin), PinMap_PWM);
+        channel = STM_PIN_CHANNEL(pinmap_function(digitalPinToPinName(pin), PinMap_PWM));
+
+        // Instantiate HardwareTimer object. 
+        MyTim = new HardwareTimer(Instance);
+
+        //set mode and period
+        MyTim->setMode(channel, TIMER_OUTPUT_COMPARE_PWM1, pin); //PWM1: pin high when counter < channel compare, low otherwise
+        MyTim->setOverflow(freq, HERTZ_FORMAT);
+        
+        //don't start output here, start output with first call to writeMicroseconds()
+        //MyTim->setCaptureCompare(channel, duty_us, MICROSEC_COMPARE_FORMAT);
+        //MyTim->resume();
+
+      return true;
+    };
+
+    void writeMicroseconds(float us) {
+        if(us < min_us) us = min_us;
+        if(us > max_us) us = max_us;
+        MyTim->setCaptureCompare(channel, us, MICROSEC_COMPARE_FORMAT);
+        MyTim->resume();
     };
 
     void writeFactor(float f) {
-        (void)f;
+        writeMicroseconds(min_us + f * (max_us - min_us));
     }
-
-    void writeMicroseconds(float us) {
-        (void)us;
-    };
 
   private:
     int pin;
-    int slicenum;
-    int bits;
-    int max_duty;
+    int freq;
     float min_us;
-    float max_us;     
-    int req_freq; //requested frequency
-    int act_freq; //actual frequency
-    float inv_duty_resolution_us;
+    float max_us; 
+    TIM_TypeDef *Instance;
+    uint32_t channel;
+    HardwareTimer *MyTim;
 };

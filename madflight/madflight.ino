@@ -72,10 +72,10 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 //Uncomment only one USE_IMU_xxx
 #define USE_IMU_MPU6000    //I2C or SPI
-//#define USE_IMU_MPU6050    //I2C only
-//#define USE_IMU_MPU9150    //I2C only, has magnetometer
+//#define USE_IMU_MPU6050    //I2C only, same as MPU6000 but I2C only
+//#define USE_IMU_MPU9150    //I2C only, same as MPU6050 plus magnetometer
 //#define USE_IMU_MPU6500    //I2C or SPI
-//#define USE_IMU_MPU9250    //I2C or SPI, has magnetometer
+//#define USE_IMU_MPU9250    //I2C or SPI, same as MPU6500 plus magnetometer
 
 //Uncomment one USE_IMU_BUS - use SPI if available
 #define USE_IMU_BUS_SPI
@@ -289,12 +289,16 @@ float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 //The delay (latency) from rising edge INT pin to start of imu_loop is approx. 10 us on ESP32 and 50 us on RP2040.
 #ifdef USE_IMU_INTERRUPT
   #ifndef HW_USE_FREERTOS
+    volatile bool imu_interrupt_busy = false;
     void imu_task_setup() {
       attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
     }
 
     void imu_interrupt_handler() {
+      if(imu_interrupt_busy) return;
+      imu_interrupt_busy = true;
       imu_loop();
+      imu_interrupt_busy = false;
     }
   #else
     TaskHandle_t imu_task_handle;
@@ -373,9 +377,7 @@ void setup() {
   for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
   Serial.println();
 
-  //gps
-  gps_setup();   
-  //gps_debug(); //uncomment to debug gps messages
+
 
   //debug i2c
   print_i2c_scan();
@@ -386,7 +388,7 @@ void setup() {
   //Set radio channels to default (safe) values before entering main loop
   for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
 
-  //Initialize IMU communication
+  //IMU
   for(int i=0;i<10;i++) {
     int rv = imu_Setup();
     if(rv==0) break;
@@ -394,29 +396,29 @@ void setup() {
     delay(500);
   }
 
-  //barometer and magnetometer
+  //Barometer, External Magnetometer, Gps
   baro_Setup();
   mag_Setup();
+  gps_setup();   
+  //gps_debug(); //uncomment to debug gps messages
 
-  //Init Motors & servos
+  //Servos (set servos first in case motors overwrite frequency of shared timers)
+  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
+    out[i].begin(HW_PIN_OUT[i], 50, 1000, 2000); //Standard servo at 50Hz
+
+    out_command[i] = 0; //keep at 0 if you are using servo outputs for motors
+    out[i].writeFactor(out_command[i]); //start the PWM output to the servos
+  } 
+
+  //Motors
   for(int i=0;i<out_MOTOR_COUNT;i++) {
     //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
     out[i].begin(HW_PIN_OUT[i], 400, 900, 2000); //Standard PWM: 400Hz, 900-2000 us
     //out[i].begin(HW_PIN_OUT[i], 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
-  }
-  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
-    out[i].begin(HW_PIN_OUT[i], 50, 1000, 2000); //Standard servo at 50Hz
-  }
-  //Arm motors
-  for(int i=0;i<out_MOTOR_COUNT;i++) {
-    out_command[i] = 0;
+
+    out_command[i] = 0; //set output to 0 for motors
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
-  //Arm servo channels
-  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
-    out_command[i] = 0; //keep at 0 if you are using servo outputs for motors
-    out[i].writeFactor(out_command[i]); //start the PWM output to the servos
-  } 
 
   //Get IMU error to zero accelerometer and gyro readings, assuming vehicle is level when powered up
   calibrate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out. (Or.. keep this active to calibrate on every startup.)
@@ -471,9 +473,10 @@ void loop() {
     if(rcin_telem_cnt % 10 == 0) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
 
-  //Debugging - Print data at 50hz, uncomment line(s) for troubleshooting
-  if (loop_time - print_time > 20000) {
-    print_time = micros();
+  //Debugging - Print data at print_interval microseconds, uncomment line(s) for troubleshooting
+  uint32_t print_interval = 100000;
+  if (micros() - print_time > print_interval) {
+    print_time += print_interval;
     print_need_newline = false;
     //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
     print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
@@ -539,7 +542,7 @@ void imu_loop() {
   rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
 
   //Uncomment to debug without remote (and no battery!) - pitch drone up: motors m1,m3 should increase and m2,m4 decrease; bank right: m1,m2 increase; yaw right: m1,m4 increase
-  //rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
+  rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
 
   //PID Controller - SELECT ONE:
   control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint

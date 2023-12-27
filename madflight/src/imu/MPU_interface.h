@@ -3,65 +3,88 @@
 #include "Arduino.h"
 #include <SPI.h>
 
+//Datasheet: spi clock up to 1MHz for register operations, up to 20MHz allowed for reading data.
+#define MPU_SPI_FREQ_SLOW 1000000
+#define MPU_SPI_FREQ_FAST 20000000
+
+//Datasheet: i2c clock up to 400kHz
+#define MPU_I2C_FREQ_SLOW 400000
+#define MPU_I2C_FREQ_FAST 1000000 //2.5 times overclocking
+
 class MPU_Interface {
   public:
+    int freqSlow;
+    int freqFast;
+  
     virtual void begin() = 0;
+
+    virtual void setFreq(int freq) = 0;
+
     virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) = 0;
+    
     virtual void ReadRegs( uint8_t reg, uint8_t *data, uint8_t n ) = 0;
+    
     unsigned int ReadReg(uint8_t reg) {
-        uint8_t data = 0;
-        ReadRegs(reg, &data, 1);
-        return data;
+      uint8_t data = 0;
+      ReadRegs(reg, &data, 1);
+      return data;
+    }
+    
+    inline void setFreqSlow() {
+      setFreq(freqSlow);
+    }
+
+    inline void setFreqFast() {
+      setFreq(freqFast);
     }
 };
 
 //================================================================
 // SPI
 //================================================================
-#define READ_FLAG 0x80
-
 class MPU_InterfaceSPI : public MPU_Interface {
   public:
-    // Using 8MHz as it appears to work for both reg ops as reading data. Datasheet: spi clock up to 1MHz for register operations, up to 20MHz allowed for reading data.
-    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, int freq = 800000) {
-        _spi = spi; 
-        _spi_cs = cs;
-        set_spi_freq(freq);
+    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs) {
+      _spi = spi; 
+      _spi_cs = cs;
+      freqSlow = MPU_SPI_FREQ_SLOW;
+      freqFast = MPU_SPI_FREQ_FAST;
+      setFreq(freqSlow);
     }
 
     virtual void begin() {
-        pinMode(_spi_cs, OUTPUT);
-        digitalWrite(_spi_cs, HIGH);
+      pinMode(_spi_cs, OUTPUT);
+      digitalWrite(_spi_cs, HIGH);
     }
 
-    void set_spi_freq(int freq) {
-        _spi_freq = freq;
+    void setFreq(int freq) {
+      _freq = freq;
     }
 
     virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) {
-        _spi->beginTransaction(SPISettings(_spi_freq, MSBFIRST, SPI_MODE3));
-        digitalWrite(_spi_cs, LOW);
-        _spi->transfer(reg);
-        unsigned int temp_val = _spi->transfer(data);
-        digitalWrite(_spi_cs, HIGH);
-        _spi->endTransaction();
-        return temp_val;
+      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, SPI_MODE3));
+      digitalWrite(_spi_cs, LOW);
+      _spi->transfer(reg & 0x7f);
+      unsigned int temp_val = _spi->transfer(data);
+      digitalWrite(_spi_cs, HIGH);
+      _spi->endTransaction();
+      return temp_val;
     }
 
     virtual void ReadRegs( uint8_t reg, uint8_t *data, uint8_t n ) {
-        _spi->beginTransaction(SPISettings(_spi_freq, MSBFIRST, SPI_MODE3));
-        digitalWrite(_spi_cs, LOW);
-        _spi->transfer(reg | READ_FLAG);
-        for(int i = 0; i < n; i++) {
-            data[i] = _spi->transfer(0x00);
-        }
-        digitalWrite(_spi_cs, HIGH);
-        _spi->endTransaction();
+      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, SPI_MODE3));
+      digitalWrite(_spi_cs, LOW);
+      _spi->transfer(reg | 0x80);
+      for(int i = 0; i < n; i++) {
+        data[i] = _spi->transfer(0x00);
+      }
+      digitalWrite(_spi_cs, HIGH);
+      _spi->endTransaction();
     }
 
 private:
     SPIClass * _spi;
-    int _spi_freq;  
+    int _freq;  
     uint8_t _spi_cs;
     unsigned int _WriteReg_SPI(uint8_t reg, uint8_t data);
     void _ReadRegs_SPI(uint8_t reg, uint8_t *buf, int n);
@@ -75,11 +98,18 @@ template <typename WireType>
 class MPU_InterfaceI2C : public MPU_Interface{
   public:
     MPU_InterfaceI2C(WireType *i2c, uint8_t i2c_adr) {
-        _i2c = i2c;
-        _i2c_adr = i2c_adr;
+      _i2c = i2c;
+      _i2c_adr = i2c_adr;
+      freqSlow = MPU_I2C_FREQ_SLOW;
+      freqFast = MPU_I2C_FREQ_FAST;
+      setFreq(freqSlow);
     }
 
     virtual void begin() {
+    }
+
+    void setFreq(int freq) {
+      _i2c->setClock(freq);
     }
 
     virtual unsigned int WriteReg( uint8_t reg, uint8_t data ) {
