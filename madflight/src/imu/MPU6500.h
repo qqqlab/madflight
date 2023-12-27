@@ -1,11 +1,11 @@
-//2023-12-27 Invensense MPU-6000/6050 library
+//2023-12-27 Invensense MPU-6500 library
 //sampling rate acc+gyro 1000Hz
 
 #pragma once
 
 #include "MPU_Interface.h"
 
-class MPU60X0 {
+class MPU6500 {
 private:
     MPU_Interface *_iface;
 
@@ -15,21 +15,7 @@ public:
     float temperature;
     float acc_multiplier;
     float gyro_multiplier;
-    
-    uint8_t rev1 = 0;
-    uint8_t rev2 = 0;
-    int acc_resolution = 32786;
 
-void set_acc_resolution() {
-    uint8_t data[6] = {0};
-    _iface->ReadRegs(MPUREG_XA_OFFS_H,data,6);
-    rev1 = ((data[5]&1)<<2) | ((data[3]&1)<<1) | ((data[1]&1)<<0);
-    rev2 = _iface->ReadReg(MPUREG_PRODUCT_ID) & 0x0F;
-    //rev 0.4 and 1.x have half acc resolution
-    acc_resolution = ( (rev1 == 0 && rev2 == 4) || (rev1 == 1) ? 16384 : 32786);
-    
-    Serial.printf("MPU60X0 revision:%d.%d\n",(int)rev1,(int)rev2);
-}
 
 MPU60X0(MPU_Interface *iface) {
   _iface = iface;
@@ -40,14 +26,13 @@ bool begin(int gyro_scale_dps=250, int acc_scale_g=2) {
   _iface->begin();
 
   //config
-  _iface->WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // MPU6050 Reset
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // Reset
   delay(20);
-  _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // MPU6050 Clock Source XGyro
-  _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // MPU6050 Enable Acc & Gyro
-  _iface->WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);    // MPU6050 Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
+  _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source XGyro
+  _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
+  _iface->WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);    // Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
   
   //set scale
-  set_acc_resolution(); //do this first, then scale
   set_gyro_scale_dps(gyro_scale_dps);
   set_acc_scale_g(acc_scale_g);
 
@@ -57,12 +42,12 @@ bool begin(int gyro_scale_dps=250, int acc_scale_g=2) {
 
   //check whoami
   int wai = whoami();
-  if(wai != 0x68) Serial.printf("WARNING: MPU60X0 whoami mismatch, got:0x%02X expected:0x68\n",wai);
+  if(wai != 0x70) Serial.printf("WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70\n",wai);
 
   return 0;
 }
 
-// MPU6050 should return 0x68
+// MPU6500 should return 0x70
 unsigned int whoami()
 {
     _iface->setFreqSlow();
@@ -74,16 +59,16 @@ void set_acc_scale_g(int scale_in_g)
     _iface->setFreqSlow();
     if(scale_in_g <= 2) {
       _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);
-      acc_multiplier = 2.0 / acc_resolution;
+      acc_multiplier = 2.0 / 32786.0;
     }else if(scale_in_g <= 4) { 
       _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_4G);
-      acc_multiplier = 4.0 / acc_resolution;
+      acc_multiplier = 4.0 / 32786.0;
     }else if(scale_in_g <= 8) { 
       _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_8G);
-      acc_multiplier = 8.0 / acc_resolution;
+      acc_multiplier = 8.0 / 32786.0;
     }else{ 
       _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_16G);
-      acc_multiplier = 16.0 / acc_resolution;
+      acc_multiplier = 16.0 / 32786.0;
     }
 }
 

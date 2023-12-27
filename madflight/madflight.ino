@@ -71,15 +71,14 @@ blink interval longer than 1 second - loop() is taking too much time
 // IMU SENSOR
 //-------------------------------------
 //Uncomment only one USE_IMU_xxx
-#define USE_IMU_MPU6000    //I2C or SPI
-//#define USE_IMU_MPU6050    //I2C only, same as MPU6000 but I2C only
-//#define USE_IMU_MPU9150    //I2C only, same as MPU6050 plus magnetometer
-//#define USE_IMU_MPU6500    //I2C or SPI
-//#define USE_IMU_MPU9250    //I2C or SPI, same as MPU6500 plus magnetometer
-
-//Uncomment one USE_IMU_BUS - use SPI if available
-#define USE_IMU_BUS_SPI
-//#define USE_IMU_BUS_I2C
+//#define USE_IMU_SPI_MPU6000
+//#define USE_IMU_SPI_MPU6500
+#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
+//#define USE_IMU_I2C_MPU6000
+//#define USE_IMU_I2C_MPU6050
+//#define USE_IMU_I2C_MPU6500
+//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
+//#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
 
 //Set I2C address. If unknown, see output of print_i2c_scan()
 #define IMU_I2C_ADR 0x69 //MPU9150=0x69 MPU9250=0x68
@@ -115,18 +114,18 @@ blink interval longer than 1 second - loop() is taking too much time
 //#define USE_BARO_BMP280
 //#define USE_BARO_MS5611
 #define USE_BARO_NONE
-//set barometer I2C address. If unknown, see output of print_i2c_scan()
-#define BARO_I2C_ADR 0x76 
+
+#define BARO_I2C_ADR 0x76 //set barometer I2C address. If unknown, see output of print_i2c_scan()
 #include "src/baro/baro.h" //first define BARO_xxx then include baro.h
 
 //-------------------------------------
-// MAGNETOMETER SENSOR
+// EXTERNAL MAGNETOMETER SENSOR
 //-------------------------------------
 //Uncomment only one USE_MAG_xxx
 //#define USE_MAG_QMC5883L
 #define USE_MAG_NONE
-//set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-#define MAG_I2C_ADR 0 
+
+#define MAG_I2C_ADR 0 //set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
 #include "src/mag/mag.h" //first define MAG_xxx then include mag.h
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
@@ -281,66 +280,6 @@ float B_mag = lowpass_to_beta(LP_mag, loop_freq);
 float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 
 //========================================================================================================================//
-//                                          IMU INTERRUPT HANDLER                                                         //
-//========================================================================================================================//
-//This runs the IMU updates in separate task triggered from pin HW_PIN_IMU_INT interrupt. By doing this, unused time can be 
-//used in loop() for other functionality. Without USE_IMU_INTERRUPT any unused time in loop() is wasted. Instead of running 
-//the IMU update directly in the interrupt handler, a high priority task is used. This prevents RTOS watchdog resets.
-//The delay (latency) from rising edge INT pin to start of imu_loop is approx. 10 us on ESP32 and 50 us on RP2040.
-#ifdef USE_IMU_INTERRUPT
-  #ifndef HW_USE_FREERTOS
-    volatile bool imu_interrupt_busy = false;
-    void imu_task_setup() {
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
-    }
-
-    void imu_interrupt_handler() {
-      if(imu_interrupt_busy) return;
-      imu_interrupt_busy = true;
-      imu_loop();
-      imu_interrupt_busy = false;
-    }
-  #else
-    TaskHandle_t imu_task_handle;
-
-    void imu_task_setup() {
-      xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
-      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
-    }
-
-    void imu_task(void*) {
-      for(;;) {
-        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        imu_loop();
-      }
-    }
-
-    void imu_interrupt_handler() {
-      //let imu_task handle the interrupt
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-  #endif
-#else
-  void imu_task_setup() {}
-#endif
-
-//========================================================================================================================//
-//                                          SETUP1() LOOP1() EXECUTING ON SECOND CORE                                     //
-//========================================================================================================================//
-//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040
-/*
-void setup1() {
-  Serial.println("setup1()");
-}
-void loop1() {
-  Serial.println("loop1()"); delay(100);
-}
-//*/
-
-//========================================================================================================================//
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
 
@@ -489,7 +428,7 @@ void loop() {
     //print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
-    //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
+    print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
     //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
     //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
     if(print_need_newline) Serial.println();
@@ -542,7 +481,7 @@ void imu_loop() {
   rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
 
   //Uncomment to debug without remote (and no battery!) - pitch drone up: motors m1,m3 should increase and m2,m4 decrease; bank right: m1,m2 increase; yaw right: m1,m4 increase
-  rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
+  //rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
 
   //PID Controller - SELECT ONE:
   control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
@@ -565,6 +504,67 @@ void imu_loop() {
   uint32_t rt = micros() - loop_time;
   if(loop_rt < rt) loop_rt = rt; 
 }
+
+//========================================================================================================================//
+//                                          IMU INTERRUPT HANDLER                                                         //
+//========================================================================================================================//
+// This runs the IMU updates triggered from pin HW_PIN_IMU_INT interrupt. By doing this, unused time can be used in loop() 
+// for other functionality. Without USE_IMU_INTERRUPT any unused time in loop() is wasted. When using FreeRTOS with 
+// HW_USE_FREERTOS the IMU update is not executed directly in the interrupt handler, but a high priority task is used. 
+// This prevents FreeRTOS watchdog resets. The delay (latency) from rising edge INT pin to start of imu_loop is approx. 
+// 10 us on ESP32 and 50 us on RP2040.
+#ifdef USE_IMU_INTERRUPT
+  #ifndef HW_USE_FREERTOS
+    volatile bool imu_interrupt_busy = false;
+    void imu_task_setup() {
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
+    }
+
+    void imu_interrupt_handler() {
+      if(imu_interrupt_busy) return;
+      imu_interrupt_busy = true;
+      imu_loop();
+      imu_interrupt_busy = false;
+    }
+  #else
+    TaskHandle_t imu_task_handle;
+
+    void imu_task_setup() {
+      xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
+      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
+    }
+
+    void imu_task(void*) {
+      for(;;) {
+        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        imu_loop();
+      }
+    }
+
+    void imu_interrupt_handler() {
+      //let imu_task handle the interrupt
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+  #endif
+#else
+  void imu_task_setup() {}
+#endif
+
+//========================================================================================================================//
+//                                          SETUP1() LOOP1() EXECUTING ON SECOND CORE (only ESP32 and RP2040)             //
+//========================================================================================================================//
+//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040
+/*
+void setup1() {
+  Serial.println("setup1()");
+}
+void loop1() {
+  Serial.println("loop1()"); delay(100);
+}
+//*/
 
 //========================================================================================================================//
 //                      IMU_LOOP() FUNCTIONS - in same order as they are called from imu_loop()                           //
