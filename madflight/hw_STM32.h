@@ -66,7 +66,7 @@ const int HW_PIN_LED      = PC13;
 #define LED_ON 0 //low = on
 
 //Battery voltage divider:
-const int HW_PIN_BAT_ADC = PB0;
+const int HW_PIN_BAT_ADC  = PB0;
 const int HW_PIN_BAT_CURR = PB1;
 
 //GPS:
