@@ -140,27 +140,27 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 |            - | VB  |   SWD pins    | 3V3 | -
 |          LED | C13 |               | G   | -
 |         FREE | C14 |               | 5V  | 5V input (*)
-|         FREE | C15 |               | B9  | FREE
-|            - | R   |               | B8  | PWM6
+|         FREE | C15 |               | B9  | PWM10(t4)
+|            - | R   |               | B8  | PWM9(t4)
 |         FREE | A0  |               | B7  | I2C_SCL
 |         FREE | A1  |               | B6  | I2C_SDA
-|       GPS_TX | A2  |               | B5  | PWM2
-|       GPS_RX | A3  |               | B4  | FREE
+|       GPS_TX | A2  |               | B5  | PWM8(t3)
+|       GPS_RX | A3  |               | B4  | PWM7(t3)
 |       IMU_CS | A4  |               | B3  | RCIN_RX
 |     SPI_SCLK | A5  |               | A15 | RCIN_TX
 |     SPI_MISO | A6  |               | A12 | USB_DP
 |     SPI_MOSI | A7  |               | A11 | USB_DN
-|        BAT_I | B0  |               | A10 | PWM5
-|        BAT_V | B1  |               | A9  | PWM4
-|         PWM1 | B2  |               | A8  | PWM3
-|     IMU_EXTI | B10 |               | B15 | FREE
-|            - | 3V3 |               | B14 | FREE
-|            - | G   |               | B13 | FREE
+|        BAT_I | B0  |               | A10 | PWM6(t1)
+|        BAT_V | B1  |               | A9  | PWM5(t1)
+|         FREE | B2  |               | A8  | PWM4(t1)
+|     IMU_EXTI | B10 |               | B15 | PWM3(t1)
+|            - | 3V3 |               | B14 | PWM2(t1)
+|            - | G   |               | B13 | PWM1(t1)
 |            - | 5V  | USB connector | B12 | FREE
 
 Board: LED: C13, key button: A0
 
-This is basically the same pinout as a MATEKF411SE flight controller, except: LED and IMU_INT
+PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins connected to the same timer have all the same frequency.
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
