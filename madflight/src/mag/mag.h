@@ -10,6 +10,10 @@ The magnetometer sample rate is 100Hz
 Body frame is NED: x-axis North(front), y-axis East(right), z-axis Down
 ========================================================================================================================*/
 
+#ifndef MAG_I2C_ADR
+  #define MAG_I2C_ADR 0
+#endif
+
 uint32_t mag_time = 0;
 
 void mag_Read2(float *mx, float *my, float *mz);

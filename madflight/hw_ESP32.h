@@ -12,44 +12,94 @@ This file defines:
 ########################################################################################################################*/
 
 //======================================================================================================================//
-//                         HARDWARE DEFINITION for Espressif ESP32 DevKitC 38 pin board                                 //
+//                    DEFAULT BOARD (used if no board set in madflight.ino)                                             //
 //======================================================================================================================//
-//ESP32 - Most pins can be assigned freely
-//This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
+#ifndef HW_BOARD_NAME
+#define HW_BOARD_NAME "DEFAULT ESP32 BOARD - Espressif ESP32 DevKitC 38 pin" //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
+#define HW_MCU "ESP32" //ESP32 - Most pins can be assigned freely
 
-#define HW_USE_FREERTOS //ESP32 always uses FreeRTOS
+//-------------------------------------
+// IMU SENSOR
+//-------------------------------------
+//Uncomment only one USE_IMU_xxx
+//#define USE_IMU_SPI_MPU6000
+#define USE_IMU_SPI_MPU6500
+//#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
+//#define USE_IMU_I2C_MPU6000
+//#define USE_IMU_I2C_MPU6050
+//#define USE_IMU_I2C_MPU6500
+//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
+//#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
 
-#include <SPI.h>                         //SPI communication
-#include "src/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
+#define IMU_I2C_ADR 0 //Set I2C address. If unknown, see output of print_i2c_scan()
 
+//Uncomment only one sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
+//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
+#define IMU_ROTATE_CW0
+//#define IMU_ROTATE_CW90
+//#define IMU_ROTATE_CW180
+//#define IMU_ROTATE_CW270
+//#define IMU_ROTATE_CW0FLIP
+//#define IMU_ROTATE_CW90FLIP
+//#define IMU_ROTATE_CW180FLIP
+//#define IMU_ROTATE_CW270FLIP
+
+//-------------------------------------
+// BAROMETER SENSOR
+//-------------------------------------
+//Uncomment only one USE_BARO_xxx
+//#define USE_BARO_BMP280
+//#define USE_BARO_MS5611
+#define USE_BARO_NONE
+
+#define BARO_I2C_ADR 0 //set barometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
+
+//-------------------------------------
+// EXTERNAL MAGNETOMETER SENSOR
+//-------------------------------------
+//Uncomment only one USE_MAG_xxx
+//#define USE_MAG_QMC5883L
+#define USE_MAG_NONE
+
+#define MAG_I2C_ADR 0 //set magnetometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
+
+//-------------------------------------
+// PIN DEFINITIONS
+//-------------------------------------
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
 const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
-#define LED_ON 1 //high = on
+const int HW_LED_ON       =  1; //0:low is on, 1:high is on
 
-//Battery voltage divider:
-const int HW_PIN_BAT_ADC  = 34;
+//IMU SPI:
+const int HW_PIN_SPI_MOSI = 21; //   defaults: VSPI 23, HSPI 13
+const int HW_PIN_SPI_MISO = 36; //VP defaults: VSPI 19, HSPI 12
+const int HW_PIN_SPI_SCLK = 19; //   defaults: VSPI 18, HSPI 14
+const int HW_PIN_IMU_CS   = 18; //   defaults: VSPI  5, HSPI 15
+const int HW_PIN_IMU_EXTI = 39; //VN only used when USE_IMU_INTERRUPT is defined
+
+//BARO/MAG I2C:
+const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
+const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
+
+//Outputs:
+const int HW_OUT_COUNT    = 11;
+const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
 
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
-
-//GPS:
-const int HW_PIN_GPS_RX   = 17;
-const int HW_PIN_GPS_TX   =  5;
-HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
 
 //RC Receiver:
 const int HW_PIN_RCIN_RX  = 35; //also used as PPM input
 const int HW_PIN_RCIN_TX  = 32;
-HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
 
-//IMU:
-const int HW_PIN_IMU_INT = 39; //VN only used when USE_IMU_INTERRUPT is defined
-#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
+//GPS:
+const int HW_PIN_GPS_RX   = 17;
+const int HW_PIN_GPS_TX   =  5;
 
-//I2C:
-const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
-const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
+//Battery voltage divider:
+const int HW_PIN_BAT_V  = 34;
+const int HW_PIN_BAT_I  = -1;
 
 /*--------------------------------------------------------------------------------------------------
   IMPORTANT
@@ -62,29 +112,41 @@ const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
   
   So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
 ----------------------------------------------------------------------------------------------------*/  
-//#define USE_ESP32_SOFTWIRE
+//#define USE_ESP32_SOFTWIRE //uncomment to use SoftWire instead of Wire
 
+//-------------------------------------
+//Include Libraries
+//-------------------------------------
 #ifdef USE_ESP32_SOFTWIRE
   #include "src/HW_ESP32/ESP32_SoftWire.h"
+#else
+  #include <Wire.h>
+#endif
+#include <SPI.h>                         //SPI communication
+#include "src/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
+
+//-------------------------------------
+//Bus Setup
+//-------------------------------------
+HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
+HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
+SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
+#ifdef USE_ESP32_SOFTWIRE
   typedef SoftWire HW_WIRETYPE; //typedef to force IMU to use SoftWire
   typedef SoftWire TwoWire; //typedef to force BARO to use SoftWire
   HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
 #else
-  #include <Wire.h>
   typedef TwoWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
   HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 #endif
 
-//SPI:
-const int HW_PIN_SPI_MOSI = 21; //   defaults: VSPI 23, HSPI 13
-const int HW_PIN_SPI_MISO = 36; //VP defaults: VSPI 19, HSPI 12
-const int HW_PIN_SPI_SCLK = 19; //   defaults: VSPI 18, HSPI 14
-const int HW_PIN_SPI_CS   = 18; //   defaults: VSPI  5, HSPI 15
-SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
+#endif //#ifndef HW_BOARD_NAME
 
-//Outputs:
-#define HW_OUT_COUNT 11
-const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+//======================================================================================================================//
+//                    hw_setup()
+//======================================================================================================================//
+#define HW_USE_FREERTOS //ESP32 always uses FreeRTOS
+#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
 
 //--------------------------------------------------------------------
 // RTOS task for setup1() and loop1() on second core
@@ -132,9 +194,9 @@ void hw_setup()
 
   rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
 
-  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000); //Note: this is 2.5 times the MPU6050/MPU9150 spec sheet 400 kHz max... 
+  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
 
-  spi->begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_SPI_CS);
+  spi->begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
 
   startLoop1Task();
 }

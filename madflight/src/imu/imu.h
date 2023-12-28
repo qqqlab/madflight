@@ -14,19 +14,19 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 ========================================================================================================================*/
 
 //handle rotation for different mounting positions
-#if defined IMU_ROTATE_YAW90
+#if defined IMU_ROTATE_CW90
   #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=tmp;   tmp=*gx; *gx=-*gy; *gy=tmp;   tmp=*mx; *mx=-*my; *my=tmp; }while(0)
-#elif defined IMU_ROTATE_YAW180
+#elif defined IMU_ROTATE_CW180
   #define IMU_ROTATE() do{ *ax=-*ax; *ay=-*ay;   *gx=-*gx; *gy=-*gy;   *mx=-*mx; *my=-*my; }while(0)
-#elif defined IMU_ROTATE_YAW270
+#elif defined IMU_ROTATE_CW270
   #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=-tmp;   tmp=*gx; *gx=*gy; *gy=-tmp;   tmp=*mx; *mx=*my; *my=-tmp; }while(0)
-#elif defined IMU_ROTATE_ROLL180
+#elif defined IMU_ROTATE_CW0FLIP
   #define IMU_ROTATE() do{ *ay=-*ay; *az=-*az;   *gy=-*gy; *gz=-*gz;   *my=-*my; *mz=-*mz; }while(0)
-#elif defined IMU_ROTATE_YAW90_ROLL180
+#elif defined IMU_ROTATE_CW90FLIP
   #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=tmp; *az=-*az;   tmp=*gx; *gx=*gy; *gy=tmp; *gz=-*gz;   tmp=*mx; *mx=*my; *my=tmp; *mz=-*mz; }while(0)
-#elif defined IMU_ROTATE_YAW180_ROLL180
+#elif defined IMU_ROTATE_CW180FLIP
   #define IMU_ROTATE() do{ *ax=-*ax; *az=-*az;   *gx=-*gx; *gz=-*gz;   *mx=-*mx; *mz=-*mz; }while(0)
-#elif defined IMU_ROTATE_YAW270_ROLL180
+#elif defined IMU_ROTATE_CW270FLIP
   #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=-tmp; *az=-*az;   tmp=*gx; *gx=-*gy; *gy=-tmp; *gz=-*gz;   tmp=*mx; *mx=-*my; *my=-tmp; *mz=-*mz; }while(0)
 #else
   #define IMU_ROTATE()
@@ -39,19 +39,19 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #define IMU_TYPE "USE_IMU_SPI_MPU6000"
   #define USE_IMU_BUS_SPI
   #define IMU_HAS_MAG 0
-  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_SPI_CS);
+  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX mpu(MPUXXXX::MPU6000, &mpu_iface);
 #elif defined USE_IMU_SPI_MPU6500
   #define IMU_TYPE "USE_IMU_SPI_MPU6500"
   #define USE_IMU_BUS_SPI
   #define IMU_HAS_MAG 0
-  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_SPI_CS);
+  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX mpu(MPUXXXX::MPU6500, &mpu_iface);
 #elif defined USE_IMU_SPI_MPU9250
   #define IMU_TYPE "USE_IMU_SPI_MPU9250"
   #define USE_IMU_BUS_SPI
   #define IMU_HAS_MAG 1
-  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_SPI_CS);
+  MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX mpu(MPUXXXX::MPU9250, &mpu_iface);
 #elif defined USE_IMU_I2C_MPU6000
   #define IMU_TYPE "USE_IMU_I2C_MPU6000"

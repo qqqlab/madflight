@@ -1,4 +1,4 @@
-//Arduino ESP32 / RP2040 Flight Controller
+//Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
 //Copyright (c) 2023 https://github.com/qqqlab/madflight
 //Copyright (c) 2022 Nicholas Rehm - dRehmFlight
@@ -31,9 +31,16 @@ blink interval longer than 1 second - loop() is taking too much time
 ##########################################################################################################################*/
 
 //========================================================================================================================//
+//                                                 BOARD                                                                  //
+//========================================================================================================================//
+
+//uncomment & change this to the flight controller you want to use, or comment it out to use the default from hw_XXXX.h
+//#include "boards/betaflight/AIRB-OMNIBUSF4.h"
+
+//========================================================================================================================//
 //                                                 INCLUDES                                                               //
 //========================================================================================================================//
-//include hardware specific code
+//include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
   #include "hw_ESP32.h"
 #elif defined ARDUINO_ARCH_RP2040
@@ -53,7 +60,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // APPLICATION SETTINGS
 //-------------------------------------
-#define USE_IMU_INTERRUPT //Uncomment to use interrupt pin and not loop() to trigger loop_imu()
+//#define USE_LOOP_FOR_IMU_INTERRUPT //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
 
 //-------------------------------------
 // RC RECEIVER
@@ -70,36 +77,9 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // IMU SENSOR
 //-------------------------------------
-//Uncomment only one USE_IMU_xxx
-//#define USE_IMU_SPI_MPU6000
-#define USE_IMU_SPI_MPU6500
-//#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
-//#define USE_IMU_I2C_MPU6000
-//#define USE_IMU_I2C_MPU6050
-//#define USE_IMU_I2C_MPU6500
-//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
-//#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
-
-//Set I2C address. If unknown, see output of print_i2c_scan()
-#define IMU_I2C_ADR 0x69 //MPU9150=0x69 MPU9250=0x68
-
-//Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
-#define IMU_GYRO_DPS 500
-
-//Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
-#define IMU_ACCEL_G 2
-
-//Uncomment only one sensor orientation. The labels is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
-//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
-#define IMU_ROTATE_NONE
-//#define IMU_ROTATE_YAW90
-//#define IMU_ROTATE_YAW180
-//#define IMU_ROTATE_YAW270
-//#define IMU_ROTATE_ROLL180
-//#define IMU_ROTATE_YAW90_ROLL180
-//#define IMU_ROTATE_YAW180_ROLL180
-//#define IMU_ROTATE_YAW270_ROLL180
-#include "src/imu/imu.h" //first define IMU_xxx then include IMO.h
+#define IMU_GYRO_DPS 500 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
+#define IMU_ACCEL_G 2 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
+#include "src/imu/imu.h" //first set all #define IMU_xxx then include IMO.h
 
 //-------------------------------------
 // GPS
@@ -110,13 +90,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // BAROMETER SENSOR
 //-------------------------------------
-//Uncomment only one USE_BARO_xxx
-//#define USE_BARO_BMP280
-//#define USE_BARO_MS5611
-#define USE_BARO_NONE
-
-#define BARO_I2C_ADR 0x76 //set barometer I2C address. If unknown, see output of print_i2c_scan()
-#include "src/baro/baro.h" //first define BARO_xxx then include baro.h
+#include "src/baro/baro.h" //first set all #define BARO_xxx then include baro.h
 
 //-------------------------------------
 // EXTERNAL MAGNETOMETER SENSOR
@@ -126,7 +100,7 @@ blink interval longer than 1 second - loop() is taking too much time
 #define USE_MAG_NONE
 
 #define MAG_I2C_ADR 0 //set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-#include "src/mag/mag.h" //first define MAG_xxx then include mag.h
+#include "src/mag/mag.h" //first set all #define MAG_xxx then include mag.h
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
 //========================================================================================================================//
@@ -286,7 +260,7 @@ float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 void setup() {
   //Set built in LED to turn on to signal startup
   pinMode(HW_PIN_LED, OUTPUT);
-  digitalWrite(HW_PIN_LED, LED_ON);
+  digitalWrite(HW_PIN_LED, HW_LED_ON);
 
   //start console serial
   Serial.begin(115200);
@@ -300,23 +274,25 @@ void setup() {
   //hardware specific setup for spi and Wire (see hw_xxx.h)
   hw_setup();
 
-#ifdef USE_IMU_INTERRUPT
-  Serial.println("USE_IMU_INTERRUPT");
+  Serial.println("HW_BOARD_NAME=" HW_BOARD_NAME);
+#ifdef HW_MCU
+  Serial.println("HW_MCU=" HW_MCU);
+#endif  
+#ifdef USE_LOOP_FOR_IMU_INTERRUPT
+  Serial.println("USE_LOOP_FOR_IMU_INTERRUPT");
 #endif
 
   //print pin config
   Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
-  Serial.printf("HW_PIN_BAT_ADC=%d\n", HW_PIN_BAT_ADC);
-  Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-  Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);   
-  Serial.printf("HW_PIN_IMU_INT=%d\n",HW_PIN_IMU_INT);
+  Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
+  Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
+  Serial.printf("HW_PIN_IMU_EXTI=%d\n",HW_PIN_IMU_EXTI);
   Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
-  Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d CS=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK, HW_PIN_SPI_CS);
-  Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);
-  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
-  Serial.println();
-
-
+  Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
+  Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+  Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+  Serial.printf("HW_PIN_BAT_V=%d\n", HW_PIN_BAT_V);
+  Serial.printf("HW_PIN_BAT_I=%d\n", HW_PIN_BAT_I);
 
   //debug i2c
   print_i2c_scan();
@@ -374,11 +350,12 @@ void setup() {
   //set times for loop
   loop_RateBegin();
 
-  //start IMU task (only if USE_IMU_INTERRUPT is defined)
-  imu_task_setup();
+  #ifndef USE_LOOP_FOR_IMU_INTERRUPT
+    imu_interrupt_setup(); //setup imu interrupt handlers
+  #endif
 
   //Set built in LED off to signal end of startup
-  digitalWrite(HW_PIN_LED, !LED_ON);
+  digitalWrite(HW_PIN_LED, !HW_LED_ON);
 }
 
 //========================================================================================================================//
@@ -387,7 +364,7 @@ void setup() {
 
 void loop() {
   //only call imu_loop here if we're not using interrupts
-  #ifndef USE_IMU_INTERRUPT
+  #ifdef USE_LOOP_FOR_IMU_INTERRUPT
     while ( (micros() - loop_time) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
     imu_loop();
   #endif
@@ -508,16 +485,16 @@ void imu_loop() {
 //========================================================================================================================//
 //                                          IMU INTERRUPT HANDLER                                                         //
 //========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_INT interrupt. By doing this, unused time can be used in loop() 
-// for other functionality. Without USE_IMU_INTERRUPT any unused time in loop() is wasted. When using FreeRTOS with 
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. By doing this, unused time can be used in loop() 
+// for other functionality. With USE_LOOP_FOR_IMU_INTERRUPT any unused time in loop() is wasted. When using FreeRTOS with 
 // HW_USE_FREERTOS the IMU update is not executed directly in the interrupt handler, but a high priority task is used. 
 // This prevents FreeRTOS watchdog resets. The delay (latency) from rising edge INT pin to start of imu_loop is approx. 
 // 10 us on ESP32 and 50 us on RP2040.
-#ifdef USE_IMU_INTERRUPT
+#ifndef USE_LOOP_FOR_IMU_INTERRUPT
   #ifndef HW_USE_FREERTOS
     volatile bool imu_interrupt_busy = false;
-    void imu_task_setup() {
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
+    void imu_interrupt_setup() {
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
     }
 
     void imu_interrupt_handler() {
@@ -529,10 +506,10 @@ void imu_loop() {
   #else
     TaskHandle_t imu_task_handle;
 
-    void imu_task_setup() {
+    void imu_interrupt_setup() {
       xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
       //vTaskCoreAffinitySet(IsrTaskHandle, 0);
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_INT), imu_interrupt_handler, RISING); 
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
     }
 
     void imu_task(void*) {
@@ -549,8 +526,6 @@ void imu_loop() {
       portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
   #endif
-#else
-  void imu_task_setup() {}
 #endif
 
 //========================================================================================================================//
@@ -574,9 +549,9 @@ void loop_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
   //DISARMED: long off, short on, ARMED: long on, short off
   if(loop_cnt % loop_freq <= loop_freq / 10) 
-    digitalWrite(HW_PIN_LED, (out_armed ? !LED_ON : LED_ON) ); //short interval
+    digitalWrite(HW_PIN_LED, (out_armed ? !HW_LED_ON : HW_LED_ON) ); //short interval
   else
-    digitalWrite(HW_PIN_LED, (out_armed ? LED_ON : !LED_ON) ); //long interval
+    digitalWrite(HW_PIN_LED, (out_armed ? HW_LED_ON : !HW_LED_ON) ); //long interval
 }
 
 void imu_GetData() {
@@ -1128,7 +1103,7 @@ void calibrate_ESCs() { //TODO
     while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
     ts = micros();
 
-    digitalWrite(HW_PIN_LED, LED_ON); //LED on to indicate we are not in main loop
+    digitalWrite(HW_PIN_LED, HW_LED_ON); //LED on to indicate we are not in main loop
 
     rcin_GetCommands(); //Pulls current available radio commands
     rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
@@ -1348,9 +1323,9 @@ void die(String msg) {
     Serial.print(msg);
     Serial.printf(" [%d]\n",cnt++);
     for(int i=0;i<10;i++) {
-      digitalWrite(HW_PIN_LED, LED_ON);
+      digitalWrite(HW_PIN_LED, HW_LED_ON);
       delay(50);
-      digitalWrite(HW_PIN_LED, !LED_ON);
+      digitalWrite(HW_PIN_LED, !HW_LED_ON);
       delay(50);
     }
   }

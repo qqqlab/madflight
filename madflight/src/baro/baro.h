@@ -9,6 +9,9 @@ Each USE_BARO_xxx section in this file defines:
 
 #pragma once
 
+#ifndef BARO_I2C_ADR
+  #define BARO_I2C_ADR 0
+#endif
 
 //========================================================================================================================
 // BMP280
