@@ -160,7 +160,7 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 Board: LED: C13, key button: A0
 
-PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins connected to the same timer have all the same frequency.
+PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins connected to the same timer operate at the same frequency.
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
