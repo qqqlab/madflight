@@ -81,12 +81,12 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
 | reset button | EN |                            | 23 | I2C_SDA
 | SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
-| IMU_INT      | VN 39 input only |            | 1 TX | USB Serial Debug TX
+| IMU_EXTI     | VN 39 input only |            | 1 TX | USB Serial Debug TX
 | BAT_ADC      | 34 input only |               | 3 RX | USB Serial Debug RX
 | RCIN_RX      | 35 input only |                 | 21 | SPI_MOSI
 | RCIN_TX      | 32 |                           | GND | GND
 | PWM1         | 33 |                            | 19 | SPI_SCLK
-| PWM2         | 25 |                            | 18 | SPI_CS
+| PWM2         | 25 |                            | 18 | IMU_CS
 | PWM3         | 26 |                       | strap 5 | GPS_TX
 | PWM4         | 27 |                            | 17 | GPS_RX
 | PWM5         | 14 |                            | 16 | PWM11
@@ -104,7 +104,7 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 <img src="doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
-## Default Pinout for Raspberry Pi Pico
+## Default Pinout for Raspberry Pi Pico (40 pin)
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -114,31 +114,31 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 |         PWM1 | 2   |               | EN       | nc
 |         PWM2 | 3   |               | 3.3V out | 3V3
 |         PWM3 | 4   |               | VREF     | nc
-|         PWM4 | 5   |               | 28_A2    | BAT_ADC
+|         PWM4 | 5   |               | 28_A2    | BAT_V
 |            - | GND |               | GND      | -
 |         PWM5 | 6   |               | 27_A1    | FREE
 |         PWM6 | 7   |               | 26_A0    | FREE
 |       GPS_TX | 8   |               | RUN      | reset button to GND
-|       GPS_RX | 9   |               | 22       | IMU_INT
+|       GPS_RX | 9   |               | 22       | IMU_EXTI
 |            - | GND |               | GND      | -
 |         PWM7 | 10  |               | 21       | I2C_SCL
 |         PWM8 | 11  |               | 20       | I2C_SDA
 |         PWM9 | 12  |               | 19       | SPI_MOSI
 |        PWM10 | 13  |               | 18       | SPI_SCLK
 |            - | GND |               | GND      | -
-|        PWM11 | 14  |               | 17       | SPI_CS
+|        PWM11 | 14  |               | 17       | IMU_CS
 |        PWM12 | 15  | JTAG pins     | 16       | SPI_MISO
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
-## Default Pinout for STM32F411 Black Pill (40 pin)
+## Default Pinout for WeActStudio STM32F411 Black Pill (40 pin)
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
 |            - | VB  |   SWD pins    | 3V3 | -
-|         FREE | C13 |               | G   | -
+|          LED | C13 |               | G   | -
 |         FREE | C14 |               | 5V  | 5V input (*)
 |         FREE | C15 |               | B9  | FREE
 |            - | R   |               | B8  | PWM6
@@ -146,19 +146,19 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 |         FREE | A1  |               | B6  | I2C_SDA
 |       GPS_TX | A2  |               | B5  | PWM2
 |       GPS_RX | A3  |               | B4  | FREE
-|       SPI_CS | A4  |               | B3  | RCIN_RX
+|       IMU_CS | A4  |               | B3  | RCIN_RX
 |     SPI_SCLK | A5  |               | A15 | RCIN_TX
-|     SPI_MISO | A6  |               | A12 | FREE
-|     SPI_MOSI | A7  |               | A11 | FREE
-|     BAT_CURR | B0  |               | A10 | PWM5
-|      BAT_ADC | B1  |               | A9  | PWM4
+|     SPI_MISO | A6  |               | A12 | USB_DP
+|     SPI_MOSI | A7  |               | A11 | USB_DN
+|        BAT_I | B0  |               | A10 | PWM5
+|        BAT_V | B1  |               | A9  | PWM4
 |         PWM1 | B2  |               | A8  | PWM3
-|      IMU_INT | B10 |               | B15 | FREE
+|     IMU_EXTI | B10 |               | B15 | FREE
 |            - | 3V3 |               | B14 | FREE
 |            - | G   |               | B13 | FREE
 |            - | 5V  | USB connector | B12 | FREE
 
-Internal LED: C13
+Board: LED: C13, key button: A0
 
 This is basically the same pinout as a MATEKF411SE flight controller, except: LED and IMU_INT
 
