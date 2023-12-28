@@ -1,5 +1,5 @@
 
-//Note: this implementation does not check if frequency overwrites the frequency of previously started PWM instances
+//Note: this implementation does not check if a PWM frequency overwrites the frequency of previously instantiated PWM instance
 
 /*########################################################################################################################
 This file contains all necessary functions and code for specific hardware platforms to avoid cluttering the main code
@@ -12,13 +12,13 @@ This file defines:
   HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
-
 ########################################################################################################################*/
 
 //Select one:
+#define TARGET_BETAFLIGHT //include a betaflight target, see below to specify the flight controller
 //#define TARGET_BLACKPILL 
 //#define TARGET_MATEKF411SE //similar to black pill except LED and IMU_INT
-#define TARGET_OMNIBUSF4 //F405
+//#define TARGET_OMNIBUSF4 //F405
 
 //Arduino IDE settings:
 //Board: Generic STM32xxx
@@ -42,9 +42,17 @@ This file defines:
 #include "src/hw_STM32/STM32_PWM.h"  //Servo and onshot
 
 //======================================================================================================================//
+//                    HARDWARE DEFINITION for a Betaflight Target
+//======================================================================================================================//
+#if defined TARGET_BETAFLIGHT
+
+//change this to the flight controller you want to use
+#include "betaflight-targets/AIRB-OMNIBUSF4.config.h"
+
+//======================================================================================================================//
 //                    HARDWARE DEFINITION Black Pill STM32F411CEUx
 //======================================================================================================================//
-#if defined TARGET_BLACKPILL
+#elif defined TARGET_BLACKPILL
 //STM32F411CEUx - not all pin combinations are allowed, see datasheet
 //This pin layout is based on MATEK F411SE (MTKS-MATEKF411SE betaflight target)
 

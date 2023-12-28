@@ -39,6 +39,7 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 
 # Change Log
 
+2023-12-28 Add converted Betaflight targets  
 2023-12-27 Add STM32 support  
 2023-12-24 Add external magnetometer  
 2023-12-18 Add CRSF telemetry  
