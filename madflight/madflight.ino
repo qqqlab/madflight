@@ -1,3 +1,4 @@
+#define APPNAME "madflight v0.1.0"
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
 //Copyright (c) 2023 https://github.com/qqqlab/madflight
@@ -267,7 +268,7 @@ void setup() {
 
   //3 second startup delay
   for(int i=10;i>0;i--) { 
-    Serial.printf("madflight starting %d ...\n",i);
+    Serial.printf(APPNAME " starting %d ...\n",i);
     delay(300);
   }
 
