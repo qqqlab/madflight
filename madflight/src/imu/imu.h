@@ -35,54 +35,54 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 //setup the sensor
 #include "MPU_interface.h"
 #include "MPUxxxx.h"
-#if defined USE_IMU_SPI_MPU6000
-  #define IMU_TYPE "USE_IMU_SPI_MPU6000"
+#if defined USE_IMU_SPI_MPU9250
+  #define IMU_TYPE "USE_IMU_SPI_MPU9250"
   #define USE_IMU_BUS_SPI
-  #define IMU_HAS_MAG 0
+  #define IMU_HAS_MAG 1
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
-  MPUXXXX mpu(MPUXXXX::MPU6000, &mpu_iface);
+  MPUXXXX mpu(MPUXXXX::MPU9250, &mpu_iface);
 #elif defined USE_IMU_SPI_MPU6500
   #define IMU_TYPE "USE_IMU_SPI_MPU6500"
   #define USE_IMU_BUS_SPI
   #define IMU_HAS_MAG 0
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX mpu(MPUXXXX::MPU6500, &mpu_iface);
-#elif defined USE_IMU_SPI_MPU9250
-  #define IMU_TYPE "USE_IMU_SPI_MPU9250"
+#elif defined USE_IMU_SPI_MPU6000
+  #define IMU_TYPE "USE_IMU_SPI_MPU6000"
   #define USE_IMU_BUS_SPI
-  #define IMU_HAS_MAG 1
+  #define IMU_HAS_MAG 0
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
-  MPUXXXX mpu(MPUXXXX::MPU9250, &mpu_iface);
-#elif defined USE_IMU_I2C_MPU6000
-  #define IMU_TYPE "USE_IMU_I2C_MPU6000"
-  #define USE_IMU_BUS_I2C
-  #define IMU_HAS_MAG 0
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX mpu(MPUXXXX::MPU6000, &mpu_iface);
-#elif defined USE_IMU_I2C_MPU6050
-  #define IMU_TYPE "USE_IMU_I2C_MPU6050"
-  #define USE_IMU_BUS_I2C
-  #define IMU_HAS_MAG 0
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
-  MPUXXXX mpu(MPUXXXX::MPU6050, &mpu_iface);
-#elif defined USE_IMU_I2C_MPU6500
-  #define IMU_TYPE "USE_IMU_I2C_MPU6500"
-  #define USE_IMU_BUS_I2C
-  #define IMU_HAS_MAG 0
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
-  MPUXXXX mpu(MPUXXXX::MPU6500, &mpu_iface);
-#elif defined USE_IMU_I2C_MPU9150
-  #define IMU_TYPE "USE_IMU_I2C_MPU9150"
-  #define USE_IMU_BUS_I2C
-  #define IMU_HAS_MAG 1
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
-  MPUXXXX mpu(MPUXXXX::MPU9150, &mpu_iface);
 #elif defined USE_IMU_I2C_MPU9250
   #define IMU_TYPE "USE_IMU_I2C_MPU9250"
   #define USE_IMU_BUS_I2C
   #define IMU_HAS_MAG 1
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX mpu(MPU9250, &mpu_iface);
+#elif defined USE_IMU_I2C_MPU9150
+  #define IMU_TYPE "USE_IMU_I2C_MPU9150"
+  #define USE_IMU_BUS_I2C
+  #define IMU_HAS_MAG 1
+  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPUXXXX mpu(MPUXXXX::MPU9150, &mpu_iface);
+#elif defined USE_IMU_I2C_MPU6500
+  #define IMU_TYPE "USE_IMU_I2C_MPU6500"
+  #define USE_IMU_BUS_I2C
+  #define IMU_HAS_MAG 0
+  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPUXXXX mpu(MPUXXXX::MPU6500, &mpu_iface);
+#elif defined USE_IMU_I2C_MPU6050
+  #define IMU_TYPE "USE_IMU_I2C_MPU6050"
+  #define USE_IMU_BUS_I2C
+  #define IMU_HAS_MAG 0
+  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPUXXXX mpu(MPUXXXX::MPU6050, &mpu_iface);
+#elif defined USE_IMU_I2C_MPU6000
+  #define IMU_TYPE "USE_IMU_I2C_MPU6000"
+  #define USE_IMU_BUS_I2C
+  #define IMU_HAS_MAG 0
+  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPUXXXX mpu(MPUXXXX::MPU6000, &mpu_iface);
 #else
   #error "uncomment a one USE_IMU_xxx in madflight.ino"
 #endif

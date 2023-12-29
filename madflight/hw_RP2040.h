@@ -22,14 +22,14 @@ This file defines:
 // IMU SENSOR
 //-------------------------------------
 //Uncomment only one USE_IMU_xxx
-//#define USE_IMU_SPI_MPU6000
-#define USE_IMU_SPI_MPU6500
 //#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
-//#define USE_IMU_I2C_MPU6000
-//#define USE_IMU_I2C_MPU6050
-//#define USE_IMU_I2C_MPU6500
-//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
+#define USE_IMU_SPI_MPU6500
+//#define USE_IMU_SPI_MPU6000
 //#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
+//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
+//#define USE_IMU_I2C_MPU6500
+//#define USE_IMU_I2C_MPU6050
+//#define USE_IMU_I2C_MPU6000
 
 #define IMU_I2C_ADR 0 //Set I2C address. If unknown, see output of print_i2c_scan()
 

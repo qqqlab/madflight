@@ -260,15 +260,15 @@ float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 void setup() {
   //Set built in LED to turn on to signal startup
   pinMode(HW_PIN_LED, OUTPUT);
-  digitalWrite(HW_PIN_LED, HW_LED_ON);
+  led_SwitchON(true);
 
   //start console serial
   Serial.begin(115200);
-  while(!Serial);
 
-  for(int i=3;i>0;i--) {
+  //3 second startup delay
+  for(int i=10;i>0;i--) { 
     Serial.printf("madflight starting %d ...\n",i);
-    delay(500); //delay to get Arduino debugger connected
+    delay(300);
   }
 
   //hardware specific setup for spi and Wire (see hw_xxx.h)
@@ -328,7 +328,7 @@ void setup() {
   //Motors
   for(int i=0;i<out_MOTOR_COUNT;i++) {
     //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
-    out[i].begin(HW_PIN_OUT[i], 400, 900, 2000); //Standard PWM: 400Hz, 900-2000 us
+    out[i].begin(HW_PIN_OUT[i], 400, 950, 2000); //Standard PWM: 400Hz, 950-2000 us
     //out[i].begin(HW_PIN_OUT[i], 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
 
     out_command[i] = 0; //set output to 0 for motors
@@ -355,7 +355,7 @@ void setup() {
   #endif
 
   //Set built in LED off to signal end of startup
-  digitalWrite(HW_PIN_LED, !HW_LED_ON);
+  led_SwitchON(false);
 }
 
 //========================================================================================================================//
@@ -405,7 +405,7 @@ void loop() {
     //print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
-    print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
+    //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
     //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
     //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
     if(print_need_newline) Serial.println();
@@ -548,10 +548,10 @@ void loop1() {
 void loop_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
   //DISARMED: long off, short on, ARMED: long on, short off
-  if(loop_cnt % loop_freq <= loop_freq / 10) 
-    digitalWrite(HW_PIN_LED, (out_armed ? !HW_LED_ON : HW_LED_ON) ); //short interval
+  if(loop_cnt % loop_freq <= loop_freq / 10)
+    led_SwitchON(!out_armed); //short interval
   else
-    digitalWrite(HW_PIN_LED, (out_armed ? HW_LED_ON : !HW_LED_ON) ); //long interval
+    led_SwitchON(out_armed); //long interval
 }
 
 void imu_GetData() {
@@ -1103,7 +1103,7 @@ void calibrate_ESCs() { //TODO
     while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
     ts = micros();
 
-    digitalWrite(HW_PIN_LED, HW_LED_ON); //LED on to indicate we are not in main loop
+    led_SwitchON(true); //LED on to indicate we are not in main loop
 
     rcin_GetCommands(); //Pulls current available radio commands
     rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
@@ -1223,7 +1223,8 @@ void print_overview() {
   Serial.printf("roll_PID:%+.3f\t",roll_PID);  
   Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
   Serial.printf("sats:%d\t",(int)gps.sat);
-  Serial.printf("loop_rt:%d\t",(int)loop_rt);  
+  Serial.printf("loop_rt:%d\t",(int)loop_rt);
+  Serial.printf("loop_cnt:%d\t",(int)loop_cnt); 
   print_need_newline = true;    
 }
 
@@ -1285,6 +1286,7 @@ void print_loop_Rate() {
   Serial.printf("loop_dt:%d\t",(int)(loop_dt * 1000000.0));
   Serial.printf("loop_rt:%d\t",(int)loop_rt);
   Serial.printf("loop_rt_imu:%d\t",(int)loop_rt_imu);
+  Serial.printf("loop_cnt:%d\t",(int)loop_cnt);  
   Serial.printf("loops:%d\t",(int)(loop_cnt - loop_cnt_last));  
   loop_cnt_last = loop_cnt;
   print_need_newline = true;
@@ -1304,8 +1306,6 @@ void print_i2c_scan() {
   Serial.printf("I2C: Found %d device(s)\n", count);      
 }
 
-
-
 //===============================================================================================
 // HELPERS
 //===============================================================================================
@@ -1315,7 +1315,9 @@ float lowpass_to_beta(float f0, float fs) {
   return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
 
-
+void led_SwitchON(bool set_on) {
+  digitalWrite( HW_PIN_LED, (set_on ? HW_LED_ON : !HW_LED_ON) );
+}
 
 void die(String msg) {
   int cnt = 0;
@@ -1323,9 +1325,9 @@ void die(String msg) {
     Serial.print(msg);
     Serial.printf(" [%d]\n",cnt++);
     for(int i=0;i<10;i++) {
-      digitalWrite(HW_PIN_LED, HW_LED_ON);
+      led_SwitchON(true);
       delay(50);
-      digitalWrite(HW_PIN_LED, !HW_LED_ON);
+      led_SwitchON(false);
       delay(50);
     }
   }

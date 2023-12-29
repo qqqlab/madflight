@@ -2,12 +2,30 @@ import re
 import os
 import datetime 
 
+DEBUG = False
+#DEBUG = True
+
 source_dirname = "betaflight_source"
 destination_dirname = "betaflight"
 
 ignore_defines = ["USE_GYRO", "USE_ACC.*", "USE_MAG", "USE_BARO", "USE_FLASH"]
 
+ignore_pins = ["LED","IMU_EXTI","IMU_CS","BAT_V","BAT_I"]
+
+
+
+def main() :
+    for filename in os.listdir(source_dirname) :
+        convert(filename)
+        if DEBUG: return
+
 def convert(filename) :
+    def toint(s) :
+        try:
+            return int(s)
+        except ValueError:
+            return 0
+    
     #in and output files
     infile = source_dirname + "/" + filename
     strippedfilename = re.sub(r"(.config$)", r"", filename)
@@ -28,6 +46,12 @@ def convert(filename) :
     resources = {}
     sets = {}
     motors = []
+    serials = [ {} for i in range( 20 ) ]
+    spis = [ {} for i in range( 20 ) ]
+    i2cs = [ {} for i in range( 20 ) ]
+    pins = {}
+
+
     for line in lines:
         s = line.strip();
         s = re.sub(" +", " ", s) #replace multiple spaces with one space
@@ -41,7 +65,7 @@ def convert(filename) :
                     found = True
                     break
             if not found :
-                defname = p[1].replace("_GYRO_","_IMU_")
+                defname = p[1].replace("_GYRO_", "_IMU_")
                 defvalue = p[2]
                 defines.append( (defname + " " + defvalue).strip() )
 
@@ -52,14 +76,35 @@ def convert(filename) :
             manufacturer_id = p[1]
 
         if p[0] == "resource" :
+            r = p[1]
+            i = toint(p[2])
             pin = "P" + re.sub(r"0([0-9])", r"\1", p[3]) #convert pin name from C01 to PC1
-            if p[1] == "MOTOR" :
-                motors.append( pin )
+            resources[ r + ":" + str(i) ] = pin
+            if   r == "SERIAL_TX" : serials[i]["TX"] = pin
+            elif r == "SERIAL_RX" : serials[i]["RX"] = pin
+            elif r == "INVERTER"  : serials[i]["INVERTER"] = pin
+            elif r == "SPI_SCK"   : spis[i]["SCK"] = pin
+            elif r == "SPI_MISO"  : spis[i]["MISO"] = pin
+            elif r == "SPI_MOSI"  : spis[i]["MOSI"] = pin
+            elif r == "I2C_SCL"   : i2cs[i]["SCL"] = pin
+            elif r == "I2C_SDA"   : i2cs[i]["SDA"] = pin
+            elif r == "MOTOR"     : motors.append( pin )
             else :
-                resources[ p[1] + ":" + p[2]] = pin
+                name = r
+                if i!=1 : name = name + "_" + str(i)
+                pins[name] = pin
 
         if p[0] == "set" :
             sets[ p[1]] = p[3]
+
+    #assign rcin = 1st serial and gps = 2nd serial
+    rcin_serial = ""
+    gps_serial = ""
+    for i in range(len(serials)) :
+        b = serials[i]
+        if b.get("RX") and b.get("TX") :
+            if rcin_serial == "" : rcin_serial = str(i)
+            elif gps_serial == "" : gps_serial = str(i)
 
     #debug print topics
     # print( "defines:", defines )
@@ -68,12 +113,14 @@ def convert(filename) :
     # print( "resources:", resources )
     # print( "sets:", sets )
     # print( "motors:", motors )
+    # print( "serials:", serials )
 
     #output madflight target header file
     f = open(outfile,"w")
 
     def fprint(txt) :
-        f.write(txt + "\n")
+        if DEBUG : print( txt )
+        else : f.write(txt + "\n")
 
     fprint( "/*==============================================================================" )
     fprint( "Generated on: " + str(datetime.datetime.now()) )
@@ -92,7 +139,7 @@ def convert(filename) :
     if mcu_re : fprint( "#define HW_MCU \"" + mcu_re.group() + "\"" )
 
     fprint( "" )
-    fprint( "//Defines from betaflight (not all will be used by madflight, and some boards define two or more IMU/MAG/BARO - madflight does not support this)" )
+    fprint( "//Defines from betaflight. Note: madflight will pick the first IMU that is matched in imu.h, this might not be the IMU that is actually on the board. Comment the offending IMU out." )
     for define in defines:
         fprint( "#define " + define )
 
@@ -127,19 +174,19 @@ def convert(filename) :
     fprint( "" )
     fprint( "//Outputs:" )
     fprint( "const int HW_OUT_COUNT    = " + str(len(motors)) + ";" )
-    fprint( "const int HW_PIN_OUT[HW_OUT_COUNT] = {" + ",".join(motors) + "};" )
+    fprint( "const int HW_PIN_OUT[]    = {" + ",".join(motors) + "};" )
 
     fprint( "" )
-    fprint( "//RC Receiver: (SERIAL1)" )
-    fprint( "const int HW_PIN_RCIN_RX  = " + resources.get("SERIAL_RX:1","-1") + ";" )
-    fprint( "const int HW_PIN_RCIN_TX  = " + resources.get("SERIAL_TX:1","-1") + ";" )
-    fprint( "const int HW_PIN_RCIN_INVERTER = " + resources.get("INVERTER:1","-1") + ";" )
+    fprint( "//RC Receiver: (SERIAL"+rcin_serial+")" )
+    fprint( "const int HW_PIN_RCIN_RX  = " + resources.get("SERIAL_RX:"+rcin_serial,"-1") + ";" )
+    fprint( "const int HW_PIN_RCIN_TX  = " + resources.get("SERIAL_TX:"+rcin_serial,"-1") + ";" )
+    fprint( "const int HW_PIN_RCIN_INVERTER = " + resources.get("INVERTER:"+rcin_serial,"-1") + ";" )
 
     fprint( "" )
-    fprint( "//GPS: (SERIAL3)" )
-    fprint( "const int HW_PIN_GPS_RX   = " + resources.get("SERIAL_RX:3","-1") + ";" )
-    fprint( "const int HW_PIN_GPS_TX   = " + resources.get("SERIAL_TX:3","-1") + ";" )
-    fprint( "const int HW_PIN_GPS_INVERTER = " + resources.get("INVERTER:3","-1") + ";" )
+    fprint( "//GPS: (SERIAL"+gps_serial+")" )
+    fprint( "const int HW_PIN_GPS_RX   = " + resources.get("SERIAL_RX:"+gps_serial,"-1") + ";" )
+    fprint( "const int HW_PIN_GPS_TX   = " + resources.get("SERIAL_TX:"+gps_serial,"-1") + ";" )
+    fprint( "const int HW_PIN_GPS_INVERTER = " + resources.get("INVERTER:"+gps_serial,"-1") + ";" )
 
     fprint( "" )
     fprint( "//Battery ADC voltage and current inputs:" )
@@ -161,6 +208,55 @@ def convert(filename) :
     fprint( "SPIClass *spi = &SPI;" )
 
     fprint( "" )
+    fprint( "//Serial" )
+    p = []
+    for i in range(len(serials)) :
+        b = serials[i]
+        if b.get("RX") or b.get("TX") :
+            p.append( "{" + str(i) + "," + b.get("TX","-1") + "," + b.get("RX","-1") + "," + b.get("INVERTER","-1") + "}" )
+    fprint( "#define HW_SERIAL_COUNT " + str(len(p)) )
+    fprint( "#define HW_PIN_SERIAL { " + ", ".join(p) + " } // {INDEX,TX,RX,INVERTER}" )
+
+    fprint( "" )
+    fprint( "//SPI" )
+    p = []
+    for i in range(len(spis)) :
+        b = spis[i]
+        if b.get("SCK") or b.get("MISO") or b.get("MOSI"):
+            p.append( "{" + str(i) + "," + b.get("SCK","-1") + "," + b.get("MISO","-1") + "," + b.get("MOSI","-1") + "}" )
+    fprint( "#define HW_SPI_COUNT " + str(len(p)) )
+    fprint( "#define HW_PIN_SPI { " + ", ".join(p) + " } // {INDEX,SCK,MISO,MOSI}" )
+
+    fprint( "" )
+    fprint( "//I2C" )
+    p = []
+    for i in range(len(i2cs)) :
+        b = i2cs[i]
+        if b.get("SCL") or b.get("SDA") :
+            p.append( "{" + str(i) + "," + b.get("SCL","-1") + "," + b.get("SDA","-1") + "}" )
+    fprint( "#define HW_I2C_COUNT " + str(len(p)) )
+    fprint( "#define HW_PIN_I2C { " + ", ".join(p) + " } // {INDEX,SCL,SDA}" )
+
+
+    fprint( "" )
+    fprint( "//Motors:" )
+    fprint( "#define HW_MOTOR_COUNT " + str(len(motors)) )
+    fprint( "#define HW_MOTOR_OUT {" + ",".join(motors) + "}" )
+
+    fprint( "" )
+    fprint( "//other pins" )
+    for name in pins.keys() :
+        pre = ""
+        if name in ignore_pins : pre = "//"
+        fprint( pre + "#define HW_PIN_" + name + " " + pins[name] )
+
+    fprint( "" )
+    fprint( "//set statements" )
+    for name in sets.keys() :
+       fprint( "#define HW_SET_" + name.upper() + " " + sets[name] )
+
+
+    fprint( "" )
     fprint( "" )
     fprint( "/*" )
     fprint( "#==============================================================================" )
@@ -171,6 +267,4 @@ def convert(filename) :
 
     f.close()
 
-
-for filename in os.listdir(source_dirname) :
-    convert(filename)
+main()
