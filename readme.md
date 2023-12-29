@@ -16,8 +16,8 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
   - RP2040 (e.g. Raspberry Pi Pico)
   - or ESP32 (e.g. Espressiv DevKitC)
   - or STM32 (e.g. Black Pill or a flight controller)
-- SPI or I2C IMU sensor: MPU6000, MPU6050, MP6500, MPU9150, or MPU9250
-- RC Receiver: ELRS, CRSF, SBUS, DMX, or PPM
+- SPI IMU sensor (MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
+- RC Receiver: ELRS, CRSF, SBUS, DMSX, or PPM
 - BEC or DC-DC converter to power your board from a battery
 - ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
 
@@ -25,17 +25,37 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 
 0. Open madflight/madflight.ino in the Arduino IDE.
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_XXX.h (see below for default pinouts)
-2. Connect your IMU sensor including the INT pin according to the configured pins:
-    - Connect sensor VCC and GND pins to dev board 3.3V and GND.
-    - For I2C sensors: connect sensor SDA to dev board I2C_SDA, SCL to I2C_SCL and INT to IMU_INT.
-    - For SPI sensors: connect sensor SCL/SCLK to dev board SPI_SCLK, SDA/SDI to SPI_MOSI, ADD/SDO to SPI_MISO, NCS to SPI_CS, and INT to IMU_INT.
-5. Uncomment print_imu_GyroData(), print_imu_AccData(), print_imu_MagData(), and/or print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. 
-6. Uncomment lines in setup() to calibate the sensor.
-7. Connect radio receiver to your development board according to the configured pins.
-8. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
-9. Uncomment print_rcin_RadioPWM() and print_rcin_RadioScaled() to check your radio setup.
-11. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
-12. Mount props, go to an wide open space, and FLY!
+2. Connect your IMU (gyro/acceleration) sensor as shown below.
+3. Uncomment print_imu_GyroData(), print_imu_AccData(), print_imu_MagData(), and/or print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. 
+4. Uncomment lines in setup() to calibate the sensor.
+5. Connect radio receiver to your development board according to the configured pins.
+6. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
+7. Uncomment print_rcin_RadioPWM() and print_rcin_RadioScaled() to check your radio setup.
+8. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
+9. Mount props, go to an wide open space, and FLY!
+
+# Connecting the IMU Sensor
+
+SPI sensor: (highly recommended over I2C)
+```
+  Sensor       Dev Board
+SCL/SCLK <---> SPI_SCLK
+ SDA/SDI <---> SPI_MOSI
+ ADD/SDO <---> SPI_MISO
+     NCS <---> SPI_CS
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
+I2C sensor:
+```
+  Sensor       Dev Board
+     SCL <---> I2C_SCL 
+     SDA <---> I2C_SDA
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
 
 # Change Log
 
@@ -76,6 +96,8 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
+This pinout can be configured as needed in hw_ESP32.h
+
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
@@ -106,6 +128,8 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 ## Default Pinout for Raspberry Pi Pico (40 pin)
 
+This pinout can be configured as needed in hw_RP2040.h
+
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
 |      RCIN_TX | 0   | USB connector | VBUS     | nc
@@ -134,6 +158,8 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
 ## Default Pinout for WeActStudio STM32F411 Black Pill (40 pin)
+
+This pinout can be configured as needed in hw_STM32.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
