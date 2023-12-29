@@ -130,14 +130,16 @@ def convert(filename) :
     fprint( "const int HW_PIN_OUT[HW_OUT_COUNT] = {" + ",".join(motors) + "};" )
 
     fprint( "" )
-    fprint( "//RC Receiver: (SERIAL3)" )
-    fprint( "const int HW_PIN_RCIN_RX  = " + resources.get("SERIAL_RX:3","-1") + ";" )
-    fprint( "const int HW_PIN_RCIN_TX  = " + resources.get("SERIAL_TX:3","-1") + ";" )
+    fprint( "//RC Receiver: (SERIAL1)" )
+    fprint( "const int HW_PIN_RCIN_RX  = " + resources.get("SERIAL_RX:1","-1") + ";" )
+    fprint( "const int HW_PIN_RCIN_TX  = " + resources.get("SERIAL_TX:1","-1") + ";" )
+    fprint( "const int HW_PIN_RCIN_INVERTER = " + resources.get("INVERTER:1","-1") + ";" )
 
     fprint( "" )
-    fprint( "//GPS: (SERIAL1)" )
-    fprint( "const int HW_PIN_GPS_RX   = " + resources.get("SERIAL_RX:1","-1") + ";" )
-    fprint( "const int HW_PIN_GPS_TX   = " + resources.get("SERIAL_TX:1","-1") + ";" )
+    fprint( "//GPS: (SERIAL3)" )
+    fprint( "const int HW_PIN_GPS_RX   = " + resources.get("SERIAL_RX:3","-1") + ";" )
+    fprint( "const int HW_PIN_GPS_TX   = " + resources.get("SERIAL_TX:3","-1") + ";" )
+    fprint( "const int HW_PIN_GPS_INVERTER = " + resources.get("INVERTER:3","-1") + ";" )
 
     fprint( "" )
     fprint( "//Battery ADC voltage and current inputs:" )

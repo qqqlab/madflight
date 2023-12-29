@@ -85,7 +85,7 @@ const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
 
 //Outputs:
 const int HW_OUT_COUNT    = 11;
-const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+const int HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
 
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 

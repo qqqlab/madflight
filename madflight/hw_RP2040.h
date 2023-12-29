@@ -85,7 +85,7 @@ const int HW_PIN_I2C_SCL  = 21; //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3,
 
 //Outputs:
 const int HW_OUT_COUNT    = 12;
-const int8_t HW_PIN_OUT[HW_OUT_COUNT] = {2,3,4,5,6,7,10,11,12,13,14,15};
+const int HW_PIN_OUT[HW_OUT_COUNT] = {2,3,4,5,6,7,10,11,12,13,14,15};
 
 //Serial debug on USB Serial port (no GPIO pins)
 

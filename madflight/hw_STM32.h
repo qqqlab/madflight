@@ -113,13 +113,15 @@ const int HW_PIN_I2C_SCL  = PB7;
 const int HW_OUT_COUNT    = 6;
 const int HW_PIN_OUT[HW_OUT_COUNT] = {PB2,PB5,PA8,PA9,PA10,PB8};
 
-//RC Receiver: (SERIAL3)
-const int HW_PIN_RCIN_RX  = PB3;
-const int HW_PIN_RCIN_TX  = PA15;
+//RC Receiver: (SERIAL1)
+const int HW_PIN_RCIN_RX  = PA3;
+const int HW_PIN_RCIN_TX  = PA2;
+const int HW_PIN_RCIN_INVERTER = -1;
 
-//GPS: (SERIAL1)
-const int HW_PIN_GPS_RX   = PA3;
-const int HW_PIN_GPS_TX   = PA2;
+//GPS: (SERIAL3)
+const int HW_PIN_GPS_RX   = PB3;
+const int HW_PIN_GPS_TX   = PA15;
+const int HW_PIN_GPS_INVERTER = -1;
 
 //Battery ADC voltage and current inputs:
 const int HW_PIN_BAT_V    = PB0;
@@ -149,6 +151,12 @@ void hw_setup()
 { 
   Serial.println("USE_HW_STM32");
   
+  //Serial RX Inverters
+  pinMode(HW_PIN_RCIN_INVERTER, OUTPUT);
+  digitalWrite(HW_PIN_RCIN_INVERTER, LOW); //not inverted
+  pinMode(HW_PIN_GPS_INVERTER, OUTPUT);
+  digitalWrite(HW_PIN_GPS_INVERTER, LOW); //not inverted
+
   //I2C
   i2c->setSDA(HW_PIN_I2C_SDA);
   i2c->setSCL(HW_PIN_I2C_SCL);
