@@ -40,9 +40,11 @@ LSM9DSO  | no
 
 | Part    | Breakout Board? | Interface | Notes |
 |-|-|-|-|
-HMC5883L | $2 | I2C | 12-bit ADC, noise 2 ug, resolution 0.73 ug, 160 Hz
-AK8963 | | I2C | 100 Hz
-AK8975 | | I2C | 100 Hz
+HMC5883L | $2 | I2C | 160 Hz, 0.20µT/LSB, 12-bit ADC
+QMC5883L | $2 | I2C | Similar to HMC5883L but with different registers. The HMC5883L has marking "L883" on it, while QMC5883L has "5883"
+AK8963 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, internal to MPU9250
+AK8975 | | I2C | 100 Hz, 0.30µT/LSB, 13-bit, internal to MPU9150
+IST8310 |
 
 ## Barometer
 
