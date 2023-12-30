@@ -10,21 +10,21 @@ An overview of available sensor boards.
 
 | Part    | Breakout Board? | Interface | Notes |
 |-|-|-|-|
-MPU6000   | yes | SPI, I2C | 8k gyro, 1k acc, WHO_AM_I=0x68 6-bit I2C address of the MPU-60X0, Released 2011 (EOL)
-MPU6050   | yes | I2C | 8k gyro, 1k acc, WHO_AM_I=0x68 6-bit I2C address of the MPU-60X0, Released 2011 (EOL)
-MPU6500   | $2 | SPI, I2C | 8k gyro, 4k acc, Released 2014
+MPU6000   | yes | SPI, I2C | 8k gyro, 1k acc, Released 2011 (EOL)
+MPU6050   | yes | I2C | 8k gyro, 1k acc, Released 2011 (EOL)
+MPU6500   | $2 | SPI, I2C | 8k gyro, 4k acc, upgraded MPU6000, Released 2014
 BMI160    | $2
 BMI180    |
-BMI270    | no | SPI | 6k gyro, Used in current commercial FC
+BMI270    | no | SPI | 6k gyro, Used in current commercial FC as replacement for MPU6000/6500
 LSM6DS3   | $2
 LSM6DSO   | $10
 MPU3000   | no | | Released 2011 (EOL)
 MPU3050   | no | | Released 2011 (EOL)
-MPU6886   | no | | Released
+MPU6886   | no
 ICM20602  | no
 ICM20608  | no
 ICM20689  | no 
-ICM42688P | no | | 32k gyro, Used in current commercial FC
+ICM42688P | no | SPI | 32k gyro, low noise IMU, Used in current high performance FC as 
 
 ## 9-axis IMU
 
