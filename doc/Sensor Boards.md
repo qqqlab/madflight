@@ -21,10 +21,10 @@ LSM6DSO   | $10
 MPU3000   | no | | Released 2011 (EOL)
 MPU3050   | no | | Released 2011 (EOL)
 MPU6886   | no
-ICM20602  | no
-ICM20608  | no
-ICM20689  | no 
-ICM42688P | no | SPI | 32k gyro, low noise IMU, Used in current high performance FC as 
+ICM-20602  | no
+ICM-20608  | no
+ICM-20689  | no 
+ICM-42688-P | no | SPI | 32k gyro, low noise IMU, Used in current high performance FC.
 
 ## 9-axis IMU
 
@@ -32,8 +32,8 @@ ICM42688P | no | SPI | 32k gyro, low noise IMU, Used in current high performance
 |-|-|-|-|
 MPU9150  | $7 | I2C | 8k gyro, WHO_AM_I=0x68 or 0x69 depending on AD0 pin, MPU6050 + AK8975, (EOL)
 MPU9250  | $7 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, WHO_AM_I=0x71, MPU6500 + AK8963, Released 2014 (EOL) Note: many fake relabelled MPU6500 boards on the market for $4 or less.
-MPU9255  | $9 | SPI 20MHz, I2C | 8k gyro, WHO_AM_I=0x73, MPU6000 + AK8963
-ICM20948 | $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
+MPU9255  | $9 | SPI 20MHz, I2C | 8k gyro, MPU6000 + AK8963
+ICM-20948 | $9 | SPI 7MHz, I2C | replacement of MPU9250/9255, Released 2018
 LSM9DSO  | no
 
 ## Magnetometer
@@ -44,6 +44,7 @@ HMC5883L | $2 | I2C | 160 Hz, 0.20µT/LSB, 12-bit ADC
 QMC5883L | $2 | I2C | Similar to HMC5883L but with different registers. The HMC5883L has marking "L883" on it, while QMC5883L has "5883"
 AK8963 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, internal to MPU9250
 AK8975 | | I2C | 100 Hz, 0.30µT/LSB, 13-bit, internal to MPU9150
+AK09916 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, internal to ICM-20948
 IST8310 |
 
 ## Barometer
