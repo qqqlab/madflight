@@ -45,9 +45,9 @@ $PMTK314,10,1,10,1,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0*19 //GLL,RMC,VTG,GGA,GSA,GSV
 $PMTK220,100*2F //100ms interval
 ```
 
-## AI-Thinker GT-01-KIT / Quectel L76K
+## AI-Thinker GT-01-KIT / GT-02-KIT / Quectel L76K
 
-Setup of AT6558R based GPS modules such as AI-Thinker GT-01-KIT / Quectel L76K.
+Setup of AT6558R based GPS modules such as AI-Thinker GT-01-KIT / AI-Thinker GT-01-KIT / Quectel L76K.
 
 ```
 //start at 9600 baud
@@ -58,7 +58,7 @@ $PCAS02,100*1E //Positioning interval: 100ms
 $PCAS04,7*1E //GPS + BeiDou + GLONASS + QZSS
 ```
 
-The settings appear to be saved to at least battery backed RAM, as the settings survived a short disconnect.
+The settings appear to be saved to battery backed RAM, as the settings survived a short disconnect, but did not survive a couple days without power.
 
 ### Set baud rate
 
@@ -73,25 +73,31 @@ The settings appear to be saved to at least battery backed RAM, as the settings 
 5 = 115200  
 
 
-```$PCAS01,0*1C //baud rate 4800
+```
+$PCAS01,0*1C //baud rate 4800
 $PCAS01,1*1D //baud rate 9600
-$PCAS01,5*19 //baud rate 115200```
+$PCAS01,5*19 //baud rate 115200
+```
 
 ### Set Positioning frequency
 
-```$PCAS02,<Interval>*<Checksum>
+```
+$PCAS02,<Interval>*<Checksum>
 
 $PCAS02,1000*2E //Positioning interval: 1000ms
 $PCAS02,200*1D //Positioning interval: 200ms
-$PCAS02,100*1E //Positioning interval: 100ms```
+$PCAS02,100*1E //Positioning interval: 100ms
+```
 
 ### Set NMEA sentence output type and output frequency
 
-```$PCAS03,<nGGA>,<nGLL>,<nGSA>,<nGSV>,<nRMC>,<nVTG>,<nZDA>,<nANT>,<Res>,<Res>,<Res>,<Res >,<Res>,<Res>*<Checksum>
+```
+$PCAS03,<nGGA>,<nGLL>,<nGSA>,<nGSV>,<nRMC>,<nVTG>,<nZDA>,<nANT>,<Res>,<Res>,<Res>,<Res >,<Res>,<Res>*<Checksum>
 
 $PCAS03,1,1,1,1,1,1,1,1,0,0,,,0,0*02 //Enable GGA, GLL, GSA, GSV, RMC, VTG, ZDA, ANT
 $PCAS03,1,10,10,10,1,10,10,10,0,0,,,0,0*02 //Enable GGA, RMC every interval, rest every 10 intervals
-$PCAS03,1,0,0,0,1,0,0,0,0,0,,,0,0*02 //Enable GGA, RMC```
+$PCAS03,1,0,0,0,1,0,0,0,0,0,,,0,0*02 //Enable GGA, RMC
+```
 
 ### Set Mode
 
@@ -107,8 +113,10 @@ $PCAS03,1,0,0,0,1,0,0,0,0,0,,,0,0*02 //Enable GGA, RMC```
 7 = GPS + BeiDou + GLONASS  
 (QZSS is enabled by default and does not support configuration.)
 
-```$PCAS04,3*1A //3 = GPS + BeiDou (default)
-$PCAS04,7*1E //7 = GPS + BeiDou + GLONASS```
+```
+$PCAS04,3*1A //3 = GPS + BeiDou (default)
+$PCAS04,7*1E //7 = GPS + BeiDou + GLONASS
+```
 
 ### Restart Module
 
@@ -120,4 +128,4 @@ $PCAS04,7*1E //7 = GPS + BeiDou + GLONASS```
 2 = cold start  
 3 = Cold boot and factory reset  
 
-```$PCAS10,0*1C //warm start```
+`$PCAS10,0*1C //warm start`
