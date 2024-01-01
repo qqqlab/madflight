@@ -1,5 +1,6 @@
-//2023-12-27 Invensense MPU6000/6050/6500/9150/9250 library
-//sampling rate acc+gyro 1000Hz
+// madflight https://github.com/qqqlab/madflight
+// 2023-12-27 Invensense MPU6000/6050/6500/9150/9250 library
+// sampling rate acc+gyro 1000Hz
 
 #pragma once
 
@@ -47,7 +48,15 @@ class MPUXXXX {
         _iface = iface;
     }
 
-    bool begin(int gyro_scale_dps=250, int acc_scale_g=2) {
+    int get_rate() {
+      return 1000; //actual data rate is always 1000
+    }
+
+    //return 0 on success, positive on error, negative on warning
+    int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
+      //actual data rate is always 1000
+      (void)(rate_hz); //suppress compiler warnings
+      
       //start interface
       _iface->begin();
       _iface->setFreqSlow();

@@ -1,6 +1,7 @@
-//2023-12-27 Invensense MPU-9150 I2C library
-//sampling rate acc+gyro 1000Hz, mag 100Hz
-//DON'T access AK8963 after begin() - the mag will stop sending data...
+// madflight https://github.com/qqqlab/madflight
+// 2023-12-27 Invensense MPU-9150 I2C library
+// sampling rate acc+gyro 1000Hz, mag 100Hz
+// DON'T access AK8963 after begin() - the mag will stop sending data...
  
 //================================================================
 // AK8975 Magnetometer - internal to MPU9150

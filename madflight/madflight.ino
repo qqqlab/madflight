@@ -1,7 +1,7 @@
-#define APPNAME "madflight v0.1.0"
+#define APPNAME "madflight v0.1.1"
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
-//Copyright (c) 2023 https://github.com/qqqlab/madflight
+//Copyright (c) 2024 https://github.com/qqqlab/madflight
 //Copyright (c) 2022 Nicholas Rehm - dRehmFlight
  
 /*#########################################################################################################################
@@ -61,7 +61,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // APPLICATION SETTINGS
 //-------------------------------------
-//#define USE_LOOP_FOR_IMU_INTERRUPT //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
+//#define USE_IMU_POLLING //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
 
 //-------------------------------------
 // RC RECEIVER
@@ -78,8 +78,9 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // IMU SENSOR
 //-------------------------------------
-#define IMU_GYRO_DPS 500 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
-#define IMU_ACCEL_G 2 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
+uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
+#define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
+#define IMU_ACCEL_G 16 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
 #include "src/imu/imu.h" //first set all #define IMU_xxx then include IMO.h
 
 //-------------------------------------
@@ -102,6 +103,7 @@ blink interval longer than 1 second - loop() is taking too much time
 
 #define MAG_I2C_ADR 0 //set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
 #include "src/mag/mag.h" //first set all #define MAG_xxx then include mag.h
+
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
 //========================================================================================================================//
@@ -164,8 +166,6 @@ const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
 
-uint32_t loop_freq = 1000; //Loop frequency in Hz. Do not touch unless you know what you are doing.
-
 //Low Pass Filter parameters. Do not touch unless you know what you are doing.
 float LP_accel = 70;          //Accelerometer lowpass filter cutoff frequency in Hz (default MPU6050: 50Hz, MPU9250: 70Hz)
 float LP_gyro = 60;           //Gyro lowpass filter cutoff frequency in Hz (default MPU6050: 35Hz, MPU9250: 60Hz)
@@ -216,7 +216,6 @@ uint32_t loop_cnt = 0; //loop counter
 uint32_t print_time;
 bool print_need_newline;
 uint32_t loop_rt, loop_rt_imu; //runtime of loop and imu sensor retrieval
-int imu_err_cnt = 0; //debugging: number of times imu took too long
 
 //Radio communication:
 int rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
@@ -279,8 +278,8 @@ void setup() {
 #ifdef HW_MCU
   Serial.println("HW_MCU=" HW_MCU);
 #endif  
-#ifdef USE_LOOP_FOR_IMU_INTERRUPT
-  Serial.println("USE_LOOP_FOR_IMU_INTERRUPT");
+#ifdef USE_IMU_POLLING
+  Serial.println("USE_IMU_POLLING");
 #endif
 
   //print pin config
@@ -305,11 +304,10 @@ void setup() {
   for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
 
   //IMU
-  for(int i=0;i<10;i++) {
-    int rv = imu_Setup();
-    if(rv==0) break;
-    Serial.printf("IMU: init failed rv=%d. Retrying...\n", rv);
-    delay(500);
+  while(true) {
+    int rv = imu_Setup(); //returns 0 on success, positive on error, negative on warning
+    if(rv<=0) break; 
+    warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
 
   //Barometer, External Magnetometer, Gps
@@ -318,7 +316,7 @@ void setup() {
   gps_setup();   
   //gps_debug(); //uncomment to debug gps messages
 
-  //Servos (set servos first in case motors overwrite frequency of shared timers)
+  //Servos (set servos first just in case motors overwrite frequency of shared timers)
   for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
     out[i].begin(HW_PIN_OUT[i], 50, 1000, 2000); //Standard servo at 50Hz
 
@@ -345,14 +343,17 @@ void setup() {
   //calibrate_ESCs(); //PROPS OFF. Uncomment this to calibrate your ESCs by setting throttle stick to max, powering on, and lowering throttle to zero after the beeps
   //Code will not proceed past here if this function is uncommented!
 
-  //set quarterion to initial yaw, so that Madgwick settles faster
+  //set quarterion to initial yaw, so that AHRS settles faster
   ahrs_Setup();
 
   //set times for loop
   loop_RateBegin();
 
-  #ifndef USE_LOOP_FOR_IMU_INTERRUPT
+  //start IMU interrupt - do this last in setup(), as the IMU interrupt handler needs all modules configured
+  #ifndef USE_IMU_POLLING
     imu_interrupt_setup(); //setup imu interrupt handlers
+    delay(100);
+    if(loop_cnt==0) die("IMU interrupt not firing.");
   #endif
 
   //Set built in LED off to signal end of startup
@@ -365,7 +366,7 @@ void setup() {
 
 void loop() {
   //only call imu_loop here if we're not using interrupts
-  #ifdef USE_LOOP_FOR_IMU_INTERRUPT
+  #ifdef USE_IMU_POLLING
     while ( (micros() - loop_time) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
     imu_loop();
   #endif
@@ -407,8 +408,7 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    //Serial.printf("imu_err_cnt:%d\t",imu_err_cnt); //prints number of times imu update took too long;
-    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data      
+    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data
     if(print_need_newline) Serial.println();
     loop_rt = 0; //reset maximum
   }
@@ -431,12 +431,6 @@ void i2c_sensors_update() {
    */
    
 void imu_loop() {
-  //debugging: number of times imu took more than 10 ms
-  if(loop_rt_imu > 10000) {
-    imu_err_cnt++;
-    Serial.printf("IMU took too long: cnt=%d rt=%d\n", (int)imu_err_cnt, (int)loop_rt_imu);
-  }
-
   //update loop_ variables
   uint32_t now = micros();
   loop_dt = (now - loop_time)/1000000.0;
@@ -487,24 +481,12 @@ void imu_loop() {
 //                                          IMU INTERRUPT HANDLER                                                         //
 //========================================================================================================================//
 // This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. By doing this, unused time can be used in loop() 
-// for other functionality. With USE_LOOP_FOR_IMU_INTERRUPT any unused time in loop() is wasted. When using FreeRTOS with 
+// for other functionality. With USE_IMU_POLLING any unused time in loop() is wasted. When using FreeRTOS with 
 // HW_USE_FREERTOS the IMU update is not executed directly in the interrupt handler, but a high priority task is used. 
 // This prevents FreeRTOS watchdog resets. The delay (latency) from rising edge INT pin to start of imu_loop is approx. 
 // 10 us on ESP32 and 50 us on RP2040.
-#ifndef USE_LOOP_FOR_IMU_INTERRUPT
-  #ifndef HW_USE_FREERTOS
-    volatile bool imu_interrupt_busy = false;
-    void imu_interrupt_setup() {
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
-    }
-
-    void imu_interrupt_handler() {
-      if(imu_interrupt_busy) return;
-      imu_interrupt_busy = true;
-      imu_loop();
-      imu_interrupt_busy = false;
-    }
-  #else
+#ifndef USE_IMU_POLLING
+  #ifdef HW_USE_FREERTOS
     TaskHandle_t imu_task_handle;
 
     void imu_interrupt_setup() {
@@ -526,6 +508,19 @@ void imu_loop() {
       vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
       portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
+  #else
+    volatile bool imu_interrupt_busy = false;
+    
+    void imu_interrupt_setup() {
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING);
+    }
+
+    void imu_interrupt_handler() {
+      if(imu_interrupt_busy) return;
+      imu_interrupt_busy = true;
+      imu_loop();
+      imu_interrupt_busy = false;
+    } 
   #endif
 #endif
 
@@ -555,19 +550,11 @@ void loop_Blink() {
     led_SwitchON(out_armed); //long interval
 }
 
+// Reads accelerometer, gyro, and magnetometer data from IMU and stores it as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. 
+// A simple first-order low-pass filter is used to get rid of high frequency noise in these raw signals. 
+// Finally, the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
 void imu_GetData() {
-  //DESCRIPTION: Request full dataset from IMU and LP filter gyro, accelerometer, and magnetometer data
-  /*
-   * Reads accelerometer, gyro, and magnetometer data from IMU as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. AK8975
-   * These values are scaled according to the IMU datasheet to put them into correct units of g's, deg/sec, and uT. A simple first-order
-   * low-pass filter is used to get rid of high frequency noise in these raw signals. Generally you want to cut
-   * off everything past 80Hz, but if your loop rate is not fast enough, the low pass filter will cause a lag in
-   * the readings. The filter parameters B_gyro and B_accel are set to be good for a 2kHz loop rate. Finally,
-   * the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
-   */
-
   float ax,ay,az,gx,gy,gz,mx=0,my=0,mz=0;
-
   uint32_t t1 = micros();
   //imu_Read() returns correctly NED oriented and correctly scaled values in g's, deg/sec, and uT (see file imu.h)
   imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
@@ -1025,72 +1012,42 @@ void ahrs_Setup()
 //                                          CALIBRATION FUNCTIONS                                                         //
 //========================================================================================================================//
 
+//Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
 void calibrate_IMU_error() {
-  //DESCRIPTION: Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
-  /*
-   * Don't worry too much about what this is doing. The error values it computes are applied to the raw gyro and 
-   * accelerometer values AccX, AccY, AccZ, GyroX, GyroY, GyroZ in imu_GetData(). This eliminates drift in the
-   * measurement. 
-   */
-  float AcX,AcY,AcZ,GyX,GyY,GyZ,MgX,MgY,MgZ;
+  Serial.println("Running calibrate_IMU_error() takes a couple of seconds...");
 
-  AccErrorX = 0.0;
-  AccErrorY = 0.0;
-  AccErrorZ = 0.0;
-  GyroErrorX = 0.0;
-  GyroErrorY= 0.0;
-  GyroErrorZ = 0.0;
-  
-  //Read IMU values 12000 times
-  int cnt;
-  for(cnt=0;cnt<12000;cnt++) {
-    imu_Read(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ, &MgX, &MgY, &MgZ);
-    
-    //Sum all readings
-    AccErrorX  = AccErrorX + AcX;
-    AccErrorY  = AccErrorY + AcY;
-    AccErrorZ  = AccErrorZ + AcZ;
-    GyroErrorX = GyroErrorX + GyX;
-    GyroErrorY = GyroErrorY + GyY;
-    GyroErrorZ = GyroErrorZ + GyZ;
+  //Read IMU values, and average the readings
+  int cnt = 3000;
+  float ax, ay, az, gx, gy, gz, mx, my, mz;
+  float axerr=0, ayerr=0, azerr=0, gxerr=0, gyerr=0, gzerr=0;
+  for(int i=0; i<cnt; i++) {
+    imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz); 
+    axerr+=ax; ayerr+=ay; azerr+=az; gxerr+=gx; gyerr+=gy; gzerr+=gz;
+    delayMicroseconds(1000000/loop_freq);
   }
-  //Divide the sum by 12000 to get the error value
-  AccErrorX  = AccErrorX / cnt;
-  AccErrorY  = AccErrorY / cnt;
-  AccErrorZ  = AccErrorZ / cnt - 1.0;
-  GyroErrorX = GyroErrorX / cnt;
-  GyroErrorY = GyroErrorY / cnt;
-  GyroErrorZ = GyroErrorZ / cnt;
+  axerr/=cnt; ayerr/=cnt; azerr/=cnt; gxerr/=cnt; gyerr/=cnt; gzerr/=cnt;
 
-  Serial.printf("float AccErrorX = %+f;\n",AccErrorX);
-  Serial.printf("float AccErrorY = %+f;\n",AccErrorY);
-  Serial.printf("float AccErrorZ = %+f;\n",AccErrorZ);
-  Serial.printf("float GyroErrorX = %+f;\n",GyroErrorX);
-  Serial.printf("float GyroErrorY = %+f;\n",GyroErrorY);
-  Serial.printf("float GyroErrorZ = %+f;\n",GyroErrorZ);
+  //remove gravitation
+  azerr -= 1.0; 
 
+  Serial.printf("float AccErrorX = %+f;\n", axerr);
+  Serial.printf("float AccErrorY = %+f;\n", ayerr);
+  Serial.printf("float AccErrorZ = %+f;\n", azerr);
+  Serial.printf("float GyroErrorX = %+f;\n", gxerr);
+  Serial.printf("float GyroErrorY = %+f;\n", gyerr);
+  Serial.printf("float GyroErrorZ = %+f;\n", gzerr);
   Serial.println("Paste these values in user specified variables section and comment out calculate_IMU_error() in void setup.");
 
-  //only apply reasonable errors
-  if(AccErrorX<-0.1 || AccErrorX>0.1 || AccErrorY<-0.1 || AccErrorY>0.1 || AccErrorZ<-0.1 || AccErrorZ>0.1 ) {
-    AccErrorX = 0.0;
-    AccErrorY = 0.0;
-    AccErrorZ = 0.0;    
+  //only apply reasonable gyro and acc errors
+  float tol = 10;
+  if( -tol < gxerr && gxerr < tol  &&  -tol < gyerr && gyerr < tol  &&  -tol < gzerr && gzerr < tol ) {
+    GyroErrorX = gxerr; AccErrorY = gyerr; AccErrorZ = gzerr;   
   }
+  tol = 0.1;
+  if( -tol < axerr && axerr < tol  &&  -tol < ayerr && ayerr < tol  &&  -tol < azerr && azerr < tol ) {
+    AccErrorX = axerr; AccErrorY = ayerr; AccErrorZ = azerr;   
+  }  
 }
-
-/*
-void ahrs_warmup() {
-  //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
-  //Assuming vehicle is powered up on level surface!
-  loop_RateBegin();
-  for (int i = 0; i <= 10000; i++) {
-    loop_Rate();
-    imu_GetData();
-    ahrs_Madgwick();
-  }
-}
-*/
 
 void calibrate_ESCs() { //TODO
   //DESCRIPTION: Used in void setup() to allow standard ESC calibration procedure with the radio to take place.
@@ -1320,16 +1277,16 @@ void led_SwitchON(bool set_on) {
   digitalWrite( HW_PIN_LED, (set_on ? HW_LED_ON : !HW_LED_ON) );
 }
 
-void die(String msg) {
-  int cnt = 0;
-  while(1) {
+void warn_or_die(String msg, bool never_return) {
+  do{
     Serial.print(msg);
-    Serial.printf(" [%d]\n",cnt++);
     for(int i=0;i<10;i++) {
       led_SwitchON(true);
       delay(50);
       led_SwitchON(false);
       delay(50);
     }
-  }
+  } while(never_return);
 }
+void die(String msg) { warn_or_die(msg, true); }
+void warn(String msg) { warn_or_die(msg, false); }

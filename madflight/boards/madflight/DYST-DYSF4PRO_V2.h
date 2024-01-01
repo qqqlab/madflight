@@ -5,7 +5,7 @@ Board name: DYSF4PROV2
 Manufacturer ID: DYST
 
 copy this line to madflight.ino to use this flight controller:
-#include "boards/DYST-DYSF4PRO_V2.h"
+#include "boards/madflight/DYST-DYSF4PRO_V2.h"
 
 
 Top Connector
@@ -35,7 +35,7 @@ PB11 RX3 - TX3 PB10
 
 ==============================================================================*/
 
-#define HW_BOARD_NAME "DYST-DYSF4PRO_V2"
+#define HW_BOARD_NAME "MADFLIGHT-DYST-DYSF4PRO_V2"
 #define HW_MCU "STM32F405"
 
 #define USE_IMU_SPI_MPU6000

@@ -1,3 +1,4 @@
+// madflight https://github.com/qqqlab/madflight
 
 //Note: this implementation does not check if frequency overwrites the frequency of previously started PWM instances
 
@@ -39,7 +40,7 @@ class PWM
 {
   public:
     PWM() {};
-    
+        
     bool begin(int pin, int freq, float min_us, float max_us) {
         this->pin = pin;         
         this->freq = freq;
@@ -59,13 +60,14 @@ class PWM
         MyTim->setOverflow(freq, HERTZ_FORMAT);
         
         //don't start output here, start output with first call to writeMicroseconds()
-        //MyTim->setCaptureCompare(channel, duty_us, MICROSEC_COMPARE_FORMAT);
+        //MyTim->setCaptureCompare(channel, min_us, MICROSEC_COMPARE_FORMAT);
         //MyTim->resume();
 
       return true;
     };
 
-    void writeMicroseconds(float us) {
+    void writeMicroseconds(uint32_t us) {
+        if(!MyTim) return;
         if(us < min_us) us = min_us;
         if(us > max_us) us = max_us;
         MyTim->setCaptureCompare(channel, us, MICROSEC_COMPARE_FORMAT);
@@ -83,5 +85,5 @@ class PWM
     float max_us; 
     TIM_TypeDef *Instance;
     uint32_t channel;
-    HardwareTimer *MyTim;
+    HardwareTimer *MyTim = nullptr;
 };

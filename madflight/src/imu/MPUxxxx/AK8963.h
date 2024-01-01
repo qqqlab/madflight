@@ -1,5 +1,6 @@
-//2023-12-27 Invensense MPU-9250 SPI/I2C library
-//sampling rate acc+gyro 1000Hz, mag 100Hz
+// madflight https://github.com/qqqlab/madflight
+// 2023-12-27 Invensense MPU-9250 SPI/I2C library
+// sampling rate acc+gyro 1000Hz, mag 100Hz
  
 //================================================================
 // AK8963 Magnetometer - internal to MPU9250

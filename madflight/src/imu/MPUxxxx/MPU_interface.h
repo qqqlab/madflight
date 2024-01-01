@@ -1,3 +1,6 @@
+// madflight https://github.com/qqqlab/madflight
+// Interface for MPU sensors
+
 #pragma once
 
 #include "Arduino.h"
