@@ -16,10 +16,16 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
   - RP2040 (e.g. Raspberry Pi Pico)
   - or ESP32 (e.g. Espressiv DevKitC)
   - or STM32 (e.g. Black Pill or a flight controller)
-- SPI IMU sensor (MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
+- SPI IMU sensor (BMI270, MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
 - RC Receiver: ELRS, CRSF, SBUS, DMSX, or PPM
 - BEC or DC-DC converter to power your board from a battery
 - ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
+
+# Optional Hardware
+
+- GPS Module (Serial)
+- Barometer (I2C BMP280, MS5611)
+- Magnetometer (I2C QMC5883L)
 
 # Getting Started
 
@@ -59,6 +65,7 @@ I2C sensor:
 
 # Change Log
 
+2024-01-01 v0.1.1 Add BMI270 IMU sensor  
 2023-12-28 Add converted Betaflight targets  
 2023-12-27 Add STM32 support  
 2023-12-24 Add external magnetometer  
