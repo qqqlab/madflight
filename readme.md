@@ -48,7 +48,7 @@ SPI sensor: (highly recommended over I2C)
 SCL/SCLK <---> SPI_SCLK
  SDA/SDI <---> SPI_MOSI
  ADD/SDO <---> SPI_MISO
-     NCS <---> SPI_CS
+     NCS <---> IMU_CS
      INT <---> IMU_EXTI
      VCC <---> 3V3
      GND <---> GND
@@ -62,23 +62,6 @@ I2C sensor:
      VCC <---> 3V3
      GND <---> GND
 ```
-
-# Change Log
-
-2024-01-01 v0.1.1 Add BMI270 IMU sensor  
-2023-12-28 Add converted Betaflight targets  
-2023-12-27 Add STM32 support  
-2023-12-24 Add external magnetometer  
-2023-12-18 Add CRSF telemetry  
-2023-12-18 Add GPS  
-2023-12-15 Add BMP280 and MS5611 barometers  
-2023-12-14 Add CRSF/ELRS radio receiver  
-2023-12-13 Add Mahony AHRS  
-2023-12-11 Add USE_IMU_INTERRUPT for interrupt driven operation  
-2023-12-11 Use C++ template for flexible I2C implementations  
-2023-12-06 Add setup1() and loop1() for ESP32  
-2023-12-06 Add IMU orientation setting  
-2023-12-05 Initial release  
 
 # Software Design
 
