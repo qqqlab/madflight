@@ -317,9 +317,9 @@ void rcin_telemetry_attitude(float pitch, float roll, float yaw) {
     //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
 }
 
-void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {
+void rcin_telemetry_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining) {
     uint8_t buf[65];
-    int len = CRSF_Telemetry::telemetry_battery(buf, voltage, current, fuel, remaining);
+    int len = CRSF_Telemetry::telemetry_battery(buf, voltage_V, current_A, fuel_mAh, remaining);
     rcin_Serial->write(buf, len);
 }
 
@@ -339,7 +339,7 @@ void rcin_telemetry_flight_mode(const char *flight_mode) {
 void rcin_telemetry_attitude(float pitch, float roll, float yaw) {
 }
 
-void rcin_telemetry_battery(uint16_t voltage, uint16_t current, int fuel, uint8_t remaining) {
+void rcin_telemetry_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining) {
 }
 
 #endif

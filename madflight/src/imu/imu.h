@@ -16,6 +16,8 @@ These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kH
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 ========================================================================================================================*/
 
+extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
+
 //handle rotation for different mounting positions
 #if defined IMU_ROTATE_CW90
   #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=tmp;   tmp=*gx; *gx=-*gy; *gy=tmp;   tmp=*mx; *mx=-*my; *my=tmp; }while(0)

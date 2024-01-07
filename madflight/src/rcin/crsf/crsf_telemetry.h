@@ -40,13 +40,13 @@ uint16_t    Current ( 0.1 A )
 uint24_t    Fuel ( drawn mAh )
 uint8_t     Battery remaining ( percent )
 */
-static int telemetry_battery(uint8_t *buf, uint16_t voltage, uint16_t current, int fuel, uint8_t remaining)
+static int telemetry_battery(uint8_t *buf, float voltage_V, float current_A, int32_t fuel_mAh, uint8_t remaining)
 {
 	int offset = 0;
 	write_frame_header(buf, offset, crsf_frame_type_t::battery_sensor, (uint8_t)crsf_payload_size_t::battery_sensor);
-	write_uint16_t(buf, offset, voltage);
-	write_uint16_t(buf, offset, current);
-	write_uint24_t(buf, offset, fuel);
+	write_uint16_t(buf, offset, voltage_V * 10);
+	write_uint16_t(buf, offset, current_A * 10);
+	write_uint24_t(buf, offset, fuel_mAh);
 	write_uint8_t(buf, offset, remaining);
 	write_frame_crc(buf, offset);
 	return offset;

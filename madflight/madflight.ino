@@ -1,4 +1,4 @@
-#define APPNAME "madflight v0.1.1"
+#define APPNAME "madflight v0.1.2-dev"
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
 //Copyright (c) 2024 https://github.com/qqqlab/madflight
@@ -35,7 +35,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //                                                 BOARD                                                                  //
 //========================================================================================================================//
 
-//uncomment & change this to the flight controller you want to use, or comment it out to use the default from hw_XXXX.h
+//uncomment and change this to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
 //#include "boards/betaflight/AIRB-OMNIBUSF4.h"
 
 //========================================================================================================================//
@@ -78,7 +78,6 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // IMU SENSOR
 //-------------------------------------
-uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
 #define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
 #define IMU_ACCEL_G 16 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
 #include "src/imu/imu.h" //first set all #define IMU_xxx then include IMO.h
@@ -87,7 +86,7 @@ uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower th
 // GPS
 //-------------------------------------
 #define GPS_BAUD 115200
-#include "src/gps/gps.h"
+#include "src/gps/gps.h" //first set all #define GPS_xxx then include gps.h
 
 //-------------------------------------
 // BAROMETER SENSOR
@@ -103,6 +102,11 @@ uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower th
 
 #define MAG_I2C_ADR 0 //set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
 #include "src/mag/mag.h" //first set all #define MAG_xxx then include mag.h
+
+//-------------------------------------
+// BATTERY MONITOR
+//-------------------------------------
+#include "src/bat/bat.h" //first set all #define BAT_xxx then include bat.h
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
@@ -157,9 +161,15 @@ float GyroErrorX = 0.0;
 float GyroErrorY = 0.0;
 float GyroErrorZ = 0.0;
 
+//battery monitor calibration
+float bat_factor_v = 8.04/13951; //voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951)
+float bat_factor_i = 1.0/847; //current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847)
+
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //                           
 //========================================================================================================================//
+
+uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
 
 //number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..HW_OUT_COUNT-1] are servos
 const int out_MOTOR_COUNT = 4;
@@ -245,7 +255,13 @@ PWM out[HW_OUT_COUNT]; //ESC and Servo outputs
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
 
-//conversion
+//Battery monitor
+float bat_i = 0; //Battery current (A)
+float bat_v = 0; //battery voltage (V)
+float bat_mah = 0; //battery usage (Ah)
+float bat_wh = 0; //battery usage (Wh)
+
+//Conversion
 float lowpass_to_beta(float,float); //prototype
 const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 float B_accel = lowpass_to_beta(LP_accel, loop_freq);
@@ -310,11 +326,12 @@ void setup() {
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
 
-  //Barometer, External Magnetometer, Gps
+  //Barometer, External Magnetometer, Gps, battery monitor
   baro_Setup();
   mag_Setup();
   gps_setup();   
   //gps_debug(); //uncomment to debug gps messages
+  bat_setup();
 
   //Servos (set servos first just in case motors overwrite frequency of shared timers)
   for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
@@ -376,8 +393,9 @@ void loop() {
     i2c_sensors_update();
   #endif
 
-  //update gps
+  //update gps & battery
   gps_loop();
+  bat_loop();
 
   //send telemetry
   static uint32_t rcin_telem_ts = 0;
@@ -387,8 +405,8 @@ void loop() {
     rcin_telem_cnt++;
     rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
     rcin_telemetry_attitude(ahrs_pitch, ahrs_roll, ahrs_yaw);
-    if(rcin_telem_cnt % 5 == 0) rcin_telemetry_battery(118, 100, 5000, 20); //TODO
-    if(rcin_telem_cnt % 10 == 0) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
+    if(rcin_telem_cnt % 10 == 0) rcin_telemetry_battery(bat_v, bat_i, bat_mah, 100);
+    if(rcin_telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
 
   //Debugging - Print data at print_interval microseconds, uncomment line(s) for troubleshooting
@@ -408,6 +426,7 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
+    //print_bat(); //Prints battery voltage, current, Ah used and Wh used
     //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data
     if(print_need_newline) Serial.println();
     loop_rt = 0; //reset maximum
@@ -1248,6 +1267,14 @@ void print_loop_Rate() {
   Serial.printf("loops:%d\t",(int)(loop_cnt - loop_cnt_last));  
   loop_cnt_last = loop_cnt;
   print_need_newline = true;
+}
+
+void print_bat() {
+  Serial.printf("bat_v:%.2f\t",bat_v);
+  Serial.printf("bat_i:%+.2f\t",bat_i);
+  Serial.printf("bat_mah:%+.2f\t",bat_mah);
+  Serial.printf("bat_wh:%+.2f\t",bat_wh); 
+  print_need_newline = true;  
 }
 
 void print_i2c_scan() {
