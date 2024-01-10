@@ -117,7 +117,7 @@ private:
   }
 
 //=====================================================================================================================
-// Logging to RAM Memory - overwrites buffer
+// Logging to RAM Memory
 //=====================================================================================================================
 #ifdef USE_BB_MEMORY
 
@@ -134,12 +134,16 @@ public:
   }
 
   void csvDump() {
+    stop();
     buf_idx = 0;
     BlackBoxDecoder bbd;
     bbd.csv_decode(callback_bbReadChar, callback_SerialPrintChar);  
   }
 
-  void erase() {}
+  void erase() {
+    stop();
+    setup();
+  }
   
 private:
 
@@ -169,7 +173,7 @@ int BlackBox::buf_idx;
 
 
 //=====================================================================================================================
-// Logging to SPI FLASH - appends to flash
+// Logging to SPI FLASH
 //=====================================================================================================================
 #elif defined USE_BB_FLASH
   //#define HW_PIN_FLASH_CS    PB3

@@ -234,8 +234,7 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 float loop_dt;
 uint32_t loop_time; //loop timestamp
 uint32_t loop_cnt = 0; //loop counter
-uint32_t print_time;
-bool print_need_newline;
+
 uint32_t loop_rt, loop_rt_imu; //runtime of loop and imu sensor retrieval
 
 //Radio communication:
@@ -275,6 +274,8 @@ float B_radio = lowpass_to_beta(LP_radio, loop_freq);
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
 
+#include "src/cli/cli.h"
+
 void setup() {
   //Set built in LED to turn on to signal startup
   pinMode(HW_PIN_LED, OUTPUT);
@@ -300,18 +301,9 @@ void setup() {
   Serial.println("USE_IMU_POLLING");
 #endif
 
-  //print pin config
-  Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
-  Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
-  Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
-  Serial.printf("HW_PIN_IMU_EXTI=%d\n",HW_PIN_IMU_EXTI);
-  Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
-  Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
-  Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-  Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-
-  //debug i2c
-  print_i2c_scan();
+  //print pinout and i2c scan
+  cli.pinout();
+  cli.i2c_scan();
   
   //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
   rcin_Setup();
@@ -333,6 +325,7 @@ void setup() {
   //gps_debug(); //uncomment to debug gps messages
   bat.setup();
   bb.setup();
+  bb.start(); //XXX
 
   //Servos (set servos first just in case motors overwrite frequency of shared timers)
   for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
@@ -374,6 +367,8 @@ void setup() {
     if(loop_cnt==0) die("IMU interrupt not firing.");
   #endif
 
+  cli.welcome();
+
   //Set built in LED off to signal end of startup
   led_SwitchON(false);
 }
@@ -410,33 +405,7 @@ void loop() {
     if(rcin_telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
 
-  //Debugging - Print data at print_interval microseconds, uncomment line(s) for troubleshooting
-  uint32_t print_interval = 100000;
-  if (micros() - print_time > print_interval) {
-    print_time += print_interval;
-    print_need_newline = false;
-    //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
-    //print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
-    //print_rcin_RadioPWM();     //Prints radio pwm values (expected: 1000 to 2000)
-    //print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)    
-    //print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
-    //print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
-    //print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
-    //print_ahrs_RollPitchYaw();  //Prints roll, pitch, and yaw angles in degrees from ahrs_Madgwick filter (expected: degrees, 0 when level)
-    //print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
-    //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
-    //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
-    //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    print_bat(); //Prints battery voltage, current, Ah used and Wh used
-    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro.press_pa, baro.temp_c); //Prints barometer data
-    if(print_need_newline) Serial.println();
-    loop_rt = 0; //reset maximum
-  }
-
-  while(Serial.available()) {
-    char c = Serial.read();
-    if(c == 'b') bb.csvDump();
-  }
+  cli.loop();
 }
 
 void i2c_sensors_update() {
@@ -1194,110 +1163,6 @@ int _calibrate_Magnetometer(float bias[3], float scale[3])
   return 0;
 }
 
-//========================================================================================================================//
-//                                                PRINT FUNCTIONS                                                         //
-//========================================================================================================================//
-
-void print_overview() {
-  Serial.printf("CH%d:%d\t",1,rcin_pwm[0]);  
-  Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
-  Serial.printf("gx:%+.2f\t",GyroX);
-  Serial.printf("ax:%+.2f\t",AccX);
-  Serial.printf("mx:%+.2f\t",MagX);
-  Serial.printf("ahrs_roll:%+.1f\t",ahrs_roll);
-  Serial.printf("roll_PID:%+.3f\t",roll_PID);  
-  Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
-  Serial.printf("sats:%d\t",(int)gps.sat);
-  Serial.printf("loop_rt:%d\t",(int)loop_rt);
-  Serial.printf("loop_cnt:%d\t",(int)loop_cnt); 
-  print_need_newline = true;    
-}
-
-void print_rcin_RadioPWM() {
-  for(int i=0;i<RCIN_NUM_CHANNELS;i++) Serial.printf("pwm%d:%d\t",i+1,rcin_pwm[i]);
-  print_need_newline = true;
-}
-
-void print_rcin_RadioScaled() {
-  Serial.printf("rcin_thro:%.2f\t",rcin_thro);
-  Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
-  Serial.printf("rcin_pitch:%+.2f\t",rcin_pitch);
-  Serial.printf("rcin_yaw:%+.2f\t",rcin_yaw);
-  Serial.printf("rcin_arm:%d\t",rcin_armed);
-  Serial.printf("rcin_aux:%d\t",rcin_aux);
-  Serial.printf("out_armed:%d\t",out_armed);  
-  print_need_newline = true;
-}
-
-void print_imu_GyroData() {
-  Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t",GyroX,GyroY,GyroZ);
-  print_need_newline = true;
-}
-
-void print_imu_AccData() {
-  Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t",AccX,AccY,AccZ);
-  print_need_newline = true;
-}
-
-void print_imu_MagData() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t",MagX,MagY,MagZ);
-  print_need_newline = true;  
-}
-
-void print_ahrs_RollPitchYaw() {
-  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t",ahrs_roll,ahrs_pitch,ahrs_yaw);
-  Serial.printf("yaw_mag:%+.1f\t",-atan2(MagY, MagX) * rad_to_deg);
-  print_need_newline = true;
-}
-
-void print_control_PIDoutput() {
-  Serial.printf("roll_PID:%+.3f\tpitch_PID:%+.3f\tyaw_PID:%+.3f\t",roll_PID,pitch_PID,yaw_PID);  
-  print_need_newline = true;
-}
-
-void print_out_MotorCommands() {
-  Serial.printf("out_armed:%d", out_armed);  
-  for(int i=0;i<out_MOTOR_COUNT;i++) Serial.printf("m%d%%:%1.0f\t", i+1, 100*out_command[i]);
-  print_need_newline = true;    
-}
-
-void print_out_ServoCommands() {
-  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) Serial.printf("s%d%%:%1.0f\t", i-out_MOTOR_COUNT+1, 100*out_command[i]);
-  print_need_newline = true;  
-}
-
-void print_loop_Rate() {
-  static uint32_t loop_cnt_last = 0;
-  Serial.printf("loop_dt:%d\t",(int)(loop_dt * 1000000.0));
-  Serial.printf("loop_rt:%d\t",(int)loop_rt);
-  Serial.printf("loop_rt_imu:%d\t",(int)loop_rt_imu);
-  Serial.printf("loop_cnt:%d\t",(int)loop_cnt);  
-  Serial.printf("loops:%d\t",(int)(loop_cnt - loop_cnt_last));  
-  loop_cnt_last = loop_cnt;
-  print_need_newline = true;
-}
-
-void print_bat() {
-  Serial.printf("bat.v:%.2f\t",bat.v);
-  Serial.printf("bat.i:%+.2f\t",bat.i);
-  Serial.printf("bat.mah:%+.2f\t",bat.mah);
-  Serial.printf("bat.wh:%+.2f\t",bat.wh); 
-  print_need_newline = true;  
-}
-
-void print_i2c_scan() {
-  Serial.printf("I2C: Scanning ...\n");
-  byte count = 0;
-  i2c->begin();
-  for (byte i = 8; i < 120; i++) {
-    i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
-    if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
-      Serial.printf("I2C: Found address: 0x%02X (%d)\n",i,i);
-      count++;
-    }
-  }
-  Serial.printf("I2C: Found %d device(s)\n", count);      
-}
 
 //===============================================================================================
 // HELPERS
