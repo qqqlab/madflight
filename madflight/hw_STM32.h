@@ -1,3 +1,5 @@
+#include "variant_generic.h"
+#include "pins_arduino.h"
 
 //Note: this implementation does not check if a PWM frequency overwrites the frequency of previously instantiated PWM instance
 
@@ -123,9 +125,15 @@ const int HW_PIN_GPS_RX   = PB3;
 const int HW_PIN_GPS_TX   = PA15;
 const int HW_PIN_GPS_INVERTER = -1;
 
-//Battery ADC voltage and current inputs:
-const int HW_PIN_BAT_V    = PB0;
-const int HW_PIN_BAT_I    = PB1;
+//Battery ADC (uncomment at least one pin to enable the battery monitor)
+#define HW_PIN_BAT_V PB0
+#define HW_PIN_BAT_I PB1
+
+//BlackBox SPI:
+const int HW_PIN_SPI2_MISO = -1;
+const int HW_PIN_SPI2_MOSI = -1;
+const int HW_PIN_SPI2_SCLK = -1;
+const int HW_PIN_BB_CS     = -1;
 
 //Include Libraries
 #include <Wire.h>                      //I2C communication
@@ -138,6 +146,7 @@ HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 SPIClass *spi = &SPI;
+SPIClass bb_spi = SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK); //do not define HW_PIN_BB_CS here
 
 #endif //#ifndef HW_BOARD_NAME
 

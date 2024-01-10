@@ -98,7 +98,7 @@ public:
                 sample_cnt++;
             }else{
                 startTemperature();
-                sample_micros = micros();                
+                sample_micros = micros();
                 sample_cnt = 0;
             }
             rv = 1;

@@ -36,7 +36,7 @@ blink interval longer than 1 second - loop() is taking too much time
 //========================================================================================================================//
 
 //uncomment and change this to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
-//#include "boards/betaflight/AIRB-OMNIBUSF4.h"
+//#include "boards/madflight/DYST-DYSF4PRO_V2.h"
 
 //========================================================================================================================//
 //                                                 INCLUDES                                                               //
@@ -91,6 +91,9 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // BAROMETER SENSOR
 //-------------------------------------
+//#define USE_BARO_BMP280
+//#define USE_BARO_MS5611
+#define USE_BARO_NONE
 #include "src/baro/baro.h" //first set all #define BARO_xxx then include baro.h
 
 //-------------------------------------
@@ -106,7 +109,19 @@ blink interval longer than 1 second - loop() is taking too much time
 //-------------------------------------
 // BATTERY MONITOR
 //-------------------------------------
-#include "src/bat/bat.h" //first set all #define BAT_xxx then include bat.h
+//BatteryADC calibration
+#define BAT_FACTOR_V 8.04/13951 //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951)
+#define BAT_FACTOR_I 1.0/847 //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847)
+#include "src/bat/bat.h" //first set all #define BAT_xxx then include bat.h - BatteryADC is used if HW_PIN_BAT_V or HW_PIN_BAT_I is defined
+
+//-------------------------------------
+// BLACKBOX LOGGER
+//-------------------------------------
+//Uncomment only one USE_BB_xxx
+#define USE_BB_MEMORY //log to RAM
+//#define USE_BB_FLASH //log to W25Qxx SPI flash 
+//#define USE_BB_NONE
+#include "src/bb/bb.h" //first set all #define BB_xxx then include bb.h
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                      //
@@ -160,10 +175,6 @@ float AccErrorZ = 0.0;
 float GyroErrorX = 0.0;
 float GyroErrorY = 0.0;
 float GyroErrorZ = 0.0;
-
-//battery monitor calibration
-float bat_factor_v = 8.04/13951; //voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951)
-float bat_factor_i = 1.0/847; //current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847)
 
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //                           
@@ -241,9 +252,6 @@ float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in deg
 //External magnetometer:
 float mag_x = 0, mag_y = 0, mag_z = 0;
 
-//Barometer:
-float baro_press_pa = 0, baro_temp_c = 0;
-
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
@@ -254,12 +262,6 @@ PWM out[HW_OUT_COUNT]; //ESC and Servo outputs
 
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
-
-//Battery monitor
-float bat_i = 0; //Battery current (A)
-float bat_v = 0; //battery voltage (V)
-float bat_mah = 0; //battery usage (Ah)
-float bat_wh = 0; //battery usage (Wh)
 
 //Conversion
 float lowpass_to_beta(float,float); //prototype
@@ -307,8 +309,6 @@ void setup() {
   Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
   Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
   Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-  Serial.printf("HW_PIN_BAT_V=%d\n", HW_PIN_BAT_V);
-  Serial.printf("HW_PIN_BAT_I=%d\n", HW_PIN_BAT_I);
 
   //debug i2c
   print_i2c_scan();
@@ -326,12 +326,13 @@ void setup() {
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
 
-  //Barometer, External Magnetometer, Gps, battery monitor
-  baro_Setup();
+  //Barometer, External Magnetometer, Gps, battery monitor, blackbox
+  baro.setup();
   mag_Setup();
   gps_setup();   
   //gps_debug(); //uncomment to debug gps messages
-  bat_setup();
+  bat.setup();
+  bb.setup();
 
   //Servos (set servos first just in case motors overwrite frequency of shared timers)
   for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) {
@@ -395,7 +396,7 @@ void loop() {
 
   //update gps & battery
   gps_loop();
-  bat_loop();
+  if(bat.loop()) bb.log_bat(); //log if battery was updated
 
   //send telemetry
   static uint32_t rcin_telem_ts = 0;
@@ -405,7 +406,7 @@ void loop() {
     rcin_telem_cnt++;
     rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
     rcin_telemetry_attitude(ahrs_pitch, ahrs_roll, ahrs_yaw);
-    if(rcin_telem_cnt % 10 == 0) rcin_telemetry_battery(bat_v, bat_i, bat_mah, 100);
+    if(rcin_telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
     if(rcin_telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
 
@@ -415,7 +416,7 @@ void loop() {
     print_time += print_interval;
     print_need_newline = false;
     //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
-    print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
+    //print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
     //print_rcin_RadioPWM();     //Prints radio pwm values (expected: 1000 to 2000)
     //print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)    
     //print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
@@ -426,15 +427,20 @@ void loop() {
     //print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
     //print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
     //print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
-    //print_bat(); //Prints battery voltage, current, Ah used and Wh used
-    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro_press_pa, baro_temp_c); //Prints barometer data
+    print_bat(); //Prints battery voltage, current, Ah used and Wh used
+    //Serial.printf("press:%.1f\ttemp:%.2f\t",baro.press_pa, baro.temp_c); //Prints barometer data
     if(print_need_newline) Serial.println();
     loop_rt = 0; //reset maximum
+  }
+
+  while(Serial.available()) {
+    char c = Serial.read();
+    if(c == 'b') bb.csvDump();
   }
 }
 
 void i2c_sensors_update() {
-  baro_Read(&baro_press_pa, &baro_temp_c);
+  if(baro.update()) bb.log_baro(); //log if pressure updated
   mag_Read(&mag_x, &mag_y, &mag_z);
 }
 
@@ -493,7 +499,9 @@ void imu_loop() {
 
   //record max runtime loop
   uint32_t rt = micros() - loop_time;
-  if(loop_rt < rt) loop_rt = rt; 
+  if(loop_rt < rt) loop_rt = rt;
+
+  //bb.log_imu(); //full speed black box logging imu data, fills up memory quickly...
 }
 
 //========================================================================================================================//
@@ -1270,10 +1278,10 @@ void print_loop_Rate() {
 }
 
 void print_bat() {
-  Serial.printf("bat_v:%.2f\t",bat_v);
-  Serial.printf("bat_i:%+.2f\t",bat_i);
-  Serial.printf("bat_mah:%+.2f\t",bat_mah);
-  Serial.printf("bat_wh:%+.2f\t",bat_wh); 
+  Serial.printf("bat.v:%.2f\t",bat.v);
+  Serial.printf("bat.i:%+.2f\t",bat.i);
+  Serial.printf("bat.mah:%+.2f\t",bat.mah);
+  Serial.printf("bat.wh:%+.2f\t",bat.wh); 
   print_need_newline = true;  
 }
 

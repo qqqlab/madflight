@@ -97,9 +97,15 @@ const int HW_PIN_RCIN_TX  = 32;
 const int HW_PIN_GPS_RX   = 17;
 const int HW_PIN_GPS_TX   =  5;
 
-//Battery voltage divider:
-const int HW_PIN_BAT_V  = 34;
-const int HW_PIN_BAT_I  = -1;
+//Battery ADC (uncomment at least one pin to enable the battery monitor)
+#define HW_PIN_BAT_V 34
+//#define HW_PIN_BAT_I -1
+
+//BlackBox SPI:
+const int HW_PIN_SPI2_MISO = -1;
+const int HW_PIN_SPI2_MOSI = -1;
+const int HW_PIN_SPI2_SCLK = -1;
+const int HW_PIN_BB_CS   = -1;
 
 /*--------------------------------------------------------------------------------------------------
   IMPORTANT
@@ -130,7 +136,9 @@ const int HW_PIN_BAT_I  = -1;
 //-------------------------------------
 HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
 HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
-SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
+SPIClass spi1 = SPIClass(HSPI); // VSPI or HSPI(default) - used for IMU
+SPIClass spi2 = SPIClass(VSPI);  // VSPI(default) or HSPI - used for BB and other functions
+
 #ifdef USE_ESP32_SOFTWIRE
   typedef SoftWire HW_WIRETYPE; //typedef to force IMU to use SoftWire
   typedef SoftWire TwoWire; //typedef to force BARO to use SoftWire
@@ -139,6 +147,12 @@ SPIClass *spi = new SPIClass(HSPI); // VSPI or HSPI(default)
   typedef TwoWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
   HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 #endif
+
+
+
+
+SPIClass *spi = &spi1;
+SPIClass *bb_spi = &spi2;
 
 #endif //#ifndef HW_BOARD_NAME
 
@@ -196,7 +210,8 @@ void hw_setup()
 
   i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
 
-  spi->begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
+  spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
+  spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
 
   startLoop1Task();
 }

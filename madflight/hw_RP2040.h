@@ -97,9 +97,15 @@ const int HW_PIN_RCIN_TX  = 0; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(defa
 const int HW_PIN_GPS_RX   = 9; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
 const int HW_PIN_GPS_TX   = 8; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
 
-//Battery voltage divider:
-const int HW_PIN_BAT_V = 28; //A2
-const int HW_PIN_BAT_I = -1;
+//Battery ADC (uncomment at least one pin to enable the battery monitor)
+#define HW_PIN_BAT_V 28; //pin A2
+//#define HW_PIN_BAT_I -1
+
+//BlackBox SPI:
+const int HW_PIN_SPI2_MISO = -1;
+const int HW_PIN_SPI2_MOSI = -1;
+const int HW_PIN_SPI2_SCLK = -1;
+const int HW_PIN_BB_CS   = -1;
 
 //-------------------------------------
 //Include Libraries
@@ -124,6 +130,7 @@ typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 
 SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
+SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1
 
 #endif //#ifndef HW_BOARD_NAME
 
@@ -154,4 +161,5 @@ void hw_setup()
 
   //SPI 
   spi->begin();
+  bb_spi->begin();
 }

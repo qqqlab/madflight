@@ -114,7 +114,7 @@ extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h migh
 int imu_Setup() {
   int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, loop_freq);
   loop_freq = imu_Sensor.get_rate();
-  Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", loop_freq, rv);
+  Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", (int)loop_freq, (int)rv);
   return rv;
 }
 
