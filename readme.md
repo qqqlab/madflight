@@ -69,19 +69,22 @@ I2C sensor:
 - No external dependencies, all module libraries included in `src` directory
 - The flight controller madflight.ino runs standard `setup()` and `loop()`.
 - madflight.ino is written in plain C with minimal function arguments.
-- Global variables to communicate between the different modules.
+- Global variables and objects are used to communicate between the different modules.
 - Function names are prefixed with the module they belong to:
-  - `loop_` Main loop control
-  - `imu_` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
-  - `ahrs_` Attitude Heading Reference System, estimates roll, yaw, pitch
-  - `rcin_` RC INput, retrieves RC receiver data
-  - `control_` PID controller and output mixer
-  - `out_` Output to motors and servos
-  - `mag_` Magnetometer (compass)
-  - `gps_` GPS receiver
-  - `print_` Prints debugging info
-  - `calibrate_` Calibration
-- Module source code is in subdirectories of the `src` directory. Here you find a .h file with the same name (e.g. `src/imu/imu.h`) which is the interface between the main program and the module. There might also be an .ino example program, e.g. `src/imu/imu.ino`.
+  - `loop` Main loop control
+  - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
+  - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
+  - `rcin` RC INput, retrieves RC receiver data
+  - `control` PID controller and output mixer
+  - `out` Output to motors and servos
+  - `mag` Magnetometer (compass)
+  - `baro` Barometer
+  - `gps` GPS receiver
+  - `bb` Black Box data logger
+  - `print` Prints debugging info
+  - `calibrate` Calibration
+  - `hw` Hardware specific code for STM32, RP2040 and ESP32
+- Module source code is in subdirectories of the `src` directory. Here you find a .h file with the same name (e.g. `src/imu/imu.h`) which is the interface between the main program and the sensor options for the module. There might also be an .ino example program, e.g. `src/imu/imu.ino`.
 - The module files are usually header only, i.e. the header also includes the implemention.
 
 ## Default Pinout for ESP32 DevKitC (38 pin)

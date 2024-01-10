@@ -33,9 +33,9 @@ public:
 
 #include "BMP280.h"
 
+Adafruit_BMP280 bmp280(i2c);
+
 class BarometerBMP280 {
-private: 
-  Adafruit_BMP280 bmp(i2c);
 
 public:
   float press_pa = 0;
@@ -44,20 +44,20 @@ public:
   int setup() {
     Serial.println();
     unsigned status;
-    status = bmp.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("USE_BARO_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, bmp.sensorID());
+    status = bmp280.begin(BARO_I2C_ADR, BMP280_CHIPID);
+    Serial.printf("USE_BARO_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, bmp280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                         "try a different address!"));
-      Serial.print("SensorID was: 0x"); Serial.println(bmp.sensorID(),16);
+      Serial.print("SensorID was: 0x"); Serial.println(bmp280.sensorID(),16);
       Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
       Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
       Serial.print("        ID of 0x60 represents a BME 280.\n");
       Serial.print("        ID of 0x61 represents a BME 680.\n");
     }
 
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+    bmp280.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                     Adafruit_BMP280::SAMPLING_X1,     /* Temp. oversampling */
                     Adafruit_BMP280::SAMPLING_X1,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_OFF,      /* Filtering. */
@@ -67,10 +67,10 @@ public:
 
   bool update() {
     //driver does not return whether data is fresh, return true if pressure changed
-    float pressure_pa_new = bmp.readPressure();
-    bool rv = (pressure_pa_new != press_pa)
+    float pressure_pa_new = bmp280.readPressure();
+    bool rv = (pressure_pa_new != press_pa);
     press_pa = pressure_pa_new;
-    temp_c = bmp.readTemperature();
+    temp_c = bmp280.readTemperature();
     return rv;
   }
 };
