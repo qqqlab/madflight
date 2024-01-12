@@ -81,8 +81,8 @@ I2C sensor:
   - `baro` Barometer
   - `gps` GPS receiver
   - `bb` Black Box data logger
-  - `print` Prints debugging info
-  - `calibrate` Calibration
+  - `cli` Command Line Interface for debugging, configuration and calibration
+  - `cfg` Read and save configuration to flash
   - `hw` Hardware specific code for STM32, RP2040 and ESP32
 - Module source code is in subdirectories of the `src` directory. Here you find a .h file with the same name (e.g. `src/imu/imu.h`) which is the interface between the main program and the sensor options for the module. There might also be an .ino example program, e.g. `src/imu/imu.ino`.
 - The module files are usually header only, i.e. the header also includes the implemention.

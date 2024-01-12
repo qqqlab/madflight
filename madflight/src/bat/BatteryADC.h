@@ -3,9 +3,9 @@ ADC Battery Monitor
 
 Need to have at least HW_PIN_BAT_V or HW_PIN_BAT_I defined before including this header
 
-Also need:
-#define BAT_FACTOR_V 8.04/13951 //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951)
-#define BAT_FACTOR_I 1.0/847 //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847)
+Also needs cfg for:
+cfg.bat_cal_v //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951 = 0.0057630)
+cfg.bat_cal_i //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847 = 0.0011806)
 
 ========================================================================================================================*/
 
@@ -24,14 +24,14 @@ class BatteryADC {
         v = 0;
         mah = 0;
         wh = 0;
-        #ifdef HW_PIN_BAT_V
-              Serial.printf("HW_PIN_BAT_V=%d\n", HW_PIN_BAT_V);
-              pinMode(HW_PIN_BAT_V, INPUT);
-        #endif
-        #ifdef HW_PIN_BAT_I
-              pinMode(HW_PIN_BAT_I, INPUT);
-              Serial.printf("HW_PIN_BAT_I=%d\n", HW_PIN_BAT_I);
-        #endif
+        Serial.printf("HW_PIN_BAT_V=%d\n", HW_PIN_BAT_V);
+        if(HW_PIN_BAT_V != -1) {
+          pinMode(HW_PIN_BAT_V, INPUT);
+        }
+        Serial.printf("HW_PIN_BAT_I=%d\n", HW_PIN_BAT_I);
+        if(HW_PIN_BAT_I != -1) {
+          pinMode(HW_PIN_BAT_I, INPUT);
+        }
         analogReadResolution(16);
     }
 
@@ -43,12 +43,12 @@ class BatteryADC {
             uint32_t dt = now - ts;
             float dt_h = dt / 3600e6;
             ts = now;
-            #ifdef HW_PIN_BAT_V
-                v = (BAT_FACTOR_V) * analogRead(HW_PIN_BAT_V);
-            #endif
-            #ifdef HW_PIN_BAT_I
-                i = (BAT_FACTOR_I) * analogRead(HW_PIN_BAT_I);
-            #endif
+            if(HW_PIN_BAT_V != -1) {
+                v = cfg.bat_cal_v * analogRead(HW_PIN_BAT_V);
+            }
+            if(HW_PIN_BAT_I != -1) {
+                i = cfg.bat_cal_v * analogRead(HW_PIN_BAT_I);
+            }
             mah += i * dt_h * 1000;
             wh += v * i * dt_h;
             return true;

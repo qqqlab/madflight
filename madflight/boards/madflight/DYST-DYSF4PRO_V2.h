@@ -39,8 +39,12 @@ PB11 RX3 - TX3 PB10
 #define HW_MCU "STM32F405"
 
 #define USE_IMU_SPI_MPU6000
-#define USE_MAX7456
-#define USE_FLASH_W25Q128FV
+#define USE_BB_FLASH
+#define USE_BAT_ADC
+
+//unused bf defines
+//#define USE_MAX7456
+//#define USE_FLASH_W25Q128FV
 
 //Sensor specific setup
 #define IMU_ROTATE_CW180
@@ -115,7 +119,6 @@ SPIClass *spi = &SPI;
 //other pins
 #define HW_PIN_BEEPER      PB4
 #define HW_PIN_PPM         PB14
-#define HW_PIN_ADC_BATT    PC2
 #define HW_PIN_ADC_RSSI    PC3
 #define HW_PIN_LED_STRIP   PA1
 #define HW_PIN_FLASH_CS    PB3

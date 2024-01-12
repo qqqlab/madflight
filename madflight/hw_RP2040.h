@@ -97,9 +97,9 @@ const int HW_PIN_RCIN_TX  = 0; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(defa
 const int HW_PIN_GPS_RX   = 9; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
 const int HW_PIN_GPS_TX   = 8; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
 
-//Battery ADC (uncomment at least one pin to enable the battery monitor)
-#define HW_PIN_BAT_V 28; //pin A2
-//#define HW_PIN_BAT_I -1
+//Battery ADC
+const int HW_PIN_BAT_V = 28; //pin A2
+const int HW_PIN_BAT_I = -1;
 
 //BlackBox SPI:
 const int HW_PIN_SPI2_MISO = -1;
@@ -135,6 +135,27 @@ SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS
 #endif //#ifndef HW_BOARD_NAME
 
 //======================================================================================================================//
+//  EEPROM
+//======================================================================================================================//
+#include <EEPROM.h>
+
+void hw_eeprom_begin() {
+  EEPROM.begin(4096);
+}
+
+uint8_t hw_eeprom_read(uint32_t adr) {
+  return EEPROM.read(adr);
+}
+
+void hw_eeprom_write(uint32_t adr, uint8_t val) {
+  EEPROM.write(adr, val);
+}
+
+void hw_eeprom_commit() {
+  EEPROM.commit();
+}
+
+//======================================================================================================================//
 //                    hw_setup()
 //======================================================================================================================//
 
@@ -145,6 +166,8 @@ SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS
   #include <FreeRTOS.h>  //FreeRTOS
   #include <semphr.h>    //FreeRTOS
 #endif
+
+
 
 void hw_setup() 
 { 
@@ -162,4 +185,15 @@ void hw_setup()
   //SPI 
   spi->begin();
   bb_spi->begin();
+
+  hw_eeprom_begin();
+}
+
+void hw_reset() {
+  watchdog_enable(1, 1);
+  while(1);
+  
+  //alternate method?
+  //#define AIRCR_Register (*((volatile uint32_t*)(PPB_BASE + 0x0ED0C)))
+  //AIRCR_Register = 0x5FA0004;
 }

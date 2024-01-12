@@ -23,15 +23,15 @@ This file defines:
 //-------------------------------------
 //Uncomment only one USE_IMU_xxx
 //#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
-#define USE_IMU_SPI_MPU6500
+//#define USE_IMU_SPI_MPU6500
 //#define USE_IMU_SPI_MPU6000
 //#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
-//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
+#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
 //#define USE_IMU_I2C_MPU6500
 //#define USE_IMU_I2C_MPU6050
 //#define USE_IMU_I2C_MPU6000
 
-#define IMU_I2C_ADR 0 //Set I2C address. If unknown, see output of print_i2c_scan()
+#define IMU_I2C_ADR 0x69 //Set I2C address. If unknown, see output of print_i2c_scan()
 
 //Uncomment only one sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
@@ -97,9 +97,9 @@ const int HW_PIN_RCIN_TX  = 32;
 const int HW_PIN_GPS_RX   = 17;
 const int HW_PIN_GPS_TX   =  5;
 
-//Battery ADC (uncomment at least one pin to enable the battery monitor)
-#define HW_PIN_BAT_V 34
-//#define HW_PIN_BAT_I -1
+//Battery ADC
+const int HW_PIN_BAT_V    = 34;
+const int HW_PIN_BAT_I    = -1;
 
 //BlackBox SPI:
 const int HW_PIN_SPI2_MISO = -1;
@@ -196,9 +196,34 @@ void startLoop1Task() {
 #endif
 }
 
+//======================================================================================================================//
+//  EEPROM
+//======================================================================================================================//
+#include <EEPROM.h>
+
+void hw_eeprom_begin() {
+  EEPROM.begin(4096);
+}
+
+uint8_t hw_eeprom_read(uint32_t adr) {
+  return EEPROM.read(adr);
+}
+
+void hw_eeprom_write(uint32_t adr, uint8_t val) {
+  EEPROM.write(adr, val);
+}
+
+void hw_eeprom_commit() {
+  EEPROM.commit();
+}
+
+
 //--------------------------------------------------------------------
 // hw_setup()
 //--------------------------------------------------------------------
+
+#include <EEPROM.h>
+
 void hw_setup()
 {
   delay(1000);
@@ -213,5 +238,11 @@ void hw_setup()
   spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
   spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
 
+  hw_eeprom_begin();
+
   startLoop1Task();
+}
+
+void hw_reset() {	
+  ESP.restart();
 }

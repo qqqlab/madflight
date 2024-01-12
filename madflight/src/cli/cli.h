@@ -1,7 +1,6 @@
+//CLI Command Line Interface for madflight
 
 #pragma once
-
-
 
 class CLI {
 
@@ -24,7 +23,15 @@ public:
     print_loop();
   }
 
-  void pinout() {
+  void print_boardInfo() {
+    Serial.println("HW_BOARD_NAME=" HW_BOARD_NAME);
+    #ifdef HW_MCU
+      Serial.println("HW_MCU=" HW_MCU);
+    #endif  
+    #ifdef USE_IMU_POLLING
+      Serial.println("USE_IMU_POLLING");
+    #endif
+
     Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
     Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
     Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
@@ -35,7 +42,7 @@ public:
     Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
   }
 
-  void i2c_scan() {
+  void print_i2cScan() {
     Serial.printf("I2C: Scanning ...\n");
     byte count = 0;
     i2c->begin();
@@ -55,10 +62,11 @@ public:
 
   void help() {
     Serial.printf(
-    "--info--\n"
+    "--info & tools--\n"
     "help or ? This info\n"
-    "pinout    Pinout\n"
+    "board     Board info and pinout\n"
     "i2c       I2C scan\n"
+    "reset     Reset\n"
     "--print--\n"
     "poff      Printing off\n"
     "po        Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt\n"
@@ -78,6 +86,13 @@ public:
     "bbstart\n"
     "bbstop\n"
     "bberase\n"
+    "--config--\n"
+    "set [name] [value]\n"
+    "set       List config\n"
+    "save      Save config to EEPROM\n"
+    "--calibrate--\n"
+    "cimu      Calibrate IMU error\n"
+    "cmag      Calibrate magnetometer\n"
     );
   }
   
@@ -85,19 +100,32 @@ private:
 
   String cmdline = "";
 
+  String getCmdPart(uint32_t &pos) {
+    String part = "";
+    while(pos < cmdline.length() && cmdline[pos] == ' ') pos++;
+    while(pos < cmdline.length() && cmdline[pos] != ' ') {
+      part += cmdline[pos];
+      pos++;
+    }
+    return part;
+  }
+
   void processCmd() {
-    String cmd = cmdline;
-    //for(int i=0;i<cmdline.length();i++) {
-    //}
+    uint32_t pos = 0;
+    String cmd = getCmdPart(pos);
+    String arg1 = getCmdPart(pos);
+    String arg2 = getCmdPart(pos);
     cmd.toLowerCase();
     cmd.trim();
-    
+
     if(cmd=="help" || cmd=="?") {
       help();
-    }else if(cmd == "pinout") {
-      pinout();
+    }else if(cmd == "board") {
+      print_boardInfo();
     }else if(cmd == "i2c") {
-      i2c_scan();
+      print_i2cScan();
+    }else if(cmd == "reset") {
+      hw_reset();
     }else if(cmd == "poff") {
       print_off();
     }else if(cmd == "po") {
@@ -132,11 +160,207 @@ private:
       bb.stop();
     }else if(cmd == "bberase") {
       bb.erase();
+    }else if(cmd == "set") {
+      if(arg2=="") {
+        cfg.print();
+      }else{
+        cfg.set(arg1, arg2);
+      }
+    }else if(cmd == "save") {
+      Serial.print("saving, please wait ... ");
+      cfg.save();
+      Serial.println("DONE");
+    }else if(cmd == "cimu") {
+      calibrate_IMU_error();
+    }else if(cmd == "cmag") {
+      calibrate_Magnetometer();
     }else if(cmd != "") {
       Serial.println("ERROR Unknown command - Type help for help");
     }
     cmdline = "";
   }
+
+//========================================================================================================================//
+//                                          CALIBRATION FUNCTIONS                                                         //
+//========================================================================================================================//
+
+public:
+
+  //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
+  void calibrate_IMU_error() {
+    Serial.println("Running calibrate_IMU_error() takes a couple of seconds...");
+
+    imu_loop_enable = false; //disable running of imu_loop()
+
+    //Read IMU values, and average the readings
+    int cnt = 3000;
+    float ax, ay, az, gx, gy, gz, mx, my, mz;
+    float axerr=0, ayerr=0, azerr=0, gxerr=0, gyerr=0, gzerr=0;
+    for(int i=0; i<cnt; i++) {
+      imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+      axerr+=ax;
+      ayerr+=ay;
+      azerr+=az;
+      gxerr+=gx;
+      gyerr+=gy;
+      gzerr+=gz;
+      delayMicroseconds(1000000/loop_freq);
+    }
+    axerr/=cnt;
+    ayerr/=cnt;
+    azerr/=cnt;
+    gxerr/=cnt;
+    gyerr/=cnt;
+    gzerr/=cnt;
+
+    //remove gravitation
+    azerr -= 1.0;
+
+    Serial.printf("set imu_cal_ax %+f #config %+f\n", axerr, cfg.imu_cal_ax);
+    Serial.printf("set imu_cal_ay %+f #config %+f\n", ayerr, cfg.imu_cal_ay);
+    Serial.printf("set imu_cal_az %+f #config %+f\n", azerr, cfg.imu_cal_az);
+    Serial.printf("set imu_cal_gx %+f #config %+f\n", gxerr, cfg.imu_cal_gx);
+    Serial.printf("set imu_cal_gy %+f #config %+f\n", gyerr, cfg.imu_cal_gy);
+    Serial.printf("set imu_cal_gz %+f #config %+f\n", gzerr, cfg.imu_cal_gz);
+    Serial.println("Note: use CLI 'save' to store these values");
+
+    //only apply reasonable gyro and acc errors
+    float tol = 10;
+    if( -tol < gxerr && gxerr < tol  &&  -tol < gyerr && gyerr < tol  &&  -tol < gzerr && gzerr < tol ) {
+      cfg.imu_cal_gx = gxerr;
+      cfg.imu_cal_gy = gyerr;
+      cfg.imu_cal_gz = gzerr;
+    }
+    tol = 0.1;
+    if( -tol < axerr && axerr < tol  &&  -tol < ayerr && ayerr < tol  &&  -tol < azerr && azerr < tol ) {
+      cfg.imu_cal_ax = axerr;
+      cfg.imu_cal_ay = ayerr;
+      cfg.imu_cal_az = azerr;
+    }
+
+    imu_loop_enable = true; //enable running of imu_loop()
+  }
+
+/*
+  void calibrate_ESCs() { //TODO
+    //DESCRIPTION: Used in void setup() to allow standard ESC calibration procedure with the radio to take place.
+    //  Simulates the void loop(), but only for the purpose of providing throttle pass through to the motors, so that you can
+    //  power up with throttle at full, let ESCs begin arming sequence, and lower throttle to zero. This function should only be
+    //  uncommented when performing an ESC calibration.
+
+    uint32_t ts = micros();
+    while (true) {
+      while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
+      ts = micros();
+
+      led_SwitchON(true); //LED on to indicate we are not in main loop
+
+      rcin_GetCommands(); //Pulls current available radio commands
+      rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
+      rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
+      
+      //set all motors
+      for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = rcin_thro;
+    
+      //out_KillSwitch(); //Don't update motor outputs to 0 if disarmed
+      out_SetCommands(); //Sends command pulses to each motor pin
+      
+      //printRadioData(); //Radio pwm values (expected: 1000 to 2000)
+    }
+  }
+*/
+  void calibrate_Magnetometer() {
+    float bias[3], scale[3];
+
+    Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
+    int rv = _calibrate_Magnetometer(bias, scale);
+    if(rv==0) {
+      Serial.println("Calibration Successful!");
+      Serial.println("Please comment out the calibrateMagnetometer() function and copy these values into the code:");
+      Serial.printf("float MagErrorX = %f;\n", bias[0]);
+      Serial.printf("float MagErrorY = %f;\n", bias[1]);
+      Serial.printf("float MagErrorZ = %f;\n", bias[2]);
+      Serial.printf("float MagScaleX = %f;\n", scale[0]);
+      Serial.printf("float MagScaleY = %f;\n", scale[1]);
+      Serial.printf("float MagScaleZ = %f;\n", scale[2]);
+      Serial.println(" ");
+      Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
+    }
+    else {
+      Serial.printf("Calibration Unsuccessful rv=%d. Please reset the board and try again.\n",rv);
+    }
+
+    while(1); //Halt code so it won't enter main loop until this function commented out
+  }
+
+private:
+
+  // finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
+  // Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
+  int _calibrate_Magnetometer(float bias[3], float scale[3]) 
+  {
+    const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
+    const float deltaThresh = 0.3f; //uT
+    const float B_coeff = 0.125;
+
+    float ax=0,ay=0,az=0,gx=0,gy=0,gz=0;
+    float m[3] = {0};
+    int counter;
+    float m_filt[3];
+    float m_max[3];
+    float m_min[3];
+
+    // get a starting set of data
+    imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &m[0], &m[1], &m[2]);
+    for(int i=0;i<3;i++) {
+      m_max[i] = m[i];
+      m_min[i] = m[i];
+      m_filt[i] = m[i];
+    }
+
+    // collect data to find max / min in each channel
+    // sample counter times, restart sampling when a min/max changed at least deltaThresh uT
+    uint32_t start_time = millis();
+    counter = 0;
+    while (counter < maxCounts) {
+      imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &m[0], &m[1], &m[2]);
+      for(int i=0;i<3;i++) {
+        m_filt[i] = m_filt[i] * (1 - B_coeff) + m[i] * B_coeff;
+        if (m_max[i] < m_filt[i]) {
+          float delta =  m_filt[i] - m_max[i];
+          if (delta > deltaThresh) counter = 0;
+          m_max[i] = m_filt[i];        
+        }
+        if (m_min[i] > m_filt[i]) {
+          float delta = m_min[i] - m_filt[i];
+          if (delta > deltaThresh) counter = 0;
+          m_min[i] = m_filt[i];
+        }
+      }
+      counter++;
+      delay(10); //sample rate = 100Hz
+
+      //print progress
+      if(millis() - start_time > 1000) {
+        start_time = millis();
+        Serial.printf("xmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
+      }
+    }
+
+    // find the magnetometer bias and scale
+    float avg_scale = 0;
+    for(int i=0;i<3;i++) { 
+      bias[i] = (m_max[i] + m_min[i]) / 2;
+      scale[i] = (m_max[i] - m_min[i]) / 2;
+      avg_scale += scale[i];
+    }
+    for(int i=0;i<3;i++) {
+      scale[i] = (avg_scale / 3) / scale[i];
+    }
+
+    return 0;
+  }
+
 
 //========================================================================================================================//
 //                                                PRINT FUNCTIONS                                                         //

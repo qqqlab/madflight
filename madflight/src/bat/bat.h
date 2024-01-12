@@ -23,7 +23,7 @@ class BatteryNone {
   }
 };
 
-#if defined HW_PIN_BAT_V || defined HW_PIN_BAT_I
+#if defined USE_BAT_ADC
   #include "BatteryADC.h"
   typedef BatteryADC Battery; //use typedef to avoid inheritance
 #else
