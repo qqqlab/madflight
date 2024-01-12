@@ -98,7 +98,7 @@ This pinout can be configured as needed in hw_ESP32.h
 | reset button | EN |                            | 23 | I2C_SDA
 | SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
 | IMU_EXTI     | VN 39 input only |            | 1 TX | USB Serial Debug TX
-| BAT_ADC      | 34 input only |               | 3 RX | USB Serial Debug RX
+| BAT_V        | 34 input only |               | 3 RX | USB Serial Debug RX
 | RCIN_RX      | 35 input only |                 | 21 | SPI_MOSI
 | RCIN_TX      | 32 |                           | GND | GND
 | PWM1         | 33 |                            | 19 | SPI_SCLK
