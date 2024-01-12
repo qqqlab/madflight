@@ -29,8 +29,9 @@ LED Status
 ==========
 OFF - not powered
 ON - running setup
-blinking long OFF shot ON - running loop() DISARMED
-blinking long ON shot OFF - running loop() ARMED
+fast blinking - something is wrong, connect USB serial for info
+blinking long OFF short ON - running loop() DISARMED
+blinking long ON short OFF - running loop() ARMED
 blink interval longer than 1 second - loop() is taking too much time
 ##########################################################################################################################*/
 
