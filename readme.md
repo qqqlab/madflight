@@ -32,13 +32,14 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 0. Open madflight/madflight.ino in the Arduino IDE.
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_XXX.h (see below for default pinouts)
 2. Connect your IMU (gyro/acceleration) sensor as shown below.
-3. Uncomment print_imu_GyroData(), print_imu_AccData(), print_imu_MagData(), and/or print_ahrs_RollPitchYaw() and check that IMU sensor and AHRS are working correctly. 
-4. Uncomment lines in setup() to calibate the sensor.
-5. Connect radio receiver to your development board according to the configured pins.
-6. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
-7. Uncomment print_rcin_RadioPWM() and print_rcin_RadioScaled() to check your radio setup.
-8. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use print_out_MotorCommands() and calibrate_ESCs()
-9. Mount props, go to an wide open space, and FLY!
+3. Compile and upload madflight. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
+4. Check that IMU sensor and AHRS are working correctly: use CLI print commands to show gyro, accelerometer, magnetometer and roll/pitch/yaw. 
+5. Use CLI to calibate the sensor.
+6. Connect radio receiver to your development board according to the configured pins.
+7. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
+8. Check your radio setup: Use CLI print commands to show pwm and scaled radio values.
+9. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
+10. Mount props, go to an wide open space, and FLY!
 
 # Connecting the IMU Sensor
 

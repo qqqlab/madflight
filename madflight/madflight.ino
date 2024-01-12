@@ -1,10 +1,10 @@
-#define APPNAME "madflight v0.2.0-dev"
+#define APPNAME "madflight v1.0.0-alpha"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
-//Copyright (c) 2024 https://github.com/qqqlab/madflight
+//Copyright (c) 2023-2024 https://github.com/qqqlab/madflight
 //Copyright (c) 2022 Nicholas Rehm - dRehmFlight
  
 /*#########################################################################################################################
@@ -35,100 +35,48 @@ blink interval longer than 1 second - loop() is taking too much time
 ##########################################################################################################################*/
 
 //========================================================================================================================//
+//                                                 USER-SPECIFIED DEFINES                                                 //
+//========================================================================================================================//
+
+//--- APPLICATION SETTINGS
+//#define USE_IMU_POLLING //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
+
+//--- RC RECEIVER
+#define RCIN_USE  RCIN_USE_CRSF //RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
+#define RCIN_NUM_CHANNELS  6 //number of receiver channels (minimal 6)
+
+//--- IMU SENSOR
+#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
+//Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
+//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
+#define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
+
+//--- GPS
+#define GPS_BAUD  115200
+
+//--- BAROMETER SENSOR
+#define BARO_USE  BARO_USE_NONE // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
+
+//--- EXTERNAL MAGNETOMETER SENSOR
+#define MAG_USE  MAG_USE_NONE // MAG_USE_QMC5883L, MAG_USE_NONE
+//#define MAG_I2C_ADR  0x77 //set magnetometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
+
+//--- BATTERY MONITOR
+#define BAT_USE  BAT_USE_ADC // BAT_USE_ADC, BAT_USE_NONE
+
+//--- BLACKBOX LOGGER
+#define BB_USE  BB_USE_MEMORY //BB_USE_FLASH log to flash, BB_USE_MEMORY log to ram, BB_USE_NONE
+
+//========================================================================================================================//
 //                                                 BOARD                                                                  //
 //========================================================================================================================//
 
 //uncomment and change this to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
+//see the boards directory for available converted BetaFlight boards
 //#include "boards/madflight/DYST-DYSF4PRO_V2.h"
 
 //========================================================================================================================//
-//                                                 INCLUDES                                                               //
-//========================================================================================================================//
-//include hardware specific code & default board pinout
-#if defined ARDUINO_ARCH_ESP32
-  #include "hw_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "hw_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "hw_STM32.h"
-#else 
-  #error "Unknown hardware architecture"
-#endif
-
-#include "src/cfg/cfg.h" //load config first, so that it can be used by other modules
-#include "src/ahrs/ahrs.h"
-
-//========================================================================================================================//
-//                                                 USER-SPECIFIED DEFINES                                                 //
-//========================================================================================================================//
-
-//-------------------------------------
-// APPLICATION SETTINGS
-//-------------------------------------
-//#define USE_IMU_POLLING //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
-
-//-------------------------------------
-// RC RECEIVER
-//-------------------------------------
-#define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
-//Uncomment only one USE_RCIN_xxx receiver type
-#define USE_RCIN_CRSF
-//#define USE_RCIN_PPM
-//#define USE_RCIN_PWM 
-//#define USE_RCIN_SBUS
-//#define USE_RCIN_DSM
-#include "src/rcin/rcin.h" //first define USE_RCIN_xxx then include RCIN.h
-
-//-------------------------------------
-// IMU SENSOR
-//-------------------------------------
-#define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
-#define IMU_ACCEL_G 16 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
-#include "src/imu/imu.h" //first set all #define IMU_xxx then include IMO.h
-
-//-------------------------------------
-// GPS
-//-------------------------------------
-#define GPS_BAUD 115200
-#include "src/gps/gps.h" //first set all #define GPS_xxx then include gps.h
-
-//-------------------------------------
-// BAROMETER SENSOR
-//-------------------------------------
-//#define USE_BARO_BMP280
-//#define USE_BARO_MS5611
-#define USE_BARO_NONE
-#include "src/baro/baro.h" //first set all #define BARO_xxx then include baro.h
-
-//-------------------------------------
-// EXTERNAL MAGNETOMETER SENSOR
-//-------------------------------------
-//Uncomment only one USE_MAG_xxx
-//#define USE_MAG_QMC5883L
-#define USE_MAG_NONE
-
-#define MAG_I2C_ADR 0 //set magnetormeter I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-#include "src/mag/mag.h" //first set all #define MAG_xxx then include mag.h
-
-//-------------------------------------
-// BATTERY MONITOR
-//-------------------------------------
-//Uncomment only one USE_BAT_xxx
-#define USE_BAT_ADC
-//#define USE_BAT_NONE
-#include "src/bat/bat.h" //first set all #define BAT_xxx then include bat.h - BatteryADC is used if HW_PIN_BAT_V or HW_PIN_BAT_I is defined
-
-//-------------------------------------
-// BLACKBOX LOGGER
-//-------------------------------------
-//Uncomment only one USE_BB_xxx
-#define USE_BB_MEMORY //log to RAM
-//#define USE_BB_FLASH //log to W25Qxx SPI flash 
-//#define USE_BB_NONE
-#include "src/bb/bb.h" //first set all #define BB_xxx then include bb.h
-
-//========================================================================================================================//
-//                                               RC RECEIVER CONFIG                                                      //
+//                                               RC RECEIVER CONFIG                                                       //
 //========================================================================================================================//
 
 const int rcin_pwm_fs[] = {1000,1500,1500,1500,1000,1000}; //failsafe pwm values
@@ -173,7 +121,7 @@ float MagScaleY = 1.0;
 float MagScaleZ = 1.0;
 
 //========================================================================================================================//
-//                                               USER-SPECIFIED VARIABLES                                                 //                           
+//                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
 
 uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
@@ -223,7 +171,7 @@ float Ki_yaw = 0.05;          //Yaw I-gain
 float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 //========================================================================================================================//
-//                              DECLARE GLOBAL VARIABLES
+//                              DECLARE GLOBAL VARIABLES                                                                  //
 //========================================================================================================================//
 
 //General stuff
@@ -250,27 +198,50 @@ float mag_x = 0, mag_y = 0, mag_z = 0;
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
-//Mixer output (motor and servo values are scaled 0.0 to 1.0)
-//Outputs:
-float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs
-PWM out[HW_OUT_COUNT]; //ESC and Servo outputs
-
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
 
-//Conversion
-float lowpass_to_beta(float,float); //prototype
+//Low pass filter parameters
+float B_accel ,B_gyro, B_mag, B_radio;
+
 const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
-float B_accel = lowpass_to_beta(LP_accel, loop_freq);
-float B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
-float B_mag = lowpass_to_beta(LP_mag, loop_freq);
-float B_radio = lowpass_to_beta(LP_radio, loop_freq);
+
+//========================================================================================================================//
+//                                                 INCLUDES                                                               //
+//========================================================================================================================//
+//Note: most modules are header only. By placing the include section here allows the modules to access the global variables.
+
+//include hardware specific code & default board pinout
+#if defined ARDUINO_ARCH_ESP32
+  #include "hw_ESP32.h"
+#elif defined ARDUINO_ARCH_RP2040
+  #include "hw_RP2040.h"
+#elif defined ARDUINO_ARCH_STM32
+  #include "hw_STM32.h"
+#else 
+  #error "Unknown hardware architecture"
+#endif
+
+//include all modules. First set all USE_xxx and MODULE_xxx defines. For example: USE_MAG_QMC5883L and MAG_I2C_ADR
+#include "src/cfg/cfg.h" //load config first, so that cfg.xxx can be used by other modules
+#include "src/ahrs/ahrs.h"
+#include "src/rcin/rcin.h"
+#include "src/imu/imu.h"
+#include "src/gps/gps.h"
+#include "src/baro/baro.h"
+#include "src/mag/mag.h"
+#include "src/bat/bat.h"
+#include "src/bb/bb.h"
+
+//Outputs:
+float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs (values: 0.0 to 1.0)
+PWM out[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
+
+#include "src/cli/cli.h" //load CLI last, so that it can access all other modules without using "extern". 
 
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
-
-#include "src/cli/cli.h" //load CLI last, so that it can access all other modules
 
 void setup() {
   //Set built in LED to turn on to signal startup
@@ -301,6 +272,12 @@ void setup() {
     if(rv<=0) break; 
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
+  //set filter parameters here, as imu_Setup can modify loop_freq
+  B_accel = lowpass_to_beta(LP_accel, loop_freq);
+  B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
+  B_mag = lowpass_to_beta(LP_mag, loop_freq);
+  B_radio = lowpass_to_beta(LP_radio, loop_freq);
+
 
   baro.setup(); //Barometer
   mag_Setup(); //External Magnetometer
@@ -560,7 +537,6 @@ void imu_GetData() {
     mx = mag_x;
     my = mag_y;
     mz = mag_z;
-
   }
   if(mx == 0 && my == 0 && mz == 0) {
     MagX = 0;

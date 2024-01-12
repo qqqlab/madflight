@@ -65,9 +65,25 @@ def convert(filename) :
                     found = True
                     break
             if not found :
-                defname = p[1].replace("_GYRO_", "_IMU_")
-                defvalue = p[2]
-                defines.append( (defname + " " + defvalue).strip() )
+                nme = p[1]
+                val = p[2]
+                if nme.startswith("USE_GYRO_") :
+                    val = "IMU_USE_" + nme.replace("USE_GYRO_", "") #remove prefix
+                    nme = "IMU_USE"
+                if nme.startswith("USE_BARO_") :
+                    val = "BARO_USE_" + nme.replace("USE_BARO_", "") #remove prefix
+                    nme = "BARO_USE"
+                if nme.startswith("USE_FLASH_") :
+                    defines.append("BB_USE  BB_USE_FLASH");
+                    val = "\"" + nme.replace("USE_FLASH_", "") + "\"" #remove prefix
+                    nme = "BB_FLASH_TYPE"
+                if nme == "USE_SDCARD" :
+                    val = "BB_USE_SDCARD"
+                    nme = "BB_USE"
+                if nme == "USE_MAX7456" :
+                    val = "OSD_USE_MAX7456"
+                    nme = "OSD_USE"
+                defines.append( (nme + "  " + val).strip() )
 
         if p[0] == "board_name" :
             board_name = p[1]
@@ -139,15 +155,15 @@ def convert(filename) :
     if mcu_re : fprint( "#define HW_MCU \"" + mcu_re.group() + "\"" )
 
     fprint( "" )
-    fprint( "//Defines from betaflight. Note: madflight will pick the first IMU that is matched in imu.h, this might not be the IMU that is actually on the board. Comment the offending IMU out." )
+    fprint( "//Defines from betaflight. Note: madflight will pick the last sensor defined here, this might not be the sensor that is actually on the board. Comment the offending sensors out." )
     for define in defines:
         fprint( "#define " + define )
 
     fprint( "" )
     fprint( "//Sensor specific setup" )
-    fprint( "#define IMU_ROTATE_" + sets.get("gyro_1_sensor_align","CW0") )
-    fprint( "#define BARO_I2C_ADR " + sets.get("baro_i2c_address","0") )
-    fprint( "#define MAG_I2C_ADR " + sets.get("mag_i2c_address","0") )
+    fprint( "#define IMU_ALIGN  IMU_ALIGN_" + sets.get("gyro_1_sensor_align","CW0") )
+    fprint( "#define BARO_I2C_ADR  " + sets.get("baro_i2c_address","0") )
+    fprint( "#define MAG_I2C_ADR  " + sets.get("mag_i2c_address","0") )
 
     fprint( "" )
     fprint( "//LED:" )

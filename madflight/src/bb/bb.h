@@ -12,6 +12,7 @@ In addition there are these functions common for all blackbox variants:
  - bb.log_xxx() - call these functions to write to logger, modify/add functions as needed
 ========================================================================================================================*/
 
+/*this section is commented out because this file is included last in madflight.ino
 //global variables used by bb_xxx
 extern float rcin_thro, rcin_roll, rcin_pitch, rcin_yaw; //rcin_thro 0(cutoff) to 1(full); rcin_roll, rcin_pitch, rcin_yaw -1(left,down) to 1(right,up) with 0 center stick
 extern bool rcin_armed; //status of arm switch, true = armed
@@ -24,6 +25,11 @@ extern float out_command[HW_OUT_COUNT]; //Mixer outputs
 extern GPS gps;
 extern Battery bat;
 extern Barometer baro;
+*/
+
+#define BB_USE_NONE 1
+#define BB_USE_FLASH 2
+#define BB_USE_MEMORY 3
 
 #include "BlackBoxWriter.h"
 #include "BlackBoxDecoder.h"
@@ -116,71 +122,17 @@ private:
     Serial.printf("%c",c);
   }
 
-//=====================================================================================================================
-// Logging to RAM Memory
-//=====================================================================================================================
-#ifdef USE_BB_MEMORY
-
-  #ifndef BB_MEMORY_BUF_SIZE
-    #define BB_MEMORY_BUF_SIZE 60000
-  #endif
-
-public:
-
-  void setup() {
-    buf_len = 0;
-    bbw.begin(callback_bbWriteChar);
-    Serial.printf("USE_BB_MEMORY size=%d\n", BB_MEMORY_BUF_SIZE);
-  }
-
-  void csvDump() {
-    stop();
-    buf_idx = 0;
-    BlackBoxDecoder bbd;
-    bbd.csv_decode(callback_bbReadChar, callback_SerialPrintChar);  
-  }
-
-  void erase() {
-    stop();
-    setup();
-  }
-  
-private:
-
-  //static callback
-  static uint8_t buf[BB_MEMORY_BUF_SIZE];
-  static int buf_len;
-  static int buf_idx;
-  
-  static void callback_bbWriteChar(uint8_t c) {
-    if(buf_len < BB_MEMORY_BUF_SIZE) {
-     buf[buf_len++] = c;
-    }
-  }
-
-  static uint8_t callback_bbReadChar() {
-    if(buf_idx < buf_len) {
-      return buf[buf_idx++];
-    }else{
-      return 0xff;
-    }
-  }
-};
-
-uint8_t BlackBox::buf[BB_MEMORY_BUF_SIZE];
-int BlackBox::buf_len;
-int BlackBox::buf_idx;
-
 
 //=====================================================================================================================
 // Logging to SPI FLASH
 //=====================================================================================================================
-#elif defined USE_BB_FLASH
+#if BB_USE == BB_USE_FLASH
   //#define HW_PIN_FLASH_CS    PB3
   //extern SPIClass bb_spi;
 
   #define BB_BUF_SIZE 64 //write this many bytes per write cycle - needs to be a power of 2, max 256
 
+//continue class BlackBox
 public:
 
   void setup() {
@@ -191,7 +143,7 @@ public:
     w25qxx.begin(HW_PIN_BB_CS,18000000);  
     bbw.begin(callback_bbWriteChar);
     findStart();
-    Serial.printf("USE_BB_FLASH size=%d start=%d\n", (int)w25qxx_size, (int)w25qxx_adr);
+    Serial.printf("BB_USE_FLASH size=%d start=%d\n", (int)w25qxx_size, (int)w25qxx_adr);
   }
 
   void csvDump() {
@@ -270,14 +222,77 @@ int BlackBox::buf_idx;
 uint32_t BlackBox::w25qxx_readadr;
 
 //=====================================================================================================================
-// No logging to SPI FLASH 
+// Logging to RAM Memory
 //=====================================================================================================================
-#else
+#elif BB_USE == BB_USE_MEMORY
+
+  #ifndef BB_MEMORY_BUF_SIZE
+    #define BB_MEMORY_BUF_SIZE 60000
+  #endif
+
+//continue class BlackBox
+public:
+
+  void setup() {
+    buf_len = 0;
+    bbw.begin(callback_bbWriteChar);
+    Serial.printf("BB_USE_MEMORY size=%d\n", BB_MEMORY_BUF_SIZE);
+  }
+
+  void csvDump() {
+    stop();
+    buf_idx = 0;
+    BlackBoxDecoder bbd;
+    bbd.csv_decode(callback_bbReadChar, callback_SerialPrintChar);  
+  }
+
+  void erase() {
+    stop();
+    setup();
+  }
+  
+private:
+
+  //static callback
+  static uint8_t buf[BB_MEMORY_BUF_SIZE];
+  static int buf_len;
+  static int buf_idx;
+  
+  static void callback_bbWriteChar(uint8_t c) {
+    if(buf_len < BB_MEMORY_BUF_SIZE) {
+     buf[buf_len++] = c;
+    }
+  }
+
+  static uint8_t callback_bbReadChar() {
+    if(buf_idx < buf_len) {
+      return buf[buf_idx++];
+    }else{
+      return 0xff;
+    }
+  }
+};
+
+uint8_t BlackBox::buf[BB_MEMORY_BUF_SIZE];
+int BlackBox::buf_len;
+int BlackBox::buf_idx;
+
+//=====================================================================================================================
+// None or undefined
+//=====================================================================================================================
+#elif BB_USE == BB_USE_NONE || !defined BB_USE
+//continue class BlackBox
 public:
   void bb_setup() {}
   void bb_csvDump() {}
   void erase() {}
 };
+
+//=====================================================================================================================
+// Invalid value
+//=====================================================================================================================
+#else
+  #error "invalid BB_USE value"
 #endif
 
 BlackBox bb;

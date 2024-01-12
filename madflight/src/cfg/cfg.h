@@ -23,6 +23,7 @@ const String _cfg_names[] = {
 class Config {
   //Only add new config values (use only float) at end of this list, when reading an old config without the new value, the new value will be set to the default defined here
   //NEVER rename, delete, insert or move values
+  //float can hold 24 bit signed integers, i.e. approx: +/-8,000,000
 private:
   uint16_t _crc = 0;
   uint16_t _len = 0;

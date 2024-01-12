@@ -1,10 +1,14 @@
 /*========================================================================================================================
 This file contains all necessary functions and code used for barometer sensors to avoid cluttering the main code
 
-Each USE_BARO_xxx section in this file defines a Barometer class like BarometerNone
+Each BARO_USE_xxx section in this file defines a Barometer class like BarometerNone
 ========================================================================================================================*/
 
 #pragma once
+
+#define BARO_USE_NONE 1
+#define BARO_USE_BMP280 2
+#define BARO_USE_MS5611 3
 
 class BarometerNone {
 public:
@@ -12,7 +16,7 @@ public:
   float temp_c = 0; //temperature in Celcius
 
   int setup() {
-    Serial.println("USE_BARO_NONE");
+    Serial.println("BARO_USE_NONE");
     return 0;
   }
 
@@ -29,7 +33,7 @@ public:
 //========================================================================================================================
 // BMP280
 //========================================================================================================================
-#if defined USE_BARO_BMP280 
+#if BARO_USE == BARO_USE_BMP280 
 
 #include "BMP280.h"
 
@@ -45,7 +49,7 @@ public:
     Serial.println();
     unsigned status;
     status = bmp280.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("USE_BARO_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, bmp280.sensorID());
+    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, bmp280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
@@ -79,7 +83,7 @@ typedef BarometerBMP280 Barometer;
 //========================================================================================================================
 // MS5611
 //========================================================================================================================
-#elif defined USE_BARO_MS5611
+#elif BARO_USE == BARO_USE_MS5611
 
 #include "MS5611.h"
 
@@ -100,10 +104,10 @@ public:
     // Ultra low power: MS5611_ULTRA_LOW_POWER
     while(!ms5611.begin(MS5611_ULTRA_HIGH_RES))
     {
-      Serial.println("USE_BARO_MS5611 failed, retry...\n");
+      Serial.println("BARO_USE_MS5611 failed, retry...\n");
       delay(500);
     }
-    Serial.printf("USE_BARO_MS5611  BARO_I2C_ADR 0x%02X  refresh rate: %d Hz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
+    Serial.printf("BARO_USE_MS5611  BARO_I2C_ADR 0x%02X  refresh rate: %d Hz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
     return 0;
   }
 
@@ -113,11 +117,17 @@ public:
 };
 typedef BarometerMS5611 Barometer;
 
-//========================================================================================================================
-// NONE
-//========================================================================================================================
+//=====================================================================================================================
+// None or undefined
+//=====================================================================================================================
+#elif BARO_USE == BARO_USE_NONE || !defined BARO_USE
+  typedef BarometerNone Barometer;
+
+//=====================================================================================================================
+// Invalid value
+//=====================================================================================================================
 #else
-typedef BarometerNone Barometer;
+  #error "invalid BARO_USE value"
 #endif
 
 Barometer baro;

@@ -38,18 +38,18 @@ PB11 RX3 - TX3 PB10
 #define HW_BOARD_NAME "MADFLIGHT-DYST-DYSF4PRO_V2"
 #define HW_MCU "STM32F405"
 
-#define USE_IMU_SPI_MPU6000
-#define USE_BB_FLASH
-#define USE_BAT_ADC
+#define BB_USE   BB_USE_FLASH
+#define IMU_USE  IMU_USE_SPI_MPU6000
+#define BAT_USE  BAT_USE_ADC
 
 //unused bf defines
 //#define USE_MAX7456
 //#define USE_FLASH_W25Q128FV
 
 //Sensor specific setup
-#define IMU_ROTATE_CW180
-#define BARO_I2C_ADR 0
-#define MAG_I2C_ADR 0
+#define IMU_ALIGN  IMU_ALIGN_CW180
+//#define BARO_I2C_ADR  0
+//#define MAG_I2C_ADR  0
 
 //Blue LED:
 //const int HW_PIN_LED      = PB5;

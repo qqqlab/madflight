@@ -19,51 +19,6 @@ This file defines:
 #define HW_MCU "RP2040" //RP2040 - not all pin combinations are allowed, see datasheet
 
 //-------------------------------------
-// IMU SENSOR
-//-------------------------------------
-//Uncomment only one USE_IMU_xxx
-//#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
-#define USE_IMU_SPI_MPU6500
-//#define USE_IMU_SPI_MPU6000
-//#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
-//#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
-//#define USE_IMU_I2C_MPU6500
-//#define USE_IMU_I2C_MPU6050
-//#define USE_IMU_I2C_MPU6000
-
-#define IMU_I2C_ADR 0 //Set I2C address. If unknown, see output of print_i2c_scan()
-
-//Uncomment only one sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
-//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
-#define IMU_ROTATE_CW0
-//#define IMU_ROTATE_CW90
-//#define IMU_ROTATE_CW180
-//#define IMU_ROTATE_CW270
-//#define IMU_ROTATE_CW0FLIP
-//#define IMU_ROTATE_CW90FLIP
-//#define IMU_ROTATE_CW180FLIP
-//#define IMU_ROTATE_CW270FLIP
-
-//-------------------------------------
-// BAROMETER SENSOR
-//-------------------------------------
-//Uncomment only one USE_BARO_xxx
-//#define USE_BARO_BMP280
-//#define USE_BARO_MS5611
-#define USE_BARO_NONE
-
-#define BARO_I2C_ADR 0 //set barometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-
-//-------------------------------------
-// EXTERNAL MAGNETOMETER SENSOR
-//-------------------------------------
-//Uncomment only one USE_MAG_xxx
-//#define USE_MAG_QMC5883L
-#define USE_MAG_NONE
-
-#define MAG_I2C_ADR 0 //set magnetometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-
-//-------------------------------------
 // PIN DEFINITIONS
 //-------------------------------------
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
@@ -189,10 +144,10 @@ void hw_setup()
   hw_eeprom_begin();
 }
 
-void hw_reset() {
+void hw_reboot() {
   watchdog_enable(1, 1);
   while(1);
-  
+
   //alternate method?
   //#define AIRCR_Register (*((volatile uint32_t*)(PPB_BASE + 0x0ED0C)))
   //AIRCR_Register = 0x5FA0004;

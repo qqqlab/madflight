@@ -1,24 +1,29 @@
 /*========================================================================================================================
 This file contains all necessary functions and code used for radio communication to avoid cluttering the main code
 
-Each USE_RCIN_xxx section in this file defines:
+Each RCIN_USE_xxx section in this file defines:
 rcin_Setup() -> init
 rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, returns true if new data was received
 
-Uses: rcin_Serial, HW_PIN_RCIN_RX, RCIN_NUM_CHANNELS
 ========================================================================================================================*/
 
+//#define RCIN_USE_NONE 0 //always need a radio
+#define RCIN_USE_CRSF 1
+#define RCIN_USE_SBUS 2
+#define RCIN_USE_DSM 3
+#define RCIN_USE_PPM 4
+#define RCIN_USE_PWM 5
 
 //========================================================================================================================
 //CRSF Receiver 
 //========================================================================================================================
-#if defined USE_RCIN_CRSF
+#if RCIN_USE == RCIN_USE_CRSF
 
 #include "crsf/crsf.h"
 CRSF crsf;
 
 void rcin_Setup() {
-  Serial.println("USE_RCIN_CRSF");
+  Serial.println("RCIN_USE_CRSF");
   rcin_Serial->begin(CRSF_BAUD);
 }
 
@@ -44,7 +49,7 @@ bool rcin_GetPWM(int *pwm) {
 //========================================================================================================================
 //SBUS Receiver 
 //========================================================================================================================
-#elif defined USE_RCIN_SBUS
+#elif RCIN_USE == RCIN_USE_SBUS
 #warning "USE_RX_SBUS not ported/tested - see src/RCIN/RCIN.h" //TODO
 
 #include "sbus/SBUS.h" //sBus interface
@@ -55,7 +60,7 @@ bool sbusFailSafe;
 bool sbusLostFrame;
 
 void rcin_Setup() {
-  Serial.println("USE_RX_SBUS");
+  Serial.println("RCIN_USE_SBUS");
   sbus.begin();
 }
 
@@ -76,7 +81,7 @@ bool rcin_GetPWM(int *pwm) {
 //========================================================================================================================
 //DSM Receiver
 //========================================================================================================================
-#elif defined USE_RCIN_DSM
+#elif RCIN_USE == RCIN_USE_DSM
 #warning "USE_RX_DSM not ported/tested - see src/RCIN/RCIN.h" //TODO
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
 
@@ -85,7 +90,7 @@ static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to mat
 DSM1024 DSM;
 
 void rcin_Setup() {
-  Serial.println("USE_RX_DSM");
+  Serial.println("RCIN_USE_DSM");
   Serial3.begin(115000);
 }
 
@@ -114,7 +119,7 @@ void serialEvent3(void)
 //========================================================================================================================
 //PPM Receiver 
 //========================================================================================================================
-#elif defined USE_RCIN_PPM
+#elif RCIN_USE == RCIN_USE_PPM
 volatile uint32_t channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 
 //INTERRUPT SERVICE ROUTINE for reading PPM
@@ -162,7 +167,7 @@ void getPPM() {
 }
 
 void rcin_Setup() {
-  Serial.printf("USE_RX_PPM pin=%d\n",HW_PIN_RCIN_RX);
+  Serial.printf("RCIN_USE_PPM pin=%d\n",HW_PIN_RCIN_RX);
   //Declare interrupt pin
   pinMode(HW_PIN_RCIN_RX, INPUT_PULLUP);
   delay(20);
@@ -183,12 +188,12 @@ bool rcin_GetPWM(int *pwm) {
 //========================================================================================================================
 // PWM Receiver
 //========================================================================================================================
-#elif defined USE_RCIN_PWM
+#elif RCIN_USE == RCIN_USE_PWM
 uint32_t channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 uint32_t rising_edge_start_1, rising_edge_start_2, rising_edge_start_3, rising_edge_start_4, rising_edge_start_5, rising_edge_start_6; 
 
 void rcin_Setup() {
-  Serial.println("USE_RX_PWM");
+  Serial.println("RCIN_USE_PWM");
   //Declare interrupt pins 
   pinMode(ch1Pin, INPUT_PULLUP);
   pinMode(ch2Pin, INPUT_PULLUP);
@@ -277,10 +282,19 @@ void getCh6() {
     channel_6_raw = micros() - rising_edge_start_6;
   }
 }
-#else
-  #error "uncomment one USE_RCIN_xxx"
-#endif
 
+//=====================================================================================================================
+// None or undefined
+//=====================================================================================================================
+#elif RCIN_USE == RCIN_USE_NONE || !defined RCIN_USE
+  #error "RCIN_USE not defined"
+  
+//=====================================================================================================================
+// Invalid value
+//=====================================================================================================================
+#else
+  #error "invalid RCIN_USE value"
+#endif
 
 
 
@@ -292,7 +306,7 @@ void getCh6() {
 //========================================================================================================================
 //  CRSF
 //========================================================================================================================
-#if defined USE_RCIN_CRSF
+#if RCIN_USE == RCIN_USE_CRSF
 
 #include "crsf/crsf_telemetry.h"
 void rcin_telemetry_gps(int32_t lat, int32_t lon, uint16_t sog_kmh, uint16_t cog_deg, uint16_t alt_m, uint8_t sats) {

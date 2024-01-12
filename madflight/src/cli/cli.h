@@ -62,12 +62,12 @@ public:
 
   void help() {
     Serial.printf(
-    "--info & tools--\n"
+    "\n--info & tools--\n"
     "help or ? This info\n"
     "board     Board info and pinout\n"
     "i2c       I2C scan\n"
-    "reset     Reset\n"
-    "--print--\n"
+    "reboot    Reboot flight controller\n"
+    "\n--print--\n"
     "poff      Printing off\n"
     "po        Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt\n"
     "ppwm      Radio pwm (expected: 1000 to 2000)\n"
@@ -81,16 +81,16 @@ public:
     "pservo    Servo output (expected: 0 to 1)\n"
     "ploop     Loop timing in microseconds (expected: 1000000 / loop_freq)\n"
     "pbat      Battery voltage, current, Ah used and Wh used\n"
-    "--black box--\n"
+    "\n--black box--\n"
     "bbdump\n"
     "bbstart\n"
     "bbstop\n"
     "bberase\n"
-    "--config--\n"
+    "\n--config--\n"
     "set [name] [value]\n"
     "set       List config\n"
     "save      Save config to EEPROM\n"
-    "--calibrate--\n"
+    "\n--calibrate--\n"
     "cimu      Calibrate IMU error\n"
     "cmag      Calibrate magnetometer\n"
     );
@@ -124,8 +124,8 @@ private:
       print_boardInfo();
     }else if(cmd == "i2c") {
       print_i2cScan();
-    }else if(cmd == "reset") {
-      hw_reset();
+    }else if(cmd == "reboot") {
+      hw_reboot();
     }else if(cmd == "poff") {
       print_off();
     }else if(cmd == "po") {
