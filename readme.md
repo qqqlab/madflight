@@ -1,8 +1,8 @@
-# madflight
+<img src="doc/img/logo/madflight_logo_2000x538.png" width="100%" />
 
 ***M**anless **A**erial **D**evice*
 
-This is a 1500 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A working flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
+This is a 1500 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `madflight/madflight.ino` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
