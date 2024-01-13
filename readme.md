@@ -210,3 +210,5 @@ In increasing order of complexity.
 - [Betaflight](https://github.com/betaflight/betaflight) STM32 F4/F7/H7
 - [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 F4/F7/H7 or Linux based
+
+Logo image copyright (c) 1975 Deutsches MAD Magazine. This project is not associated with MAD Magazine.
