@@ -69,8 +69,6 @@ I2C sensor:
 - Keep it simple!!!
 - No external dependencies, all module libraries included in `src` directory
 - The flight controller madflight.ino runs standard `setup()` and `loop()`.
-- madflight.ino is written in plain C with minimal function arguments.
-- Global variables and objects are used to communicate between the different modules.
 - Function names are prefixed with the module they belong to:
   - `loop` Main loop control
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
@@ -78,7 +76,7 @@ I2C sensor:
   - `rcin` RC INput, retrieves RC receiver data
   - `control` PID controller and output mixer
   - `out` Output to motors and servos
-  - `mag` Magnetometer (compass)
+  - `mag` Magnetometer (external)
   - `baro` Barometer
   - `gps` GPS receiver
   - `bb` Black Box data logger

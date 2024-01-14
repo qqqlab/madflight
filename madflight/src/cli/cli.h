@@ -194,24 +194,28 @@ public:
 
     //Read IMU values, and average the readings
     int cnt = 3000;
-    float ax, ay, az, gx, gy, gz, mx, my, mz;
-    float axerr=0, ayerr=0, azerr=0, gxerr=0, gyerr=0, gzerr=0;
+    float axerr = 0;
+    float ayerr = 0;
+    float azerr = 0;
+    float gxerr = 0;
+    float gyerr = 0;
+    float gzerr = 0;
     for(int i=0; i<cnt; i++) {
-      imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-      axerr+=ax;
-      ayerr+=ay;
-      azerr+=az;
-      gxerr+=gx;
-      gyerr+=gy;
-      gzerr+=gz;
+      imu.update();
+      axerr += imu.ax;
+      ayerr += imu.ay;
+      azerr += imu.az;
+      gxerr += imu.gx;
+      gyerr += imu.gy;
+      gzerr += imu.gz;
       delayMicroseconds(1000000/loop_freq);
     }
-    axerr/=cnt;
-    ayerr/=cnt;
-    azerr/=cnt;
-    gxerr/=cnt;
-    gyerr/=cnt;
-    gzerr/=cnt;
+    axerr /= cnt;
+    ayerr /= cnt;
+    azerr /= cnt;
+    gxerr /= cnt;
+    gyerr /= cnt;
+    gzerr /= cnt;
 
     //remove gravitation
     azerr -= 1.0;
@@ -225,14 +229,14 @@ public:
     Serial.println("Note: use CLI 'save' to store these values");
 
     //only apply reasonable gyro and acc errors
-    float tol = 10;
-    if( -tol < gxerr && gxerr < tol  &&  -tol < gyerr && gyerr < tol  &&  -tol < gzerr && gzerr < tol ) {
+    float gtol = 10;
+    if( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol ) {
       cfg.imu_cal_gx = gxerr;
       cfg.imu_cal_gy = gyerr;
       cfg.imu_cal_gz = gzerr;
     }
-    tol = 0.1;
-    if( -tol < axerr && axerr < tol  &&  -tol < ayerr && ayerr < tol  &&  -tol < azerr && azerr < tol ) {
+    float atol = 0.1;
+    if( -atol < axerr && axerr < atol  &&  -atol < ayerr && ayerr < atol  &&  -atol < azerr && azerr < atol ) {
       cfg.imu_cal_ax = axerr;
       cfg.imu_cal_ay = ayerr;
       cfg.imu_cal_az = azerr;
@@ -273,8 +277,7 @@ public:
     float bias[3], scale[3];
 
     Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
-    int rv = _calibrate_Magnetometer(bias, scale);
-    if(rv==0) {
+    if( _calibrate_Magnetometer(bias, scale) ) {
       Serial.println("Calibration Successful!");
       Serial.println("Please comment out the calibrateMagnetometer() function and copy these values into the code:");
       Serial.printf("float MagErrorX = %f;\n", bias[0]);
@@ -287,7 +290,7 @@ public:
       Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
     }
     else {
-      Serial.printf("Calibration Unsuccessful rv=%d. Please reset the board and try again.\n",rv);
+      Serial.println("ERROR: No magnetometer");
     }
 
     while(1); //Halt code so it won't enter main loop until this function commented out
@@ -295,23 +298,39 @@ public:
 
 private:
 
+  //get a reading from the external or imu magnetometer
+  bool _calibrate_Magnetometer_ReadMag(float *m) {
+    if(mag.installed()) {
+      mag.update();
+      m[0] = mag.x;
+      m[1] = mag.y;
+      m[2] = mag.z;
+    }else{
+      if(!imu.hasMag()) return false;
+      imu.update();
+      m[0] = imu.mx;
+      m[1] = imu.my;
+      m[2] = imu.mz;
+    }
+    return true;
+  }
+
   // finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
   // Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
-  int _calibrate_Magnetometer(float bias[3], float scale[3]) 
+  bool _calibrate_Magnetometer(float bias[3], float scale[3]) 
   {
     const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
     const float deltaThresh = 0.3f; //uT
     const float B_coeff = 0.125;
 
-    float ax=0,ay=0,az=0,gx=0,gy=0,gz=0;
     float m[3] = {0};
     int counter;
     float m_filt[3];
     float m_max[3];
     float m_min[3];
 
-    // get a starting set of data
-    imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &m[0], &m[1], &m[2]);
+    // get a starting set of data (and test if mag is present)
+    if(!_calibrate_Magnetometer_ReadMag(m)) return false;
     for(int i=0;i<3;i++) {
       m_max[i] = m[i];
       m_min[i] = m[i];
@@ -323,7 +342,7 @@ private:
     uint32_t start_time = millis();
     counter = 0;
     while (counter < maxCounts) {
-      imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &m[0], &m[1], &m[2]);
+      _calibrate_Magnetometer_ReadMag(m);
       for(int i=0;i<3;i++) {
         m_filt[i] = m_filt[i] * (1 - B_coeff) + m[i] * B_coeff;
         if (m_max[i] < m_filt[i]) {
@@ -358,7 +377,7 @@ private:
       scale[i] = (avg_scale / 3) / scale[i];
     }
 
-    return 0;
+    return true;
   }
 
 

@@ -1,4 +1,4 @@
-/*========================================================================================================================
+/*=================================================================================================
 ADC Battery Monitor
 
 Need to have at least HW_PIN_BAT_V or HW_PIN_BAT_I defined before including this header
@@ -7,14 +7,18 @@ Also needs cfg for:
 cfg.bat_cal_v //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951 = 0.0057630)
 cfg.bat_cal_i //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847 = 0.0011806)
 
-========================================================================================================================*/
+=================================================================================================*/
 
-class BatteryADC {
+#pragma once
+
+#include "../interface.h"
+
+class BatteryADC: public Battery {
     public:
-        float i;// = 0; //Battery current (A)
-        float v;// = 0; //battery voltage (V)
-        float mah;// = 0; //battery usage (Ah)
-        float wh;// = 0; //battery usage (Wh)
+        //float i;// = 0; //Battery current (A)
+        //float v;// = 0; //battery voltage (V)
+        //float mah;// = 0; //battery usage (Ah)
+        //float wh;// = 0; //battery usage (Wh)
         float factor_v;// = 8.04/13951; //voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading
         float factor_i;// = 1.0/847; //current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading
         uint32_t interval_us = 10000; //update interval in us
@@ -36,7 +40,7 @@ class BatteryADC {
     }
 
     //returns true if battery was updated
-    bool loop() {
+    bool update() {
         static uint32_t ts = micros();
         uint32_t now = micros();
         if(now - ts >= interval_us) {

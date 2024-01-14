@@ -1,8 +1,6 @@
-/*========================================================================================================================
-This file contains all necessary functions and code used for barometer sensors to avoid cluttering the main code
-
-Each BARO_USE_xxx section in this file defines a Barometer class like BarometerNone
-========================================================================================================================*/
+/*=================================================================================================
+Each BARO_USE_xxx section in this file defines a specific Barometer class
+=================================================================================================*/
 
 #pragma once
 
@@ -10,10 +8,32 @@ Each BARO_USE_xxx section in this file defines a Barometer class like BarometerN
 #define BARO_USE_BMP280 2
 #define BARO_USE_MS5611 3
 
-class BarometerNone {
+#include "../interface.h"
+
+/* INTERFACE
+class Barometer {
 public:
   float press_pa = 0; //pressure in Pascal
   float temp_c = 0; //temperature in Celcius
+  virtual int setup() = 0;
+  virtual bool update() = 0; //returns true if pressure was updated
+};
+
+extern Barometer &baro;
+*/
+
+#ifndef BARO_I2C_ADR
+  #define BARO_I2C_ADR 0
+#endif
+
+//=================================================================================================
+// None or undefined
+//=================================================================================================
+#if BARO_USE == BARO_USE_NONE || !defined BARO_USE
+class BarometerNone: public Barometer {
+public:
+  //float press_pa = 0; //pressure in Pascal
+  //float temp_c = 0; //temperature in Celcius
 
   int setup() {
     Serial.println("BARO_USE_NONE");
@@ -26,42 +46,40 @@ public:
   }
 };
 
-#ifndef BARO_I2C_ADR
-  #define BARO_I2C_ADR 0
-#endif
+BarometerNone baro_instance;
 
-//========================================================================================================================
+//=================================================================================================
 // BMP280
-//========================================================================================================================
-#if BARO_USE == BARO_USE_BMP280 
+//=================================================================================================
+#elif BARO_USE == BARO_USE_BMP280 
 
 #include "BMP280.h"
 
-Adafruit_BMP280 bmp280(i2c);
+Adafruit_BMP280 baro_BMP280(i2c);
 
-class BarometerBMP280 {
+class BarometerBMP280: public Barometer {
 
 public:
-  float press_pa = 0;
-  float temp_c = 0;
+  //float press_pa = 0;
+  //float temp_c = 0;
 
   int setup() {
     Serial.println();
     unsigned status;
-    status = bmp280.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, bmp280.sensorID());
+    status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
+    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                         "try a different address!"));
-      Serial.print("SensorID was: 0x"); Serial.println(bmp280.sensorID(),16);
+      Serial.print("SensorID was: 0x"); Serial.println(baro_BMP280.sensorID(),16);
       Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
       Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
       Serial.print("        ID of 0x60 represents a BME 280.\n");
       Serial.print("        ID of 0x61 represents a BME 680.\n");
     }
 
-    bmp280.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+    baro_BMP280.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                     Adafruit_BMP280::SAMPLING_X1,     /* Temp. oversampling */
                     Adafruit_BMP280::SAMPLING_X1,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_OFF,      /* Filtering. */
@@ -71,29 +89,30 @@ public:
 
   bool update() {
     //driver does not return whether data is fresh, return true if pressure changed
-    float pressure_pa_new = bmp280.readPressure();
+    float pressure_pa_new = baro_BMP280.readPressure();
     bool rv = (pressure_pa_new != press_pa);
     press_pa = pressure_pa_new;
-    temp_c = bmp280.readTemperature();
+    temp_c = baro_BMP280.readTemperature();
     return rv;
   }
 };
-typedef BarometerBMP280 Barometer;
 
-//========================================================================================================================
+BarometerBMP280 baro_instance;
+
+//=================================================================================================
 // MS5611
-//========================================================================================================================
+//=================================================================================================
 #elif BARO_USE == BARO_USE_MS5611
 
 #include "MS5611.h"
 
-class BarometerMS5611 {
+class BarometerMS5611: public Barometer {
 private: 
   MS5611 ms5611;
 
 public:
-  float press_pa = 0;
-  float temp_c = 0;
+  //float press_pa = 0;
+  //float temp_c = 0;
 
   int setup() {
     // Initialize MS5611 sensor
@@ -115,19 +134,14 @@ public:
       return (ms5611.getMeasurements(&press_pa, &temp_c) == 1); //ms5611.getMeasurements returns: 0=no update, 1=pressure updated, 2=temp updated
   }
 };
-typedef BarometerMS5611 Barometer;
 
-//=====================================================================================================================
-// None or undefined
-//=====================================================================================================================
-#elif BARO_USE == BARO_USE_NONE || !defined BARO_USE
-  typedef BarometerNone Barometer;
+BarometerMS5611 baro_instance;
 
-//=====================================================================================================================
+//=================================================================================================
 // Invalid value
-//=====================================================================================================================
+//=================================================================================================
 #else
   #error "invalid BARO_USE value"
 #endif
 
-Barometer baro;
+Barometer &baro = baro_instance;

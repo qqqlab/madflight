@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-alpha"
+#define APPNAME "madflight v1.0.0-alpha2"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -75,6 +75,17 @@ blink interval longer than 1 second - loop() is taking too much time
 //uncomment and change this to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
 //see the boards directory for available converted BetaFlight boards
 //#include "boards/madflight/DYST-DYSF4PRO_V2.h"
+
+//include hardware specific code & default board pinout
+#if defined ARDUINO_ARCH_ESP32
+  #include "hw_ESP32.h"
+#elif defined ARDUINO_ARCH_RP2040
+  #include "hw_RP2040.h"
+#elif defined ARDUINO_ARCH_STM32
+  #include "hw_STM32.h"
+#else 
+  #error "Unknown hardware architecture"
+#endif
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                       //
@@ -190,14 +201,15 @@ bool rcin_thro_is_low; //status of throttle stick, true = throttle low
 int rcin_aux; // six position switch connected to aux channel, values 0-5
 
 //IMU:
-float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ;
+float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ; //corrected and filtered IMU measurements
 float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in degrees. Positive angles are: roll right, yaw right, pitch up
-
-//External magnetometer:
-float mag_x = 0, mag_y = 0, mag_z = 0;
 
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
+
+//Outputs:
+float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs (values: 0.0 to 1.0)
+PWM out[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
 
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
@@ -212,17 +224,6 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 //========================================================================================================================//
 //Note: most modules are header only. By placing the include section here allows the modules to access the global variables.
 
-//include hardware specific code & default board pinout
-#if defined ARDUINO_ARCH_ESP32
-  #include "hw_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "hw_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "hw_STM32.h"
-#else 
-  #error "Unknown hardware architecture"
-#endif
-
 //include all modules. First set all USE_xxx and MODULE_xxx defines. For example: USE_MAG_QMC5883L and MAG_I2C_ADR
 #include "src/cfg/cfg.h" //load config first, so that cfg.xxx can be used by other modules
 #include "src/ahrs/ahrs.h"
@@ -233,11 +234,6 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 #include "src/mag/mag.h"
 #include "src/bat/bat.h"
 #include "src/bb/bb.h"
-
-//Outputs:
-float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs (values: 0.0 to 1.0)
-PWM out[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
-
 #include "src/cli/cli.h" //load CLI last, so that it can access all other modules without using "extern". 
 
 //========================================================================================================================//
@@ -269,10 +265,11 @@ void setup() {
 
   //IMU
   while(true) {
-    int rv = imu_Setup(); //returns 0 on success, positive on error, negative on warning
+    int rv = imu.setup(loop_freq); //returns 0 on success, positive on error, negative on warning
     if(rv<=0) break; 
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
+  loop_freq = imu.getSampleRate();
   //set filter parameters here, as imu_Setup can modify loop_freq
   B_accel = lowpass_to_beta(LP_accel, loop_freq);
   B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
@@ -281,7 +278,7 @@ void setup() {
 
 
   baro.setup(); //Barometer
-  mag_Setup(); //External Magnetometer
+  mag.setup(); //External Magnetometer
   bat.setup(); //Battery Monitor
   bb.setup(); //Black Box
   bb.start(); //XXX start black box logging
@@ -345,7 +342,7 @@ void loop() {
   #endif
 
   gps_loop(); //update gps
-  if(bat.loop()) bb.log_bat(); //update battery, and log if battery was updated
+  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated
 
   //send telemetry
   static uint32_t rcin_telem_ts = 0;
@@ -364,7 +361,7 @@ void loop() {
 
 void i2c_sensors_update() {
   if(baro.update()) bb.log_baro(); //log if pressure updated
-  mag_Read(&mag_x, &mag_y, &mag_z);
+  mag.update();
 }
 
 //========================================================================================================================//
@@ -506,45 +503,36 @@ void loop_Blink() {
 // A simple first-order low-pass filter is used to get rid of high frequency noise in these raw signals. 
 // Finally, the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
 void imu_GetData() {
-  float ax,ay,az,gx,gy,gz,mx=0,my=0,mz=0;
   uint32_t t1 = micros();
   //imu_Read() returns correctly NED oriented and correctly scaled values in g's, deg/sec, and uT (see file imu.h)
-  imu_Read(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+  imu.update();
   loop_rt_imu = micros() - t1;
 
  //Accelerometer
-  //Correct the outputs with the calculated error values
-  ax = ax - cfg.imu_cal_ax;
-  ay = ay - cfg.imu_cal_ay;
-  az = az - cfg.imu_cal_az;
-  //LP filter accelerometer data
-  AccX = (1.0 - B_accel) * AccX + B_accel * ax;
-  AccY = (1.0 - B_accel) * AccY + B_accel * ay;
-  AccZ = (1.0 - B_accel) * AccZ + B_accel * az;
+  //LP filter corrected accelerometer data
+  AccX = (1.0 - B_accel) * AccX + B_accel * (imu.ax - cfg.imu_cal_ax);
+  AccY = (1.0 - B_accel) * AccY + B_accel * (imu.ay - cfg.imu_cal_ay);
+  AccZ = (1.0 - B_accel) * AccZ + B_accel * (imu.az - cfg.imu_cal_az);
 
   //Gyro
-  //Correct the outputs with the calculated error values
-  gx = gx - cfg.imu_cal_gx;
-  gy = gy - cfg.imu_cal_gy;
-  gz = gz - cfg.imu_cal_gz;
-  //LP filter gyro data
-  GyroX = (1.0 - B_gyro) * GyroX + B_gyro * gx;
-  GyroY = (1.0 - B_gyro) * GyroY + B_gyro * gy;
-  GyroZ = (1.0 - B_gyro) * GyroZ + B_gyro * gz;
+  //LP filter corrected gyro data
+  GyroX = (1.0 - B_gyro) * GyroX + B_gyro * (imu.gx - cfg.imu_cal_gx);
+  GyroY = (1.0 - B_gyro) * GyroY + B_gyro * (imu.gy - cfg.imu_cal_gy);
+  GyroZ = (1.0 - B_gyro) * GyroZ + B_gyro * (imu.gz - cfg.imu_cal_gz);
 
-  //Magnetometer 
-  //use external (if present), then internal mag
-  if(!(mag_x == 0 && mag_y == 0 && mag_z == 0)) {
-    mx = mag_x;
-    my = mag_y;
-    mz = mag_z;
-  }
+  //External Magnetometer 
+  float mx = mag.x;
+  float my = mag.y;
+  float mz = mag.z;
+  //If no external mag, then use internal mag
   if(mx == 0 && my == 0 && mz == 0) {
-    MagX = 0;
-    MagY = 0;
-    MagZ = 0;
-  }else{
-    //Correct the outputs with the calculated error values
+    mx = imu.mx;
+    my = imu.my;
+    mz = imu.mz;
+  }
+  //update the mag values
+  if( ! (mx == 0 && my == 0 && mz == 0) ) {
+    //Correct the mag values with the calculated error values
     mx = (mx - MagErrorX) * MagScaleX;
     my = (my - MagErrorY) * MagScaleY;
     mz = (mz - MagErrorZ) * MagScaleZ;
@@ -552,6 +540,10 @@ void imu_GetData() {
     MagX = (1.0 - B_mag) * MagX + B_mag * mx;
     MagY = (1.0 - B_mag) * MagY + B_mag * my;
     MagZ = (1.0 - B_mag) * MagZ + B_mag * mz;
+  }else{
+    MagX = 0;
+    MagY = 0;
+    MagZ = 0;
   }
 }
 
@@ -938,7 +930,7 @@ void ahrs_Setup()
   
   for(int i=0;i<100;i++) {
     uint32_t start = micros();
-    mag_Read(&mag_x, &mag_y, &mag_z);
+    mag.update();
     imu_GetData();
     while(micros() - start < 1000000/loop_freq); //wait until next sample time
   }

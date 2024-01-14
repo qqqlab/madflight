@@ -30,6 +30,32 @@ extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h migh
 #define IMU_USE_I2C_MPU6050 8
 #define IMU_USE_I2C_MPU6000 9
 
+#include "../interface.h"
+
+/* INTERFACE
+class Imu {
+  public:
+    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
+    virtual int setup(uint32_t sampleRate) = 0;
+    virtual void update() = 0;
+
+    float ax = 0; //"North" acceleration in G
+    float ay = 0; //"East" acceleration in G
+    float az = 0; //"Down" acceleration in G
+    float gx = 0; //"North" rotation speed in deg/s
+    float gy = 0; //"East" rotation speed in deg/s
+    float gz = 0; //"Down" rotation speed in deg/s
+    float mx = 0; //"North" magnetic flux in uT
+    float my = 0; //"East" magnetic flux in uT
+    float mz = 0; //"Down" magnetic flux in uT
+    uint32_t getSampleRate() {return _sampleRate;}
+  protected:
+    uint32_t _sampleRate = 0; //sensor sample rate in Hz
+};
+
+extern Imu &imu;
+*/
+
 //Available aligns
 #define IMU_ALIGN_CW0 1
 #define IMU_ALIGN_CW90 2
@@ -186,20 +212,29 @@ extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h migh
   #error "invalid IMU_USE value"
 #endif
 
-//returns 0 on success, positive on error, negative on warning
-int imu_Setup() {
-  int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, loop_freq);
-  loop_freq = imu_Sensor.get_rate();
-  Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", (int)loop_freq, (int)rv);
-  return rv;
-}
+class ImuGeneric: public Imu {
+  public:
+    bool hasMag() { return IMU_HAS_MAG; }
+  
+    //returns 0 on success, positive on error, negative on warning
+    int setup(uint32_t sampleRate) {
+      UNUSED(sampleRate); //Note: currently nothing is done with the requested sample rate...
+      int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, loop_freq);
+      _sampleRate = imu_Sensor.get_rate();
+      Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
+      return rv;
+    }
 
-void imu_Read(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {
-#if IMU_HAS_MAG 
-  imu_Sensor.getMotion9NED(ax, ay, az, gx, gy, gz, mx, my, mz);
-#else
-  (void)(mx); (void)(my); (void)(mz); //suppress compiler warnings
-  imu_Sensor.getMotion6NED(ax, ay, az, gx, gy, gz);
-#endif
-  IMU_ROTATE();
-}
+    void update() {
+    #if IMU_HAS_MAG 
+      imu_Sensor.getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    #else
+      imu_Sensor.getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+    #endif
+      IMU_ROTATE();
+    }
+};
+
+ImuGeneric imu_instance;
+
+Imu &imu = imu_instance;
