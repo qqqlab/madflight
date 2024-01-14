@@ -218,8 +218,7 @@ class ImuGeneric: public Imu {
   
     //returns 0 on success, positive on error, negative on warning
     int setup(uint32_t sampleRate) {
-      UNUSED(sampleRate); //Note: currently nothing is done with the requested sample rate...
-      int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, loop_freq);
+      int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
       _sampleRate = imu_Sensor.get_rate();
       Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
       return rv;
