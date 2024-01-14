@@ -89,7 +89,8 @@ public:
     "\n--config--\n"
     "set [name] [value]\n"
     "set       List config\n"
-    "save      Save config to EEPROM\n"
+    "clearall  Clear config\n"
+    "save      Save config to flash\n"
     "\n--calibrate--\n"
     "cimu      Calibrate IMU error\n"
     "cmag      Calibrate magnetometer\n"
@@ -166,6 +167,9 @@ private:
       }else{
         cfg.set(arg1, arg2);
       }
+    }else if(cmd == "clearall") {
+      cfg.clear();
+      Serial.println("Config cleared, type 'save' to write to flash");
     }else if(cmd == "save") {
       Serial.print("saving, please wait ... ");
       cfg.save();
@@ -273,21 +277,28 @@ public:
     }
   }
 */
+
   void calibrate_Magnetometer() {
     float bias[3], scale[3];
 
     Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
     if( _calibrate_Magnetometer(bias, scale) ) {
       Serial.println("Calibration Successful!");
-      Serial.println("Please comment out the calibrateMagnetometer() function and copy these values into the code:");
-      Serial.printf("float MagErrorX = %f;\n", bias[0]);
-      Serial.printf("float MagErrorY = %f;\n", bias[1]);
-      Serial.printf("float MagErrorZ = %f;\n", bias[2]);
-      Serial.printf("float MagScaleX = %f;\n", scale[0]);
-      Serial.printf("float MagScaleY = %f;\n", scale[1]);
-      Serial.printf("float MagScaleZ = %f;\n", scale[2]);
+      Serial.printf("set mag_cal_x  %+f #config %+f\n", bias[0], cfg.mag_cal_x);
+      Serial.printf("set mag_cal_y  %+f #config %+f\n", bias[1], cfg.mag_cal_y);
+      Serial.printf("set mag_cal_z  %+f #config %+f\n", bias[2], cfg.mag_cal_z);
+      Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
+      Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
+      Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
+      Serial.println("Note: use CLI 'save' to store these values");
       Serial.println(" ");
       Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
+      cfg.mag_cal_x = bias[0];
+      cfg.mag_cal_y = bias[1];
+      cfg.mag_cal_z = bias[2];
+      cfg.mag_cal_sx = scale[0];
+      cfg.mag_cal_sy = scale[1];
+      cfg.mag_cal_sz = scale[2];
     }
     else {
       Serial.println("ERROR: No magnetometer");

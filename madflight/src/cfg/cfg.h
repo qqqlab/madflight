@@ -28,23 +28,24 @@ private:
   uint16_t _crc = 0;
   uint16_t _len = 0;
 public:
-  float imu_cal_ax = 0;
-  float imu_cal_ay = 0;
-  float imu_cal_az = 0;
-  float imu_cal_gx = 0;
-  float imu_cal_gy = 0;
-  float imu_cal_gz = 0;
+  float imu_cal_ax = 0; //accel X zero offset calibration
+  float imu_cal_ay = 0; //accel Y zero offset calibration
+  float imu_cal_az = 0; //accel Z zero offset calibration
+  float imu_cal_gx = 0; //gyro X zero offset calibration
+  float imu_cal_gy = 0; //gyro Y zero offset calibration
+  float imu_cal_gz = 0; //gyro Z zero offset calibration
   
-  float mag_cal_x = 0;
-  float mag_cal_y = 0;
-  float mag_cal_z = 0;
-  float mag_cal_sx = 1;
-  float mag_cal_sy = 1;
-  float mag_cal_sz = 1;
+  float mag_cal_x = 0; //magnetometer X zero offset calibration
+  float mag_cal_y = 0; //magnetometer Y zero offset calibration
+  float mag_cal_z = 0; //magnetometer Z zero offset calibration
+  float mag_cal_sx = 1; //magnetometer X scale calibration
+  float mag_cal_sy = 1; //magnetometer Y scale calibration
+  float mag_cal_sz = 1; //magnetometer Z scale calibration
   
-  float bat_cal_v = 1;
-  float bat_cal_i = 1;
+  float bat_cal_v = 1; //battery ADC voltage scale calibration, value is actual_voltage_in_V / adc_reading
+  float bat_cal_i = 1; //battery ADC current scale calibration, value is actual_current_in_A / adc_reading
 
+  //print all config values
   void print() {
     float *values = ((float*)this) + 1; //move past crc+len
     int i = 0;
@@ -54,6 +55,7 @@ public:
     }
   }
 
+  //set a config value
   void set(String name, String val) {
     name.toLowerCase();
     float *values = ((float*)this) + 1; //move past crc+len
@@ -124,32 +126,29 @@ public:
     return retVal;
   }
 
+  //load defaults
+  void clear() {
+    Config cfg2;
+    memcpy(this, &cfg2, lenExpected());
+  }
+
 private:
 
   void eeprom_read_and_check_config() {
-    //create a dummy config to read eeprom data into
-    Config cfg_test;
-    eeprom_read_conf(&cfg_test);
+    //create a new config and read "eeprom" data into it
+    Config cfg2;
+    uint8_t *buf = (uint8_t *)&cfg2;
+    for(uint16_t i=0; i<lenExpected(); i++) {
+      buf[i] = hw_eeprom_read(i);
+    }  
 
     //check len is expected size or smaller, then check crc
-    if(cfg_test.len() <= lenExpected() && cfg_test.crc() == cfg_test.crcCalc()) {
-      eeprom_read_conf(this);
+    if(cfg2.len() <= lenExpected() && cfg2.crc() == cfg2.crcCalc()) {
+      memcpy(this, &cfg2, lenExpected());
       //recalc len and crc so that len() and crc() return correct values
       _len = lenExpected();
       _crc = crcCalc();
     }
-  }
-
-  //read to config
-  void eeprom_read_conf(Config *conf) {
-    eeprom_read((uint8_t *)conf, conf->len());
-  }
-
-  //read to buffer
-  void eeprom_read(uint8_t *buf, uint16_t size) {
-    for(uint16_t i=0;i<size;i++) {
-      buf[i] = hw_eeprom_read(i);
-    }  
   }
 
 };

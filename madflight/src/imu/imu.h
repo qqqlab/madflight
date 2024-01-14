@@ -35,10 +35,6 @@ extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h migh
 /* INTERFACE
 class Imu {
   public:
-    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
-    virtual int setup(uint32_t sampleRate) = 0;
-    virtual void update() = 0;
-
     float ax = 0; //"North" acceleration in G
     float ay = 0; //"East" acceleration in G
     float az = 0; //"Down" acceleration in G
@@ -48,6 +44,9 @@ class Imu {
     float mx = 0; //"North" magnetic flux in uT
     float my = 0; //"East" magnetic flux in uT
     float mz = 0; //"Down" magnetic flux in uT
+    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
+    virtual int setup(uint32_t sampleRate) = 0;
+    virtual void update() = 0;
     uint32_t getSampleRate() {return _sampleRate;}
   protected:
     uint32_t _sampleRate = 0; //sensor sample rate in Hz

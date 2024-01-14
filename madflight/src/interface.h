@@ -12,22 +12,11 @@ class Rcin {
   public:
     int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
     virtual void setup() = 0;
-  private:
-    virtual bool _update() = 0; //returns true if channel pwm data was updated
-
-  public:
-    bool update() { //returns true if channel pwm data was updated
-      bool rv = _update();
-      if(rv) {
-        update_time = millis();
-      }
-      return rv;
-    }
-    bool connected() {
-      return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
-    }
+    bool update(); //returns true if channel pwm data was updated
+    bool connected();
   private:
     uint32_t update_time = 0;
+    virtual bool _update() = 0; //returns true if channel pwm data was updated
 };
 
 extern Rcin &rcin;
@@ -38,10 +27,6 @@ extern Rcin &rcin;
 
 class Imu {
   public:
-    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
-    virtual int setup(uint32_t sampleRate) = 0;
-    virtual void update() = 0;
-
     float ax = 0; //"North" acceleration in G
     float ay = 0; //"East" acceleration in G
     float az = 0; //"Down" acceleration in G
@@ -51,6 +36,9 @@ class Imu {
     float mx = 0; //"North" magnetic flux in uT
     float my = 0; //"East" magnetic flux in uT
     float mz = 0; //"Down" magnetic flux in uT
+    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
+    virtual int setup(uint32_t sampleRate) = 0;
+    virtual void update() = 0;
     uint32_t getSampleRate() {return _sampleRate;}
   protected:
     uint32_t _sampleRate = 0; //sensor sample rate in Hz
@@ -78,23 +66,15 @@ extern Barometer &baro;
 
 class Magnetometer {
   public:
-    virtual bool installed() = 0; //returns true if a sensor is installed
-    virtual int setup() = 0;
-  private:
-    virtual void _update() = 0;
-
-  public:
     float x = 0; //"North" magnetic flux in uT
     float y = 0; //"East" magnetic flux in uT
     float z = 0; //"Down" magnetic flux in uT
-    bool update() {
-      if(micros() - mag_time < 10000) return false;
-      mag_time = micros();
-      _update();
-      return true;
-    }
+    virtual bool installed() = 0; //returns true if a sensor is installed
+    virtual int setup() = 0; //returns 0 on success
+    bool update(); //returns true if values updated
   private:
     uint32_t mag_time = 0;
+    virtual void _update() = 0;
 };
 
 extern Magnetometer &mag;
@@ -105,14 +85,13 @@ extern Magnetometer &mag;
 
 class Battery {
   public:
-      float i = 0; //Battery current (A)
-      float v = 0; //battery voltage (V)
-      float mah = 0; //battery usage (Ah)
-      float wh = 0; //battery usage (Wh)
-      uint32_t interval_us = 10000; //update interval in us
-
-  virtual void setup() = 0;
-  virtual bool update() = 0; //returns true if battery was updated
+    float i = 0; //Battery current (A)
+    float v = 0; //battery voltage (V)
+    float mah = 0; //battery usage (Ah)
+    float wh = 0; //battery usage (Wh)
+    uint32_t interval_us = 10000; //update interval in us
+    virtual void setup() = 0;
+    virtual bool update() = 0; //returns true if battery was updated
 };
 
 extern Battery &bat;

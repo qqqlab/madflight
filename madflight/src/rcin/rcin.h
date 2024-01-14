@@ -22,26 +22,29 @@ class Rcin {
   public:
     int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
     virtual void setup() = 0;
-  private:
-    virtual bool _update() = 0; //returns true if channel pwm data was updated
-
-  public:
-    bool update() { //returns true if channel pwm data was updated
-      bool rv = _update();
-      if(rv) {
-        update_time = millis();
-      }
-      return rv;
-    }
-    bool connected() {
-      return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
-    }
+    bool update(); //returns true if channel pwm data was updated
+    bool connected();
   private:
     uint32_t update_time = 0;
+    virtual bool _update() = 0; //returns true if channel pwm data was updated
 };
 
 extern Rcin &rcin;
 */
+
+bool Rcin::update() { //returns true if channel pwm data was updated
+  bool rv = _update();
+  if(rv) {
+    update_time = millis();
+  }
+  return rv;
+}
+bool Rcin::connected() {
+  return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
+}
+
+
+
 
 //=================================================================================================
 // None or undefined

@@ -20,27 +20,26 @@ Unit of Measure is uT (micro Tesla)
 /* INTERFACE
 class Magnetometer {
   public:
-    virtual bool installed() = 0; //returns true if a sensor is installed
-    virtual int setup() = 0;
-  private:
-    virtual void _update() = 0;
-
-  public:
     float x = 0; //"North" magnetic flux in uT
     float y = 0; //"East" magnetic flux in uT
     float z = 0; //"Down" magnetic flux in uT
-    bool update() {
-      if(micros() - mag_time < 10000) return false;
-      mag_time = micros();
-      _update();
-      return true;
-    }
+    virtual bool installed() = 0; //returns true if a sensor is installed
+    virtual int setup() = 0; //returns 0 on success
+    bool update(); //returns true if values updated
   private:
     uint32_t mag_time = 0;
+    virtual void _update() = 0;
 };
 
 extern Magnetometer &mag;
 */
+bool Magnetometer::update() {
+  if(micros() - mag_time < 10000) return false; //100 Hz sample rate
+  mag_time = micros();
+  _update();
+  return true;
+}
+
 
 //=================================================================================================
 // None or undefined

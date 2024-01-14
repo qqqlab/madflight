@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-beta1"
+#define APPNAME "madflight v1.0.0-beta2"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -119,18 +119,6 @@ const int rcin_cfg_arm_max       = 2200;
 //config 6 position switch on aux channel
 int rcin_cfg_aux_min = 1115; //lowest switch position
 int rcin_cfg_aux_max = 1945; //higest switch position
-
-//========================================================================================================================//
-//                                               CALIBRATION PARAMETERS                                                   //
-//========================================================================================================================//
-
-//Magnetometer calibration parameters - if using magnetometer, uncomment calibrate_Magnetometer() in void setup() to get these values, else just ignore these
-float MagErrorX = 0.0;
-float MagErrorY = 0.0; 
-float MagErrorZ = 0.0;
-float MagScaleX = 1.0;
-float MagScaleY = 1.0;
-float MagScaleZ = 1.0;
 
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
@@ -532,9 +520,9 @@ void imu_GetData() {
   //update the mag values
   if( ! (mx == 0 && my == 0 && mz == 0) ) {
     //Correct the mag values with the calculated error values
-    mx = (mx - MagErrorX) * MagScaleX;
-    my = (my - MagErrorY) * MagScaleY;
-    mz = (mz - MagErrorZ) * MagScaleZ;
+    mx = (mx - cfg.mag_cal_x) * cfg.mag_cal_sx;
+    my = (my - cfg.mag_cal_y) * cfg.mag_cal_sy;
+    mz = (mz - cfg.mag_cal_z) * cfg.mag_cal_sz;
     //LP filter magnetometer data
     MagX = (1.0 - B_mag) * MagX + B_mag * mx;
     MagY = (1.0 - B_mag) * MagY + B_mag * my;
