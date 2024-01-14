@@ -69,7 +69,7 @@ I2C sensor:
 - Keep it simple!!!
 - No external dependencies, all module libraries included in `src` directory
 - The flight controller madflight.ino runs standard `setup()` and `loop()`.
-- Function names are prefixed with the module they belong to:
+- The madflight.ino uses the following modules:
   - `loop` Main loop control
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
@@ -83,8 +83,9 @@ I2C sensor:
   - `cli` Command Line Interface for debugging, configuration and calibration
   - `cfg` Read and save configuration to flash
   - `hw` Hardware specific code for STM32, RP2040 and ESP32
-- Module source code is in subdirectories of the `src` directory. Here you find a .h file with the same name (e.g. `src/imu/imu.h`) which is the interface between the main program and the sensor options for the module. There might also be an .ino example program, e.g. `src/imu/imu.ino`.
-- The module files are usually header only, i.e. the header also includes the implemention.
+- Most modules are interfaced through a global object, for example the `imu.gx` has the current gyro x-axis rate in degrees per second for the selected IMU chip.
+- Module source code is in subdirectories of the `src` directory. Here you find the module .h file, e.g. `src/imu/imu.h`. There might also be an .ino module test program, e.g. `src/imu/imu.ino`.
+- The module files are usually header only, that is, the header also includes the implemention.
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 

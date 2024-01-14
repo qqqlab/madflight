@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-alpha2"
+#define APPNAME "madflight v1.0.0-beta1"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -242,8 +242,7 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 
 void setup() {
   //Set built in LED to turn on to signal startup
-  pinMode(HW_PIN_LED, OUTPUT);
-  led_SwitchON(true);
+  led_setup();
 
   //start console serial
   Serial.begin(115200);
@@ -258,7 +257,7 @@ void setup() {
   cfg.begin(); //read config from EEPROM
   cli.print_boardInfo(); //print board info and pinout
   cli.print_i2cScan(); //print i2c scan
-  rcin_Setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
+  rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
 
   //Set radio channels to default (safe) values before entering main loop
   for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
@@ -556,12 +555,11 @@ void rcin_GetCommands() {
    * The raw radio commands are filtered with a first order low-pass filter to eliminate any really high frequency noise. 
    */
 
-  int pwm_new[RCIN_NUM_CHANNELS];
-  bool got_new_data = rcin_GetPWM(pwm_new);
+  bool got_new_data = rcin.update();
 
   //Low-pass the critical commands and update previous values
   for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
-    rcin_pwm[i] = lrintf( (1.0 - B_radio)*rcin_pwm[i] + B_radio*pwm_new[i] );
+    rcin_pwm[i] = lrintf( (1.0 - B_radio)*rcin_pwm[i] + B_radio*rcin.pwm[i] );
   }
 
   if(got_new_data) {
@@ -569,24 +567,27 @@ void rcin_GetCommands() {
   }
 }
 
+//If radio is not connected or gives garbage values, set rcin_pwm[] to failsafe values
 void rcin_Failsafe() {
-  //DESCRIPTION: If radio gives garbage values, set all commands to default values
-  /*
-   * Radio connection failsafe used to check if the getCommands() function is returning acceptable pwm values. If any of 
-   * the commands are lower than 800 or higher than 2200, then we can be certain that there is an issue with the radio
-   * connection (most likely hardware related). If any of the channels show this failure, then all of the radio commands 
-   * channel_x_pwm are set to default failsafe values specified in the setup. Comment out this function when troubleshooting 
-   * your radio connection in case any extreme values are triggering this function to overwrite the print_need_newline variables.
-   */
-  int minVal = 800;
-  int maxVal = 2200;
-  for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
-    if (rcin_pwm[i] > maxVal || rcin_pwm[i] < minVal) {
-      //If any failures, set to default failsafe values
-      for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
-      return;
+  //check transmitter connected status (if available)
+  bool failsafe = !rcin.connected();
+
+  if(!failsafe) {
+    //check pwm values are acceptable
+    int minVal = 800;
+    int maxVal = 2200;
+    for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
+      if (rcin_pwm[i] > maxVal || rcin_pwm[i] < minVal) {
+        failsafe = true;
+        break;
+      }
     }
-  }  
+  }
+
+  //If any failures, set rcin_pwm[] to failsafe values
+  if(failsafe) {
+    for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
+  }
 }
 
 void rcin_Normalize() {
@@ -908,26 +909,12 @@ void loop_RateBegin() {
   loop_cnt = 0;    
 }
 
-void out_ArmMotors() {
-  //DESCRIPTION: Sends many command pulses to the motors, to be used to arm motors in the void setup()
-  /*  
-   *  Loops over the commandMotors() function 50 times with a delay in between, simulating how the commandMotors()
-   *  function is used in the main loop. Ensures motors arm within the void setup() where there are some delays
-   *  for other processes that sometimes prevent motors from arming.
-   */
-  for (int i = 0; i <= 50; i++) {
-    out_SetCommands();
-    delay(2);
-  }
-}
-
 //set initial quarterion
 void ahrs_Setup() 
 {
   //estimate yaw based on mag only (assumes vehicle is horizontal)
 
   //warm up imu by getting 100 samples
-  
   for(int i=0;i<100;i++) {
     uint32_t start = micros();
     mag.update();
@@ -960,18 +947,31 @@ float lowpass_to_beta(float f0, float fs) {
   return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
 
+bool led_state;
+
+void led_setup() {
+  pinMode(HW_PIN_LED, OUTPUT);
+  led_SwitchON(true);
+}
+
 void led_SwitchON(bool set_on) {
+  led_state = set_on;
   digitalWrite( HW_PIN_LED, (set_on ? HW_LED_ON : !HW_LED_ON) );
+}
+
+void led_Toggle() {
+  led_SwitchON(!led_state);
 }
 
 void warn_or_die(String msg, bool never_return) {
   do{
     Serial.print(msg);
-    for(int i=0;i<10;i++) {
-      led_SwitchON(true);
-      delay(50);
-      led_SwitchON(false);
-      delay(50);
+    for(int i=0;i<20;i++) {
+      led_Toggle();
+      uint32_t ts = millis();
+      while(millis() - ts < 50) {
+        cli.loop(); //process CLI commands
+      } 
     }
   } while(never_return);
 }

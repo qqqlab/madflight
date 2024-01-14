@@ -12,6 +12,37 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #define RCIN_USE_PPM 4
 #define RCIN_USE_PWM 5
 
+#define RCIN_MAX_CHANNELS 24
+#define RCIN_TIMEOUT 2000 // lost connection timeout in milliseconds
+
+#include "../interface.h"
+
+/* INTERFACE
+class Rcin {
+  public:
+    int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
+    virtual void setup() = 0;
+  private:
+    virtual bool _update() = 0; //returns true if channel pwm data was updated
+
+  public:
+    bool update() { //returns true if channel pwm data was updated
+      bool rv = _update();
+      if(rv) {
+        update_time = millis();
+      }
+      return rv;
+    }
+    bool connected() {
+      return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
+    }
+  private:
+    uint32_t update_time = 0;
+};
+
+extern Rcin &rcin;
+*/
+
 //=================================================================================================
 // None or undefined
 //=================================================================================================
@@ -26,35 +57,40 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #include "crsf/crsf.h"
 CRSF crsf;
 
-void rcin_Setup() {
-  Serial.println("RCIN_USE_CRSF");
-  rcin_Serial->begin(CRSF_BAUD);
-}
+class RcinCSRF : public Rcin {
+  public:
+    void setup() {
+      Serial.println("RCIN_USE_CRSF");
+      rcin_Serial->begin(CRSF_BAUD);
+    }
 
-bool rcin_GetPWM(int *pwm) {
-    bool rv = false;
-    while(rcin_Serial->available()) {
+    bool _update() {
+      bool rv = false;
+      while(rcin_Serial->available()) {
         int c = rcin_Serial->read();
         //print received data
         //if(c == CRSF_ADDRESS_FLIGHT_CONTROLLER) Serial.printf("\nreceived: "); Serial.printf("%02x ",c);
         if(crsf.update(c)) {
-            //print decoded rc data
-            //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,crsf.channel[i]); Serial.println();
-            rv = true;
+          //print decoded rc data
+          //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,crsf.channel[i]); Serial.println();
+          rv = true;
         }
+      }
+      
+      for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
+          pwm[i] = (int)crsf.channel[i];
+      }
+      return rv;
     }
-    
-    for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
-        pwm[i] = (int)crsf.channel[i];
-    }
-    return rv;
-}
+};
+
+RcinCSRF rcin_instance;
 
 //=================================================================================================
 //SBUS Receiver 
 //=================================================================================================
 #elif RCIN_USE == RCIN_USE_SBUS
-#warning "USE_RX_SBUS not ported/tested - see src/RCIN/RCIN.h" //TODO
+#warning "RCIN_USE_SBUS not ported/tested - see src/rcin/rcin.h" //TODO
 
 #include "sbus/SBUS.h" //sBus interface
 
@@ -63,14 +99,16 @@ uint16_t sbusChannels[16];
 bool sbusFailSafe;
 bool sbusLostFrame;
 
-void rcin_Setup() {
-  Serial.println("RCIN_USE_SBUS");
-  sbus.begin();
-}
+class RcinSBUS : public Rcin {
+  public:
+    void setup() {
+      Serial.println("RCIN_USE_SBUS");
+      sbus.begin();
+    }
 
-bool rcin_GetPWM(int *pwm) {
-    if (sbus.read(sbusChannels, &sbusFailSafe, &sbusLostFrame))
-    {
+    bool _update() {
+      if (sbus.read(sbusChannels, &sbusFailSafe, &sbusLostFrame))
+      {
         //sBus scaling below is for Taranis-Plus and X4R-SB
         float scale = 0.615;
         float bias  = 895.0;
@@ -78,40 +116,23 @@ bool rcin_GetPWM(int *pwm) {
             pwm[i] = sbusChannels[i] * scale + bias;
         }
         return true;
+      }
+      return false;
     }
-    return false;
-}
+};
+
+RcinSBUS rcin_instance;
 
 //=================================================================================================
 //DSM Receiver
 //=================================================================================================
 #elif RCIN_USE == RCIN_USE_DSM
-#warning "USE_RX_DSM not ported/tested - see src/RCIN/RCIN.h" //TODO
+#warning "RCIN_USE_DSM not ported/tested - see src/rcin/rcin.h" //TODO
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
 
 #include "dsmrx/DSMRX.h"  
 
 DSM1024 DSM;
-
-void rcin_Setup() {
-  Serial.println("RCIN_USE_DSM");
-  Serial3.begin(115000);
-}
-
-void rcin_GetPWM(int *pwm) {
-    if (DSM.timedOut(micros())) {
-        //Serial.println("*** DSM RX TIMED OUT ***");
-    }
-    else if (DSM.gotNewFrame()) {
-        uint16_t values[num_DSM_channels];
-        DSM.getChannelValues(values, num_DSM_channels);
-        for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
-            pwm[i] = values[i];
-        }
-        return true;
-    }
-    return false;
-}
 
 void serialEvent3(void)
 {
@@ -119,6 +140,31 @@ void serialEvent3(void)
       DSM.handleSerialEvent(Serial3.read(), micros());
   }
 }
+
+class RcinDSM : public Rcin {
+  public:
+    void setup() {
+      Serial.println("RCIN_USE_DSM");
+      Serial3.begin(115000);
+    }
+
+    bool _update() {
+      if (DSM.timedOut(micros())) {
+          //Serial.println("*** DSM RX TIMED OUT ***");
+      }
+      else if (DSM.gotNewFrame()) {
+          uint16_t values[num_DSM_channels];
+          DSM.getChannelValues(values, num_DSM_channels);
+          for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
+              pwm[i] = values[i];
+          }
+          return true;
+      }
+      return false;
+    }
+};
+
+RcinDSM rcin_instance;
 
 //=================================================================================================
 //PPM Receiver 
@@ -170,61 +216,37 @@ void getPPM() {
   }
 }
 
-void rcin_Setup() {
-  Serial.printf("RCIN_USE_PPM pin=%d\n",HW_PIN_RCIN_RX);
-  //Declare interrupt pin
-  pinMode(HW_PIN_RCIN_RX, INPUT_PULLUP);
-  delay(20);
-  //Attach interrupt and point to corresponding ISR function
-  attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_RX), getPPM, CHANGE);
-}
+class RcinPPM : public Rcin {
+  public:
+    void setup() {
+      Serial.printf("RCIN_USE_PPM pin=%d\n",HW_PIN_RCIN_RX);
+      //Declare interrupt pin
+      pinMode(HW_PIN_RCIN_RX, INPUT_PULLUP);
+      delay(20);
+      //Attach interrupt and point to corresponding ISR function
+      attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_RX), getPPM, CHANGE);
+    }
 
-bool rcin_GetPWM(int *pwm) {
-  pwm[0] = channel_1_raw;
-  pwm[1] = channel_2_raw;
-  pwm[2] = channel_3_raw;
-  pwm[3] = channel_4_raw;
-  pwm[4] = channel_5_raw;
-  pwm[5] = channel_6_raw;
-  return true;
-}
+    bool update() {
+      pwm[0] = channel_1_raw;
+      pwm[1] = channel_2_raw;
+      pwm[2] = channel_3_raw;
+      pwm[3] = channel_4_raw;
+      pwm[4] = channel_5_raw;
+      pwm[5] = channel_6_raw;
+      return true;
+    }
+};
+
+RcinPPM rcin_instance;
 
 //=================================================================================================
 // PWM Receiver
 //=================================================================================================
 #elif RCIN_USE == RCIN_USE_PWM
+#warning "RCIN_USE_PWM not ported/tested - see src/rcin/rcin.h" //TODO
 uint32_t channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 uint32_t rising_edge_start_1, rising_edge_start_2, rising_edge_start_3, rising_edge_start_4, rising_edge_start_5, rising_edge_start_6; 
-
-void rcin_Setup() {
-  Serial.println("RCIN_USE_PWM");
-  //Declare interrupt pins 
-  pinMode(ch1Pin, INPUT_PULLUP);
-  pinMode(ch2Pin, INPUT_PULLUP);
-  pinMode(ch3Pin, INPUT_PULLUP);
-  pinMode(ch4Pin, INPUT_PULLUP);
-  pinMode(ch5Pin, INPUT_PULLUP);
-  pinMode(ch6Pin, INPUT_PULLUP);
-  delay(20);
-  //Attach interrupt and point to corresponding ISR functions
-  attachInterrupt(digitalPinToInterrupt(ch1Pin), getCh1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ch2Pin), getCh2, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ch3Pin), getCh3, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ch4Pin), getCh4, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ch5Pin), getCh5, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ch6Pin), getCh6, CHANGE);
-  delay(20);
-}
-
-bool rcin_GetPWM(int *pwm) {
-  pwm[0] = channel_1_raw;
-  pwm[1] = channel_2_raw;
-  pwm[2] = channel_3_raw;
-  pwm[3] = channel_4_raw;
-  pwm[4] = channel_5_raw;
-  pwm[5] = channel_6_raw;
-  return true;
-}
 
 //INTERRUPT SERVICE ROUTINES for reading PWM
 void getCh1() {
@@ -287,12 +309,52 @@ void getCh6() {
   }
 }
 
+class RcinPWM : public Rcin {
+  public:
+    void setup() {
+      Serial.println("RCIN_USE_PWM");
+      //Declare interrupt pins 
+      pinMode(ch1Pin, INPUT_PULLUP);
+      pinMode(ch2Pin, INPUT_PULLUP);
+      pinMode(ch3Pin, INPUT_PULLUP);
+      pinMode(ch4Pin, INPUT_PULLUP);
+      pinMode(ch5Pin, INPUT_PULLUP);
+      pinMode(ch6Pin, INPUT_PULLUP);
+      delay(20);
+      //Attach interrupt and point to corresponding ISR functions
+      attachInterrupt(digitalPinToInterrupt(ch1Pin), getCh1, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(ch2Pin), getCh2, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(ch3Pin), getCh3, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(ch4Pin), getCh4, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(ch5Pin), getCh5, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(ch6Pin), getCh6, CHANGE);
+      delay(20);
+    }
+
+    bool _update() {
+      pwm[0] = channel_1_raw;
+      pwm[1] = channel_2_raw;
+      pwm[2] = channel_3_raw;
+      pwm[3] = channel_4_raw;
+      pwm[4] = channel_5_raw;
+      pwm[5] = channel_6_raw;
+      return true;
+    }
+};
+
+RcinPWM rcin_instance;
+
 //=================================================================================================
 // Invalid value
 //=================================================================================================
 #else
   #error "invalid RCIN_USE value"
 #endif
+
+Rcin &rcin = rcin_instance;
+
+
+
 
 
 

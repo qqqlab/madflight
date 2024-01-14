@@ -5,6 +5,60 @@ interface.h - This file defines the interfaces for sensors and other devices
 #pragma once
 
 //=================================================================================================
+// Radio Receiver
+//=================================================================================================
+
+class Rcin {
+  public:
+    int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
+    virtual void setup() = 0;
+  private:
+    virtual bool _update() = 0; //returns true if channel pwm data was updated
+
+  public:
+    bool update() { //returns true if channel pwm data was updated
+      bool rv = _update();
+      if(rv) {
+        update_time = millis();
+      }
+      return rv;
+    }
+    bool connected() {
+      return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
+    }
+  private:
+    uint32_t update_time = 0;
+};
+
+extern Rcin &rcin;
+
+//=================================================================================================
+// IMU
+//=================================================================================================
+
+class Imu {
+  public:
+    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
+    virtual int setup(uint32_t sampleRate) = 0;
+    virtual void update() = 0;
+
+    float ax = 0; //"North" acceleration in G
+    float ay = 0; //"East" acceleration in G
+    float az = 0; //"Down" acceleration in G
+    float gx = 0; //"North" rotation speed in deg/s
+    float gy = 0; //"East" rotation speed in deg/s
+    float gz = 0; //"Down" rotation speed in deg/s
+    float mx = 0; //"North" magnetic flux in uT
+    float my = 0; //"East" magnetic flux in uT
+    float mz = 0; //"Down" magnetic flux in uT
+    uint32_t getSampleRate() {return _sampleRate;}
+  protected:
+    uint32_t _sampleRate = 0; //sensor sample rate in Hz
+};
+
+extern Imu &imu;
+
+//=================================================================================================
 // Barometer
 //=================================================================================================
 
@@ -62,29 +116,3 @@ class Battery {
 };
 
 extern Battery &bat;
-
-//=================================================================================================
-// IMU
-//=================================================================================================
-
-class Imu {
-  public:
-    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
-    virtual int setup(uint32_t sampleRate) = 0;
-    virtual void update() = 0;
-
-    float ax = 0; //"North" acceleration in G
-    float ay = 0; //"East" acceleration in G
-    float az = 0; //"Down" acceleration in G
-    float gx = 0; //"North" rotation speed in deg/s
-    float gy = 0; //"East" rotation speed in deg/s
-    float gz = 0; //"Down" rotation speed in deg/s
-    float mx = 0; //"North" magnetic flux in uT
-    float my = 0; //"East" magnetic flux in uT
-    float mz = 0; //"Down" magnetic flux in uT
-    uint32_t getSampleRate() {return _sampleRate;}
-  protected:
-    uint32_t _sampleRate = 0; //sensor sample rate in Hz
-};
-
-extern Imu &imu;
