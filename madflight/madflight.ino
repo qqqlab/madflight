@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-beta2"
+#define APPNAME "madflight v1.0.0-beta3"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -72,9 +72,10 @@ blink interval longer than 1 second - loop() is taking too much time
 //                                                 BOARD                                                                  //
 //========================================================================================================================//
 
-//uncomment and change this to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
-//see the boards directory for available converted BetaFlight boards
-//#include "boards/madflight/DYST-DYSF4PRO_V2.h"
+//uncomment and change this #include to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
+
+//#include "boards/madflight/DYST-DYSF4PRO_V2.h" //see the boards directory for available converted BetaFlight boards
+
 
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
@@ -210,7 +211,7 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 //========================================================================================================================//
 //                                                 INCLUDES                                                               //
 //========================================================================================================================//
-//Note: most modules are header only. By placing the include section here allows the modules to access the global variables.
+//Note: most modules are header only. By placing the include section here allows the modules to access the global variables without declaring them extern.
 
 //include all modules. First set all USE_xxx and MODULE_xxx defines. For example: USE_MAG_QMC5883L and MAG_I2C_ADR
 #include "src/cfg/cfg.h" //load config first, so that cfg.xxx can be used by other modules
@@ -239,7 +240,9 @@ void setup() {
   for(int i=10;i>0;i--) { 
     Serial.printf(APPNAME " starting %d ...\n",i);
     delay(300);
+    led_Toggle();
   }
+  led_SwitchON(true);
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
   cfg.begin(); //read config from EEPROM
@@ -268,7 +271,6 @@ void setup() {
   mag.setup(); //External Magnetometer
   bat.setup(); //Battery Monitor
   bb.setup(); //Black Box
-  bb.start(); //XXX start black box logging
   gps_setup(); //GPS
   //gps_debug(); //uncomment to debug gps messages
 
@@ -290,8 +292,8 @@ void setup() {
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
 
-  //Get IMU error to zero accelerometer and gyro readings, assuming vehicle is level when powered up
-  cli.calibrate_IMU_error();
+  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values.
+  cli.calibrate_gyro();
 
   //set quarterion to initial yaw, so that AHRS settles faster
   ahrs_Setup();
@@ -859,22 +861,21 @@ Yaw right               (CCW+ CW-)       -++-
   //out_command[SERVO2] = 0; 
 }
 
+//Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
+//Change to DISARMED when radio armed switch is in disamed position
 void out_KillSwitch() {
-  //DESCRIPTION: update out_armed status
-  /*
-      Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
-      Change to DISARMED when radio armed switch is in disamed position
-  */
   static bool rcin_armed_prev = false; 
 
-  //Set ARMED when throttle is low and rcin_armed was flipped from unarmed to armed
-  if (rcin_thro_is_low && rcin_armed && !rcin_armed_prev) {
+  //Switch from DISARMED to ARMED when throttle is low and rcin_armed was flipped from unarmed to armed
+  if (!out_armed && rcin_thro_is_low && rcin_armed && !rcin_armed_prev) {
     out_armed = true;
+    bb.start(); //start blackbox logging
   }
 
-  //Set DISARMED when rcin_armed is disarmed
-   if (!rcin_armed) {
+  //Switch from ARMED to DISARMED when rcin_armed is disarmed
+   if (out_armed && !rcin_armed) {
     out_armed = false;
+    bb.start(); //stop blackbox logging
   }
 
   //If DISARMED set motor outputs to 0

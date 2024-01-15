@@ -148,9 +148,6 @@ SPIClass spi2 = SPIClass(VSPI);  // VSPI(default) or HSPI - used for BB and othe
   HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 #endif
 
-
-
-
 SPIClass *spi = &spi1;
 SPIClass *bb_spi = &spi2;
 

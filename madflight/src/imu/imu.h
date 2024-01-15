@@ -16,8 +16,6 @@ These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kH
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 ========================================================================================================================*/
 
-extern uint32_t loop_freq;// = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
-
 //Available sensors
 //#define IMU_USE_NONE 0 //always need an IMU
 #define IMU_USE_SPI_BMI270 1
@@ -75,19 +73,19 @@ extern Imu &imu;
 
 //handle rotation for different mounting positions
 #if IMU_ALIGN == IMU_ALIGN_CW90
-  #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=tmp;   tmp=*gx; *gx=-*gy; *gy=tmp;   tmp=*mx; *mx=-*my; *my=tmp; }while(0)
+  #define IMU_ROTATE() do{ float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp;   tmp=mx; mx=-my; my=tmp; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW180
-  #define IMU_ROTATE() do{ *ax=-*ax; *ay=-*ay;   *gx=-*gx; *gy=-*gy;   *mx=-*mx; *my=-*my; }while(0)
+  #define IMU_ROTATE() do{ ax=-ax; ay=-ay;   gx=-gx; gy=-gy;   mx=-mx; my=-my; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW270
-  #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=-tmp;   tmp=*gx; *gx=*gy; *gy=-tmp;   tmp=*mx; *mx=*my; *my=-tmp; }while(0)
+  #define IMU_ROTATE() do{ float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp;   tmp=mx; mx=my; my=-tmp; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW0FLIP
-  #define IMU_ROTATE() do{ *ay=-*ay; *az=-*az;   *gy=-*gy; *gz=-*gz;   *my=-*my; *mz=-*mz; }while(0)
+  #define IMU_ROTATE() do{ ay=-ay; az=-az;   gy=-gy; gz=-gz;   my=-my; mz=-mz; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW90FLIP
-  #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=*ay; *ay=tmp; *az=-*az;   tmp=*gx; *gx=*gy; *gy=tmp; *gz=-*gz;   tmp=*mx; *mx=*my; *my=tmp; *mz=-*mz; }while(0)
+  #define IMU_ROTATE() do{ float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;   tmp=mx; mx=my; my=tmp; mz=-mz; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW180FLIP
-  #define IMU_ROTATE() do{ *ax=-*ax; *az=-*az;   *gx=-*gx; *gz=-*gz;   *mx=-*mx; *mz=-*mz; }while(0)
+  #define IMU_ROTATE() do{ ax=-ax; az=-az;   gx=-gx; gz=-gz;   mx=-mx; mz=-mz; }while(0)
 #elif IMU_ALIGN == IMU_ALIGN_CW270FLIP
-  #define IMU_ROTATE() do{ float tmp; tmp=*ax; *ax=-*ay; *ay=-tmp; *az=-*az;   tmp=*gx; *gx=-*gy; *gy=-tmp; *gz=-*gz;   tmp=*mx; *mx=-*my; *my=-tmp; *mz=-*mz; }while(0)
+  #define IMU_ROTATE() do{ float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz;   tmp=mx; mx=-my; my=-tmp; mz=-mz; }while(0)
 #else
   #define IMU_ROTATE()
 #endif
@@ -219,7 +217,7 @@ class ImuGeneric: public Imu {
     int setup(uint32_t sampleRate) {
       int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
       _sampleRate = imu_Sensor.get_rate();
-      Serial.printf(IMU_TYPE " loop_freq=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
+      Serial.printf(IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
       return rv;
     }
 

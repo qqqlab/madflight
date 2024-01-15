@@ -33,6 +33,11 @@ PB11 RX3 - TX3 PB10
       5V - 5V
      GND - GND
 
+
+set bat_cal_v 0.0057630
+set bat_cal_i 0.0011806
+cwrite
+
 ==============================================================================*/
 
 #define HW_BOARD_NAME "MADFLIGHT-DYST-DYSF4PRO_V2"
@@ -52,41 +57,49 @@ PB11 RX3 - TX3 PB10
 //#define MAG_I2C_ADR  0
 
 //Blue LED:
-//const int HW_PIN_LED      = PB5;
-//const int HW_LED_ON       = 0; //0:low is on, 1:high is on
+//const int HW_PIN_LED           = PB5;
+//const int HW_LED_ON            = 0; //0:low is on, 1:high is on
 
 //Green LED:
-const int HW_PIN_LED      = PC10; // == SPI3_SCK for MAX7456, FlASH
-const int HW_LED_ON       = 1; //0:low is on, 1:high is on
+const int HW_PIN_LED           = PC10; // == SPI3_SCK for MAX7456, FlASH
+const int HW_LED_ON            = 1; //0:low is on, 1:high is on
 
 //IMU SPI: (SPI1)
-const int HW_PIN_SPI_MISO = PA6;
-const int HW_PIN_SPI_MOSI = PA7;
-const int HW_PIN_SPI_SCLK = PA5;
-const int HW_PIN_IMU_CS   = PA4;
-const int HW_PIN_IMU_EXTI = PC4;
+const int HW_PIN_SPI_INDEX     = 1;
+const int HW_PIN_SPI_SCLK      = PA5;
+const int HW_PIN_SPI_MISO      = PA6;
+const int HW_PIN_SPI_MOSI      = PA7;
+const int HW_PIN_IMU_CS        = PA4;
+const int HW_PIN_IMU_EXTI      = PC4;
 
 //BARO/MAG I2C: (I2C2) Note: pins SCL/SDA are swapped in board documentation
-const int HW_PIN_I2C_SDA  = PB9;
-const int HW_PIN_I2C_SCL  = PB8;
+const int HW_PIN_I2C_SDA       = PB9;
+const int HW_PIN_I2C_SCL       = PB8;
 
 //Outputs:
-const int HW_OUT_COUNT    = 6;
-const int HW_PIN_OUT[]    = {PB0,PB1,PA3,PA2,PA1,PA8};
+const int HW_OUT_COUNT         = 6;
+const int HW_PIN_OUT[]         = {PB0,PB1,PA3,PA2,PA1,PA8};
 
 //RC Receiver: (SERIAL1)
-const int HW_PIN_RCIN_RX  = PA10;
-const int HW_PIN_RCIN_TX  = PA9;
+const int HW_PIN_RCIN_RX       = PA10;
+const int HW_PIN_RCIN_TX       = PA9;
 const int HW_PIN_RCIN_INVERTER = PC0;
 
 //GPS: (SERIAL3) Note: pins RX3/TX3 are swapped in board documentation
-const int HW_PIN_GPS_RX   = PB11;
-const int HW_PIN_GPS_TX   = PB10;
+const int HW_PIN_GPS_RX       = PB11;
+const int HW_PIN_GPS_TX       = PB10;
 const int HW_PIN_GPS_INVERTER = -1;
 
 //Battery ADC voltage and current inputs:
-const int HW_PIN_BAT_V    = PC2;
-const int HW_PIN_BAT_I    = PC1;
+const int HW_PIN_BAT_V        = PC2;
+const int HW_PIN_BAT_I        = PC1;
+
+//Black Box
+const int HW_PIN_SPI2_INDEX   = 3;
+const int HW_PIN_SPI2_SCLK    = PC10;
+const int HW_PIN_SPI2_MISO    = PC11;
+const int HW_PIN_SPI2_MOSI    = PC12;
+const int HW_PIN_BB_CS        = PB3;
 
 //Include Libraries
 #include <Wire.h>                      //I2C communication
@@ -99,6 +112,7 @@ HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 SPIClass *spi = &SPI;
+SPIClass *bb_spi = new SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK); //do not define HW_PIN_BB_CS here
 
 //Serial
 #define HW_SERIAL_COUNT 3

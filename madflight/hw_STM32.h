@@ -101,7 +101,7 @@ HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 SPIClass *spi = &SPI;
-SPIClass bb_spi = SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK); //do not define HW_PIN_BB_CS here
+SPIClass *bb_spi = new SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK); //do not define HW_PIN_BB_CS here
 
 #endif //#ifndef HW_BOARD_NAME
 
@@ -109,23 +109,26 @@ SPIClass bb_spi = SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK)
 //  EEPROM
 //======================================================================================================================//
 
-#include <EEPROM.h>
-
 #if defined(DATA_EEPROM_BASE)
   //----------------------------------------------------------------------------------------------------------
   //unbuffered write - very slow because writes whole flash page for each byte, i.e. 1 second per changed byte
   //----------------------------------------------------------------------------------------------------------
+  #include <EEPROM.h>
 
   void hw_eeprom_begin() {
+    Serial.println("EEPROM: using Unbuffered IO");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
 
   uint8_t hw_eeprom_read(uint32_t adr) {
-    return EEPROM.read(adr);
+    uint8_t val = EEPROM.read(adr);
+    //Serial.printf("EEPROM.read(%d) = 0x%02X\n", adr, val);
+    return val;
   }
 
   void hw_eeprom_write(uint32_t adr, uint8_t val) {
     EEPROM.update(adr, val); //update only writes when changed
+    //Serial.printf("EEPROM.write(%d, 0x%02X)\n", adr, val);
   }
 
   void hw_eeprom_commit() {
@@ -135,30 +138,35 @@ SPIClass bb_spi = SPIClass(HW_PIN_SPI2_MOSI, HW_PIN_SPI2_MISO, HW_PIN_SPI2_SCLK)
   //----------------------------------------------------------------------------------------------------------
   //buffered write - takes approx. 1 second to write full config
   //----------------------------------------------------------------------------------------------------------
+  #include <EEPROM.h>
+
   void hw_eeprom_begin() {
-    UNUSED(EEPROM);    
+    (void)(EEPROM); //keep compiler happy
+    Serial.println("EEPROM: using Buffered IO");
     //Serial.println("START reading from flash");Serial.flush();
     eeprom_buffer_fill(); //Copy the data from the flash to the buffer
     //Serial.println("DONE reading");Serial.flush();
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {  
+  uint8_t hw_eeprom_read(uint32_t adr) {
     uint8_t val = eeprom_buffered_read_byte(adr); //read from buffer
-    //Serial.printf("hw_eeprom_read(%d)=%d\n",adr,val);Serial.flush();
+    //Serial.printf("hw_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
     return val;
   }
 
   void hw_eeprom_write(uint32_t adr, uint8_t val) {
-    //Serial.printf("hw_eeprom_write(%d,%d)\n",adr,val);Serial.flush();
+    //Serial.printf("hw_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
     eeprom_buffered_write_byte(adr, val); //write to buffer
   }
 
   void hw_eeprom_commit() {
     //Serial.println("START writing to flash");Serial.flush();
     eeprom_buffer_flush(); //Copy the data from the buffer to the flash
+    eeprom_buffer_flush(); //TODO: calling flush twice seems to do the trick???
     //Serial.println("DONE writing");Serial.flush();
   } 
 #endif
+
 
 //======================================================================================================================//
 //                    hw_setup()
@@ -193,3 +201,12 @@ void hw_setup()
 void hw_reboot() {
   NVIC_SystemReset();
 }
+/*
+void hw_disable_irq() {
+  __disable_irq();
+}
+
+void hw_enable_irq() {
+  __enable_irq();
+}
+*/

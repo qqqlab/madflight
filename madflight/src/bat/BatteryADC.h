@@ -4,8 +4,8 @@ ADC Battery Monitor
 Need to have at least HW_PIN_BAT_V or HW_PIN_BAT_I defined before including this header
 
 Also needs cfg for:
-cfg.bat_cal_v //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951 = 0.0057630)
-cfg.bat_cal_i //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847 = 0.0011806)
+cfg.bat_cal_v //BatteryADC voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading (for example: 8.04/13951 -> set bat_cal_v 0.0057630 )
+cfg.bat_cal_i //BatteryADC current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading (for example: 1.0/847 --> set bat_cal_i 0.0011806 )
 
 =================================================================================================*/
 

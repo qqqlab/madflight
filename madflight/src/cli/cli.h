@@ -11,49 +11,18 @@ public:
   }
 
   void loop() {
+    static char prev_c = 0;
     while(Serial.available()) {
       char c = Serial.read();
-      if(c=='\r' || c=='\n') {
+      if( (c=='\r' && prev_c!='\n') || (c=='\n' && prev_c!='\n') ) { //accept \n, \r, \r\n, \n\r as end of command
         processCmd();
       }else{
         cmdline += c;
       }
+      prev_c = c;
     }
     
     print_loop();
-  }
-
-  void print_boardInfo() {
-    Serial.println("HW_BOARD_NAME=" HW_BOARD_NAME);
-    #ifdef HW_MCU
-      Serial.println("HW_MCU=" HW_MCU);
-    #endif  
-    #ifdef USE_IMU_POLLING
-      Serial.println("USE_IMU_POLLING");
-    #endif
-
-    Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
-    Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
-    Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
-    Serial.printf("HW_PIN_IMU_EXTI=%d\n",HW_PIN_IMU_EXTI);
-    Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
-    Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
-    Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-    Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-  }
-
-  void print_i2cScan() {
-    Serial.printf("I2C: Scanning ...\n");
-    byte count = 0;
-    i2c->begin();
-    for (byte i = 8; i < 120; i++) {
-      i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
-      if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
-        Serial.printf("I2C: Found address: 0x%02X (%d)\n",i,i);
-        count++;
-      }
-    }
-    Serial.printf("I2C: Found %d device(s)\n", count);      
   }
 
   void welcome() {
@@ -82,21 +51,22 @@ public:
     "ploop     Loop timing in microseconds (expected: 1000000 / loop_freq)\n"
     "pbat      Battery voltage, current, Ah used and Wh used\n"
     "\n--black box--\n"
-    "bbdump\n"
-    "bbstart\n"
-    "bbstop\n"
-    "bberase\n"
+    "bbdump    Dump CSV format\n"
+    "bbstart   Start logging\n"
+    "bbstop    Stop logging\n"
+    "bberase   Erase bb device\n"
     "\n--config--\n"
     "set [name] [value]\n"
-    "set       List config\n"
-    "clearall  Clear config\n"
-    "save      Save config to flash\n"
+    "clist     List config\n"
+    "cclear    Clear config\n"
+    "cwrite    Write config to flash\n"
+    "cread     Read config to flash\n"
     "\n--calibrate--\n"
-    "cimu      Calibrate IMU error\n"
-    "cmag      Calibrate magnetometer\n"
+    "calimu    Calibrate IMU error\n"
+    "calmag    Calibrate magnetometer\n"
     );
   }
-  
+
 private:
 
   String cmdline = "";
@@ -118,6 +88,8 @@ private:
     String arg2 = getCmdPart(pos);
     cmd.toLowerCase();
     cmd.trim();
+
+    Serial.println( "> " + cmd + " " + arg1 + " " + arg2 );
 
     if(cmd=="help" || cmd=="?") {
       help();
@@ -162,26 +134,66 @@ private:
     }else if(cmd == "bberase") {
       bb.erase();
     }else if(cmd == "set") {
-      if(arg2=="") {
-        cfg.print();
-      }else{
-        cfg.set(arg1, arg2);
-      }
-    }else if(cmd == "clearall") {
+      cfg.set(arg1, arg2);
+    }else if(cmd == "clist") {
+      cfg.list();
+    }else if(cmd == "cclear") {
       cfg.clear();
-      Serial.println("Config cleared, type 'save' to write to flash");
-    }else if(cmd == "save") {
-      Serial.print("saving, please wait ... ");
-      cfg.save();
-      Serial.println("DONE");
-    }else if(cmd == "cimu") {
-      calibrate_IMU_error();
-    }else if(cmd == "cmag") {
+      Serial.println("Config cleared, use 'cwrite' to write to flash");
+    }else if(cmd == "cwrite") {
+      Serial.println("writing, please wait... ");
+      cfg.write();
+      Serial.println("cwrite completed");
+    }else if(cmd == "cread") {
+      cfg.read();
+    }else if(cmd == "calimu") {
+      calibrate_IMU();
+    }else if(cmd == "calmag") {
       calibrate_Magnetometer();
     }else if(cmd != "") {
       Serial.println("ERROR Unknown command - Type help for help");
     }
     cmdline = "";
+  }
+
+
+//========================================================================================================================//
+//                                          HELPERS                                                                       //
+//========================================================================================================================//
+
+public:
+
+  void print_boardInfo() {
+    Serial.println("HW_BOARD_NAME=" HW_BOARD_NAME);
+    #ifdef HW_MCU
+      Serial.println("HW_MCU=" HW_MCU);
+    #endif  
+    #ifdef USE_IMU_POLLING
+      Serial.println("USE_IMU_POLLING");
+    #endif
+
+    Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
+    Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
+    Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
+    Serial.printf("HW_PIN_IMU_EXTI=%d\n",HW_PIN_IMU_EXTI);
+    Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
+    Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
+    Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+    Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+  }
+
+  void print_i2cScan() {
+    Serial.printf("I2C: Scanning ...\n");
+    byte count = 0;
+    i2c->begin();
+    for (byte i = 8; i < 120; i++) {
+      i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
+      if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
+        Serial.printf("I2C: Found address: 0x%02X (%d)\n",i,i);
+        count++;
+      }
+    }
+    Serial.printf("I2C: Found %d device(s)\n", count);      
   }
 
 //========================================================================================================================//
@@ -190,8 +202,12 @@ private:
 
 public:
 
+  void calibrate_gyro() {
+    calibrate_IMU(true);
+  }
+
   //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
-  void calibrate_IMU_error() {
+  void calibrate_IMU(bool gyro_only = false) {
     Serial.println("Running calibrate_IMU_error() takes a couple of seconds...");
 
     imu_loop_enable = false; //disable running of imu_loop()
@@ -224,27 +240,44 @@ public:
     //remove gravitation
     azerr -= 1.0;
 
-    Serial.printf("set imu_cal_ax %+f #config %+f\n", axerr, cfg.imu_cal_ax);
-    Serial.printf("set imu_cal_ay %+f #config %+f\n", ayerr, cfg.imu_cal_ay);
-    Serial.printf("set imu_cal_az %+f #config %+f\n", azerr, cfg.imu_cal_az);
-    Serial.printf("set imu_cal_gx %+f #config %+f\n", gxerr, cfg.imu_cal_gx);
-    Serial.printf("set imu_cal_gy %+f #config %+f\n", gyerr, cfg.imu_cal_gy);
-    Serial.printf("set imu_cal_gz %+f #config %+f\n", gzerr, cfg.imu_cal_gz);
-    Serial.println("Note: use CLI 'save' to store these values");
 
-    //only apply reasonable gyro and acc errors
-    float gtol = 10;
-    if( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol ) {
+    Serial.printf("set imu_cal_gx %+f #config was %+f\n", gxerr, cfg.imu_cal_gx);
+    Serial.printf("set imu_cal_gy %+f #config was %+f\n", gyerr, cfg.imu_cal_gy);
+    Serial.printf("set imu_cal_gz %+f #config was %+f\n", gzerr, cfg.imu_cal_gz);
+
+    bool apply_gyro = true;
+    
+    if(gyro_only) {
+      //only apply reasonable gyro errors
+      float gtol = 10;
+      apply_gyro = ( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol );
+    }else{
+      Serial.printf("set imu_cal_ax %+f #config was %+f\n", axerr, cfg.imu_cal_ax);
+      Serial.printf("set imu_cal_ay %+f #config was %+f\n", ayerr, cfg.imu_cal_ay);
+      Serial.printf("set imu_cal_az %+f #config was %+f\n", azerr, cfg.imu_cal_az);
+    }
+/*
+      //only apply reasonable acc errors
+      float atol = 0.1;
+      float aztol = 0.2;
+      apply_acc = ( -atol < axerr && axerr < atol  &&  -atol < ayerr && ayerr < atol  &&  -aztol < azerr && azerr < aztol );
+*/
+    
+    if (apply_gyro) {
       cfg.imu_cal_gx = gxerr;
       cfg.imu_cal_gy = gyerr;
       cfg.imu_cal_gz = gzerr;
+    }else{
+       Serial.println("=== Not applying gyro correction, out of tolerance ===");
     }
-    float atol = 0.1;
-    if( -atol < axerr && axerr < atol  &&  -atol < ayerr && ayerr < atol  &&  -atol < azerr && azerr < atol ) {
+  
+    if (!gyro_only) {
       cfg.imu_cal_ax = axerr;
       cfg.imu_cal_ay = ayerr;
       cfg.imu_cal_az = azerr;
     }
+    
+    Serial.println("Use CLI 'cwrite' to write these values to flash");
 
     imu_loop_enable = true; //enable running of imu_loop()
   }
@@ -290,7 +323,7 @@ public:
       Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
       Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
       Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
-      Serial.println("Note: use CLI 'save' to store these values");
+      Serial.println("Note: use CLI 'cwrite' to write these values to flash");
       Serial.println(" ");
       Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
       cfg.mag_cal_x = bias[0];
@@ -395,6 +428,8 @@ private:
 //========================================================================================================================//
 //                                                PRINT FUNCTIONS                                                         //
 //========================================================================================================================//
+
+public:
 
   uint32_t print_time = 0;
   bool print_need_newline = false;
