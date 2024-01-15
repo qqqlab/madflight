@@ -13,7 +13,7 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #define RCIN_USE_PWM 5
 
 
-#define RCIN_TIMEOUT 2000 // lost connection timeout in milliseconds
+#define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
 
 #include "../interface.h"
 
@@ -42,7 +42,6 @@ bool Rcin::update() { //returns true if channel pwm data was updated
 bool Rcin::connected() {
   return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
 }
-
 
 
 
@@ -180,6 +179,7 @@ RcinDSM rcin_instance;
 //=================================================================================================
 #elif RCIN_USE == RCIN_USE_PPM
 volatile uint32_t channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
+volatile bool rcin_updated = false;
 
 //INTERRUPT SERVICE ROUTINE for reading PPM
 void getPPM() {
@@ -219,6 +219,7 @@ void getPPM() {
   
     if (ppm_counter == 6) { //Sixth pulse
       channel_6_raw = dt_ppm;
+      rcin_updated = true;
     }
     
     ppm_counter = ppm_counter + 1;
@@ -244,7 +245,9 @@ class RcinPPM : public Rcin {
       pwm[3] = channel_4_raw;
       pwm[4] = channel_5_raw;
       pwm[5] = channel_6_raw;
-      return true;
+      bool rv = rcin_updated;
+      rcin_updated = false;
+      return rv;
     }
 
   private:
@@ -260,6 +263,7 @@ RcinPPM rcin_instance;
 #warning "RCIN_USE_PWM not ported/tested - see src/rcin/rcin.h" //TODO
 uint32_t channel_1_raw, channel_2_raw, channel_3_raw, channel_4_raw, channel_5_raw, channel_6_raw;
 uint32_t rising_edge_start_1, rising_edge_start_2, rising_edge_start_3, rising_edge_start_4, rising_edge_start_5, rising_edge_start_6; 
+volatile bool rcin_updated = false;
 
 //INTERRUPT SERVICE ROUTINES for reading PWM
 void getCh1() {
@@ -319,6 +323,7 @@ void getCh6() {
   }
   else if(trigger == 0) {
     channel_6_raw = micros() - rising_edge_start_6;
+    rcin_updated = true;
   }
 }
 
@@ -352,7 +357,9 @@ class RcinPWM : public Rcin {
       pwm[3] = channel_4_raw;
       pwm[4] = channel_5_raw;
       pwm[5] = channel_6_raw;
-      return true;
+      bool rv = rcin_updated;
+      rcin_updated = false;
+      return rv;
     }
 
   private:

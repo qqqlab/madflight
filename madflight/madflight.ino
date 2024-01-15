@@ -120,8 +120,6 @@ const int rcin_cfg_arm_max       = 2200;
 int rcin_cfg_aux_min = 1115; //lowest switch position
 int rcin_cfg_aux_max = 1945; //higest switch position
 
-bool rcin_failsafe = true; //radio in failsafe mode
-
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
@@ -548,20 +546,6 @@ void rcin_GetCommands() {
   if(got_new_data) {
     //Serial.print("rcin_GetCommands() "); for(int i=0; i<RCIN_NUM_CHANNELS; i++) Serial.printf("CH%d:%d->%d ",i+1,pwm_new[i],rcin_pwm[i]); Serial.println(); //uncomment for debugging
   }
-
-  //If radio is not connected or gives garbage values, trigger failsafe
-  rcin_failsafe = !rcin.connected(); //check transmitter connected status (if available)
-  if(!rcin_failsafe) {
-    //check pwm values are acceptable
-    int minVal = 800;
-    int maxVal = 2200;
-    for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
-      if (rcin_pwm[i] > maxVal || rcin_pwm[i] < minVal) {
-        rcin_failsafe = true;
-        break;
-      }
-    }
-  }
 }
 
 void rcin_Normalize() {
@@ -845,29 +829,29 @@ Yaw right               (CCW+ CW-)       -++-
   //out_command[SERVO2] = 0; 
 }
 
-//Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
-//Change to DISARMED when radio armed switch is in disamed position
 void out_KillSwitchAndFailsafe() {
-  //set armed/disarmed
   static bool rcin_armed_prev = false; 
 
-  //Switch from DISARMED to ARMED when throttle is low and rcin_armed was flipped from unarmed to armed
+  //Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
   if (!out_armed && rcin_thro_is_low && rcin_armed && !rcin_armed_prev) {
     out_armed = true;
     Serial.println("OUT: ARMED");
     bb.start(); //start blackbox logging
   }
 
-  //Switch from ARMED to DISARMED when rcin_armed is disarmed or failsafe triggered
-   if (out_armed && (!rcin_armed || rcin_failsafe)) {
+  //Change to DISARMED when radio armed switch is in disarmed position, or if radio lost connection
+   if (out_armed && (!rcin_armed || !rcin.connected())) {
     out_armed = false;
-    if(rcin_failsafe) Serial.println("RCIN: FAILSAFE");    
-    Serial.println("OUT: DISARMED");
-    bb.start(); //stop blackbox logging
+    if(!rcin_armed) {
+      Serial.println("OUT: DISARMED (arm switch)");
+      bb.stop(); //stop blackbox logging
+    }else{
+      Serial.println("OUT: DISARMED (rcin lost connection)");
+    }
   }
 
-  //If DISARMED set motor outputs to 0
-  if(!out_armed) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = 0; 
+  //If DISARMED or throttle low -> set motor outputs to 0 (Note: because of PID mixing motors can rotate even if throttle is at zero)
+  if(!out_armed || rcin_thro_is_low) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = 0; 
 
   rcin_armed_prev = rcin_armed;
 }

@@ -500,14 +500,13 @@ public:
   }
 
   void print_rcin_RadioScaled() {
-    Serial.printf("failsafe:%d\t",rcin_failsafe);
     Serial.printf("rcin_thro:%.2f\t",rcin_thro);
     Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
     Serial.printf("rcin_pitch:%+.2f\t",rcin_pitch);
     Serial.printf("rcin_yaw:%+.2f\t",rcin_yaw);
     Serial.printf("rcin_arm:%d\t",rcin_armed);
     Serial.printf("rcin_aux:%d\t",rcin_aux);
-    Serial.printf("out_armed:%d\t",out_armed);  
+    Serial.printf("out_armed:%d\t",out_armed);
     print_need_newline = true;
   }
 
