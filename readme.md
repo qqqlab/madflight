@@ -41,6 +41,17 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 9. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
 10. Mount props, go to an wide open space, and FLY!
 
+# Safety First!!!
+
+By default madflight has these safety features:
+
+- Motors only rotate when armed.
+- Arming Procedure: set throttle low then flip the arm switch from disarmed to armed.
+- Kill Switch: when the arm switch is in the disarm position, disarm and stop motors until re-armed.
+- Failsafe: when radio connection is lost, disarm and stop motors until re-armed.
+- Low Throttle: stop motors, but stay armed.
+- LED armed/disarmed indicator.
+
 # Connecting the IMU Sensor
 
 SPI sensor: (highly recommended over I2C)
