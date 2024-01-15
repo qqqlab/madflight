@@ -12,7 +12,7 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #define RCIN_USE_PPM 4
 #define RCIN_USE_PWM 5
 
-#define RCIN_MAX_CHANNELS 24
+
 #define RCIN_TIMEOUT 2000 // lost connection timeout in milliseconds
 
 #include "../interface.h"
@@ -20,7 +20,7 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 /* INTERFACE
 class Rcin {
   public:
-    int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
+    uint16_t *pwm; //pwm channel data. values: 988-2012
     virtual void setup() = 0;
     bool update(); //returns true if channel pwm data was updated
     bool connected();
@@ -40,7 +40,7 @@ bool Rcin::update() { //returns true if channel pwm data was updated
   return rv;
 }
 bool Rcin::connected() {
-  return ((uint32_t)millis() - update_time > (RCIN_TIMEOUT) );
+  return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
 }
 
 
@@ -64,6 +64,7 @@ class RcinCSRF : public Rcin {
   public:
     void setup() {
       Serial.println("RCIN_USE_CRSF");
+      pwm = crsf.channel;
       rcin_Serial->begin(CRSF_BAUD);
     }
 
@@ -79,10 +80,7 @@ class RcinCSRF : public Rcin {
           rv = true;
         }
       }
-      
-      for(int i=0; i<RCIN_NUM_CHANNELS; i++) {
-          pwm[i] = (int)crsf.channel[i];
-      }
+
       return rv;
     }
 };
@@ -106,6 +104,7 @@ class RcinSBUS : public Rcin {
   public:
     void setup() {
       Serial.println("RCIN_USE_SBUS");
+      pwm = pwm_instance;
       sbus.begin();
     }
 
@@ -122,6 +121,9 @@ class RcinSBUS : public Rcin {
       }
       return false;
     }
+
+  private:
+    uint16_t pwm_instance[16];
 };
 
 RcinSBUS rcin_instance;
@@ -148,6 +150,7 @@ class RcinDSM : public Rcin {
   public:
     void setup() {
       Serial.println("RCIN_USE_DSM");
+      pwm = pwm_instance;
       Serial3.begin(115000);
     }
 
@@ -165,6 +168,9 @@ class RcinDSM : public Rcin {
       }
       return false;
     }
+
+  private:
+    uint16_t pwm_instance[16];
 };
 
 RcinDSM rcin_instance;
@@ -223,6 +229,7 @@ class RcinPPM : public Rcin {
   public:
     void setup() {
       Serial.printf("RCIN_USE_PPM pin=%d\n",HW_PIN_RCIN_RX);
+      pwm = pwm_instance;
       //Declare interrupt pin
       pinMode(HW_PIN_RCIN_RX, INPUT_PULLUP);
       delay(20);
@@ -239,6 +246,9 @@ class RcinPPM : public Rcin {
       pwm[5] = channel_6_raw;
       return true;
     }
+
+  private:
+    uint16_t pwm_instance[6];
 };
 
 RcinPPM rcin_instance;
@@ -316,6 +326,7 @@ class RcinPWM : public Rcin {
   public:
     void setup() {
       Serial.println("RCIN_USE_PWM");
+      pwm = pwm_instance;
       //Declare interrupt pins 
       pinMode(ch1Pin, INPUT_PULLUP);
       pinMode(ch2Pin, INPUT_PULLUP);
@@ -343,6 +354,9 @@ class RcinPWM : public Rcin {
       pwm[5] = channel_6_raw;
       return true;
     }
+
+  private:
+    uint16_t pwm_instance[6];
 };
 
 RcinPWM rcin_instance;

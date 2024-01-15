@@ -34,7 +34,7 @@ PB11 RX3 - TX3 PB10
      GND - GND
 
 
-set bat_cal_v 0.0057630
+set bat_cal_v 0.00057630
 set bat_cal_i 0.0011806
 cwrite
 
@@ -42,6 +42,11 @@ cwrite
 
 #define HW_BOARD_NAME "MADFLIGHT-DYST-DYSF4PRO_V2"
 #define HW_MCU "STM32F405"
+
+#undef BB_USE
+#undef IMU_USE
+#undef BAT_USE
+#undef IMU_ALIGN
 
 #define BB_USE   BB_USE_FLASH
 #define IMU_USE  IMU_USE_SPI_MPU6000

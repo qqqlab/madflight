@@ -10,7 +10,7 @@ interface.h - This file defines the interfaces for sensors and other devices
 
 class Rcin {
   public:
-    int pwm[RCIN_MAX_CHANNELS]; //reveived channel pwm values
+    uint16_t *pwm; //pwm channel data. values: 988-2012
     virtual void setup() = 0;
     bool update(); //returns true if channel pwm data was updated
     bool connected();
@@ -95,3 +95,23 @@ class Battery {
 };
 
 extern Battery &bat;
+
+//=================================================================================================
+// LED
+//=================================================================================================
+
+class Led {
+  public:
+    virtual void setup(int pin, uint8_t led_on_value) = 0;
+    virtual void set(bool set_on) = 0;
+    void on();
+    void off();
+    void toggle();
+    void blink(int times);
+  protected:
+    bool state = false;
+    int pin = -1;
+    uint8_t led_on_value = 0;
+};
+
+extern Led &led;

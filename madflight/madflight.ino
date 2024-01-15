@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-beta3"
+#define APPNAME "madflight v1.0.0-rc1"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -72,10 +72,11 @@ blink interval longer than 1 second - loop() is taking too much time
 //                                                 BOARD                                                                  //
 //========================================================================================================================//
 
-//uncomment and change this #include to the flight controller you want to use, or leave commented out to use the default from hw_XXXX.h
-
+//-----------------------------------------------------------------------------
+// Uncomment and change this #include to the flight controller you want to use,
+// or leave commented out to use the default from hw_XXXX.h
+//-----------------------------------------------------------------------------
 //#include "boards/madflight/DYST-DYSF4PRO_V2.h" //see the boards directory for available converted BetaFlight boards
-
 
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
@@ -91,8 +92,6 @@ blink interval longer than 1 second - loop() is taking too much time
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                       //
 //========================================================================================================================//
-
-const int rcin_pwm_fs[] = {1000,1500,1500,1500,1000,1000}; //failsafe pwm values
 
 //set channels
 const int rcin_cfg_thro_channel  = 1; //low pwm = zero throttle/stick back, high pwm = full throttle/stick forward
@@ -120,6 +119,8 @@ const int rcin_cfg_arm_max       = 2200;
 //config 6 position switch on aux channel
 int rcin_cfg_aux_min = 1115; //lowest switch position
 int rcin_cfg_aux_max = 1945; //higest switch position
+
+bool rcin_failsafe = true; //radio in failsafe mode
 
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
@@ -215,6 +216,7 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 
 //include all modules. First set all USE_xxx and MODULE_xxx defines. For example: USE_MAG_QMC5883L and MAG_I2C_ADR
 #include "src/cfg/cfg.h" //load config first, so that cfg.xxx can be used by other modules
+#include "src/led/led.h"
 #include "src/ahrs/ahrs.h"
 #include "src/rcin/rcin.h"
 #include "src/imu/imu.h"
@@ -230,28 +232,22 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 //========================================================================================================================//
 
 void setup() {
-  //Set built in LED to turn on to signal startup
-  led_setup();
-
-  //start console serial
-  Serial.begin(115200);
+  led.setup(HW_PIN_LED, HW_LED_ON); //Set built in LED to turn on to signal startup
+  Serial.begin(115200); //start console serial
 
   //3 second startup delay
   for(int i=10;i>0;i--) { 
     Serial.printf(APPNAME " starting %d ...\n",i);
     delay(300);
-    led_Toggle();
+    led.toggle();
   }
-  led_SwitchON(true);
+  led.on();
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
   cfg.begin(); //read config from EEPROM
   cli.print_boardInfo(); //print board info and pinout
   cli.print_i2cScan(); //print i2c scan
   rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
-
-  //Set radio channels to default (safe) values before entering main loop
-  for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
 
   //IMU
   while(true) {
@@ -265,7 +261,6 @@ void setup() {
   B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
   B_mag = lowpass_to_beta(LP_mag, loop_freq);
   B_radio = lowpass_to_beta(LP_radio, loop_freq);
-
 
   baro.setup(); //Barometer
   mag.setup(); //External Magnetometer
@@ -310,8 +305,7 @@ void setup() {
 
   cli.welcome();
 
-  //Set built in LED off to signal end of startup
-  led_SwitchON(false);
+  led.off(); //Set built in LED off to signal end of startup
 }
 
 //========================================================================================================================//
@@ -385,7 +379,6 @@ void imu_loop() {
 
   //Get radio state
   rcin_GetCommands(); //Pulls current available radio commands
-  rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
   rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
 
   //Uncomment to debug without remote (and no battery!) - pitch drone up: motors m1,m3 should increase and m2,m4 decrease; bank right: m1,m2 increase; yaw right: m1,m4 increase
@@ -400,7 +393,7 @@ void imu_loop() {
   control_Mixer(); //Mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
 
   //Command actuators
-  out_KillSwitch(); //Cut all motor outputs if DISARMED.
+  out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
 #ifdef USE_IMU_BUS_I2C
@@ -483,9 +476,9 @@ void loop_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
   //DISARMED: long off, short on, ARMED: long on, short off
   if(loop_cnt % loop_freq <= loop_freq / 10)
-    led_SwitchON(!out_armed); //short interval
+    led.set(!out_armed); //short interval
   else
-    led_SwitchON(out_armed); //long interval
+    led.set(out_armed); //long interval
 }
 
 // Reads accelerometer, gyro, and magnetometer data from IMU and stores it as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. 
@@ -555,28 +548,19 @@ void rcin_GetCommands() {
   if(got_new_data) {
     //Serial.print("rcin_GetCommands() "); for(int i=0; i<RCIN_NUM_CHANNELS; i++) Serial.printf("CH%d:%d->%d ",i+1,pwm_new[i],rcin_pwm[i]); Serial.println(); //uncomment for debugging
   }
-}
 
-//If radio is not connected or gives garbage values, set rcin_pwm[] to failsafe values
-void rcin_Failsafe() {
-  //check transmitter connected status (if available)
-  bool failsafe = !rcin.connected();
-
-  if(!failsafe) {
+  //If radio is not connected or gives garbage values, trigger failsafe
+  rcin_failsafe = !rcin.connected(); //check transmitter connected status (if available)
+  if(!rcin_failsafe) {
     //check pwm values are acceptable
     int minVal = 800;
     int maxVal = 2200;
     for(int i=0;i<RCIN_NUM_CHANNELS;i++) {
       if (rcin_pwm[i] > maxVal || rcin_pwm[i] < minVal) {
-        failsafe = true;
+        rcin_failsafe = true;
         break;
       }
     }
-  }
-
-  //If any failures, set rcin_pwm[] to failsafe values
-  if(failsafe) {
-    for(int i=0;i<RCIN_NUM_CHANNELS;i++) rcin_pwm[i] = rcin_pwm_fs[i];
   }
 }
 
@@ -863,18 +847,22 @@ Yaw right               (CCW+ CW-)       -++-
 
 //Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
 //Change to DISARMED when radio armed switch is in disamed position
-void out_KillSwitch() {
+void out_KillSwitchAndFailsafe() {
+  //set armed/disarmed
   static bool rcin_armed_prev = false; 
 
   //Switch from DISARMED to ARMED when throttle is low and rcin_armed was flipped from unarmed to armed
   if (!out_armed && rcin_thro_is_low && rcin_armed && !rcin_armed_prev) {
     out_armed = true;
+    Serial.println("OUT: ARMED");
     bb.start(); //start blackbox logging
   }
 
-  //Switch from ARMED to DISARMED when rcin_armed is disarmed
-   if (out_armed && !rcin_armed) {
+  //Switch from ARMED to DISARMED when rcin_armed is disarmed or failsafe triggered
+   if (out_armed && (!rcin_armed || rcin_failsafe)) {
     out_armed = false;
+    if(rcin_failsafe) Serial.println("RCIN: FAILSAFE");    
+    Serial.println("OUT: DISARMED");
     bb.start(); //stop blackbox logging
   }
 
@@ -936,30 +924,15 @@ float lowpass_to_beta(float f0, float fs) {
   return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
 
-bool led_state;
-
-void led_setup() {
-  pinMode(HW_PIN_LED, OUTPUT);
-  led_SwitchON(true);
-}
-
-void led_SwitchON(bool set_on) {
-  led_state = set_on;
-  digitalWrite( HW_PIN_LED, (set_on ? HW_LED_ON : !HW_LED_ON) );
-}
-
-void led_Toggle() {
-  led_SwitchON(!led_state);
-}
-
 void warn_or_die(String msg, bool never_return) {
+  bool do_print = true;
   do{
-    Serial.print(msg);
+    if(do_print) Serial.print(msg);
     for(int i=0;i<20;i++) {
-      led_Toggle();
+      led.toggle();
       uint32_t ts = millis();
       while(millis() - ts < 50) {
-        cli.loop(); //process CLI commands
+        if(cli.loop()) do_print = false; //process CLI commands, stop error output after first command
       } 
     }
   } while(never_return);

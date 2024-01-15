@@ -7,22 +7,28 @@ class CLI {
 public:
 
   void setup() {
-    print_off();
+    print_all(false);
   }
 
-  void loop() {
+  //returns true if a command was processed (even an invalid one)
+  bool loop() {
     static char prev_c = 0;
+    bool rv = false;
     while(Serial.available()) {
       char c = Serial.read();
       if( (c=='\r' && prev_c!='\n') || (c=='\n' && prev_c!='\n') ) { //accept \n, \r, \r\n, \n\r as end of command
         processCmd();
+        rv = true;
       }else{
         cmdline += c;
       }
       prev_c = c;
     }
     
+    //handle output for pxxx commands
     print_loop();
+    
+    return rv;
   }
 
   void welcome() {
@@ -31,37 +37,38 @@ public:
 
   void help() {
     Serial.printf(
-    "\n--info & tools--\n"
+    "-- INFO & TOOLS --\n"
     "help or ? This info\n"
     "board     Board info and pinout\n"
     "i2c       I2C scan\n"
     "reboot    Reboot flight controller\n"
-    "\n--print--\n"
+    "-- PRINT --\n"
     "poff      Printing off\n"
+    "pall      Print all\n"
     "po        Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt\n"
     "ppwm      Radio pwm (expected: 1000 to 2000)\n"
     "pradio    Scaled radio (expected: -1 to 1)\n"
     "pgyro     Filtered gyro (expected: -250 to 250, 0 at rest)\n"
     "pacc      Filtered accelerometer (expected: -2 to 2; x,y 0 when level, z 1 when level)\n"
     "pmag      Filtered magnetometer (expected: -300 to 300)\n"
-    "prpy      AHRS roll, pitch, and yaw (expected: degrees, 0 when level)\n"
+    "proll     AHRS roll, pitch, and yaw (expected: degrees, 0 when level)\n"
     "ppid      PID output (expected: -1 to 1)\n"
     "pmot      Motor output (expected: 0 to 1)\n"
     "pservo    Servo output (expected: 0 to 1)\n"
     "ploop     Loop timing in microseconds (expected: 1000000 / loop_freq)\n"
     "pbat      Battery voltage, current, Ah used and Wh used\n"
-    "\n--black box--\n"
+    "-- BLACK BOX --\n"
     "bbdump    Dump CSV format\n"
     "bbstart   Start logging\n"
     "bbstop    Stop logging\n"
     "bberase   Erase bb device\n"
-    "\n--config--\n"
+    "-- CONFIG --\n"
     "set [name] [value]\n"
     "clist     List config\n"
     "cclear    Clear config\n"
     "cwrite    Write config to flash\n"
     "cread     Read config to flash\n"
-    "\n--calibrate--\n"
+    "-- CALIBRATE --\n"
     "calimu    Calibrate IMU error\n"
     "calmag    Calibrate magnetometer\n"
     );
@@ -100,7 +107,9 @@ private:
     }else if(cmd == "reboot") {
       hw_reboot();
     }else if(cmd == "poff") {
-      print_off();
+      print_all(false);
+    }else if(cmd == "pall") {
+      print_all(true); 
     }else if(cmd == "po") {
       print_flag[0] = !print_flag[0];
     }else if(cmd == "ppwm") {
@@ -113,7 +122,7 @@ private:
       print_flag[4] = !print_flag[4];
     }else if(cmd == "pmag") {
       print_flag[5] = !print_flag[5];
-    }else if(cmd == "prpy") {
+    }else if(cmd == "proll") {
       print_flag[6] = !print_flag[6];
     }else if(cmd == "ppid") {
       print_flag[7] = !print_flag[7];
@@ -203,13 +212,17 @@ public:
 public:
 
   void calibrate_gyro() {
-    calibrate_IMU(true);
+    Serial.println("Calibrating gyro, this takes a couple of seconds...");
+    calibrate_IMU2(true);
+  }
+
+  void calibrate_IMU() {
+    Serial.println("Calibrating IMU, this takes a couple of seconds...");
+    calibrate_IMU2(false);
   }
 
   //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
-  void calibrate_IMU(bool gyro_only = false) {
-    Serial.println("Running calibrate_IMU_error() takes a couple of seconds...");
-
+  void calibrate_IMU2(bool gyro_only = false) {
     imu_loop_enable = false; //disable running of imu_loop()
 
     //Read IMU values, and average the readings
@@ -436,8 +449,8 @@ public:
 #define CLI_PRINT_FLAG_COUNT 12
   bool print_flag[CLI_PRINT_FLAG_COUNT];
 
-  void print_off() {
-    for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) print_flag[i] = false;
+  void print_all(bool val) {
+    for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) print_flag[i] = val;
   }
 
   void print_loop() {
@@ -481,11 +494,13 @@ public:
   }
 
   void print_rcin_RadioPWM() {
+    Serial.printf("rcin_con:%d\t",rcin.connected());
     for(int i=0;i<RCIN_NUM_CHANNELS;i++) Serial.printf("pwm%d:%d\t",i+1,rcin_pwm[i]);
     print_need_newline = true;
   }
 
   void print_rcin_RadioScaled() {
+    Serial.printf("failsafe:%d\t",rcin_failsafe);
     Serial.printf("rcin_thro:%.2f\t",rcin_thro);
     Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
     Serial.printf("rcin_pitch:%+.2f\t",rcin_pitch);

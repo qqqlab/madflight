@@ -31,6 +31,11 @@ extern Barometer baro;
 #define BB_USE_FLASH 2
 #define BB_USE_MEMORY 3
 
+
+#if BB_USE == BB_USE_FLASH
+  #define BB_USE BB_USE_MEMORY //TODO implement BB_USE_FLASH, for now use BB_USE_MEMORY
+#endif
+
 #include "BlackBoxWriter.h"
 #include "BlackBoxDecoder.h"
 

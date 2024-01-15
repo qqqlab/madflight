@@ -25,7 +25,7 @@ class Config {
   //Only add new config values (use only float) at end of this list, when reading an old config without the new value, the new value will be set to the default defined here
   //NEVER rename, delete, insert or move values
   //float can hold 24 bit signed integers, i.e. approx: +/-8,000,000
-private:
+protected:
   uint8_t _header0 = 'm'; //0x6D
   uint8_t _header1 = 'a'; //0x61
   uint8_t _header2 = 'd'; //0x64
@@ -104,8 +104,8 @@ public:
     }
     Serial.println();
     
-    //check crc
-    if(cfg2.crc() == cfg2.crcCalc()) {
+    //check header & crc
+    if(cfg2._header0 == 'm' && cfg2._header1 == 'a' && cfg2._header2 == 'd' && cfg2._header3 == 'f' && cfg2.crc() == cfg2.crcCalc()) {
       memcpy(this, &cfg2, lenExpected());
       Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", cfg2.len(), cfg2.crc());
     }else{
