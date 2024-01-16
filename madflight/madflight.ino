@@ -1,4 +1,4 @@
-#define APPNAME "madflight v1.0.0-rc1"
+#define APPNAME "madflight v1.0.0-rc2"
 
 //this is a development version - random stuff does not work - use latest release if you want something more stable
 
@@ -28,11 +28,11 @@ Disarming: Flip arm switch from ARMED to DISARMED, at any throttle position. "Ki
 LED Status
 ==========
 OFF - not powered
-ON - running setup
-fast blinking - something is wrong, connect USB serial for info
+startup: a couple blinks then ON while running gyro calibration (don't move)
 blinking long OFF short ON - running loop() DISARMED
 blinking long ON short OFF - running loop() ARMED
 blink interval longer than 1 second - loop() is taking too much time
+fast blinking - something is wrong, connect USB serial for info
 ##########################################################################################################################*/
 
 //========================================================================================================================//
@@ -101,22 +101,22 @@ const int rcin_cfg_yaw_channel   = 4; //low pwm = left, high pwm = right
 const int rcin_cfg_arm_channel   = 5; //ARM/DISARM switch
 const int rcin_cfg_aux_channel   = 6; //Fight mode - 6 position switch
 
-//config throttle pwm values
-const int rcin_cfg_thro_min      = 1150;
-const int rcin_cfg_thro_low      = 1250; //used to set rcin_thro_is_low flag when pwm is below. Note: your craft won't arm if this is too low
+//throttle pwm values
+const int rcin_cfg_thro_low      = 1250; //used to set rcin_thro_is_low flag when pwm is below. Note: your craft won't arm if this is too low.
 const int rcin_cfg_thro_max      = 1900;
+const float out_armed_speed      = 0.2; //Safety feature: make props spin when armed, the motors spin at this speed when armed and thottle is low. The default 0.2 is probably fairly high, set lower as needed.
 
-//config roll, pitch, yaw pwm values
+//roll, pitch, yaw pwm values
 const int rcin_cfg_pwm_min       = 1150;
 const int rcin_cfg_pwm_center    = 1500;
 const int rcin_cfg_pwm_max       = 1900;
 const int rcin_cfg_pwm_deadband  = 0; //Amount of deadband around center, center-deadband to center+deadband will be interpreted as central stick. Set to 15 for PPM or 0 for jitter-free serial protocol receivers.
 
-//config pwm range for ARMED on arm channel
+//pwm range for arm switch in ARMED position
 const int rcin_cfg_arm_min       = 1600;
 const int rcin_cfg_arm_max       = 2200;
 
-//config 6 position switch on aux channel
+//6 position switch on aux channel
 int rcin_cfg_aux_min = 1115; //lowest switch position
 int rcin_cfg_aux_max = 1945; //higest switch position
 
@@ -233,8 +233,8 @@ void setup() {
   led.setup(HW_PIN_LED, HW_LED_ON); //Set built in LED to turn on to signal startup
   Serial.begin(115200); //start console serial
 
-  //3 second startup delay
-  for(int i=10;i>0;i--) { 
+  //6 second startup delay
+  for(int i=20;i>0;i--) { 
     Serial.printf(APPNAME " starting %d ...\n",i);
     delay(300);
     led.toggle();
@@ -557,9 +557,9 @@ void rcin_Normalize() {
    */
 
   //normalized values
-  //throttle
+  //throttle: when stick is back below rcin_cfg_thro_low then rcin_thro = rcin_cfg_thro_low value (approx 0.1), and rcin_thro = 1.0 on full throttle
   int pwm = rcin_pwm[rcin_cfg_thro_channel-1];
-  rcin_thro = constrain( ((float)(pwm - rcin_cfg_thro_min)) / (rcin_cfg_thro_max - rcin_cfg_thro_min), 0.0, 1.0); // output: 0 (throttle cutoff, stick back) to 1 (full throttle, stick forward),
+  rcin_thro = constrain( ((float)(pwm - rcin_cfg_thro_low)) / (rcin_cfg_thro_max - rcin_cfg_thro_low), out_armed_speed, 1.0);
   rcin_thro_is_low = (pwm <= rcin_cfg_thro_low); 
 
   //roll,pitch,yaw
@@ -850,8 +850,11 @@ void out_KillSwitchAndFailsafe() {
     }
   }
 
-  //If DISARMED or throttle low -> set motor outputs to 0 (Note: because of PID mixing motors can rotate even if throttle is at zero)
-  if(!out_armed || rcin_thro_is_low) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = 0; 
+  //If armed and throttle is low -> set motor outputs to approx 0.1 (out_armed_speed)
+  if(out_armed && rcin_thro_is_low) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = out_armed_speed; 
+
+  //IF DISARMED -> STOP MOTORS
+  if(!out_armed) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = 0; 
 
   rcin_armed_prev = rcin_armed;
 }

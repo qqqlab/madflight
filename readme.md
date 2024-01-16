@@ -2,11 +2,11 @@
 
 ***M**anless **A**erial **D**evice*
 
-This is a 1500 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
+This is a 1000 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `madflight/madflight.ino` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
-The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino IDE. It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
+Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino IDE. It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 
 <img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
@@ -43,13 +43,13 @@ The source code is tested on ESP32, RP2040, and STM32F405 microcontrollers with 
 
 # Safety First!!!
 
-By default madflight has these safety features:
+By default madflight has these safety features enabled:
 
 - Motors only rotate when armed.
 - Arming Procedure: set throttle low then flip the arm switch from disarmed to armed.
 - Kill Switch: when the arm switch is in the disarm position, disarm and stop motors until re-armed.
 - Failsafe: when radio connection is lost, disarm and stop motors until re-armed.
-- Low Throttle: stop motors, but stay armed.
+- Armed Low Throttle: motors run at low speed, to give visible armed indication.
 - LED armed/disarmed indicator.
 
 # Connecting the IMU Sensor
