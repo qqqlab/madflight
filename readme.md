@@ -10,7 +10,7 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 
 <img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
-# Required Hardware
+## Required Hardware
 
 - Development board: 
   - RP2040 (e.g. Raspberry Pi Pico)
@@ -21,13 +21,13 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 - BEC or DC-DC converter to power your board from a battery
 - ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
 
-# Optional Hardware
+## Optional Hardware
 
 - GPS Module (Serial)
 - Barometer (I2C BMP280, MS5611)
 - Magnetometer (I2C QMC5883L)
 
-# Getting Started
+## Getting Started
 
 0. Open madflight/madflight.ino in the Arduino IDE.
 1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_XXX.h (see below for default pinouts)
@@ -41,7 +41,7 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 9. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
 10. Mount props, go to an wide open space, and FLY!
 
-# Safety First!!!
+## Safety First!!!
 
 By default madflight has these safety features enabled:
 
@@ -52,7 +52,11 @@ By default madflight has these safety features enabled:
 - Armed Low Throttle: motors run at low speed, to give visible armed indication.
 - LED armed/disarmed indicator.
 
-# Connecting the IMU Sensor
+## Feedback is Welcome
+
+I enjoy hacking around with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
+
+## Connecting the IMU Sensor
 
 SPI sensor: (highly recommended over I2C)
 ```
@@ -75,10 +79,11 @@ I2C sensor:
      GND <---> GND
 ```
 
-# Software Design
+## Software Design
 
 - Keep it simple!!!
-- No external dependencies, all module libraries included in `src` directory
+- No external dependencies, all module libraries included in `src` directory.
+- Coded for readability, not for speed or smallest size.
 - The flight controller madflight.ino runs standard `setup()` and `loop()`.
 - The madflight.ino uses the following modules:
   - `loop` Main loop control
@@ -94,8 +99,9 @@ I2C sensor:
   - `cli` Command Line Interface for debugging, configuration and calibration
   - `cfg` Read and save configuration to flash
   - `hw` Hardware specific code for STM32, RP2040 and ESP32
-- Most modules are interfaced through a global object, for example the `imu.gx` has the current gyro x-axis rate in degrees per second for the selected IMU chip.
-- Module source code is in subdirectories of the `src` directory. Here you find the module .h file, e.g. `src/imu/imu.h`. There might also be an .ino module test program, e.g. `src/imu/imu.ino`.
+- Most modules are interfaced through a global object, for example `imu.gx` is the current gyro x-axis rate in degrees per second for the selected IMU chip.
+- The header `src/interfaces.h` defines the module interfaces.
+- The module implementations are in subdirectories of the `src` directory. Here you find the module header file, e.g. `src/imu/imu.h`. There might also be an .ino module test program, e.g. `src/imu/imu.ino`.
 - The module files are usually header only, that is, the header also includes the implemention.
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
@@ -196,7 +202,7 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 
 <img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
 
-# Changes from dRehmFlight
+## Changes from dRehmFlight
 
 - Add support for RP2040, ESP32, and STM32
 - Dropped Teensy support, but could be re-added by creating a hw_TEENSY.h file. (I just don't have the hardware to test on)
@@ -208,7 +214,7 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 - Loop rate set to 1kHz to match IMU sensor rate
 - Interrupt driven IMU operation by default, but setup/loop still possible
 
-# Flight Controllers on Github
+## Flight Controllers on Github
 
 In increasing order of complexity.
 
@@ -221,7 +227,7 @@ In increasing order of complexity.
 - [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 F4/F7/H7 or Linux based
 
-# Disclaimer
+## Disclaimer
 
 This code is a shared, open source flight controller for small micro aerial vehicles and is intended to be modified to suit your needs. It is NOT intended to be used on manned vehicles. I do not claim any responsibility for any damage or injury that may be inflicted as a result of the use of this code. Use and modify at your own risk. More specifically put:
 
