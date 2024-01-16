@@ -1,6 +1,4 @@
-#define APPNAME "madflight v1.0.0-rc2"
-
-//this is a development version - random stuff does not work - use latest release if you want something more stable
+#define APPNAME "madflight v1.0.0"
 
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license

@@ -86,7 +86,7 @@ public:
     bbw.writeBeginRecord(BB_REC_BAT);
     bbw.writeUnsignedVB("ts",micros());
     bbw.writeUnsignedVB("bat_mA",bat.i*1000); //Battery current (A)
-    bbw.writeUnsignedVB("bat_mV",bat.v); //battery voltage (V)
+    bbw.writeUnsignedVB("bat_mV",bat.v*1000); //battery voltage (V)
     bbw.writeUnsignedVB("bat_mAh",bat.mah); //battery usage (Ah)
     bbw.writeUnsignedVB("bat_mWh",bat.wh*1000); //battery usage (Wh)
     bbw.writeEndrecord();
