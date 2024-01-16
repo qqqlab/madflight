@@ -56,29 +56,6 @@ By default madflight has these safety features enabled:
 
 I enjoy hacking around with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
 
-## Connecting the IMU Sensor
-
-SPI sensor: (highly recommended over I2C)
-```
-  Sensor       Dev Board
-SCL/SCLK <---> SPI_SCLK
- SDA/SDI <---> SPI_MOSI
- ADD/SDO <---> SPI_MISO
-     NCS <---> IMU_CS
-     INT <---> IMU_EXTI
-     VCC <---> 3V3
-     GND <---> GND
-```
-I2C sensor:
-```
-  Sensor       Dev Board
-     SCL <---> I2C_SCL 
-     SDA <---> I2C_SDA
-     INT <---> IMU_EXTI
-     VCC <---> 3V3
-     GND <---> GND
-```
-
 ## Software Design
 
 - Keep it simple!!!
@@ -103,6 +80,29 @@ I2C sensor:
 - The header `src/interfaces.h` defines the module interfaces.
 - The module implementations are in subdirectories of the `src` directory. Here you find the module header file, e.g. `src/imu/imu.h`. There might also be an .ino module test program, e.g. `src/imu/imu.ino`.
 - The module files are usually header only, that is, the header also includes the implemention.
+
+## Connecting the IMU Sensor
+
+SPI sensor: (highly recommended over I2C)
+```
+  Sensor       Dev Board
+SCL/SCLK <---> SPI_SCLK
+ SDA/SDI <---> SPI_MOSI
+ ADD/SDO <---> SPI_MISO
+     NCS <---> IMU_CS
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
+I2C sensor:
+```
+  Sensor       Dev Board
+     SCL <---> I2C_SCL 
+     SDA <---> I2C_SDA
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
