@@ -23,6 +23,7 @@ MPU-3050   | no | | Released 2011 (EOL)
 MPU-6886   | no
 ICM-20602  | no
 ICM-20608  | no
+ICM-20649  |
 ICM-20689  | no 
 ICM-42688-P | no | SPI | 32k gyro, low noise IMU, Used in current high performance FC.
 
@@ -33,7 +34,7 @@ ICM-42688-P | no | SPI | 32k gyro, low noise IMU, Used in current high performan
 MPU-9150  | $7 | I2C | 8k gyro, MPU6050 + AK8975, (EOL)
 MPU-9250  | $7 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, MPU6500 + AK8963, Released 2014 (EOL) Note: many fake or relabelled MPU-6500 chips sold as MPU-9250 on the market...
 MPU-9255  | $9 | SPI 20MHz, I2C | 8k gyro, MPU-6000 + AK8963 (EOL)
-ICM-20948 | $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, Released 2018
+ICM-20948 | $9 | SPI 7MHz, I2C | replacement of MPU-9250/9255, ICM-20649 + AK09916, Released 2018
 LSM9DSO  | no
 
 ## Magnetometer
