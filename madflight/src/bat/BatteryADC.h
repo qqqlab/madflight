@@ -53,8 +53,9 @@ class BatteryADC: public Battery {
             if(HW_PIN_BAT_I != -1) {
                 i = cfg.bat_cal_v * analogRead(HW_PIN_BAT_I);
             }
+            w = v * i;
             mah += i * dt_h * 1000;
-            wh += v * i * dt_h;
+            wh += w * dt_h;
             return true;
         }
         return false;

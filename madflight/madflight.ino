@@ -1,4 +1,6 @@
-#define APPNAME "madflight v1.0.0"
+#define APPNAME "madflight v1.0.1-dev"
+
+//this is a development version - random stuff does not work - use latest release if you want something more stable
 
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
@@ -54,14 +56,14 @@ fast blinking - something is wrong, connect USB serial for info
 #define GPS_BAUD  115200
 
 //--- BAROMETER SENSOR
-#define BARO_USE  BARO_USE_NONE // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
+#define BARO_USE  BARO_USE_BMP280 // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
 
 //--- EXTERNAL MAGNETOMETER SENSOR
-#define MAG_USE  MAG_USE_NONE // MAG_USE_QMC5883L, MAG_USE_NONE
+#define MAG_USE  MAG_USE_QMC5883L // MAG_USE_QMC5883L, MAG_USE_NONE
 //#define MAG_I2C_ADR  0x77 //set magnetometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- BATTERY MONITOR
-#define BAT_USE  BAT_USE_ADC // BAT_USE_ADC, BAT_USE_NONE
+#define BAT_USE  BAT_USE_INA226 // BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
 #define BB_USE  BB_USE_MEMORY //BB_USE_FLASH log to flash, BB_USE_MEMORY log to ram, BB_USE_NONE

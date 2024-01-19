@@ -58,10 +58,10 @@ MagnetometerNone mag_instance;
 //=================================================================================================
 // QMC5883L
 //=================================================================================================
-#elif MAG_USE == MAG_USE_TYPEAQMC5883L
+#elif MAG_USE == MAG_USE_QMC5883L
 
 #include "QMC5883L.h"
-mag_QMC5883L<HW_WIRETYPE> mag_QMC5883L(i2c);
+QMC5883L<HW_WIRETYPE> mag_QMC5883L(i2c);
 
 class MagnetometerQMC5883L: public Magnetometer {
   public:
@@ -73,7 +73,7 @@ class MagnetometerQMC5883L: public Magnetometer {
     }
   private:
     void _update() {
-      mag_QMC5883L.read_uT(x, y, z);
+      mag_QMC5883L.read_uT(&x, &y, &z);
     }
 };
 

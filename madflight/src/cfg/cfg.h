@@ -48,7 +48,7 @@ public:
   float mag_cal_sz = 1; //magnetometer Z scale calibration
   
   float bat_cal_v = 1; //battery ADC voltage scale calibration, value is actual_voltage_in_V / adc_reading
-  float bat_cal_i = 1; //battery ADC current scale calibration, value is actual_current_in_A / adc_reading
+  float bat_cal_i = 1; //battery ADC current scale calibration, value is actual_current_in_A / adc_reading, INA226: Rshunt value in Ohm
 
   Config() {
     _len = lenExpected();
@@ -107,9 +107,9 @@ public:
     //check header & crc
     if(cfg2._header0 == 'm' && cfg2._header1 == 'a' && cfg2._header2 == 'd' && cfg2._header3 == 'f' && cfg2.crc() == cfg2.crcCalc()) {
       memcpy(this, &cfg2, lenExpected());
-      Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", cfg2.len(), cfg2.crc());
+      Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", (int)cfg2.len(), (int)cfg2.crc());
     }else{
-      Serial.printf("CFG: EEPROM Config invalid. len=%u crc=%04X crc_expected=%04X\n", cfg2.len(), cfg2.crc(), cfg2.crcCalc());
+      Serial.printf("CFG: EEPROM Config invalid. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
     }
   }
 
