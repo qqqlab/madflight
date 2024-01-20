@@ -10,11 +10,10 @@ An overview of available sensor boards.
 
 | Part    | Breakout Board? | Interface | Notes |
 |-|-|-|-|
-MPU-6000   | yes | SPI, I2C | 8k gyro, 1k acc, Released 2011 (EOL)
-MPU-6050   | yes | I2C | 8k gyro, 1k acc, Released 2011 (EOL)
-MPU-6500   | $2 | SPI, I2C | 8k gyro, 4k acc, noise: 10 mdps/&radic;Hz 300 µg/&radic;Hz, upgraded MPU-6000, Released 2014 (not recommended for new designs)
-BMI160    | $2
-BMI180    |
+MPU-6000   | yes | SPI, I2C | 8k gyro, 1k acc, Released 2011, EOL
+MPU-6050   | yes | I2C | 8k gyro, 1k acc, Released 2011, EOL
+MPU-6500   | $2 | SPI, I2C | 8k gyro, 4k acc, noise: 10 mdps/&radic;Hz 300 µg/&radic;Hz, upgraded MPU-6000, Released 2014, NRND
+BMI160    | $2 | SPI, I2C | 3.2k gyro, 1.6k acc, noise: 8 mdps/&radic;Hz 180 µg/&radic;Hz
 BMI270    | no | SPI | 6k gyro, noise: 7 mdps/&radic;Hz 160 µg/&radic;Hz, Used in current commercial FC as replacement for MPU-6000/6500
 LSM6DS3   | $2 | | noise: 7 mdps/&radic;Hz 180 µg/&radic;Hz
 LSM6DSO   | $10 | | noise: 3.8 mdps/&radic;Hz 110 µg/&radic;Hz
@@ -31,9 +30,9 @@ ICM-42688-P | no | SPI | 32k gyro, noise: 2.8 mdps/&radic;Hz 70 µg/&radic;Hz, U
 
 | Part    | Breakout Board? | Interface | Notes |
 |-|-|-|-|
-MPU-9150  | $7 | I2C | 8k gyro, MPU6050 + AK8975, (EOL)
+MPU-9150  | $7 | I2C | 8k gyro, MPU6050 + AK8975, EOL
 MPU-9250  | $7 | SPI 20MHz, I2C | 8k gyro, 4k acc, 100Hz mag, MPU6500 + AK8963, Released 2014 (EOL) Note: many fake or relabelled MPU-6500 chips sold as MPU-9250 on the market...
-MPU-9255  | $9 | SPI 20MHz, I2C | 8k gyro, MPU-6000 + AK8963 (EOL)
+MPU-9255  | $9 | SPI 20MHz, I2C | 8k gyro, MPU-6000 + AK8963, EOL
 ICM-20948 | $9 | SPI 7MHz, I2C | noise: 15 mdps/&radic;Hz 230 µg/&radic;Hz, replacement of MPU-9250/9255, ICM-20649 + AK09916, Released 2018
 LSM9DSO  | no
 
@@ -43,9 +42,9 @@ LSM9DSO  | no
 |-|-|-|-|
 HMC5883L | $2 | I2C | 160 Hz, 0.2µT/LSB, 12-bit ADC, chip marking "L883"
 QMC5883L | $2 | I2C | 200 Hz, 0.008µT/LSB, 16-bit ADC, chip marking "5883"
-AK8963 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, internal to MPU9250
-AK8975 | | I2C | 100 Hz, 0.3µT/LSB, 13-bit, internal to MPU9150
-AK09916 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, internal to ICM-20948
+AK8963 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, integraded in MPU9250
+AK8975 | | I2C | 100 Hz, 0.3µT/LSB, 13-bit, integraded in MPU9150
+AK09916 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, integraded in ICM-20948
 IST8310 | | I2C | 200 Hz, 0.3µT/LSB, 14-bit
 
 ## Barometer
