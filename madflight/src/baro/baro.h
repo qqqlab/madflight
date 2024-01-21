@@ -67,7 +67,7 @@ public:
     Serial.println();
     unsigned status;
     status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
+    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR: 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "

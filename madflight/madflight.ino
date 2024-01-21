@@ -57,6 +57,7 @@ fast blinking - something is wrong, connect USB serial for info
 
 //--- BAROMETER SENSOR
 #define BARO_USE  BARO_USE_BMP280 // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
+//#define BARO_I2C_ADR  0x76 //set barometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- EXTERNAL MAGNETOMETER SENSOR
 #define MAG_USE  MAG_USE_QMC5883L // MAG_USE_QMC5883L, MAG_USE_NONE

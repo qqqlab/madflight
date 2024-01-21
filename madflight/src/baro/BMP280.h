@@ -168,7 +168,7 @@ public:
   Adafruit_BMP280(int8_t cspin, int8_t mosipin, int8_t misopin, int8_t sckpin);
   ~Adafruit_BMP280(void);
 
-  bool begin(uint8_t addr = BMP280_ADDRESS, uint8_t chipid = BMP280_CHIPID);
+  bool begin(uint8_t addr, uint8_t chipid = BMP280_CHIPID);
   void reset(void);
   uint8_t getStatus(void);
   uint8_t sensorID(void);
@@ -319,6 +319,7 @@ bool Adafruit_BMP280::begin(uint8_t addr, uint8_t chipid) {
     // I2C mode
     if (i2c_dev)
       delete i2c_dev;
+    if (addr == 0x00) addr = BMP280_ADDRESS_ALT;
     i2c_dev = new Adafruit_I2CDevice(addr, _wire);
     if (!i2c_dev->begin())
       return false;
