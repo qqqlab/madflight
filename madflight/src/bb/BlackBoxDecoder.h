@@ -13,25 +13,28 @@ public:
   char separator = ','; //column separator
 
   //Note: this function expects 0xff from getChar() when fetching past the end of buffer
-  void csv_decode(uint8_t (*getChar)(void), void (*putChar)(uint8_t)) {
-    _getChar = getChar;
-    _putChar = putChar;
+  void csv_decode(BlackBoxFS *fs) {
+    this->fs = fs;
 
+    //read file start marker
+    for(int i=0;i<16;i++){
+      uint8_t c = fs->readChar();
+      if(c != BB_STARTLOG[i]) {
+        Serial.println("Invalid BlackBox file");
+        return;
+      }
+    }
+    
     recNo = 0;
+    sl_cnt = 0;
+    ff_cnt = 0;
 
-    int ff_cnt = 0;
     bool lastCharWasEndRecord = true;
     bool csvHeaderWritten = false;
     while(true) {
-      uint8_t c = getChar();
+      if(eof) return; //exit on eof
 
-      //detect end of stream
-      if(c == 0xff) {
-        ff_cnt++;
-        if(ff_cnt > BB_MAX_REC_CHARS) return;
-      }else{
-        ff_cnt = 0;
-      }
+      uint8_t c = readChar();
 
       if(lastCharWasEndRecord) {
         //look for record type byte
@@ -41,7 +44,7 @@ public:
         }else if(c<BB_REC_TYPE_SIZE) {
           //got a record
           if(!csvHeaderWritten) {
-            putColumns(); //columns contain fieldnames at this point
+            putColumns(0); //columns contain fieldnames at this point
             csvHeaderWritten = true;
           }
           lastCharWasEndRecord = parseRecord(c);
@@ -58,13 +61,50 @@ public:
 
 private:
 
-  uint8_t (*_getChar)(void);
-  void (*_putChar)(uint8_t);
-  uint8_t currentType = BB_HDR_REC_TYPE;
-  uint8_t currentFieldIdx = 0;
+  BlackBoxFS *fs;
+
+  //uint8_t currentType = BB_HDR_REC_TYPE;
+  //uint8_t currentFieldIdx = 0;
   uint8_t columnCount = 0;
-  String column[BB_MAX_COLUMN_COUNT];
+  String column[BB_MAX_COLUMN_COUNT]; //CSV columns
+  String recName[BB_MAX_FIELD_COUNT]; //record name for recordtype
   int recNo;
+
+  //end of file detection
+  bool eof = false;
+  uint8_t sl_cnt = 0;
+  uint8_t ff_cnt = 0;
+
+  uint8_t readChar() {
+    uint8_t c = fs->readChar();
+    //detect end of stream
+    if(c == 0xff) {
+      ff_cnt++;
+      if(ff_cnt > BB_MAX_REC_CHARS) {
+        eof = true;
+        ff_cnt = 0;
+      }
+    }else{
+      ff_cnt = 0;
+    }
+
+    //detect start of next file
+    if(c == BB_STARTLOG[sl_cnt]) {
+      sl_cnt++;
+      if(sl_cnt==16) {
+        eof = true;
+        sl_cnt = 0;
+      }
+    }else{
+      sl_cnt=0;
+    }
+    
+    return c;
+  }
+
+  void _putChar(uint8_t c) {
+    Serial.printf("%c",c);
+  }
 
   struct Field_s {
     uint8_t column = 0xff;
@@ -72,27 +112,43 @@ private:
   } fields[BB_REC_TYPE_SIZE][BB_MAX_FIELD_COUNT];
 
   bool parseHeader() {
-    uint8_t hdrType = _getChar();
-    if(hdrType == BB_HDRTYPE_FIELD) { //BB_HDRTYPE_FIELD: recordtype, fieldindex, datatype, name
+    uint8_t hdrType = readChar();
+    if (hdrType == BB_HDRTYPE_REC) { //BB_HDRTYPE_REC: recordtype, name
       //recordtype
-      uint8_t recordtype = _getChar();
+      uint8_t recordtype = readChar();
+      if(recordtype >= BB_REC_TYPE_SIZE) return false;
+      //name
+      String name = "";
+      uint8_t c;
+      for(int i=0;i<BB_MAX_REC_CHARS;i++) {
+        c = readChar();
+        if(c == BB_ENDRECORD) break;
+        name = name + (char)c;
+      }
+      if(c != BB_ENDRECORD) return false;
+      //store record info
+      recName[recordtype] = name;
+      return true;
+    }else if(hdrType == BB_HDRTYPE_FIELD) { //BB_HDRTYPE_FIELD: recordtype, fieldindex, datatype, name
+      //recordtype
+      uint8_t recordtype = readChar();
       if(recordtype >= BB_REC_TYPE_SIZE) return false;
       //fieldindex
-      uint8_t fieldindex = _getChar();
+      uint8_t fieldindex = readChar();
       if(fieldindex >= BB_MAX_FIELD_COUNT) return false;
       //datatype
-      uint8_t datatype = _getChar();
+      uint8_t datatype = readChar();
       if(datatype >= BB_DATATYPE_COUNT) return false;
       //name
       String name = "";
       uint8_t c;
       for(int i=0;i<BB_MAX_REC_CHARS;i++) {
-        c = _getChar();
+        c = readChar();
         if(c == BB_ENDRECORD) break;
         name = name + (char)c;
       }
       if(c != BB_ENDRECORD) return false;
-      //process field 
+      //store field info
       int col;
       for(col=0;col<columnCount;col++) {
         if(column[col] == name) break;
@@ -155,29 +211,42 @@ private:
       }
       fldidx++;
     }
-    putColumns();
-    return (_getChar() == BB_ENDRECORD);
+    if(readChar() != BB_ENDRECORD) return false;
+    if(eof) return false;
+    putColumns(type);
+    return true;
   }
 
   //write columns to csv
-  void putColumns() {
+  void putColumns(uint8_t type) {
+    //record number column
     if(addRecNoColumn) {
-      String s;
       if(recNo == 0) {
-        s = "RecNo";
+        putString("RecNo");
       }else{
-        s = String(recNo);
+        putString(String(recNo));
       }
-      putString(s);
       _putChar(separator);
     }
-    recNo++;
+
+    //record type column
+    if(recNo == 0) {
+      putString("RecType");
+    }else{
+      putString(recName[type]);
+    }
+    _putChar(separator);
+
+    //data columns
     for(int i=0;i<columnCount;i++) {
       if(i!=0) _putChar(separator);
       putString(column[i]);
       column[i] = "";
     }
+
     _putChar('\n');
+
+    recNo++;
   }
 
   void putString(String s) {
@@ -189,42 +258,42 @@ private:
   //-------------------------------------------------
   float getFloat() {
     uint8_t buf[4];
-    buf[0] = _getChar();
-    buf[1] = _getChar();
-    buf[2] = _getChar();
-    buf[3] = _getChar();
+    buf[0] = readChar();
+    buf[1] = readChar();
+    buf[2] = readChar();
+    buf[3] = readChar();
     return *((float*)buf);
   }
 
   float getU32() {
     uint8_t buf[4];
-    buf[0] = _getChar();
-    buf[1] = _getChar();
-    buf[2] = _getChar();
-    buf[3] = _getChar();
+    buf[0] = readChar();
+    buf[1] = readChar();
+    buf[2] = readChar();
+    buf[3] = readChar();
     return *((uint32_t*)buf);
   }
 
   float getI32() {
     uint8_t buf[4];
-    buf[0] = _getChar();
-    buf[1] = _getChar();
-    buf[2] = _getChar();
-    buf[3] = _getChar();
+    buf[0] = readChar();
+    buf[1] = readChar();
+    buf[2] = readChar();
+    buf[3] = readChar();
     return *((int32_t*)buf);
   }
 
   float getU16() {
     uint8_t buf[2];
-    buf[0] = _getChar();
-    buf[1] = _getChar();
+    buf[0] = readChar();
+    buf[1] = readChar();
     return *((uint16_t*)buf);
   }
 
   float getI16() {
     uint8_t buf[2];
-    buf[0] = _getChar();
-    buf[1] = _getChar();
+    buf[0] = readChar();
+    buf[1] = readChar();
     return *((int16_t*)buf);
   }
 
@@ -234,7 +303,7 @@ private:
     uint8_t shift = 0;
     uint32_t value = 0;
     do {
-      c = _getChar();
+      c = readChar();
       value |= (c & 0x7f) << shift;
       shift += 7;
     } while( (c & 0x80) && (shift < 32) ); //process 5 bytes max

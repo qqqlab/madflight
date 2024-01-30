@@ -137,7 +137,7 @@ void hw_setup()
   i2c->setClock(1000000);
   i2c->begin();
 
-  //SPI 
+  //SPI
   spi->begin();
   bb_spi->begin();
 

@@ -109,7 +109,7 @@ public:
       memcpy(this, &cfg2, lenExpected());
       Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", (int)cfg2.len(), (int)cfg2.crc());
     }else{
-      Serial.printf("CFG: EEPROM Config invalid. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
+      Serial.printf("CFG: EEPROM Config invalid, using defaults. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
     }
   }
 

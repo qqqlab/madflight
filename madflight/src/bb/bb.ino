@@ -1,4 +1,4 @@
-#include "BlackBox.h"
+#include "BlackBoxWriter.h"
 #include "BlackBoxDecoder.h"
 
 BlackBox bb;
@@ -43,17 +43,17 @@ void bb_decode_putChar(uint8_t c) {
 
 void bb_imu() {
   bb.writeBeginRecord(BB_REC_PID);
-  bb.writeUnsignedVB("ts",11);
-  bb.writeSignedVB("ax",12);
-  bb.writeSignedVB("ay",13);
-  bb.writeSignedVB("az",14);    
+  bb.writeU("ts",11);
+  bb.writeI("ax",12);
+  bb.writeI("ay",13);
+  bb.writeI("az",14);    
   bb.writeEndrecord();
 }
 
 void bb_gps() {
   bb.writeBeginRecord(BB_REC_GPS);
-  bb.writeSignedVB("ts",-21);  
-  bb.writeSignedVB("lat",-2222);
+  bb.writeI("ts",-21);  
+  bb.writeI("lat",-2222);
   bb.writeFloat("lon",1.23e-2);   
   bb.writeEndrecord();
 }

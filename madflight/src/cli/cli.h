@@ -58,7 +58,8 @@ public:
     "ploop     Loop timing in microseconds (expected: 1000000 / loop_freq)\n"
     "pbat      Battery voltage, current, Ah used and Wh used\n"
     "-- BLACK BOX --\n"
-    "bbdump    Dump CSV format\n"
+    "bbls      List files\n"
+    "bbdump n  Dump file n in CSV format\n"
     "bbstart   Start logging\n"
     "bbstop    Stop logging\n"
     "bberase   Erase bb device\n"
@@ -134,8 +135,10 @@ private:
       print_flag[10] = !print_flag[10];
     }else if(cmd == "pbat") {
       print_flag[11] = !print_flag[11];
+    }else if(cmd == "bbls") {
+      bb.dir();
     }else if(cmd == "bbdump") {
-      bb.csvDump();
+      bb.csvDump(arg1.toInt());
     }else if(cmd == "bbstart") {
       bb.start();
     }else if(cmd == "bbstop") {
@@ -194,7 +197,7 @@ public:
   void print_i2cScan() {
     Serial.printf("I2C: Scanning ...\n");
     byte count = 0;
-    i2c->begin();
+    //i2c->begin();
     for (byte i = 8; i < 120; i++) {
       i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
       if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 

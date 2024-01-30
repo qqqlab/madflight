@@ -47,7 +47,7 @@ fast blinking - something is wrong, connect USB serial for info
 #define RCIN_NUM_CHANNELS  6 //number of receiver channels (minimal 6)
 
 //--- IMU SENSOR
-#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
+#define IMU_USE  IMU_USE_SPI_MPU9250 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
 #define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
@@ -56,18 +56,18 @@ fast blinking - something is wrong, connect USB serial for info
 #define GPS_BAUD  115200
 
 //--- BAROMETER SENSOR
-#define BARO_USE  BARO_USE_BMP280 // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
+#define BARO_USE  BARO_USE_NONE // BARO_USE_BMP280, BARO_USE_MS5611, BARO_USE_NONE
 //#define BARO_I2C_ADR  0x76 //set barometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- EXTERNAL MAGNETOMETER SENSOR
-#define MAG_USE  MAG_USE_QMC5883L // MAG_USE_QMC5883L, MAG_USE_NONE
+#define MAG_USE  MAG_USE_NONE // MAG_USE_QMC5883L, MAG_USE_NONE
 //#define MAG_I2C_ADR  0x77 //set magnetometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- BATTERY MONITOR
-#define BAT_USE  BAT_USE_INA226 // BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
+#define BAT_USE  BAT_USE_NONE // BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
-#define BB_USE  BB_USE_MEMORY //BB_USE_FLASH log to flash, BB_USE_MEMORY log to ram, BB_USE_NONE
+#define BB_USE  BB_USE_NONE //BB_USE_FLASH log to internal or external flash, BB_USE_RAM log to ram or psram, BB_USE_NONE
 
 //========================================================================================================================//
 //                                                 BOARD                                                                  //
@@ -404,7 +404,7 @@ void imu_loop() {
   uint32_t rt = micros() - loop_time;
   if(loop_rt < rt) loop_rt = rt;
 
-  //bb.log_imu(); //full speed black box logging imu data, fills up memory quickly...
+  //bb.log_imu(); //full speed black box logging imu data, memory fills up quickly...
 }
 
 //========================================================================================================================//

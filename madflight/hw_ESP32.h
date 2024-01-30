@@ -19,51 +19,6 @@ This file defines:
 #define HW_MCU "ESP32" //ESP32 - Most pins can be assigned freely
 
 //-------------------------------------
-// IMU SENSOR
-//-------------------------------------
-//Uncomment only one USE_IMU_xxx
-//#define USE_IMU_SPI_MPU9250  //same as MPU6500 plus magnetometer
-//#define USE_IMU_SPI_MPU6500
-//#define USE_IMU_SPI_MPU6000
-//#define USE_IMU_I2C_MPU9250  //same as MPU6500 plus magnetometer
-#define USE_IMU_I2C_MPU9150  //same as MPU6050 plus magnetometer
-//#define USE_IMU_I2C_MPU6500
-//#define USE_IMU_I2C_MPU6050
-//#define USE_IMU_I2C_MPU6000
-
-#define IMU_I2C_ADR 0x69 //Set I2C address. If unknown, see output of print_i2c_scan()
-
-//Uncomment only one sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
-//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives increasing ahrs_yaw
-#define IMU_ROTATE_CW0
-//#define IMU_ROTATE_CW90
-//#define IMU_ROTATE_CW180
-//#define IMU_ROTATE_CW270
-//#define IMU_ROTATE_CW0FLIP
-//#define IMU_ROTATE_CW90FLIP
-//#define IMU_ROTATE_CW180FLIP
-//#define IMU_ROTATE_CW270FLIP
-
-//-------------------------------------
-// BAROMETER SENSOR
-//-------------------------------------
-//Uncomment only one USE_BARO_xxx
-//#define USE_BARO_BMP280
-//#define USE_BARO_MS5611
-#define USE_BARO_NONE
-
-#define BARO_I2C_ADR 0 //set barometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-
-//-------------------------------------
-// EXTERNAL MAGNETOMETER SENSOR
-//-------------------------------------
-//Uncomment only one USE_MAG_xxx
-//#define USE_MAG_QMC5883L
-#define USE_MAG_NONE
-
-#define MAG_I2C_ADR 0 //set magnetometer I2C address, or 0 for default. If unknown, see output of print_i2c_scan()
-
-//-------------------------------------
 // PIN DEFINITIONS
 //-------------------------------------
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
@@ -134,6 +89,9 @@ const int HW_PIN_BB_CS   = -1;
 //-------------------------------------
 //Bus Setup
 //-------------------------------------
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#define VSPI FSPI
+#endif  
 HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
 HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
 SPIClass spi1 = SPIClass(HSPI); // VSPI or HSPI(default) - used for IMU
@@ -229,8 +187,14 @@ void hw_setup()
 
   i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
 
-  spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
-  spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
+  if(HW_PIN_SPI_SCLK>=0 && HW_PIN_SPI_MISO>=0 && HW_PIN_SPI_MOSI>=0) {
+    spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
+    //spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
+  }
+
+  if(HW_PIN_SPI2_SCLK>=0 && HW_PIN_SPI2_MISO>=0 && HW_PIN_SPI2_MOSI>=0) {
+    spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
+  }
 
   hw_eeprom_begin();
 
