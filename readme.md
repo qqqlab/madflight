@@ -26,6 +26,8 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 - GPS Module (Serial)
 - Barometer (I2C BMP280, MS5611)
 - Magnetometer (I2C QMC5883L)
+- Current/Voltage Sensor (ADC or I2C INA226)
+- [Optical Flow Sensor](https://github.com/qqqlab/ESP32-Optical-Flow) (I2C)
 
 ## Getting Started
 
