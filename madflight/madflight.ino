@@ -1,6 +1,4 @@
-#define APPNAME "madflight v1.0.1-dev"
-
-//this is a development version - random stuff does not work - use latest release if you want something more stable
+#define APPNAME "madflight v1.0.1"
 
 //Arduino ESP32 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
@@ -47,7 +45,7 @@ fast blinking - something is wrong, connect USB serial for info
 #define RCIN_NUM_CHANNELS  6 //number of receiver channels (minimal 6)
 
 //--- IMU SENSOR
-#define IMU_USE  IMU_USE_SPI_MPU9250 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
+#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
 #define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
@@ -67,7 +65,7 @@ fast blinking - something is wrong, connect USB serial for info
 #define BAT_USE  BAT_USE_NONE // BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
-#define BB_USE  BB_USE_NONE //BB_USE_FLASH log to internal or external flash, BB_USE_RAM log to ram or psram, BB_USE_NONE
+#define BB_USE  BB_USE_NONE //BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
 
 //========================================================================================================================//
 //                                                 BOARD                                                                  //

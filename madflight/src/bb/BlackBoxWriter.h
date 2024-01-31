@@ -111,17 +111,17 @@ void writeI16(String name, int16_t value) {
   }
 }
 
-void writeUnsignedVB(String name, uint32_t value) {
+void writeU(String name, uint32_t value) {
   if(logStarted) {
-    logUnsignedVB(value);
+    logU(value);
   }else{
     writeHeaderField(name, BB_DATATYPE_UVB);
   }
 }
 
-void writeSignedVB(String name, int32_t value) {
+void writeI(String name, int32_t value) {
   if(logStarted) {
-    logSignedVB((uint32_t)value); 
+    logI((uint32_t)value); 
   }else{
     writeHeaderField(name, BB_DATATYPE_SVB);
   }
@@ -198,7 +198,7 @@ void logFloat(float value) {
 }
 
 //Write an unsigned integer to the blackbox using variable byte encoding.
-void logUnsignedVB(uint32_t value)
+void logU(uint32_t value)
 {
     //While this isn't the final byte (we can only write 7 bits at a time)
     while (value > 127) {
@@ -210,10 +210,10 @@ void logUnsignedVB(uint32_t value)
 
 
 //Write a signed integer to the blackbox using ZigZig and variable byte encoding.
-void logSignedVB(int32_t value)
+void logI(int32_t value)
 {
     //ZigZag encode to make the value always positive
-    logUnsignedVB(zigzagEncode(value));
+    logU(zigzagEncode(value));
 }
 
 /**

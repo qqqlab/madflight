@@ -14,7 +14,7 @@ In addition there are these functions common for all blackbox variants:
 
 HOW TO ADD YOUR OWN LOGGERS
  1. add a recordtype_e enum
- 2. add a new BlackBoxBase::log_xxx() for your logger. Use writeU() and writeI() to write variable byte encoded integer (these take 1-5 bytes of space)
+ 2. add a new BlackBoxBase::log_xxx() for your logger.
  3. add a call to your logger in BlackBoxBase::start() to write the header
  4. call bb.log_xxx() in madflight.ino to log data
 
@@ -22,8 +22,9 @@ Note: this header needs to be included after all globals are defined in madfligh
 ========================================================================================================================*/
 
 #define BB_USE_NONE 1
-#define BB_USE_FLASH 2
-#define BB_USE_RAM 3
+#define BB_USE_INTFLASH 2 //internal QSPI/OSPI flash
+#define BB_USE_FLASH 3 //external SPI flash
+#define BB_USE_RAM 4 //internal RAM (or PSRAM on ESP32)
 
 #include "BlackBox_Defines.h"
 #include "BlackBoxWriter.h"
@@ -43,59 +44,60 @@ private:
 
 public:
 
+  //loggers - Use writeU() and writeI() to write variable byte encoded integer, which use 1-5 bytes
   void log_imu() {
     if(bbw.isBusy()) return; //sets busy flag
     bbw.writeBeginRecord(BB_REC_IMU, "IMU");
-    bbw.writeUnsignedVB("ts",micros());
-    bbw.writeSignedVB("ax*100",AccX*100); //G
-    bbw.writeSignedVB("ay*100",AccY*100); //G
-    bbw.writeSignedVB("az*100",AccZ*100); //G
-    bbw.writeSignedVB("gx*10",GyroX*10); //dps
-    bbw.writeSignedVB("gy*10",GyroY*10); //dps
-    bbw.writeSignedVB("gz*10",GyroZ*10); //dps
-    bbw.writeSignedVB("mx*100",MagX*100); //uT
-    bbw.writeSignedVB("my*100",MagX*100); //uT
-    bbw.writeSignedVB("mz*100",MagX*100); //uT  
-    bbw.writeSignedVB("roll*10",ahrs_roll*10); //deg
-    bbw.writeSignedVB("pitch*10",ahrs_pitch*10);; //deg
-    bbw.writeSignedVB("yaw*10",ahrs_yaw*10);; //deg
+    bbw.writeU("ts",micros());
+    bbw.writeI("ax*100",AccX*100); //G
+    bbw.writeI("ay*100",AccY*100); //G
+    bbw.writeI("az*100",AccZ*100); //G
+    bbw.writeI("gx*10",GyroX*10); //dps
+    bbw.writeI("gy*10",GyroY*10); //dps
+    bbw.writeI("gz*10",GyroZ*10); //dps
+    bbw.writeI("mx*100",MagX*100); //uT
+    bbw.writeI("my*100",MagX*100); //uT
+    bbw.writeI("mz*100",MagX*100); //uT
+    bbw.writeI("roll*10",ahrs_roll*10); //deg
+    bbw.writeI("pitch*10",ahrs_pitch*10);; //deg
+    bbw.writeI("yaw*10",ahrs_yaw*10);; //deg
     bbw.writeEndrecord(); //clears busy flag
   }
 
   void log_pid() {
     if(bbw.isBusy()) return;
     bbw.writeBeginRecord(BB_REC_PID, "PID");
-    bbw.writeUnsignedVB("ts",micros());
-    bbw.writeSignedVB("roll_PID*100",roll_PID*100); //-1 to +1
-    bbw.writeSignedVB("pitch_PID*100",pitch_PID*100);; //-1 to +1
-    bbw.writeSignedVB("yaw_PID*100",yaw_PID*100);; //-1 to +1
+    bbw.writeU("ts",micros());
+    bbw.writeI("roll_PID*100",roll_PID*100); //-1 to +1
+    bbw.writeI("pitch_PID*100",pitch_PID*100);; //-1 to +1
+    bbw.writeI("yaw_PID*100",yaw_PID*100);; //-1 to +1
     bbw.writeEndrecord();
   }
 
   void log_bat() {
     if(bbw.isBusy()) return;
     bbw.writeBeginRecord(BB_REC_BAT, "BAT");
-    bbw.writeUnsignedVB("ts",micros());
-    bbw.writeUnsignedVB("bat_mA",bat.i*1000); //Battery current (A)
-    bbw.writeUnsignedVB("bat_mV",bat.v*1000); //battery voltage (V)
-    bbw.writeUnsignedVB("bat_mAh",bat.mah); //battery usage (Ah)
-    bbw.writeUnsignedVB("bat_mWh",bat.wh*1000); //battery usage (Wh)
+    bbw.writeU("ts",micros());
+    bbw.writeU("bat_mA",bat.i*1000); //Battery current (A)
+    bbw.writeU("bat_mV",bat.v*1000); //battery voltage (V)
+    bbw.writeU("bat_mAh",bat.mah); //battery usage (Ah)
+    bbw.writeU("bat_mWh",bat.wh*1000); //battery usage (Wh)
     bbw.writeEndrecord();
   }
 
   void log_baro() {
     if(bbw.isBusy()) return;
     bbw.writeBeginRecord(BB_REC_BARO, "BARO");
-    bbw.writeUnsignedVB("ts",micros());
-    bbw.writeUnsignedVB("baro_pa",baro.press_pa); //Barometer pressure (Pa)
-    bbw.writeSignedVB("baro_t*100",baro.temp_c*100); //barometer temp (C)
+    bbw.writeU("ts",micros());
+    bbw.writeU("baro_pa",baro.press_pa); //Barometer pressure (Pa)
+    bbw.writeI("baro_t*100",baro.temp_c*100); //barometer temp (C)
     bbw.writeEndrecord();
   }
 
   void log_gps() {
     if(bbw.isBusy()) return;
     bbw.writeBeginRecord(BB_REC_GPS, "GPS");
-    bbw.writeUnsignedVB("ts",micros()); 
+    bbw.writeU("ts",micros()); 
     bbw.writeI32("lat",gps.lat);
     bbw.writeI32("lon",gps.lon);
     bbw.writeEndrecord();
@@ -161,17 +163,12 @@ private:
 //=====================================================================================================================
 // Logging to FLASH (internal or external)
 //=====================================================================================================================
-#if BB_USE == BB_USE_FLASH
+#if BB_USE == BB_USE_INTFLASH || BB_USE == BB_USE_FLASH
 
 #include "SPIFlash/Adafruit_SPIFlashBase.h"
 
-//TODO
-// Un-comment to run example with custom SPI and SS e.g with FRAM breakout
-// #define CUSTOM_CS   A5
-// #define CUSTOM_SPI  SPI
-
-#if defined(CUSTOM_CS) && defined(CUSTOM_SPI)
-  Adafruit_FlashTransport_SPI flashTransport(CUSTOM_CS, CUSTOM_SPI);
+#if BB_USE == BB_USE_FLASH
+  Adafruit_FlashTransport_SPI flashTransport(HW_PIN_BB_CS, bb_spi);
 #elif defined(ARDUINO_ARCH_ESP32)
   // ESP32 use same flash device that store code for file system.
   // SPIFlash will parse partition.cvs to detect FATFS/SPIFS partition to use
@@ -183,7 +180,7 @@ private:
   // 'Tools->Flash Size' menu selection will be used.
   Adafruit_FlashTransport_RP2040 flashTransport;
 #else
-  #error No (Q)SPI flash defined for your board !
+  #error BB_USE_INTFLASH No internal flash defined for your board !
 #endif
 
 Adafruit_SPIFlashBase flash(&flashTransport);
@@ -309,7 +306,7 @@ private:
       //Serial.printf("page_min=%8d page_max=%8d page=%8d ", page_min, page_max, page);
       //for(int i=0;i<16;i++) Serial.printf(" %02X",buf[i]);
       //Serial.println();
-      for(int i=0;i<readlen;i++) if(buf[i]!=0xff) {
+      for(uint32_t i=0;i<readlen;i++) if(buf[i]!=0xff) {
         page_min = page;
         break;
       }
@@ -329,109 +326,6 @@ private:
 };
 
 BlackBoxFS_Flash bb_fs;
-
-
-
-/*
-//=====================================================================================================================
-// Logging to SPI FLASH
-//=====================================================================================================================
-#if BB_USE == BB_USE_FLASH
-
-//#define HW_PIN_FLASH_CS    PB3
-//extern SPIClass bb_spi;
-
-#define BB_BUF_SIZE 64 //write this many bytes per write cycle - needs to be a power of 2, max 256
-
-class BlackBox: public BlackBoxBase {
-public:
-
-  void setup() {
-    w25qxx_size = 0;
-    w25qxx_adr = 0xffffffff;
-    buf_len = 0;
-    w25qxx.setSPIPort(bb_spi);
-    w25qxx.begin(HW_PIN_BB_CS,18000000);  
-    bbw.begin(callback_bbWriteChar);
-    findStart();
-    Serial.printf("BB_USE_FLASH size=%d start=%d\n", (int)w25qxx_size, (int)w25qxx_adr);
-  }
-
-  void csvDump() {
-    stop();
-    buf_idx = BB_BUF_SIZE;
-    w25qxx_readadr = w25qxx_startadr;
-    BlackBoxDecoder bbd;
-    bbd.csv_decode(callback_bbReadChar, callback_SerialPrintChar);  
-  }
-
-  void erase() {
-    Serial.println("Full flash erase started, this will take a while to complete...");
-    w25qxx.eraseAll(true);
-    Serial.println("Full flash erase completed.");
-  }
-
-private:
-
-  void findStart() {
-    w25qxx_size = w25qxx.readSize();
-    w25qxx_adr = w25qxx_size>>1;
-    uint32_t stepsize = w25qxx_adr>>1;
-    uint8_t buf[16];
-    while(stepsize>=16) {
-      w25qxx.read(w25qxx_adr, buf, 16);
-      int32_t step = -stepsize;
-      for(int i=0;i<16;i++) if(buf[i]!=0xff) {
-        step = +stepsize;
-        break;
-      }
-      w25qxx_adr += step;
-      stepsize >>= 1;
-    }
-    w25qxx_adr = ((w25qxx_adr / BB_BUF_SIZE) + 1) * BB_BUF_SIZE; //move to next BB_BUF_SIZE boundary
-    w25qxx_startadr = w25qxx_adr;
-  }
-
-  //static callback
-  #include "W25Qxx/W25Qxx.h"
-  static W25Qxx w25qxx;
-  static uint8_t buf[BB_BUF_SIZE];
-  static uint32_t w25qxx_size;
-  static uint32_t w25qxx_adr;
-  static uint32_t w25qxx_startadr;
-  static int buf_len;
-  static int buf_idx;
-  static uint32_t w25qxx_readadr;
-
-  static uint8_t callback_bbReadChar() {
-    if(buf_idx >= BB_BUF_SIZE) {
-      w25qxx.read(w25qxx_readadr, buf, BB_BUF_SIZE);
-      w25qxx_readadr += BB_BUF_SIZE;
-      buf_idx = 0;
-    }
-    return buf[buf_idx++];
-  }
-
-  static void callback_bbWriteChar(uint8_t c) {
-    if(buf_len < BB_BUF_SIZE) {
-      buf[buf_len++] = c;
-    }else{
-      w25qxx.pageWrite(w25qxx_adr, buf, BB_BUF_SIZE, false); //non-blocking write
-      w25qxx_adr += BB_BUF_SIZE;
-      buf_len = 0;
-    }
-  }
-};
-
-BlackBox::W25Qxx BlackBox::w25qxx;
-uint8_t BlackBox::buf[BB_BUF_SIZE];
-uint32_t BlackBox::w25qxx_size;
-uint32_t BlackBox::w25qxx_adr;
-uint32_t BlackBox::w25qxx_startadr;
-int BlackBox::buf_len;
-int BlackBox::buf_idx;
-uint32_t BlackBox::w25qxx_readadr;
-*/
 
 //=====================================================================================================================
 // Logging to RAM Memory
