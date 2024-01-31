@@ -15,12 +15,65 @@ This file defines:
 //                    DEFAULT BOARD (used if no board set in madflight.ino)                                             //
 //======================================================================================================================//
 #ifndef HW_BOARD_NAME
-#define HW_BOARD_NAME "DEFAULT ESP32 BOARD - Espressif ESP32 DevKitC 38 pin" //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
+
+//------------------------------------------------------------------------------------------------------------------------
+// PIN DEFINITIONS  ESP32S3 BOARD
+//------------------------------------------------------------------------------------------------------------------------
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#define HW_BOARD_NAME "DEFAULT ESP32-S3 BOARD - Espressif ESP32-S3-DevKitC-1 - 44 pin" //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
+#define HW_MCU "ESP32-S3" //ESP32-S3 - Most pins can be assigned freely
+
+//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
+
+//Serial Debug
+//19,20=USB, 43,44=CP2102
+//USB CDC On Boot "Enabled": Serial->USB, Serial0->UART, "Disabled": Serial->UART, Serial1->undefined
+
+//LED:
+const int HW_PIN_LED      = 38; //Note: ESP32S3 DevKitC has RGB LED on this pin
+const int HW_LED_ON       =  1; //0:low is on, 1:high is on
+
+//IMU SPI:
+const int HW_PIN_SPI_MOSI = 11;
+const int HW_PIN_SPI_MISO = 12;
+const int HW_PIN_SPI_SCLK = 13;
+const int HW_PIN_IMU_CS   = 10;
+const int HW_PIN_IMU_EXTI = 14;
+
+//BARO/MAG I2C:
+const int HW_PIN_I2C_SDA  =  8;
+const int HW_PIN_I2C_SCL  =  9;
+
+//Outputs:
+const int HW_OUT_COUNT    =  6;
+const int HW_PIN_OUT[HW_OUT_COUNT] = {4,5,6,7,15,16}; 
+
+//RC Receiver:
+const int HW_PIN_RCIN_RX  = 18; //also used as PPM input
+const int HW_PIN_RCIN_TX  = 17;
+
+//GPS:
+const int HW_PIN_GPS_RX   =  3;
+const int HW_PIN_GPS_TX   = 46;
+
+//Battery ADC
+const int HW_PIN_BAT_V    = -1;
+const int HW_PIN_BAT_I    = -1;
+
+//BlackBox SPI:
+const int HW_PIN_SPI2_MISO = -1;
+const int HW_PIN_SPI2_MOSI = -1;
+const int HW_PIN_SPI2_SCLK = -1;
+const int HW_PIN_BB_CS     = -1;
+
+
+//------------------------------------------------------------------------------------------------------------------------
+// PIN DEFINITIONS ESP32 BOARD
+//------------------------------------------------------------------------------------------------------------------------
+#else
+#define HW_BOARD_NAME "DEFAULT ESP32 BOARD - Espressif ESP32-DevKitC 38 pin" //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
 #define HW_MCU "ESP32" //ESP32 - Most pins can be assigned freely
 
-//-------------------------------------
-// PIN DEFINITIONS
-//-------------------------------------
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
@@ -61,6 +114,8 @@ const int HW_PIN_SPI2_MISO = -1;
 const int HW_PIN_SPI2_MOSI = -1;
 const int HW_PIN_SPI2_SCLK = -1;
 const int HW_PIN_BB_CS   = -1;
+
+#endif //PIN DEF ESP32S3 or ESP32
 
 /*--------------------------------------------------------------------------------------------------
   IMPORTANT
@@ -178,18 +233,16 @@ void hw_eeprom_commit() {
 
 void hw_setup()
 {
-  delay(1000);
-  Serial.println("USE_HW_ESP32");
-
-  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+  Serial.println(HW_BOARD_NAME);
 
   rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+
+  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
 
   i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
 
   if(HW_PIN_SPI_SCLK>=0 && HW_PIN_SPI_MISO>=0 && HW_PIN_SPI_MOSI>=0) {
     spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
-    //spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI, HW_PIN_IMU_CS);
   }
 
   if(HW_PIN_SPI2_SCLK>=0 && HW_PIN_SPI2_MISO>=0 && HW_PIN_SPI2_MOSI>=0) {

@@ -34,7 +34,6 @@ This file defines:
 #define HW_BOARD_NAME "DEFAULT STM32 BOARD - Black Pill STM32F411CEUx" //This pin layout is based on MATEK F411SE (MTKS-MATEKF411SE betaflight target)
 #define HW_MCU "STM32F411CEUx" //STM32F411CEUx - not all pin combinations are allowed, see datasheet
 
-
 //Arduino F411 defines: -DSTM32F4xx -DARDUINO=10607 -DARDUINO_GENERIC_F411CEUX -DARDUINO_ARCH_STM32 -DBOARD_NAME="GENERIC_F411CEUX" -DVARIANT_H="variant_generic.h" -DSTM32F411xE -DUSBCON -DUSBD_VID=0 -DUSBD_PID=0 -DHAL_PCD_MODULE_ENABLED -DUSBD_USE_CDC -DHAL_UART_MODULE_ENABLED
 
 //Arduino F411: Serial and Serial1 both map TX1/RX1 on pin A9/A10. 
