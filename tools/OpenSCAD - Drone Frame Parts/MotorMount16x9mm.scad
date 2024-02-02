@@ -8,6 +8,7 @@ beam1_dia = 6.5; //diameter
 beam1_depth = 3*beam1_dia; //socket depth
 beam1_start = 13; //socket starting point from center of motor
 beam1_square = 0; //beam type: 0=round, 1=square
+beam1_tightener = 2; //add screw tightener: 0=none(i.e. use glue) 1=horizonal 2=vertical
 
 //outer square beam
 beam2_dia = 3.5; //diameter (0 to ignore)
@@ -52,8 +53,16 @@ beam2_od = beam2_dia+2*beam_wall;
 beam3_od = beam3_dia+2*beam_wall;
 beam4_od = beam4_dia+2*beam_wall;
 
-difference()
-{
+difference() {
+  union() {
+    MotorMount_add();
+    beam1_tigthener_add();
+  }
+  MotorMount_drill();
+  beam1_tigthener_drill();
+}
+
+module MotorMount_add() {
   union() //this union doesn't do anything, just here to make debugging easy
   hull() //comment out hull() for debugging
   {
@@ -62,7 +71,7 @@ difference()
     //sockets for beams
     translate([0,0,beam1_od/2]) rotate([90,0,0]) translate([0,0,beam1_start]) {
       if(beam1_square)
-         translate([-beam1_od/2,-beam1_od/2,0]) cube([beam1_od,beam1_od,20]);
+        translate([-beam1_od/2,-beam1_od/2,0]) cube([beam1_od,beam1_od,20]);
       else 
         cylinder(h=beam1_depth,d=beam1_od);
     }
@@ -74,10 +83,11 @@ difference()
       translate([0,0,beam1_od+beam3_od/2-2*beam_wall]) rotate([78,0,0]) translate([0,0,beam3_start]) cylinder(h=beam3_depth,d=beam3_od);
     if(beam4_dia>0) {
       translate([(beam1_dia+beam4_dia)/2,-beam4_start,0]) rotate([0,0,0]) translate([0,0,beam4_start_z]) cylinder(h=beam4_depth,d=beam4_od);
-      translate([-(beam1_dia+beam4_dia)/2,-beam4_start,0]) rotate([0,0,0]) translate([0,0,beam4_start_z]) cylinder(h=beam4_depth,d=beam4_od);      
+      translate([-(beam1_dia+beam4_dia)/2,-beam4_start,0]) rotate([0,0,0]) translate([0,0,beam4_start_z]) cylinder(h=beam4_depth,d=beam4_od);
     }
   }
-  
+}
+module MotorMount_drill() {
   //drill holes for beams
   translate([0,0,beam1_od/2]) rotate([90,0,0]) translate([0,0,beam1_start]) {
     if(beam1_square)
@@ -115,4 +125,50 @@ module DrillMotor16x19(){
 module DrillMotorScrew() {
   translate([0,0,+10]) cylinder(h=999,d=motor_dr1,center=true);
   translate([0,0,-50-motor_h]) cylinder(h=100,d=motor_dr2,center=true);
+}
+
+module nutholeM3() {
+  cylinder(r= 6.4/2, h=100, $fn=6, center=[0,0]);
+  translate([0,0,-99]) cylinder(r= 3.3/2, h=100, center=[0,0]);
+}
+
+//beam1 tigthener
+module beam1_tigthener_add() {
+  if(beam1_tightener==1) {
+    w = beam1_dia + 10;
+    d = 8;
+    h = 8;
+    translate([-w/2,-beam1_start-beam1_depth,-h/2+beam1_od/2]) cube([w, d, h]);
+  }
+  if(beam1_tightener==2) {
+    w = 10;
+    d = 8;
+    h1 = 6;
+    h = beam1_dia/2+h1;
+    translate([-w/2, -beam1_start-beam1_depth, +beam1_od/2]) cube([w, d, h]);
+  }
+}
+module beam1_tigthener_drill() {
+  if(beam1_tightener==1) {
+    w = beam1_dia + 10;
+    d = 8;
+    h = 8;
+    translate([+beam1_dia/2+2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-1.5]) rotate([0,0,90]) nutholeM3();
+    translate([-beam1_dia/2-2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-1.5]) rotate([0,0,90]) nutholeM3();
+    //gap
+    h2 = 1.5; //gap width
+    d2 = beam1_depth/2;
+    translate([-50,-beam1_start-beam1_depth-0.01,-h2/2+beam1_od/2]) cube([100, d2, h2]);
+  }
+  if(beam1_tightener==2) {
+      w = 10;
+      d = 8;
+      h1 = 6;
+      translate([w/2-1.5, -beam1_start-beam1_depth+d/2, +beam1_od/2+beam1_dia/2+h1/2]) rotate([90,0,90]) nutholeM3();
+      //gap
+      w2 = 1.5; //gap width
+      d2 = beam1_depth/2;
+      h2 = beam1_dia/2;
+      translate([-w2/2,-beam1_start-beam1_depth-0.01,-h2/2+beam1_od/2]) cube([w2, d2, 100]);
+  }
 }

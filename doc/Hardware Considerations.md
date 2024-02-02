@@ -40,6 +40,13 @@ Board price single piece | $4 | $5 | $4 | $3
 
 ![](img/boards.jpeg)
 
+Other boards:
+|Board|MCU|Specs|IO|Size|Weight|
+|-|-|-|-|-|-| 
+Waveshare RP2040-Zero | RP2040 | 2MB flash, RESET+BOOT button, RGB LED | 20 io + 9 via solder points | 23 * 17 mm | 1.7 gr
+WeMos LOLIN32-Lite | ESP32 | 4MB flash, 0MB PSRAM, RESET button, lipo charger, LED | 23 io | 50 * 25 mm | 4.7 gr
+WeMos LOLIN S3 Mini | ESP32-S3 | 4MB flash, 2MB PSRAM, RESET+BOOT button, LED | 27 io | 34 * 25 mm | 3 gr
+
 ### ESP32
 ![](img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
 ![](img/ESP32-DOIT-DEV-KIT-v1-pinout-mischianti.png)
