@@ -4,7 +4,7 @@
 
 This is a 1000 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
-`madflight/madflight.ino` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
+`Quadcopter.ino` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
 Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino IDE. It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 
@@ -15,7 +15,7 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 - Development board: 
   - RP2040 (e.g. Raspberry Pi Pico)
   - or ESP32 (e.g. Espressiv DevKitC)
-  - or STM32 (e.g. Black Pill or a flight controller)
+  - or STM32 (e.g. Black Pill or a commercial flight controller)
 - SPI IMU sensor (BMI270, MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
 - RC Receiver: ELRS, CRSF, SBUS, DMSX, or PPM
 - BEC or DC-DC converter to power your board from a battery
@@ -31,17 +31,19 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 
 ## Getting Started
 
-0. Open madflight/madflight.ino in the Arduino IDE.
-1. Setup the USER-SPECIFIED DEFINES section in the main code, and configure the pins in hw_XXX.h (see below for default pinouts)
-2. Connect your IMU (gyro/acceleration) sensor as shown below.
-3. Compile and upload madflight. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
-4. Check that IMU sensor and AHRS are working correctly: use CLI print commands to show gyro, accelerometer, magnetometer and roll/pitch/yaw. 
-5. Use CLI to calibate the sensor.
-6. Connect radio receiver to your development board according to the configured pins.
-7. Edit the RC RECEIVER CONFIG section in the main code. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
-8. Check your radio setup: Use CLI print commands to show pwm and scaled radio values.
-9. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
-10. Mount props, go to an wide open space, and FLY!
+1. Install the Arduino madflight library
+2. Open example madflight_Quadcopter.ino in the Arduino IDE.
+3. Setup the USER-SPECIFIED DEFINES section
+4. If you're not using a default pinout (see below) then setup your board pinout in the BOARD section.
+5. Connect your IMU (gyro/acceleration) sensor as shown below.
+6. Compile and upload madflight_Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
+7. Check that IMU sensor and AHRS are working correctly: use CLI print commands to show gyro, accelerometer, magnetometer and roll/pitch/yaw. 
+8. Use CLI to calibate the sensor.
+9. Connect radio receiver to your development board according to the configured pins.
+10. Edit the RC RECEIVER CONFIG section. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
+11. Check your radio setup: Use CLI print commands to show pwm and scaled radio values.
+12. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
+13. Mount props, go to an wide open space, and FLY!
 
 ## Safety First!!!
 
@@ -61,10 +63,10 @@ I enjoy hacking around with electronics and I'm attempting to write some decent 
 ## Software Design
 
 - Keep it simple!!!
-- No external dependencies, all module libraries included in `src` directory.
-- Coded for readability, not for speed or smallest size.
-- The flight controller madflight.ino runs standard `setup()` and `loop()`.
-- The madflight.ino uses the following modules:
+- No external dependencies, all modules are included in the `src/madflight` directory.
+- Coded primarily for readability, then for speed and code size.
+- The madflight flight controller runs standard `setup()` and `loop()`.
+- The following modules are used:
   - `loop` Main loop control
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
@@ -78,9 +80,9 @@ I enjoy hacking around with electronics and I'm attempting to write some decent 
   - `cli` Command Line Interface for debugging, configuration and calibration
   - `cfg` Read and save configuration to flash
   - `hw` Hardware specific code for STM32, RP2040 and ESP32
-- Most modules are interfaced through a global object, for example `imu.gx` is the current gyro x-axis rate in degrees per second for the selected IMU chip.
-- The header `src/interfaces.h` defines the module interfaces.
-- The module implementations are in subdirectories of the `src` directory. Here you find the module header file, e.g. `src/imu/imu.h`. There might also be an .ino module test program, e.g. `src/imu/imu.ino`.
+- Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
+- For a quick overview of the objects, see header `src/madflight/interfaces.h` which defines the module interfaces.
+- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. There might also be an .ino module test program, e.g. `src/madflight/imu/imu.ino`.
 - The module files are usually header only, that is, the header also includes the implemention.
 
 ## Connecting the IMU Sensor

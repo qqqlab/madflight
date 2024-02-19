@@ -4,14 +4,14 @@
 // Config
 //=======================================================================
 //main cross beam 
-beam1_dia = 6.5; //diameter
-beam1_depth = 3*beam1_dia; //socket depth
+beam1_dia = 15; //diameter
+beam1_depth = 2*beam1_dia; //socket depth
 beam1_start = 13; //socket starting point from center of motor
 beam1_square = 0; //beam type: 0=round, 1=square
 beam1_tightener = 2; //add screw tightener: 0=none(i.e. use glue) 1=horizonal 2=vertical
 
 //outer square beam
-beam2_dia = 3.5; //diameter (0 to ignore)
+beam2_dia = 0; //diameter (0 to ignore)
 beam2_depth = 0; //socket depth
 beam2_start = 6; //socket starting point from center of motor
 
@@ -21,13 +21,13 @@ beam3_depth = 3*beam3_dia; //socket depth
 beam3_start = 11; //socket starting point from center of motor
 
 //landing beams
-beam4_dia = 3.5; //diameter (0 to ignore)
+beam4_dia = 0; //diameter (0 to ignore)
 beam4_depth = 0; //socket depth
 beam4_start = 15; //socket starting point from center of motor
 beam4_start_z = 1.5; //socket z starting point
 
 //wall thickness for beam sockets
-beam_wall = 1;
+beam_wall = 2;
 
 //Motor Mount 3xM2 3x10mm
 //motor screw drill hole diameter
@@ -128,7 +128,8 @@ module DrillMotorScrew() {
 }
 
 module nutholeM3() {
-  cylinder(r= 6.4/2, h=100, $fn=6, center=[0,0]);
+  print_tol = 0.5;
+  cylinder(r=(6.4+print_tol)/2, h=100, $fn=6, center=[0,0]);
   translate([0,0,-99]) cylinder(r= 3.3/2, h=100, center=[0,0]);
 }
 
@@ -143,7 +144,7 @@ module beam1_tigthener_add() {
   if(beam1_tightener==2) {
     w = 10;
     d = 8;
-    h1 = 6;
+    h1 = 7;
     h = beam1_dia/2+h1;
     translate([-w/2, -beam1_start-beam1_depth, +beam1_od/2]) cube([w, d, h]);
   }
@@ -153,8 +154,9 @@ module beam1_tigthener_drill() {
     w = beam1_dia + 10;
     d = 8;
     h = 8;
-    translate([+beam1_dia/2+2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-1.5]) rotate([0,0,90]) nutholeM3();
-    translate([-beam1_dia/2-2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-1.5]) rotate([0,0,90]) nutholeM3();
+    nut_depth = 1.0;
+    translate([+beam1_dia/2+2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-nut_depth]) rotate([0,0,90]) nutholeM3();
+    translate([-beam1_dia/2-2,-beam1_start-beam1_depth+d/2,-h/2+beam1_od/2+h-nut_depth]) rotate([0,0,90]) nutholeM3();
     //gap
     h2 = 1.5; //gap width
     d2 = beam1_depth/2;
@@ -163,8 +165,9 @@ module beam1_tigthener_drill() {
   if(beam1_tightener==2) {
       w = 10;
       d = 8;
-      h1 = 6;
-      translate([w/2-1.5, -beam1_start-beam1_depth+d/2, +beam1_od/2+beam1_dia/2+h1/2]) rotate([90,0,90]) nutholeM3();
+      h1 = 7;
+      nut_depth = 1.0;
+      translate([w/2-nut_depth, -beam1_start-beam1_depth+d/2, +beam1_od/2+beam1_dia/2+h1/2]) rotate([90,0,90]) nutholeM3();
       //gap
       w2 = 1.5; //gap width
       d2 = beam1_depth/2;
