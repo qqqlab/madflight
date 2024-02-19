@@ -1,7 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v1.0.2-dev"
-
-#warning "this is a development madflight version - random stuff does not work - use latest release if you want something more stable"
-#define P(x) do{Serial.println("---DEBUG:"+String(x)); Serial.flush();}while(0)
+#define MADFLIGHT_VERSION "madflight v1.0.2"
 
 /*==========================================================================================
 madflight - Flight Controller for ESP32 / RP2040 / STM32
