@@ -32,11 +32,11 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 ## Getting Started
 
 1. Install the Arduino madflight library
-2. Open example madflight_Quadcopter.ino in the Arduino IDE.
+2. Open example Quadcopter.ino in the Arduino IDE.
 3. Setup the USER-SPECIFIED DEFINES section
 4. If you're not using a default pinout (see below) then setup your board pinout in the BOARD section.
 5. Connect your IMU (gyro/acceleration) sensor as shown below.
-6. Compile and upload madflight_Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
+6. Compile and upload Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
 7. Check that IMU sensor and AHRS are working correctly: use CLI print commands to show gyro, accelerometer, magnetometer and roll/pitch/yaw. 
 8. Use CLI to calibate the sensor.
 9. Connect radio receiver to your development board according to the configured pins.
@@ -110,7 +110,7 @@ I2C sensor:
 
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
-This pinout can be configured as needed in hw_ESP32.h
+This pinout can be configured as needed in madflight_board_default_ESP32.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -142,7 +142,7 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 ## Default Pinout for Raspberry Pi Pico (40 pin)
 
-This pinout can be configured as needed in hw_RP2040.h
+This pinout can be configured as needed in madflight_board_default_RP2040.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -173,7 +173,7 @@ This pinout can be configured as needed in hw_RP2040.h
 
 ## Default Pinout for WeActStudio STM32F411 Black Pill (40 pin)
 
-This pinout can be configured as needed in hw_STM32.h
+This pinout can be configured as needed in madflight_board_default_STM32.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -205,6 +205,41 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 <img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
+
+
+## Default Pinout for ESP32-S3 DevKitC-1 (44 pin)
+
+This pinout can be configured as needed in madflight_board_default_ESP32-S3.h
+
+| Function | GPIO | Board | GPIO | Function |
+| --: | :-- | -- |--: | :-- |
+3V3 out | 3V3 | Antenna side | G | GND
+3V3 out | 3V3 | | 43 | TX serial debug UART port
+reset button | RST | | 44 | RX serial debug UART port
+PWM1 | 4 | | 1 | -
+PWM2 | 5 | | 2 | -
+PWM3 | 6 | | 42 | -
+PWM4 | 7 | | 41 | -
+PWM5 | 15 | | 40 | -
+PWM6 | 16 | | 39 | -
+RCIN_TX | 17 | | 38 | LED
+RCIN_RX | 18 | | 37 | -
+I2C_SDA | 8 | | 36 | -
+GPS_RX | 3 | | 35 | -
+GPS_TX | 46 | | 0 | boot button
+I2C_SCL | 9 | | 45| -
+IMU_CS | 10 | | 48 | RGB_LED
+SPI_MOSI | 11 | | 47 | -
+MISO | 12 | | 21 | -
+SCLK | 13 | | 20 | USB_D+ (serial debug alternate)
+IMU_EXTI | 14 | | 19 | USB_D- (serial debug alternate)
+5V in (*) | 5V | | G | GND
+GND | G | USB connector | G | GND
+
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
+
+<img src="doc/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
+
 
 ## Changes from dRehmFlight
 
