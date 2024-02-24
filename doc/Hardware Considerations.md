@@ -11,7 +11,7 @@
   - 1x IMU interrupt pin
   - 8x PWM: Motor, Servo (8 pins)
   
-## Considered UAV Controller Boards
+## Default madflight Controller Boards
 
 | Board | ESP32 DevKitC | ESP32-S3 DevKitC | Raspberry Pi Pico (W) | Black Pill |
 | --- | :-: | :-: | :-: | :-: |
@@ -41,11 +41,14 @@ Board price single piece | $4 | $5 | $4 | $3
 ![](img/boards.jpeg)
 
 Other boards:
-|Board|MCU|Specs|IO|Size|Weight|
-|-|-|-|-|-|-| 
-Waveshare RP2040-Zero | RP2040 | 2MB flash, RESET+BOOT button, RGB LED | 20 io + 9 via solder points | 23 * 17 mm | 1.7 gr
-WeMos LOLIN32-Lite | ESP32 | 4MB flash, 0MB PSRAM, RESET button, lipo charger, LED | 23 io | 50 * 25 mm | 4.7 gr
-WeMos LOLIN S3 Mini | ESP32-S3 | 4MB flash, 2MB PSRAM, RESET+BOOT button, LED | 27 io | 34 * 25 mm | 3 gr
+|Board|MCU|Specs|IO|Size|Weight|Price|
+|-|-|-|-|-|-|-|
+Waveshare RP2040-Zero | RP2040 | 2MB flash, RESET+BOOT button, RGB LED | 20 io + 9 via solder points | 23 * 17 mm | 1.7 gr | $3
+WeMos LOLIN32-Lite | ESP32 | 4MB flash, 0MB PSRAM, RESET button, lipo charger, LED | 23 io | 50 * 25 mm | 4.7 gr | $3
+WeMos LOLIN S3 Mini | ESP32-S3 | 4MB flash, 2MB PSRAM, RESET+BOOT button, LED | 27 io | 34 * 25 mm | 3 gr | $5
+WeAct STM32F405 Core Board | STM32F405RGT6 | 1MB flash, 192kB RAM, 168MHz, 6 UART, RESET+BOOT+USER button, LED, SDCARD | 45 io | 42 * 25 mm | | $8
+WeAct STM32H743 Core Board | STM32H743VIT6 | 2MB flash, 1MB RAM, 480MHz, 8 UART, RESET+BOOT+USER button, LED, SDCARD, 8MB SPI Flash, LCD, DVP | 77 io | 67 * 41 mm | | $16
+
 
 ### ESP32
 ![](img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png)
