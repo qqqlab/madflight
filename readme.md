@@ -10,6 +10,8 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 
 <img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
+[Default Pinout for ESP32](#pinout_ESP32)
+
 ## Required Hardware
 
 - Development board: 
@@ -107,7 +109,7 @@ I2C sensor:
      VCC <---> 3V3
      GND <---> GND
 ```
-
+<a name="pinout_ESP32"></a>
 ## Default Pinout for ESP32 DevKitC (38 pin)
 
 This pinout can be configured as needed in madflight_board_default_ESP32.h
