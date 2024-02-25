@@ -2,16 +2,32 @@
 
 ***M**anless **A**erial **D**evice*
 
-This is a 1000 line Arduino ESP32 / RP2040 / STM32 flight controller, forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight). A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
+This is a Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
-`Quadcopter.ino` is a demo program for a quadcopter, but can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
-
-Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino IDE. It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
+`Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
 <img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
-[Default Pinout for ESP32](#pinout_ESP32)
+## Feedback is Welcome
 
+I enjoy hacking with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
+
+[Required Hardware](#hardware)  
+[Getting Started](#gettingstarted)  
+[Safety First](#safetyfirst)  
+[Software Design](#softwaredesign)  
+[Connecting the IMU Sensor](#connectsensor)  
+[ESP32 Pinout](#pinoutESP32)  
+[ESP32-S3 Pinout](#pinoutESP32-S3)  
+[RP2040 Pinout](#pinoutRP2040)  
+[STM32 Pinout](#pinoutSTM32)  
+[Of-the-shelf Flight Controller Pinout](#pinoutFC)  
+[Changes from dRehmFlight](#changes)  
+[Flight Controllers on Github](#github)  
+[Disclaimer](#disclamer)  
+
+
+<a name="hardware"></a>
 ## Required Hardware
 
 - Development board: 
@@ -31,6 +47,8 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 - Current/Voltage Sensor (ADC or I2C INA226)
 - [Optical Flow Sensor](https://github.com/qqqlab/ESP32-Optical-Flow) (I2C)
 
+
+<a name="gettingstarted"></a>
 ## Getting Started
 
 1. Install the Arduino madflight library
@@ -47,6 +65,8 @@ Flight tested on ESP32, RP2040, and STM32F405 microcontrollers with the Arduino 
 12. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
 13. Mount props, go to an wide open space, and FLY!
 
+
+<a name="safetyfirst"></a>
 ## Safety First!!!
 
 By default madflight has these safety features enabled:
@@ -58,16 +78,16 @@ By default madflight has these safety features enabled:
 - Armed Low Throttle: motors run at low speed, to give visible armed indication.
 - LED armed/disarmed indicator.
 
-## Feedback is Welcome
 
-I enjoy hacking around with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
-
+<a name="softwaredesign"></a>
 ## Software Design
 
 - Keep it simple!!!
-- No external dependencies, all modules are included in the `src/madflight` directory.
+- Forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight)
 - Coded primarily for readability, then for speed and code size.
+- No external dependencies, all modules are included in the `src/madflight` directory.
 - The madflight flight controller runs standard `setup()` and `loop()`.
+- It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 - The following modules are used:
   - `loop` Main loop control
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
@@ -84,9 +104,11 @@ I enjoy hacking around with electronics and I'm attempting to write some decent 
   - `hw` Hardware specific code for STM32, RP2040 and ESP32
 - Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
 - For a quick overview of the objects, see header `src/madflight/interfaces.h` which defines the module interfaces.
-- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. There might also be an .ino module test program, e.g. `src/madflight/imu/imu.ino`.
+- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. In the `extras` directory your find test programs for the modules, e.g. `extras/TestMadflight/imu.ino`.
 - The module files are usually header only, that is, the header also includes the implemention.
 
+
+<a name="connectsensor"></a>
 ## Connecting the IMU Sensor
 
 SPI sensor: (highly recommended over I2C)
@@ -109,10 +131,12 @@ I2C sensor:
      VCC <---> 3V3
      GND <---> GND
 ```
-<a name="pinout_ESP32"></a>
-## Default Pinout for ESP32 DevKitC (38 pin)
 
-This pinout can be configured as needed in madflight_board_default_ESP32.h
+
+<a name="pinoutESP32"></a>
+## Default Pinout for ESP32 - DevKitC (38 pin)
+
+This pinout can be changed as needed in madflight_board_default_ESP32.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -142,9 +166,11 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 <img src="doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
-## Default Pinout for Raspberry Pi Pico (40 pin)
 
-This pinout can be configured as needed in madflight_board_default_RP2040.h
+<a name="pinoutRP2040"></a>
+## Default Pinout for RP2040 - Raspberry Pi Pico (40 pin)
+
+This pinout can be changed as needed in madflight_board_default_RP2040.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -173,9 +199,11 @@ This pinout can be configured as needed in madflight_board_default_RP2040.h
 
 <img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
-## Default Pinout for WeActStudio STM32F411 Black Pill (40 pin)
 
-This pinout can be configured as needed in madflight_board_default_STM32.h
+<a name="pinoutSTM32"></a>
+## Default Pinout for STM32 - WeAct STM32F411 Black Pill (40 pin)
+
+This pinout can be changed as needed in madflight_board_default_STM32.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -209,9 +237,10 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 <img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
 
 
-## Default Pinout for ESP32-S3 DevKitC-1 (44 pin)
+<a name="pinoutESP32-S3"></a>
+## Default Pinout for ESP32-S3 - DevKitC-1 (44 pin)
 
-This pinout can be configured as needed in madflight_board_default_ESP32-S3.h
+This pinout can be changed as needed in madflight_board_default_ESP32-S3.h
 
 | Function | GPIO | Board | GPIO | Function |
 | --: | :-- | -- |--: | :-- |
@@ -243,9 +272,15 @@ GND | G | USB connector | G | GND
 <img src="doc/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
 
 
+<a name="pinoutFC"></a>
+## Pinout for Of-the-shelf Flight Controllers
+
+In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file you want to use, and modify the 'USE' defines like IMU_USE to match your board. 
+
+<a name="changes"></a>
 ## Changes from dRehmFlight
 
-- Add support for RP2040, ESP32, and STM32
+- Add support for RP2040, ESP32, ESP32-S3, and STM32
 - Dropped Teensy support, but could be re-added by creating a hw_TEENSY.h file. (I just don't have the hardware to test on)
 - Moved all hardware specific code to hw_XXX.h and added hardware specific libraries
 - Reduced the number of global variables
@@ -255,6 +290,8 @@ GND | G | USB connector | G | GND
 - Loop rate set to 1kHz to match IMU sensor rate
 - Interrupt driven IMU operation by default, but setup/loop still possible
 
+
+<a name="github"></a>
 ## Flight Controllers on Github
 
 In increasing order of complexity.
@@ -268,6 +305,8 @@ In increasing order of complexity.
 - [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 F4/F7/H7 or Linux based
 
+
+<a name="disclamer"></a>
 ## Disclaimer
 
 This code is a shared, open source flight controller for small micro aerial vehicles and is intended to be modified to suit your needs. It is NOT intended to be used on manned vehicles. I do not claim any responsibility for any damage or injury that may be inflicted as a result of the use of this code. Use and modify at your own risk. More specifically put:
