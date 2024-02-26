@@ -49,14 +49,17 @@ IST8310 | | I2C | 200 Hz, 0.3µT/LSB, 14-bit
 
 ## Barometer
 
-| Part    | Breakout Board? | Interface | Notes |
-|-|-|-|-|
-DPS310    | $3 | SPI, I2C | Relative precision: 6Pa 0.5m, Resolution 0.06Pa, Used in current commercial FC
+| Part    | Breakout Board? | Interface | Relative Precision | Resolution | Measurement Rate | RMS Noise | Notes |
+|-|-|-|-|-|-|-|-|
+DPS310    | $3 | SPI, I2C | 6Pa 50cm| 0.06Pa||| Used in current commercial FC
 BMP180    | $2
-BMP280    | $2 | | Used in current commercial FC
+BMP280    | $2 | | 12Pa 100cm| 0.18Pa| 157Hz | 1.3Pa| Used in current commercial FC
 BMP388    | $8 | SPI, I2C 
-MS5611    | $4 | SPI 20MHz, I2C | Resolution RMS: 0.012mbar, 1.2Pa, 10cm @ 100Hz
+MS5611    | $4 | SPI 20MHz, I2C ||1.2Pa 10cm|120Hz
 SPL06-001 | no
+LPS22HB   | $6 | SPI, I2C |10Pa 80cm|0.025Pa|75Hz|0.75Pa
+LPS22DF   | $14 | SPI, I2C |1Pa 8cm|0.025Pa|200Hz|0.34Pa
+ILPS22QS  | $14 | SPI, I2C |1.5Pa 12cm|0.025Pa|200Hz|0.34Pa
 
 ## Multi Sensor Modules
 
