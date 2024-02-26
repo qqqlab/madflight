@@ -13,10 +13,11 @@ An overview of available sensor boards.
 MPU-6000   | yes | SPI, I2C | 8k gyro, 1k acc, Released 2011, EOL
 MPU-6050   | yes | I2C | 8k gyro, 1k acc, Released 2011, EOL
 MPU-6500   | $2 | SPI, I2C | 8k gyro, 4k acc, noise: 10 mdps/&radic;Hz 300 µg/&radic;Hz, upgraded MPU-6000, Released 2014, NRND
-BMI160    | $2 | SPI, I2C | 3.2k gyro, 1.6k acc, noise: 8 mdps/&radic;Hz 180 µg/&radic;Hz
-BMI270    | no | SPI | 6k gyro, noise: 7 mdps/&radic;Hz 160 µg/&radic;Hz, Used in current commercial FC as replacement for MPU-6000/6500
-LSM6DS3   | $2 | | noise: 7 mdps/&radic;Hz 180 µg/&radic;Hz
-LSM6DSO   | $10 | | noise: 3.8 mdps/&radic;Hz 110 µg/&radic;Hz
+BMI160     | $2 | SPI, I2C | 3.2k gyro, 1.6k acc, noise: 8 mdps/&radic;Hz 180 µg/&radic;Hz
+BMI270     | no | SPI | 6k gyro, noise: 7 mdps/&radic;Hz 160 µg/&radic;Hz, Used in current commercial FC as replacement for MPU-6000/6500
+LSM6DS3    | $2 | | noise: 7 mdps/&radic;Hz 180 µg/&radic;Hz
+LSM6DSO    | $10 | | noise: 3.8 mdps/&radic;Hz 110 µg/&radic;Hz
+LSM6DSL    | | | 6.7k gyro, 6.7k acc, noise: 4 mdps/&radic;Hz 80 µg/&radic;Hz
 MPU-3000   | no | | Released 2011 (EOL)
 MPU-3050   | no | | Released 2011 (EOL)
 MPU-6886   | no
@@ -24,7 +25,7 @@ ICM-20602  | no
 ICM-20608  | no
 ICM-20649  | no | SPI, I2C | noise: 17.5 mdps/&radic;Hz 285 µg/&radic;Hz, NRND
 ICM-20689  | no 
-ICM-42688-P | no | SPI | 32k gyro, noise: 2.8 mdps/&radic;Hz 70 µg/&radic;Hz, Used in current high performance FC.
+ICM-42688-P | no | SPI | 32k gyro, noise: 2.8 mdps/&radic;Hz 70 µg/&radic;Hz, Used in current high performance FC
 
 ## 9-axis IMU
 
@@ -46,6 +47,7 @@ AK8963 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, integraded in MPU9250
 AK8975 | | I2C | 100 Hz, 0.3µT/LSB, 13-bit, integraded in MPU9150
 AK09916 | | I2C | 100 Hz, 0.15µT/LSB, 16-bit, integraded in ICM-20948
 IST8310 | | I2C | 200 Hz, 0.3µT/LSB, 14-bit
+LIS2MDL | | I2C | 100 Hz, 0.015µT/LSB, 16-bit
 
 ## Barometer
 
