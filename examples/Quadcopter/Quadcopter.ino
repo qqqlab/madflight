@@ -7,6 +7,8 @@
 How to use this quadcopter demo program 
 =======================================
 
+See http://madflight.com for detailed description
+
 Motor order diagram (Betaflight order)
 
       front
@@ -45,7 +47,7 @@ fast blinking - something is wrong, connect USB serial for info
 //--- IMU SENSOR
 #define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
-//if not sure what is needed: try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
+//If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
 #define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
 
 //--- GPS
@@ -120,43 +122,43 @@ const int out_MOTOR_COUNT = 4;
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
 
 //Low Pass Filter parameters. Do not touch unless you know what you are doing.
-float LP_accel = 70;          //Accelerometer lowpass filter cutoff frequency in Hz (default MPU6050: 50Hz, MPU9250: 70Hz)
-float LP_gyro = 60;           //Gyro lowpass filter cutoff frequency in Hz (default MPU6050: 35Hz, MPU9250: 60Hz)
-float LP_mag = 1e10;          //Magnetometer lowpass filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering)
-float LP_radio = 400;         //Radio input lowpass filter cutoff frequency in Hz (default 400Hz)
+float LP_accel       = 70;        //Accelerometer lowpass filter cutoff frequency in Hz (default MPU6050: 50Hz, MPU9250: 70Hz)
+float LP_gyro        = 60;        //Gyro lowpass filter cutoff frequency in Hz (default MPU6050: 35Hz, MPU9250: 60Hz)
+float LP_mag         = 1e10;      //Magnetometer lowpass filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering)
+float LP_radio       = 400;       //Radio input lowpass filter cutoff frequency in Hz (default 400Hz)
 
 //AHRS Parameters
-float ahrs_MadgwickB = 0.041;     //ahrs_Madgwick filter parameter
-float ahrs_Mahony2KP = (2.0f * 0.5f);		// Mahony: 2 * proportional gain (Kp)
-float ahrs_Mahony2KI = (2.0f * 0.0f);		// Mahony: 2 * integral gain (Ki)
+float ahrs_MadgwickB = 0.041;     //Madgwick filter parameter
+float ahrs_Mahony2KP = 2 * 0.5;		//Mahony: 2 * proportional gain (Kp)
+float ahrs_Mahony2KI = 2 * 0.0;		//Mahony: 2 * integral gain (Ki)
 
 //Controller parameters (take note of defaults before modifying!): 
-float i_limit = 25.0;         //Integrator saturation level, mostly for safety (default 25.0)
-float maxRoll = 30.0;         //Max roll angle in degrees for angle mode (maximum ~70 degrees)
-float maxPitch = 30.0;        //Max pitch angle in degrees for angle mode (maximum ~70 degrees)
-float maxRollRate = 30.0;     //Max roll rate in deg/sec for rate mode 
-float maxPitchRate = 30.0;    //Max pitch rate in deg/sec for rate mode
-float maxYawRate = 160.0;     //Max yaw rate in deg/sec for angle and rate mode
+float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
+float maxRoll        = 30.0;      //Max roll angle in degrees for angle mode (maximum ~70 degrees)
+float maxPitch       = 30.0;      //Max pitch angle in degrees for angle mode (maximum ~70 degrees)
+float maxRollRate    = 30.0;      //Max roll rate in deg/sec for rate mode 
+float maxPitchRate   = 30.0;      //Max pitch rate in deg/sec for rate mode
+float maxYawRate     = 160.0;     //Max yaw rate in deg/sec for angle and rate mode
 
-float Kp_roll_angle = 0.2;    //Roll P-gain - angle mode 
-float Ki_roll_angle = 0.3;    //Roll I-gain - angle mode
-float Kd_roll_angle = 0.05;   //Roll D-gain - angle mode (has no effect on control_Angle2)
-float B_loop_roll = 0.9;      //Roll damping term for control_Angle2(), lower is more damping (must be between 0 to 1)
-float Kp_pitch_angle = 0.2;   //Pitch P-gain - angle mode
-float Ki_pitch_angle = 0.3;   //Pitch I-gain - angle mode
-float Kd_pitch_angle = 0.05;  //Pitch D-gain - angle mode (has no effect on control_Angle2)
-float B_loop_pitch = 0.9;     //Pitch damping term for control_Angle2(), lower is more damping (must be between 0 to 1)
+float Kp_roll_angle  = 0.2;       //Roll P-gain - angle mode 
+float Ki_roll_angle  = 0.3;       //Roll I-gain - angle mode
+float Kd_roll_angle  = 0.05;      //Roll D-gain - angle mode (has no effect on control_Angle2)
+float B_loop_roll    = 0.9;       //Roll damping term for control_Angle2(), lower is more damping (must be between 0 to 1)
+float Kp_pitch_angle = 0.2;       //Pitch P-gain - angle mode
+float Ki_pitch_angle = 0.3;       //Pitch I-gain - angle mode
+float Kd_pitch_angle = 0.05;      //Pitch D-gain - angle mode (has no effect on control_Angle2)
+float B_loop_pitch   = 0.9;       //Pitch damping term for control_Angle2(), lower is more damping (must be between 0 to 1)
 
-float Kp_roll_rate = 0.15;    //Roll P-gain - rate mode
-float Ki_roll_rate = 0.2;     //Roll I-gain - rate mode
-float Kd_roll_rate = 0.0002;  //Roll D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
-float Kp_pitch_rate = 0.15;   //Pitch P-gain - rate mode
-float Ki_pitch_rate = 0.2;    //Pitch I-gain - rate mode
-float Kd_pitch_rate = 0.0002; //Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
+float Kp_roll_rate   = 0.15;      //Roll P-gain - rate mode
+float Ki_roll_rate   = 0.2;       //Roll I-gain - rate mode
+float Kd_roll_rate   = 0.0002;    //Roll D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
+float Kp_pitch_rate  = 0.15;      //Pitch P-gain - rate mode
+float Ki_pitch_rate  = 0.2;       //Pitch I-gain - rate mode
+float Kd_pitch_rate  = 0.0002;    //Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
 
-float Kp_yaw = 0.3;           //Yaw P-gain
-float Ki_yaw = 0.05;          //Yaw I-gain
-float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+float Kp_yaw         = 0.3;       //Yaw P-gain
+float Ki_yaw         = 0.05;      //Yaw I-gain
+float Kd_yaw         = 0.00015;   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 //========================================================================================================================//
 //                              DECLARE GLOBAL VARIABLES                                                                  //
@@ -257,7 +259,7 @@ void setup() {
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
 
-  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values.
+  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
   cli.calibrate_gyro();
 
   //set quarterion to initial yaw, so that AHRS settles faster
