@@ -6,29 +6,43 @@
 How to use this PID Tuning demo program 
 =======================================
 
-See http://madflight.com for detailed description.
+See https://madflight.com for detailed description.
 
-This is an extension of the Quadcopter.ino example. 
+This is an extension of the Quadcopter.ino example, it adds the option to change PID (or other) variables from your
+RC transmitter. The currently selected PID and it's value are reported back to the ELRS/CRSF transmitter via the 
+FlightMode telemetry sensor value.
 
-Use a 6-position switch on radio channel 6 to select the PID to change. Two toggle switches connected to channel 7 are used to 
-change the PID values. One toggle switch increases the PID value, the other decreases the value. Press both toggle switches 
-to reset the PID value to it's default.
+The PWM commands are:
 
-The currently selected PID and it's value are reported back to the ELRS/CRSF transmitter via the FlightMode telemetry sensor value.
+1020 First variable
+1180 Next variable
+1340 Previous variable
+1500 None
+1660 Secrease value
+1820 Increase value
+1980 Reset value
 
-EdgeTx CH6 mixer setup to emulate a 6-position switch with 3-pos SC + 2-pos SF to give Ardupilot 6-pos switch pwm: 1165,1295,1425,1555,1685,1815
- - Source:SC weight:52 offset:0
- - Source:SF weight:13 offset:-1 multiplex: add
-SC,SFdown gives rcin_aux = 0,2,4; SC,SFup gives rcin_aux = 1,3,5
-OR 
- - Source:SC Weight:26 Offset:-40 Switch:SFdown
- - Source:SC Weight:26 Offset:36 Switch:SFup Multiplex:Replace
-SC,SFdown gives rcin_aux = 0,1,2; SC,SFup gives rcin_aux = 3,4,5
+Setup your RC transmitter to generate these PWM commands on channel 7 from combinations of switches/toggles/trims, 
+and display the FlightMode sensor value on the transmitter.
 
-EdgeTX CH7 mixer setup with two toggle switches SA and SD 
- - Source:MAX Weight:50 Offset:0 Trim:Off Switch:SDdown
- - Source:SD Weight:75 Offset:25 Trim:Off Switch:SAdown Multiplex:Replace
-SA pressed is pwm 1250 (decrease value), SD pressed is 1750 (increase value), both pressed is 2000 (reset value), none pressed is 1500 (keep value)
+For example: EdgeTX mixer setup for 4 toggle switches SA-SD
+
+|Source|Weight|Offset|Switch|Multiplex|
+|------|------|------|------|---------|
+| MAX  |  16  |  16  |  SA  | Replace |
+|  SA  |  16  |  80  |  SB  | Replace |
+| MAX  | -16  | -16  |  SC  | Replace |
+|  SC  | -16  | -80  |  SD  | Replace |
+
+This sets up the commands as follows:
+
+SA    Decrease value
+SB    Increase value
+SA+SB Reset value
+SC    Previous variable
+SD    Next variable
+SC+SD First variable
+
 
 Motor order diagram (Betaflight order)
 
@@ -63,7 +77,7 @@ fast blinking - something is wrong, connect USB serial for info
 
 //--- RC RECEIVER
 #define RCIN_USE  RCIN_USE_CRSF //RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
-#define RCIN_NUM_CHANNELS  8 //number of receiver channels (minimal 6)
+#define RCIN_NUM_CHANNELS 7 //number of receiver channels
 
 //--- IMU SENSOR
 #define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
@@ -212,72 +226,87 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 //========================================================================================================================//
 //                              PID TUNING                                                                                //
 //========================================================================================================================//
+const int pidtune_channel = 7; 
+
 struct pidtune_s {
   String name;
   float *pvalue;
   float value_reset;
 };
 
-//uses 6 position flightmode switch(es)
-pidtune_s pidtune[] = {
-  {"RP",&Kp_ro_pi_angle, 0}, //SWAdown,SWBdown
-  {"YP",&Kp_yaw, 0},          //SWAdown,SWBup
-  {"RI",&Ki_ro_pi_angle, 0}, //SWAmid,SWBdown
-  {"YI",&Ki_yaw, 0},          //SWAmid,SWBup
-  {"RD",&Kd_ro_pi_angle, 0}, //SWAup,SWBdown
-  {"YD",&Kd_yaw, 0},          //SWAup,SWBup  
-};
-
-enum pidtune_state_e {
-  PIDTUNE_DEC,   //pwm 1250
-  PIDTUNE_KEEP,  //pwm 1500
-  PIDTUNE_INC,   //pwm 1750
-  PIDTUNE_RESET, //pwm 2000
-};
-
-const int pidtune_channel = 7; 
+//list of tunes
 const int pidtune_cnt = 6;
+pidtune_s pidtune[] = {
+  {"Pr",&Kp_ro_pi_angle, 0},
+  {"Ir",&Ki_ro_pi_angle, 0},
+  {"Dr",&Kd_ro_pi_angle, 0},
+  {"Py",&Kp_yaw, 0},
+  {"Iy",&Ki_yaw, 0},
+  {"Dy",&Kd_yaw, 0},
+};
+
+enum pidtune_command_e {
+  PIDTUNE_FIRSTVAR,   //PWM 1020
+  PIDTUNE_NEXTVAR,    //PWM 1180
+  PIDTUNE_PREVVAR,    //PWM 1340
+  PIDTUNE_NONE,       //PWM 1500
+  PIDTUNE_DECVALUE,   //PWM 1660
+  PIDTUNE_INCVALUE,   //PWM 1820
+  PIDTUNE_RESETVALUE, //PWM 1980
+  PIDTUNE_CMDCOUNT //number of commands
+};
+const int pidtune_pwm_min = 1020;
+const int pidtune_pwm_max = 1980;
+const int pidtune_pwm_spacing = (pidtune_pwm_max-pidtune_pwm_min) / (PIDTUNE_CMDCOUNT-1);
+int pidtune_idx = 0;
 
 void pidtune_setup() {
   for(int i=0;i<pidtune_cnt;i++) {
     pidtune[i].value_reset = *pidtune[i].pvalue;
   }
+  pidtune_idx = 0;
 }
 
 bool pidtune_update() {
-  static pidtune_state_e state_last = PIDTUNE_KEEP;
-  static int idx_last = rcin_aux;
+  static pidtune_command_e cmd_last = PIDTUNE_NONE;
 
-  //get current var to tune
-  int idx = constrain(rcin_aux,0,pidtune_cnt-1);
-  pidtune_s tunevar = pidtune[idx];
+  //get current variable
+  pidtune_s tunevar = pidtune[pidtune_idx];
 
-  //get current state
-  pidtune_state_e state = PIDTUNE_KEEP;
+  //get current command
   int pwm = rcin_pwm[pidtune_channel-1];
-  state = (pidtune_state_e) constrain((pwm-1125)/250, 0, 3);
-  
-  //update tune variable
-  bool updated = (idx != idx_last);
-  if(state_last == PIDTUNE_KEEP && state == PIDTUNE_DEC) {
+  pidtune_command_e cmd = (pidtune_command_e) constrain((pwm - pidtune_pwm_min + pidtune_pwm_spacing/2 ) / pidtune_pwm_spacing, 0, PIDTUNE_CMDCOUNT-1);
+
+  //process command
+  bool updated = false;
+  if(cmd == PIDTUNE_FIRSTVAR) {
+    pidtune_idx = 0;
+    updated = true;
+  } else if(cmd_last == PIDTUNE_NONE && cmd == PIDTUNE_NEXTVAR) {
+    pidtune_idx++;
+    if(pidtune_idx > pidtune_cnt-1) pidtune_idx = 0;
+    updated = true;
+  } else if(cmd_last == PIDTUNE_NONE && cmd == PIDTUNE_PREVVAR) {
+    pidtune_idx--;
+    if(pidtune_idx < 0) pidtune_idx = pidtune_cnt-1;
+    updated = true;
+  } else if(cmd_last == PIDTUNE_NONE && cmd == PIDTUNE_DECVALUE) {
     *tunevar.pvalue *= (1.0f/1.1f); //decrease by 10%
-     updated = true;
-  } else if(state_last == PIDTUNE_KEEP && state == PIDTUNE_INC) {
+    updated = true;
+  } else if(cmd_last == PIDTUNE_NONE && cmd == PIDTUNE_INCVALUE) {
     *tunevar.pvalue *= 1.1f; //increase by 10%
-     updated = true;    
-  } else if(state == PIDTUNE_RESET) {
+    updated = true;    
+  } else if(cmd == PIDTUNE_RESETVALUE) {
     *tunevar.pvalue = tunevar.value_reset;
-     updated = true;    
+    updated = true;    
   }
-  state_last = state;
-  idx_last = idx;
+  cmd_last = cmd;
 
   return updated;
 }
 
 String pidtune_status() {
-  int idx = constrain(rcin_aux,0,pidtune_cnt-1);
-  pidtune_s tunevar = pidtune[idx];
+  pidtune_s tunevar = pidtune[pidtune_idx];
   return tunevar.name + String(*tunevar.pvalue,5);
 }
 
