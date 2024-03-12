@@ -213,7 +213,7 @@ def convert(filename) :
     fprint( "//Include Libraries" )
     fprint( "#include <Wire.h>                      //I2C communication" )
     fprint( "#include <SPI.h>                       //SPI communication" )
-    fprint( "#include \"src/hw_STM32/STM32_PWM.h\"    //Servo and oneshot" )
+    fprint( "#include \"madflight/hw_STM32/STM32_PWM.h\"    //Servo and oneshot" )
 
     fprint( "" )
     fprint( "//Bus Setup" )

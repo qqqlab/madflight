@@ -76,7 +76,7 @@ class BMI270 {
         BMI270_REG_PWR_CONF = 0x7C,
         BMI270_REG_PWR_CTRL = 0x7D,
         BMI270_REG_CMD = 0x7E,
-    } bmi270Register_e;
+    } Register_e;
 
     // BMI270 register configuration values
     typedef enum {
@@ -99,7 +99,7 @@ class BMI270 {
         BMI270_VAL_FIFO_DOWNS = 0x00,            // select unfiltered gyro data with no downsampling (6.4KHz samples)
         BMI270_VAL_FIFO_WTM_0 = 0x06,            // set the FIFO watermark level to 1 gyro sample (6 bytes)
         BMI270_VAL_FIFO_WTM_1 = 0x00,            // FIFO watermark MSB
-    } bmi270ConfigValues_e;
+    } ConfigValues_e;
 
     typedef enum {
         GYRO_ODR_25_HZ = 6,
@@ -339,7 +339,7 @@ class BMI270 {
         _spi->beginTransaction(SPISettings(spi_freq, MSBFIRST, SPI_MODE3));
         digitalWrite(_csPin, LOW);
         _spi->transfer(0x80 | reg);
-        _spi->transfer(0); //dummy byte
+        _spi->transfer(0); //dummy byte --- BMI270 specific ---
         for (uint32_t k=0; k<count; k++) {
             data[k] = _spi->transfer(0);
         }
