@@ -1,3 +1,4 @@
+on: [push, pull_request]
 jobs:
   compile-sketches:
     runs-on: ubuntu-latest
