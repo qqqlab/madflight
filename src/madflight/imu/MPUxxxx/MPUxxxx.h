@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "MPU_Interface.h"
+#include "MPU_interface.h"
 #include "AK8963.h"
 #include "AK8975.h"
 
