@@ -1,10 +1,18 @@
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - ".github/workflows/compile-sketches.yml"
+      - "examples/**"
+      - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/compile-sketches.yml"
+      - "examples/**"
+      - "src/**"
 jobs:
   compile-sketches:
     runs-on: ubuntu-latest
     steps: 
-      - uses: arduino/compile-sketches@v1.1.0
+      - uses: arduino/compile-sketches@v1
         with:
           fqbn: esp32:esp32:esp32
-          sketch-paths: |
-            - "examples/01.Quadcopter"
