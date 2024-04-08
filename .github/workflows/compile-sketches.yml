@@ -1,14 +1,4 @@
-on:
-  push:
-    paths:
-      - ".github/workflows/compile-sketches.yml"
-      - "examples/**"
-      - "src/**"
-  pull_request:
-    paths:
-      - ".github/workflows/compile-sketches.yml"
-      - "examples/**"
-      - "src/**"
+on: [push, pull_request]
 jobs:
   compile-sketches:
     runs-on: ubuntu-latest
