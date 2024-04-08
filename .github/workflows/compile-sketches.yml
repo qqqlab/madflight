@@ -2,6 +2,6 @@ jobs:
   compile-sketches:
     runs-on: ubuntu-latest
     steps: 
-      uses: arduino/compile-sketches@v1.1.0
-      with:
-        fqbn: esp32
+      - uses: arduino/compile-sketches@v1.1.0
+        with:
+          fqbn: esp32
