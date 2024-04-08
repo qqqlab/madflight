@@ -1,29 +1,7 @@
- # - name: Compile Arduino Sketches
-  # You may pin to the exact commit or the version.
-  # uses: arduino/compile-sketches@8fd840319c8c9b8617a42cc731092a3350599f35
-  uses: arduino/compile-sketches@v1.1.0
-  with:
-    # Version of Arduino CLI to use when building
-    cli-version: # default is latest
-    # Full qualified board name, with Boards Manager URL if needed
-    fqbn: # default is arduino:avr:uno
-    # YAML-format list of library dependencies to install
-    libraries: # default is - source-path: ./
-    # YAML-format list of platform dependencies to install
-    platforms: # default is 
-    # YAML-format list of paths containing sketches to compile.
-    sketch-paths: # default is - examples
-    # YAML-format list of flags to add to the Arduino CLI sketch compilation command.
-    cli-compile-flags: # optional, default is 
-    # Set to true to show verbose output in the log
-    verbose: # default is false
-    # Path in which to save a JSON formatted file containing data from the sketch compilations
-    sketches-report-path: # default is sketches-reports
-    # GitHub access token used to get information from the GitHub API.
-    # Only needed if you are using the deltas report feature in a private repository.
-    github-token: # default is 
-    # Set to true to cause the action to determine the change in memory usage and compiler warnings of the compiled sketches between the head and base refs of a PR and the immediate parent commit of a push
-    enable-deltas-report: # default is false
-    # Set to true to cause the action to record the compiler warning count for each sketch compilation in the sketches report
-    enable-warnings-report: # default is false
-          
+jobs:
+  compile-sketches:
+    runs-on: ubuntu-latest
+    steps: 
+      uses: arduino/compile-sketches@v1.1.0
+      with:
+        fqbn: esp32
