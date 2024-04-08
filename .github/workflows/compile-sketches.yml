@@ -5,4 +5,4 @@ jobs:
     steps: 
       - uses: arduino/compile-sketches@v1.1.0
         with:
-          fqbn: esp32
+          fqbn: esp32:esp32:esp32
