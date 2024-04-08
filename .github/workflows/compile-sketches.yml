@@ -1,4 +1,4 @@
- - name: Compile Arduino Sketches
+ # - name: Compile Arduino Sketches
   # You may pin to the exact commit or the version.
   # uses: arduino/compile-sketches@8fd840319c8c9b8617a42cc731092a3350599f35
   uses: arduino/compile-sketches@v1.1.0
