@@ -238,7 +238,7 @@ class RcinPPM : public Rcin {
       attachInterrupt(digitalPinToInterrupt(HW_PIN_RCIN_RX), getPPM, CHANGE);
     }
 
-    bool update() {
+    bool _update() {
       pwm[0] = channel_1_raw;
       pwm[1] = channel_2_raw;
       pwm[2] = channel_3_raw;
