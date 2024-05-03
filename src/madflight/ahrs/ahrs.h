@@ -56,11 +56,12 @@ void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float 
   qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
   qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
 
-  //Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-  if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
+  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
+  float alen2 = ax * ax + ay * ay + az * az;
+  if (0.81 <= alen2 && alen2 <= 1.21) {
+    
     //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(ax * ax + ay * ay + az * az);
+    recipNorm = 1.0/sqrtf(alen2);
     ax *= recipNorm;
     ay *= recipNorm;
     az *= recipNorm;
@@ -155,10 +156,12 @@ void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float 
   qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
   qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
 
-  //Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-  if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
+  float alen2 = ax * ax + ay * ay + az * az;
+  if (0.81 <= alen2 && alen2 <= 1.21) {
+    
     //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(ax * ax + ay * ay + az * az);
+    recipNorm = 1.0/sqrtf(alen2);
     ax *= recipNorm;
     ay *= recipNorm;
     az *= recipNorm;
@@ -245,12 +248,12 @@ void _ahrs_Mahony9DOF(float gx, float gy, float gz, float ax, float ay, float az
 	gy *= 0.0174533f;
 	gz *= 0.0174533f;
 
-	// Compute feedback only if accelerometer measurement valid
-	// (avoids NaN in accelerometer normalisation)
-	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
-		// Normalise accelerometer measurement
-		recipNorm = 1.0f/sqrtf(ax * ax + ay * ay + az * az);
+  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
+  float alen2 = ax * ax + ay * ay + az * az;
+  if (0.81 <= alen2 && alen2 <= 1.21) {
+    
+    //Normalise accelerometer measurement
+    recipNorm = 1.0/sqrtf(alen2);
 		ax *= recipNorm;
 		ay *= recipNorm;
 		az *= recipNorm;
@@ -345,12 +348,12 @@ void _ahrs_Mahony6DOF(float gx, float gy, float gz, float ax, float ay, float az
 	gy *= 0.0174533f;
 	gz *= 0.0174533f;
 
-	// Compute feedback only if accelerometer measurement valid
-	// (avoids NaN in accelerometer normalisation)
-	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
-
-		// Normalise accelerometer measurement
-		recipNorm = 1.0f/sqrtf(ax * ax + ay * ay + az * az);
+  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
+  float alen2 = ax * ax + ay * ay + az * az;
+  if (0.81 <= alen2 && alen2 <= 1.21) {
+    
+    //Normalise accelerometer measurement
+    recipNorm = 1.0/sqrtf(alen2);
 		ax *= recipNorm;
 		ay *= recipNorm;
 		az *= recipNorm;
