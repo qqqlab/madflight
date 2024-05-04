@@ -85,13 +85,13 @@ class MPUXXXX {
       if(_type == MPU6050 && wai != 0x68) {
         Serial.printf("WARNING: MPU6050 whoami mismatch, got:0x%02X expected:0x68\n",wai);
       }
-      if(_type==MPU6500 && wai != 0x70) {
+      if(_type == MPU6500 && wai != 0x70) {
         Serial.printf("WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70\n",wai);
       }
       if(_type == MPU9150 && wai != 0x68) {
         Serial.printf("WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68\n",wai);
       }  
-      if(_type==MPU9250 && wai != 0x71) {
+      if(_type == MPU9250 && wai != 0x71) {
         if(wai == 0x70) {
             Serial.printf("WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500\n",wai);
         }else{
@@ -258,13 +258,13 @@ class MPUXXXX {
     //read sensor data (axis as defined by sensor)
     void read9()
     {
-        uint8_t response[20];
+        uint8_t response[20]; //response is 21 bytes = 6 acc + 2 temp + 6 gyro + 6 mag + 1 magstatus (last byte not retrieved)
         int16_t bit_data;
         float data;
         int i,pos;
 
         _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,20);
+        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,20); 
         // Get accelerometer value (6 bytes)
         pos = 0;
         for(i = 0; i < 3; i++) {
@@ -292,6 +292,11 @@ class MPUXXXX {
             mag[i] = data * mag_multiplier[i];
             pos += 2;
         }
-    }
 
+        //this hack appears to help to get more reasonable mag values from MPU9150
+        if(_type == MPU9150) {
+          _iface->WriteReg(MPUREG_ACCEL_XOUT_H+15,0xff);
+        }
+
+    }
 };

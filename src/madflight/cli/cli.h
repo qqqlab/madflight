@@ -330,6 +330,12 @@ public:
   void calibrate_Magnetometer() {
     float bias[3], scale[3];
 
+
+    if(mag.installed()) {
+      Serial.print("EXT ");
+    }else if(imu.hasMag()) {
+      Serial.print("IMU ");
+    }
     Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
     if( _calibrate_Magnetometer(bias, scale) ) {
       Serial.println("Calibration Successful!");
@@ -352,8 +358,6 @@ public:
     else {
       Serial.println("ERROR: No magnetometer");
     }
-
-    while(1); //Halt code so it won't enter main loop until this function commented out
   }
 
 private:
@@ -379,18 +383,32 @@ private:
   // Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
   bool _calibrate_Magnetometer(float bias[3], float scale[3]) 
   {
+    const int sample_interval = 10000; //in us
     const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
     const float deltaThresh = 0.3f; //uT
     const float B_coeff = 0.125;
 
+    float mlast[3] = {0};
     float m[3] = {0};
     int counter;
     float m_filt[3];
     float m_max[3];
     float m_min[3];
 
-    // get a starting set of data (and test if mag is present)
+    //exit if no mag present
     if(!_calibrate_Magnetometer_ReadMag(m)) return false;
+
+    // get starting set of data
+    for(int i=0;i<50;i++) {
+      _calibrate_Magnetometer_ReadMag(mlast);
+      delayMicroseconds(sample_interval);
+      _calibrate_Magnetometer_ReadMag(m);
+      delayMicroseconds(sample_interval);
+      if( abs(m[0] - mlast[0]) < 20 && abs(m[1] - mlast[1]) && abs(m[2] - mlast[2]) && m[0] != 0  && m[1] != 0 && m[2] != 0) break;
+    }
+    for(int i=0;i<3;i++) mlast[i] = m[i];
+    
+    //save starting data
     for(int i=0;i<3;i++) {
       m_max[i] = m[i];
       m_min[i] = m[i];
@@ -399,30 +417,35 @@ private:
 
     // collect data to find max / min in each channel
     // sample counter times, restart sampling when a min/max changed at least deltaThresh uT
-    uint32_t start_time = millis();
+    uint32_t start_time = millis()-1000;
     counter = 0;
+    uint32_t sample_time = micros();
     while (counter < maxCounts) {
+      while(micros() - sample_time < sample_interval); //sample at 100Hz
+      sample_time = micros();
       _calibrate_Magnetometer_ReadMag(m);
-      for(int i=0;i<3;i++) {
-        m_filt[i] = m_filt[i] * (1 - B_coeff) + m[i] * B_coeff;
-        if (m_max[i] < m_filt[i]) {
-          float delta =  m_filt[i] - m_max[i];
-          if (delta > deltaThresh) counter = 0;
-          m_max[i] = m_filt[i];        
+      if( abs(m[0] - mlast[0]) < 20 && abs(m[1] - mlast[1]) && abs(m[2] - mlast[2]) && m[0] != 0  && m[1] != 0 && m[2] != 0) {
+        for(int i=0;i<3;i++) mlast[i] = m[i];
+        for(int i=0;i<3;i++) {
+          m_filt[i] = m_filt[i] * (1 - B_coeff) + m[i] * B_coeff;
+          if (m_max[i] < m_filt[i]) {
+            float delta =  m_filt[i] - m_max[i];
+            if (delta > deltaThresh) counter = 0;
+            m_max[i] = m_filt[i];
+          }
+          if (m_min[i] > m_filt[i]) {
+            float delta = m_min[i] - m_filt[i];
+            if (delta > deltaThresh) counter = 0;
+            m_min[i] = m_filt[i];
+          }
         }
-        if (m_min[i] > m_filt[i]) {
-          float delta = m_min[i] - m_filt[i];
-          if (delta > deltaThresh) counter = 0;
-          m_min[i] = m_filt[i];
-        }
+        counter++;
       }
-      counter++;
-      delay(10); //sample rate = 100Hz
-
+      
       //print progress
       if(millis() - start_time > 1000) {
         start_time = millis();
-        Serial.printf("xmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
+        Serial.printf("cnt:%d\txmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", counter, m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
       }
     }
 
