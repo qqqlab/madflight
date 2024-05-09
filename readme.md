@@ -38,7 +38,7 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 
 - Development board: 
   - RP2040 (e.g. Raspberry Pi Pico)
-  - or ESP32 (e.g. Espressiv DevKitC)
+  - or ESP32/ESP32-S3 (e.g. Espressiv DevKitC)
   - or STM32 (e.g. Black Pill or a commercial flight controller)
 - SPI IMU sensor (BMI270, MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
 - RC Receiver: ELRS, CRSF, SBUS, DMSX, or PPM
