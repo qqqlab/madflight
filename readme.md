@@ -12,6 +12,12 @@ This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight con
 
 I enjoy hacking with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
 
+## Documentation
+
+For full documention see [madflight.com](https://madflight.com) and the source code itself.
+
+## Quick Start
+
 [Required Hardware](#hardware)  
 [Getting Started](#gettingstarted)  
 [Safety First](#safetyfirst)  
@@ -304,6 +310,7 @@ In increasing order of complexity.
 - [Betaflight](https://github.com/betaflight/betaflight) STM32 F4/F7/H7
 - [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
 - [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 F4/F7/H7 or Linux based
+- [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) STM32 F4/F7/H7
 
 
 <a name="disclamer"></a>
