@@ -20,43 +20,93 @@
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-const int HW_PIN_LED      = PC13;
-const int HW_LED_ON       = 0; //0:low is on, 1:high is on
+#ifndef HW_OUT_COUNT
+  #define HW_PIN_LED             PC13
+#endif
+#ifndef HW_LED_ON
+  #define HW_LED_ON                 0 //0:low is on, 1:high is on
+#endif
 
-//IMU SPI: (SPI1)
-const int HW_PIN_SPI_MISO = PA6;
-const int HW_PIN_SPI_MOSI = PA7;
-const int HW_PIN_SPI_SCLK = PA5;
-const int HW_PIN_IMU_CS   = PA4;
-const int HW_PIN_IMU_EXTI = PB10;
+//IMU SPI:
+#ifndef HW_PIN_SPI_MOSI
+  #define HW_PIN_SPI_MOSI         PA6
+#endif
+#ifndef HW_PIN_SPI_MISO
+  #define HW_PIN_SPI_MISO         PA7
+#endif
+#ifndef HW_PIN_SPI_SCLK
+  #define HW_PIN_SPI_SCLK         PA5
+#endif
+#ifndef HW_PIN_IMU_CS
+  #define HW_PIN_IMU_CS           PA4
+#endif
+#ifndef HW_PIN_IMU_EXTI
+  #define HW_PIN_IMU_EXTI        PB10
+#endif
 
-//BARO/MAG I2C: (I2C1)
-const int HW_PIN_I2C_SDA  = PB6;
-const int HW_PIN_I2C_SCL  = PB7;
+//BARO/MAG I2C:
+#ifndef HW_PIN_I2C_SDA
+  #define HW_PIN_I2C_SDA          PB6
+#endif
+#ifndef HW_PIN_I2C_SCL
+  #define HW_PIN_I2C_SCL          PB7
+#endif
 
 //Outputs:
-const int HW_OUT_COUNT    = 6;
-const int HW_PIN_OUT[HW_OUT_COUNT] = {PB2,PB5,PA8,PA9,PA10,PB8};
+#ifndef HW_OUT_COUNT
+  #define HW_OUT_COUNT              6
+#endif
+#ifndef HW_PIN_OUT_LIST
+  #define HW_PIN_OUT_LIST {PB2,PB5,PA8,PA9,PA10,PB8}
+#endif
+
+//Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 
 //RC Receiver: (SERIAL1)
-const int HW_PIN_RCIN_RX  = PA3;
-const int HW_PIN_RCIN_TX  = PA2;
-const int HW_PIN_RCIN_INVERTER = -1;
+#ifndef HW_PIN_RCIN_RX
+  #define HW_PIN_RCIN_RX           PA3 //also used as PPM input
+#endif
+#ifndef HW_PIN_RCIN_TX
+  #define HW_PIN_RCIN_TX           PA2
+#endif
+#ifndef HW_PIN_RCIN_INVERTER
+  #define HW_PIN_RCIN_INVERTER      -1
+#endif
 
 //GPS: (SERIAL3)
-const int HW_PIN_GPS_RX   = PB3;
-const int HW_PIN_GPS_TX   = PA15;
-const int HW_PIN_GPS_INVERTER = -1;
+#ifndef HW_PIN_GPS_RX
+  #define HW_PIN_GPS_RX            PB3
+#endif
+#ifndef HW_PIN_GPS_TX
+  #define HW_PIN_GPS_TX           PA15
+#endif
+#ifndef HW_PIN_GPS_INVERTER
+  #define HW_PIN_GPS_INVERTER       -1
+#endif
 
-//Battery ADC (uncomment at least one pin to enable the battery monitor)
-#define HW_PIN_BAT_V PB0
-#define HW_PIN_BAT_I PB1
+//Battery ADC
+#ifndef HW_PIN_BAT_V
+  #define HW_PIN_BAT_V            PB0
+#endif
+#ifndef HW_PIN_BAT_I
+  #define HW_PIN_BAT_I            PB1
+#endif
 
 //BlackBox SPI:
-const int HW_PIN_SPI2_MISO = -1;
-const int HW_PIN_SPI2_MOSI = -1;
-const int HW_PIN_SPI2_SCLK = -1;
-const int HW_PIN_BB_CS     = -1;
+#ifndef HW_PIN_SPI2_MISO
+  #define HW_PIN_SPI2_MISO         -1
+#endif
+#ifndef HW_PIN_SPI2_MOSI
+  #define HW_PIN_SPI2_MOSI         -1
+#endif
+#ifndef HW_PIN_SPI2_SCLK
+  #define HW_PIN_SPI2_SCLK         -1
+#endif
+#ifndef HW_PIN_BB_CS
+  #define HW_PIN_BB_CS             -1
+#endif
+
+const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 //Include Libraries
 #include <Wire.h>                      //I2C communication

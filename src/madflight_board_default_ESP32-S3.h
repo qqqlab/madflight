@@ -32,41 +32,87 @@ Programming/debugging:
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-const int HW_PIN_LED      = 38; //Note: plus RGB_LED on pin 48, some versions have RGB_LED on pin 38 and no LED
-const int HW_LED_ON       =  1; //0:low is on, 1:high is on
+#ifndef HW_OUT_COUNT
+  #define HW_PIN_LED               38 //Note: plus RGB_LED on pin 48, some versions have RGB_LED on pin 38 and no LED
+#endif
+#ifndef HW_LED_ON
+  #define HW_LED_ON                 1 //0:low is on, 1:high is on
+#endif
 
 //IMU SPI:
-const int HW_PIN_SPI_MOSI = 11;
-const int HW_PIN_SPI_MISO = 12;
-const int HW_PIN_SPI_SCLK = 13;
-const int HW_PIN_IMU_CS   = 10;
-const int HW_PIN_IMU_EXTI = 14;
+#ifndef HW_PIN_SPI_MOSI
+  #define HW_PIN_SPI_MOSI          11
+#endif
+#ifndef HW_PIN_SPI_MISO
+  #define HW_PIN_SPI_MISO          12
+#endif
+#ifndef HW_PIN_SPI_SCLK
+  #define HW_PIN_SPI_SCLK          13
+#endif
+#ifndef HW_PIN_IMU_CS
+  #define HW_PIN_IMU_CS            10
+#endif
+#ifndef HW_PIN_IMU_EXTI
+  #define HW_PIN_IMU_EXTI          14
+#endif
 
 //BARO/MAG I2C:
-const int HW_PIN_I2C_SDA  =  8;
-const int HW_PIN_I2C_SCL  =  9;
+#ifndef HW_PIN_I2C_SDA
+  #define HW_PIN_I2C_SDA            8
+#endif
+#ifndef HW_PIN_I2C_SCL
+  #define HW_PIN_I2C_SCL            9
+#endif
 
 //Outputs:
-const int HW_OUT_COUNT    =  6;
-const int HW_PIN_OUT[HW_OUT_COUNT] = {4,5,6,7,15,16}; 
+#ifndef HW_OUT_COUNT
+  #define HW_OUT_COUNT             6
+#endif
+#ifndef HW_PIN_OUT_LIST
+  #define HW_PIN_OUT_LIST {4,5,6,7,15,16}
+#endif
+
+//Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 
 //RC Receiver:
-const int HW_PIN_RCIN_RX  = 18; //also used as PPM input
-const int HW_PIN_RCIN_TX  = 17;
+#ifndef HW_PIN_RCIN_RX
+  #define HW_PIN_RCIN_RX           18 //also used as PPM input
+#endif
+#ifndef HW_PIN_RCIN_TX
+  #define HW_PIN_RCIN_TX           17
+#endif
 
 //GPS:
-const int HW_PIN_GPS_RX   =  3;
-const int HW_PIN_GPS_TX   = 46;
+#ifndef HW_PIN_GPS_RX
+  #define HW_PIN_GPS_RX             3
+#endif
+#ifndef HW_PIN_GPS_TX
+  #define HW_PIN_GPS_TX            46
+#endif
 
 //Battery ADC
-const int HW_PIN_BAT_V    = -1;
-const int HW_PIN_BAT_I    = -1;
+#ifndef HW_PIN_BAT_V
+  #define HW_PIN_BAT_V             -1
+#endif
+#ifndef HW_PIN_BAT_I
+  #define HW_PIN_BAT_I             -1
+#endif
 
 //BlackBox SPI:
-const int HW_PIN_SPI2_MISO = -1;
-const int HW_PIN_SPI2_MOSI = -1;
-const int HW_PIN_SPI2_SCLK = -1;
-const int HW_PIN_BB_CS     = -1;
+#ifndef HW_PIN_SPI2_MISO
+  #define HW_PIN_SPI2_MISO         -1
+#endif
+#ifndef HW_PIN_SPI2_MOSI
+  #define HW_PIN_SPI2_MOSI         -1
+#endif
+#ifndef HW_PIN_SPI2_SCLK
+  #define HW_PIN_SPI2_SCLK         -1
+#endif
+#ifndef HW_PIN_BB_CS
+  #define HW_PIN_BB_CS             -1
+#endif
+
+const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 
 /*--------------------------------------------------------------------------------------------------

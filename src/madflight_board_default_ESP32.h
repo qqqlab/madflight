@@ -6,44 +6,87 @@
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-const int HW_PIN_LED      =  2; //Note: ESP32 DevKitC has no on-board LED
-const int HW_LED_ON       =  1; //0:low is on, 1:high is on
+#ifndef HW_OUT_COUNT
+  #define HW_PIN_LED                2 //Note: ESP32 DevKitC has no on-board LED
+#endif
+#ifndef HW_LED_ON
+  #define HW_LED_ON                 1 //0:low is on, 1:high is on
+#endif
 
 //IMU SPI:
-const int HW_PIN_SPI_MOSI = 21; //   defaults: VSPI 23, HSPI 13
-const int HW_PIN_SPI_MISO = 36; //VP defaults: VSPI 19, HSPI 12
-const int HW_PIN_SPI_SCLK = 19; //   defaults: VSPI 18, HSPI 14
-const int HW_PIN_IMU_CS   = 18; //   defaults: VSPI  5, HSPI 15
-const int HW_PIN_IMU_EXTI = 39; //VN only used when USE_IMU_INTERRUPT is defined
+#ifndef HW_PIN_SPI_MOSI
+  #define HW_PIN_SPI_MOSI          21 //   defaults: VSPI 23, HSPI 13
+#endif
+#ifndef HW_PIN_SPI_MISO
+  #define HW_PIN_SPI_MISO          36 //VP defaults: VSPI 19, HSPI 12
+#endif
+#ifndef HW_PIN_SPI_SCLK
+  #define HW_PIN_SPI_SCLK          19 //   defaults: VSPI 18, HSPI 14
+#endif
+#ifndef HW_PIN_IMU_CS
+  #define HW_PIN_IMU_CS            18 //   defaults: VSPI  5, HSPI 15
+#endif
+#ifndef HW_PIN_IMU_EXTI
+  #define HW_PIN_IMU_EXTI          39 //VN only used when USE_IMU_INTERRUPT is defined
+#endif
 
 //BARO/MAG I2C:
-const int HW_PIN_I2C_SDA  = 23; //default: Wire 21
-const int HW_PIN_I2C_SCL  = 22; //default: Wire 22
+#ifndef HW_PIN_I2C_SDA
+  #define HW_PIN_I2C_SDA           23 //default: Wire 21
+#endif
+#ifndef HW_PIN_I2C_SCL
+  #define HW_PIN_I2C_SCL           22 //default: Wire 22
+#endif
 
 //Outputs:
-const int HW_OUT_COUNT    = 11;
-const int HW_PIN_OUT[HW_OUT_COUNT] = {33,25,26,27,14,12,13,15,0,4,16}; //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+#ifndef HW_OUT_COUNT
+  #define HW_OUT_COUNT             11
+#endif
+#ifndef HW_PIN_OUT_LIST
+  #define HW_PIN_OUT_LIST {33,25,26,27,14,12,13,15,0,4,16} //for ESP32 it is recommended to use only pins 2,4,12-19,21-23,25-27,32-33 for motors/servos
+#endif
 
 //Serial Debug on tx0 (pin 1), rx0 (pin 3) connected to serial->USB converter
 
 //RC Receiver:
-const int HW_PIN_RCIN_RX  = 35; //also used as PPM input
-const int HW_PIN_RCIN_TX  = 32;
+#ifndef HW_PIN_RCIN_RX
+  #define HW_PIN_RCIN_RX            5 //also used as PPM input
+#endif
+#ifndef HW_PIN_RCIN_TX
+  #define HW_PIN_RCIN_TX           32
+#endif
 
 //GPS:
-const int HW_PIN_GPS_RX   = 17;
-const int HW_PIN_GPS_TX   =  5;
+#ifndef HW_PIN_GPS_RX
+  #define HW_PIN_GPS_RX            17
+#endif
+#ifndef HW_PIN_GPS_TX
+  #define HW_PIN_GPS_TX             5
+#endif
 
 //Battery ADC
-const int HW_PIN_BAT_V    = 34;
-const int HW_PIN_BAT_I    = -1;
+#ifndef HW_PIN_BAT_V
+  #define HW_PIN_BAT_V             34
+#endif
+#ifndef HW_PIN_BAT_I
+  #define HW_PIN_BAT_I             -1
+#endif
 
 //BlackBox SPI:
-const int HW_PIN_SPI2_MISO = -1;
-const int HW_PIN_SPI2_MOSI = -1;
-const int HW_PIN_SPI2_SCLK = -1;
-const int HW_PIN_BB_CS     = -1;
+#ifndef HW_PIN_SPI2_MISO
+  #define HW_PIN_SPI2_MISO         -1
+#endif
+#ifndef HW_PIN_SPI2_MOSI
+  #define HW_PIN_SPI2_MOSI         -1
+#endif
+#ifndef HW_PIN_SPI2_SCLK
+  #define HW_PIN_SPI2_SCLK         -1
+#endif
+#ifndef HW_PIN_BB_CS
+  #define HW_PIN_BB_CS             -1
+#endif
 
+const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 
 /*--------------------------------------------------------------------------------------------------

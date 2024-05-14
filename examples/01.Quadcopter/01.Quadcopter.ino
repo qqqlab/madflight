@@ -33,6 +33,62 @@ blink interval longer than 1 second - loop() is taking too much time
 fast blinking - something is wrong, connect USB serial for info
 ##########################################################################################################################*/
 
+
+//========================================================================================================================//
+//                                                 PINS                                                                   //
+//========================================================================================================================//
+// PINS are setup in the board header file library/src/madflight_board_default_*.h, but you can use these defines to 
+// override the pins. The pin numbers below are the default for Raspberry Pi Pico
+
+//LED:
+//#define HW_PIN_LED       25
+//#define HW_LED_ON         1 //0:low is on, 1:high is on
+
+//IMU SPI:
+//#define HW_PIN_SPI_MISO  16
+//#define HW_PIN_SPI_MOSI  19
+//#define HW_PIN_SPI_SCLK  18
+//#define HW_PIN_IMU_CS    17
+//#define HW_PIN_IMU_EXTI  22 //external interrupt pin
+
+//I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
+//#define HW_PIN_I2C_SDA   20
+//#define HW_PIN_I2C_SCL   21
+
+//Outputs:
+//#define HW_OUT_COUNT     12 //number of outputs
+//#define HW_PIN_OUT_LIST  {2,3,4,5,6,7,10,11,12,13,14,15} //list of output pins
+
+//Serial debug on USB Serial port (no GPIO pins)
+
+//RC Receiver:
+//#define HW_PIN_RCIN_RX     1
+//#define HW_PIN_RCIN_TX     0
+//#define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
+
+//GPS:
+//#define HW_PIN_GPS_RX      9 
+//#define HW_PIN_GPS_TX      8
+//#define HW_PIN_GPS_INVERTER -1 //only used for STM32 targets
+
+//Battery ADC
+//#define HW_PIN_BAT_V      28
+//#define HW_PIN_BAT_I      -1
+
+//BlackBox SPI:
+//#define HW_PIN_SPI2_MISO  -1
+//#define HW_PIN_SPI2_MOSI  -1
+//#define HW_PIN_SPI2_SCLK  -1
+//#define HW_PIN_BB_CS      -1
+
+//========================================================================================================================//
+//                                                 BOARD                                                                  //
+//========================================================================================================================//
+// Uncomment/change the following #include to the flight controller you want to use, or leave commented out to use the
+// default board pinout (madflight_board_default_*.h). See library/madflight/src for all available boards
+
+//#include <madflight_board_betaflight_MTKS-MATEKH743.h>
+
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
@@ -67,18 +123,6 @@ fast blinking - something is wrong, connect USB serial for info
 
 //--- BLACKBOX LOGGER
 #define BB_USE  BB_USE_NONE //BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
-
-//========================================================================================================================//
-//                                                 BOARD                                                                  //
-//========================================================================================================================//
-// Uncomment/change the following #include to the flight controller you want to use, or leave commented out 
-// to use the default board pinout (madflight_board_default_XXX.h). See library/madflight/src for all available boards
-
-//#include <madflight_board_custom_DYST-DYSF4PRO_V2.h>
-//#include <madflight_board_betaflight_MTKS-MATEKH743.h>
-
-//Note: after the board include, you can override the sensors if needed. For example:
-//#define IMU_USE  IMU_USE_SPI_BMI270 //force use of BMI270 sensor, even if other sensor defined in the board header
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                       //
@@ -364,7 +408,7 @@ void imu_loop() {
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
 #ifdef USE_IMU_BUS_I2C
-  //if IMU uses i2c bus, then get i2c sensor readings in the imu_loop to prevent i2c bus. Or, put the imu on a separate i2c bus.
+  //if IMU uses i2c bus, then get i2c sensor readings in imu_loop() to prevent i2c bus collisions. Alternatively, put the IMU on a separate i2c bus.
   i2c_sensors_update();
 #endif
 
