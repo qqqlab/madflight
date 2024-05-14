@@ -32,7 +32,7 @@ Programming/debugging:
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-#ifndef HW_OUT_COUNT
+#ifndef HW_PIN_LED
   #define HW_PIN_LED               38 //Note: plus RGB_LED on pin 48, some versions have RGB_LED on pin 38 and no LED
 #endif
 #ifndef HW_LED_ON

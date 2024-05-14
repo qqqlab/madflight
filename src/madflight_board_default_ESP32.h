@@ -6,7 +6,7 @@
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-#ifndef HW_OUT_COUNT
+#ifndef HW_PIN_LED
   #define HW_PIN_LED                2 //Note: ESP32 DevKitC has no on-board LED
 #endif
 #ifndef HW_LED_ON
