@@ -23,11 +23,11 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 [Safety First](#safetyfirst)  
 [Software Design](#softwaredesign)  
 [Connecting the IMU Sensor](#connectsensor)  
-[ESP32 Pinout](#pinoutESP32)  
-[ESP32-S3 Pinout](#pinoutESP32-S3)  
-[RP2040 Pinout](#pinoutRP2040)  
-[STM32 Pinout](#pinoutSTM32)  
-[Of-the-shelf Flight Controller Pinout](#pinoutFC)  
+[Pinout ESP32](#pinoutESP32)  
+[Pinout ESP32-S3](#pinoutESP32-S3)  
+[Pinout RP2040](#pinoutRP2040)  
+[Pinout STM32](#pinoutSTM32)  
+[Pinout STM32 Of-the-shelf Flight Controllers](#pinoutFC)  
 [Changes from dRehmFlight](#changes)  
 [Flight Controllers on Github](#github)  
 [Disclaimer](#disclamer)  
@@ -140,12 +140,12 @@ I2C sensor:
 
 
 <a name="pinoutESP32"></a>
-## Default Pinout for ESP32 - DevKitC (38 pin)
+## Pinout ESP32
 
-This pinout can be changed as needed in madflight_board_default_ESP32.h
+Default pinout for ESP32, using the Espressiv ESP32 DevKitC (38 pin) board. This pinout is defined in madflight_board_default_ESP32.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | -- |--: | :-- |
+| --: | :-- | :--: |--: | :-- |
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
 | reset button | EN |                            | 23 | I2C_SDA
 | SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
@@ -164,92 +164,24 @@ This pinout can be changed as needed in madflight_board_default_ESP32.h
 | nc           | D2 9 flash |              | strap 15 | PWM8
 | nc           | D3 10 flash |           | flash 8 D1 | nc
 | nc           | CMD 11 flash |          | flash 7 D0 | nc
-| 5V in (*)    | 5V | USB connector     | flash 6 CLK | nc
+| 5V input (*) | 5V | USB connector     | flash 6 CLK | nc
 
 Note: During boot the input voltage levels (pull up/pull down) on strap pins have a configuration function, therefor these pins are used as output only.
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
+This pinout can be changed as needed in madflight_board_default_ESP32.h
+
 <img src="doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
 
-<a name="pinoutRP2040"></a>
-## Default Pinout for RP2040 - Raspberry Pi Pico (40 pin)
-
-This pinout can be changed as needed in madflight_board_default_RP2040.h
-
-| Function | GPIO | Board | GPIO | Function |
-| --: | :-- | -- |--: | :-- |
-|      RCIN_TX | 0   | USB connector | VBUS     | nc
-|      RCIN_RX | 1   |               | VSYS     | 5V input via diode (*)
-|            - | GND |               | GND      | -
-|         PWM1 | 2   |               | EN       | nc
-|         PWM2 | 3   |               | 3.3V out | 3V3
-|         PWM3 | 4   |               | VREF     | nc
-|         PWM4 | 5   |               | 28_A2    | BAT_V
-|            - | GND |               | GND      | -
-|         PWM5 | 6   |               | 27_A1    | FREE
-|         PWM6 | 7   |               | 26_A0    | FREE
-|       GPS_TX | 8   |               | RUN      | reset button to GND
-|       GPS_RX | 9   |               | 22       | IMU_EXTI
-|            - | GND |               | GND      | -
-|         PWM7 | 10  |               | 21       | I2C_SCL
-|         PWM8 | 11  |               | 20       | I2C_SDA
-|         PWM9 | 12  |               | 19       | SPI_MOSI
-|        PWM10 | 13  |               | 18       | SPI_SCLK
-|            - | GND |               | GND      | -
-|        PWM11 | 14  |               | 17       | IMU_CS
-|        PWM12 | 15  | JTAG pins     | 16       | SPI_MISO
-
-(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
-
-<img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
-
-
-<a name="pinoutSTM32"></a>
-## Default Pinout for STM32 - WeAct STM32F411 Black Pill (40 pin)
-
-This pinout can be changed as needed in madflight_board_default_STM32.h
-
-| Function | GPIO | Board | GPIO | Function |
-| --: | :-- | -- |--: | :-- |
-|            - | VB  |   SWD pins    | 3V3 | -
-|          LED | C13 |               | G   | -
-|         FREE | C14 |               | 5V  | 5V input (*)
-|         FREE | C15 |               | B9  | PWM10(t4)
-|            - | R   |               | B8  | PWM9(t4)
-|         FREE | A0  |               | B7  | I2C_SCL
-|         FREE | A1  |               | B6  | I2C_SDA
-|       GPS_TX | A2  |               | B5  | PWM8(t3)
-|       GPS_RX | A3  |               | B4  | PWM7(t3)
-|       IMU_CS | A4  |               | B3  | RCIN_RX
-|     SPI_SCLK | A5  |               | A15 | RCIN_TX
-|     SPI_MISO | A6  |               | A12 | USB_DP
-|     SPI_MOSI | A7  |               | A11 | USB_DN
-|        BAT_I | B0  |               | A10 | PWM6(t1)
-|        BAT_V | B1  |               | A9  | PWM5(t1)
-|         FREE | B2  |               | A8  | PWM4(t1)
-|     IMU_EXTI | B10 |               | B15 | PWM3(t1)
-|            - | 3V3 |               | B14 | PWM2(t1)
-|            - | G   |               | B13 | PWM1(t1)
-|            - | 5V  | USB connector | B12 | FREE
-
-Board: LED: C13, key button: A0
-
-PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins connected to the same timer operate at the same frequency.
-
-(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
-
-<img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
-
-
 <a name="pinoutESP32-S3"></a>
-## Default Pinout for ESP32-S3 - DevKitC-1 (44 pin)
+## Pinout ESP32-S3
 
-This pinout can be changed as needed in madflight_board_default_ESP32-S3.h
+Default pinout for ESP32-S3, using the Espressiv ESP32-S3 DevKitC-1 (44 pin) board. This pinout is defined in madflight_board_default_ESP32-S3.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | -- |--: | :-- |
+| --: | :-- | :--: |--: | :-- |
 3V3 out | 3V3 | Antenna side | G | GND
 3V3 out | 3V3 | | 43 | TX serial debug UART port
 reset button | RST | | 44 | RX serial debug UART port
@@ -278,10 +210,83 @@ GND | G | USB connector | G | GND
 <img src="doc/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
 
 
-<a name="pinoutFC"></a>
-## Pinout for Of-the-shelf Flight Controllers
+<a name="pinoutRP2040"></a>
+## Pinout RP2040
 
-In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file you want to use, and modify the 'USE' defines like IMU_USE to match your board. 
+Default pinout for RP2040, using the Raspberry Pi Pico (40 pin) board. This pinout is defined in madflight_board_default_RP2040.h, but can be modified with `#define HW_PIN_XXX` in your program.
+
+| Function | GPIO | Board | GPIO | Function |
+| --: | :-- | :--: |--: | :-- |
+|      RCIN_TX | 0   | USB connector | VBUS     | nc
+|      RCIN_RX | 1   |               | VSYS     | 5V input via diode (*)
+|          GND | GND |               | GND      | GND
+|         PWM1 | 2   |               | EN       | nc
+|         PWM2 | 3   |               | 3.3V out | 3V3
+|         PWM3 | 4   |               | VREF     | nc
+|         PWM4 | 5   |               | 28_A2    | BAT_V
+|          GND | GND |               | GND      | GND
+|         PWM5 | 6   |               | 27_A1    | -
+|         PWM6 | 7   |               | 26_A0    | -
+|       GPS_TX | 8   |               | RUN      | reset button to GND
+|       GPS_RX | 9   |               | 22       | IMU_EXTI
+|          GND | GND |               | GND      | GND
+|         PWM7 | 10  |               | 21       | I2C_SCL
+|         PWM8 | 11  |               | 20       | I2C_SDA
+|         PWM9 | 12  |               | 19       | SPI_MOSI
+|        PWM10 | 13  |               | 18       | SPI_SCLK
+|          GND | GND |               | GND      | GND
+|        PWM11 | 14  |               | 17       | IMU_CS
+|        PWM12 | 15  | JTAG pins     | 16       | SPI_MISO
+
+Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and have the same frequency.
+
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
+
+<img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
+
+
+<a name="pinoutSTM32"></a>
+## Pinout STM32
+
+Default pinout for STM32, using the WeAct STM32F411 Black Pill (40 pin) board. This pinout is defined in madflight_board_default_STM32.h, but can be modified with `#define HW_PIN_XXX` in your program.
+
+| Function | GPIO | Board | GPIO | Function |
+| --: | :-- | :--: |--: | :-- |
+|           nc | VB  |   SWD pins    | 3V3 | 3V3 out
+|          LED | C13 |               | G   | GND
+|            - | C14 |               | 5V  | 5V input (*)
+|            - | C15 |               | B9  | PWM10(t4)
+|           nc | R   |               | B8  | PWM9(t4)
+|            - | A0  |               | B7  | I2C_SCL
+|            - | A1  |               | B6  | I2C_SDA
+|       GPS_TX | A2  |               | B5  | PWM8(t3)
+|       GPS_RX | A3  |               | B4  | PWM7(t3)
+|       IMU_CS | A4  |               | B3  | RCIN_RX
+|     SPI_SCLK | A5  |               | A15 | RCIN_TX
+|     SPI_MISO | A6  |               | A12 | USB_DP
+|     SPI_MOSI | A7  |               | A11 | USB_DN
+|        BAT_I | B0  |               | A10 | PWM6(t1)
+|        BAT_V | B1  |               | A9  | PWM5(t1)
+|            - | B2  |               | A8  | PWM4(t1)
+|     IMU_EXTI | B10 |               | B15 | PWM3(t1)
+|      3V3 out | 3V3 |               | B14 | PWM2(t1)
+|          GND | G   |               | B13 | PWM1(t1)
+| 5V input (*) | 5V  | USB connector | B12 | -
+
+Internally connected: C13 - LED, A0 - key button
+
+PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins connected to the same timer operate at the same frequency.
+
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
+
+<img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
+
+
+<a name="pinoutFC"></a>
+## Pinout STM32 Of-the-shelf Flight Controllers
+
+In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
+
 
 <a name="changes"></a>
 ## Changes from dRehmFlight
