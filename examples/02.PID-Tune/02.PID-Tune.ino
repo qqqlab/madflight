@@ -62,18 +62,71 @@ LED Status
 ==========
 OFF - not powered
 startup: a couple blinks then ON while running gyro calibration (don't move)
-blinking long OFF short ON - running loop() DISARMED
-blinking long ON short OFF - running loop() ARMED
-blink interval longer than 1 second - loop() is taking too much time
+blinking long OFF short ON - DISARMED
+blinking long ON short OFF - ARMED
+blink interval longer than 1 second - imu_onUpdate() is taking too much time
 fast blinking - something is wrong, connect USB serial for info
 ##########################################################################################################################*/
+
+
+//========================================================================================================================//
+//                                                 PINS                                                                   //
+//========================================================================================================================//
+// PINS are setup in the board header file library/src/madflight_board_default_*.h, but you can use these defines to 
+// override the pins. The pin numbers below are the default for Raspberry Pi Pico
+
+//LED:
+//#define HW_PIN_LED       25
+//#define HW_LED_ON         1 //0:low is on, 1:high is on
+
+//IMU SPI:
+//#define HW_PIN_SPI_MISO  16
+//#define HW_PIN_SPI_MOSI  19
+//#define HW_PIN_SPI_SCLK  18
+//#define HW_PIN_IMU_CS    17
+//#define HW_PIN_IMU_EXTI  22 //external interrupt pin
+
+//I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
+//#define HW_PIN_I2C_SDA   20
+//#define HW_PIN_I2C_SCL   21
+
+//Outputs:
+//#define HW_OUT_COUNT     12 //number of outputs
+//#define HW_PIN_OUT_LIST  {2,3,4,5,6,7,10,11,12,13,14,15} //list of output pins
+
+//Serial debug on USB Serial port (no GPIO pins)
+
+//RC Receiver:
+//#define HW_PIN_RCIN_RX     1
+//#define HW_PIN_RCIN_TX     0
+//#define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
+
+//GPS:
+//#define HW_PIN_GPS_RX      9 
+//#define HW_PIN_GPS_TX      8
+//#define HW_PIN_GPS_INVERTER -1 //only used for STM32 targets
+
+//Battery ADC
+//#define HW_PIN_BAT_V      28
+//#define HW_PIN_BAT_I      -1
+
+//BlackBox SPI:
+//#define HW_PIN_SPI2_MISO  -1
+//#define HW_PIN_SPI2_MOSI  -1
+//#define HW_PIN_SPI2_SCLK  -1
+//#define HW_PIN_BB_CS      -1
+
+//========================================================================================================================//
+//                                                 BOARD                                                                  //
+//========================================================================================================================//
+// Uncomment/change the following #include to the flight controller you want to use, or leave commented out to use the
+// default board pinout (madflight_board_default_*.h). See library/madflight/src for all available boards
+
+//#include <madflight_board_betaflight_MTKS-MATEKH743.h>
 
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
-
-//--- APPLICATION SETTINGS
-//#define USE_IMU_POLLING //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
 
 //--- RC RECEIVER
 #define RCIN_USE  RCIN_USE_CRSF //RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
@@ -101,18 +154,6 @@ fast blinking - something is wrong, connect USB serial for info
 
 //--- BLACKBOX LOGGER
 #define BB_USE  BB_USE_NONE //BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
-
-//========================================================================================================================//
-//                                                 BOARD                                                                  //
-//========================================================================================================================//
-// Uncomment/change the following #include to the flight controller you want to use, or leave commented out 
-// to use the default board pinout (madflight_board_default_XXX.h). See library/madflight/src for all available boards
-
-//#include <madflight_board_custom_DYST-DYSF4PRO_V2.h>
-//#include <madflight_board_betaflight_MTKS-MATEKH743.h>
-
-//Note: after the board include, you can override the sensors if needed. For example:
-//#define IMU_USE  IMU_USE_SPI_BMI270 //force use of BMI270 sensor, even if other sensor defined in the board header
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                       //
@@ -150,8 +191,6 @@ int rcin_cfg_aux_max = 1815; //higest switch pwm
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
-
-uint32_t loop_freq = 1000; //The main loop frequency in Hz. imu.h might lower this depending on the sensor used. Do not touch unless you know what you are doing.
 
 //number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..HW_OUT_COUNT-1] are servos
 const int out_MOTOR_COUNT = 4;
@@ -193,13 +232,6 @@ float Kd_yaw         = 0.00015;   //Yaw D-gain (be careful when increasing too h
 //========================================================================================================================//
 //                              DECLARE GLOBAL VARIABLES                                                                  //
 //========================================================================================================================//
-
-//General stuff
-float loop_dt;
-uint32_t loop_time; //loop timestamp
-uint32_t loop_cnt = 0; //loop counter
-uint32_t loop_rt, loop_rt_imu; //runtime of loop and imu sensor retrieval
-bool imu_loop_enable = true; //disable imu update during calibration
 
 //Radio communication:
 int rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
@@ -310,12 +342,24 @@ String pidtune_status() {
   return tunevar.name + String(*tunevar.pvalue,5);
 }
 
-
 //========================================================================================================================//
 //                                                 INCLUDE MADFLIGHT LIBRARY                                              //
 //========================================================================================================================//
 //Note: most madflight modules are header only. By placing the madflight include here allows the modules to access the global variables without declaring them extern.
 #include <madflight.h>
+
+//========================================================================================================================//
+//                  SETUP1() LOOP1() EXECUTING ON SECOND CORE (only for dual core MCUs like ESP32 and RP2040)             //
+//========================================================================================================================//
+//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040
+/*
+void setup1() {
+  Serial.println("setup1()");
+}
+void loop1() {
+  Serial.println("loop1()"); delay(100);
+}
+//*/
 
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
@@ -339,18 +383,18 @@ void setup() {
   cli.print_i2cScan(); //print i2c scan
   rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
 
-  //IMU
+  //IMU: keep on trying until no error is returned (some sensors need a couple of tries...)
   while(true) {
-    int rv = imu.setup(loop_freq); //returns 0 on success, positive on error, negative on warning
-    if(rv<=0) break; 
+    int rv = imu.setup(1000); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
+    if(rv<=0) break;
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
-  loop_freq = imu.getSampleRate();
-  //set filter parameters here, as imu_Setup can modify loop_freq
-  B_accel = lowpass_to_beta(LP_accel, loop_freq);
-  B_gyro = lowpass_to_beta(LP_gyro, loop_freq);
-  B_mag = lowpass_to_beta(LP_mag, loop_freq);
-  B_radio = lowpass_to_beta(LP_radio, loop_freq);
+
+  //set filter parameters after imu.setup(), as imu.setup() can modify requested sample rate
+  B_accel = lowpass_to_beta(LP_accel, imu.getSampleRate());
+  B_gyro = lowpass_to_beta(LP_gyro, imu.getSampleRate());
+  B_mag = lowpass_to_beta(LP_mag, imu.getSampleRate());
+  B_radio = lowpass_to_beta(LP_radio, imu.getSampleRate());
 
   baro.setup(); //Barometer
   mag.setup(); //External Magnetometer
@@ -383,15 +427,9 @@ void setup() {
   //set quarterion to initial yaw, so that AHRS settles faster
   ahrs_Setup();
 
-  //set times for loop
-  loop_RateBegin();
-
-  //start IMU interrupt - do this last in setup(), as the IMU interrupt handler needs all modules configured
-  #ifndef USE_IMU_POLLING
-    imu_interrupt_setup(); //setup imu interrupt handlers
-    delay(100);
-    if(loop_cnt==0) die("IMU interrupt not firing.");
-  #endif
+  //start IMU update handler - do this last in setup(), as the handler needs all modules configured
+  imu.onUpdate = imu_onUpdate;
+  if(!imu.waitNewSample()) die("IMU interrupt not firing.");
 
   pidtune_setup();
 
@@ -405,12 +443,6 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //only call imu_loop here if we're not using interrupts
-  #ifdef USE_IMU_POLLING
-    while ( (micros() - loop_time) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
-    imu_loop();
-  #endif
-
   #ifdef USE_IMU_BUS_SPI
     //if IMU uses SPI bus, then read slower i2c sensors here in loop() to keep imu_loop() as fast as possible
     i2c_sensors_update();
@@ -442,34 +474,23 @@ void i2c_sensors_update() {
 }
 
 //========================================================================================================================//
-//                                                            IMU_LOOP()                                                      //
+//                                                   IMU UPDATE LOOP                                                      //
 //========================================================================================================================//
-  /*
-   * It's good to operate at a constant loop rate for filters to remain stable and whatnot. Interrupt routines running in the
-   * background cause the loop rate to fluctuate. This function basically just waits at the end of every loop iteration until 
-   * the correct time has passed since the start of the current loop for the desired loop rate in Hz. 2kHz is a good rate to 
-   * be at because the loop nominally will run between 2.8kHz - 4.2kHz. This lets us have a little room to add extra computations
-   * and remain above 2kHz, without needing to retune all of our filtering parameters.
-   */
-   
-void imu_loop() {
-  if(!imu_loop_enable) return; //exit if calibration is running
 
-  //update loop_ variables
-  uint32_t now = micros();
-  loop_dt = (now - loop_time)/1000000.0;
-  loop_time = now;
-  loop_cnt++;
-
+//This is _MAIN_ function of this program. It is called when new IMU data is available.
+void imu_onUpdate() {
   //Blink LED
-  loop_Blink();
+  led_Blink();
 
-  //Get vehicle state
-  imu_GetData(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and applies low-pass filters to remove noise
+  // Apply low-pass filters to remove noise
+  imu_Filter(); 
+
   //ahrs filter method: Madgwick or Mahony - SELECT ONE:
-  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Madgwick filter quaternion update
-  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, loop_dt); //Mahony filter quaternion update
-  ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw); //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaterion
+  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Madgwick filter quaternion update
+  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Mahony filter quaternion update
+
+  //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaterion
+  ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw);
 
   //Get radio state
   rcin_GetCommands(); //Pulls current available radio commands
@@ -490,86 +511,22 @@ void imu_loop() {
   out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
-#ifdef USE_IMU_BUS_I2C
-  //if IMU uses i2c bus, then get i2c sensor readings in the imu_loop to prevent i2c bus. Or, put the imu on a separate i2c bus.
-  i2c_sensors_update();
-#endif
-
-  //record max runtime loop
-  uint32_t rt = micros() - loop_time;
-  if(loop_rt < rt) loop_rt = rt;
+  //if IMU uses i2c bus, then get i2c sensor readings in imu_interrupt_handler() to prevent i2c bus collisions. Alternatively, put the IMU on a separate i2c bus.
+  #ifdef USE_IMU_BUS_I2C
+    i2c_sensors_update();
+  #endif
 
   //bb.log_imu(); //full speed black box logging imu data, memory fills up quickly...
 }
 
 //========================================================================================================================//
-//                                          IMU INTERRUPT HANDLER                                                         //
-//========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. By doing this, unused time can be used in loop() 
-// for other functionality. With USE_IMU_POLLING any unused time in loop() is wasted. When using FreeRTOS with 
-// HW_USE_FREERTOS the IMU update is not executed directly in the interrupt handler, but a high priority task is used. 
-// This prevents FreeRTOS watchdog resets. The delay (latency) from rising edge INT pin to start of imu_loop is approx. 
-// 10 us on ESP32 and 50 us on RP2040.
-#ifndef USE_IMU_POLLING
-  #ifdef HW_USE_FREERTOS
-    TaskHandle_t imu_task_handle;
-
-    void imu_interrupt_setup() {
-      xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
-      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
-    }
-
-    void imu_task(void*) {
-      for(;;) {
-        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        imu_loop();
-      }
-    }
-
-    void imu_interrupt_handler() {
-      //let imu_task handle the interrupt
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-  #else
-    volatile bool imu_interrupt_busy = false;
-    
-    void imu_interrupt_setup() {
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING);
-    }
-
-    void imu_interrupt_handler() {
-      if(imu_interrupt_busy) return;
-      imu_interrupt_busy = true;
-      imu_loop();
-      imu_interrupt_busy = false;
-    } 
-  #endif
-#endif
-
-//========================================================================================================================//
-//                                          SETUP1() LOOP1() EXECUTING ON SECOND CORE (only ESP32 and RP2040)             //
-//========================================================================================================================//
-//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040
-/*
-void setup1() {
-  Serial.println("setup1()");
-}
-void loop1() {
-  Serial.println("loop1()"); delay(100);
-}
-//*/
-
-//========================================================================================================================//
-//                      IMU_LOOP() FUNCTIONS - in same order as they are called from imu_loop()                           //
+//                      IMU UPDATE LOOP FUNCTIONS - in same order as they are called from imu_onUpdate()                           //
 //========================================================================================================================//
 
-void loop_Blink() {
+void led_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use print_loop_Rate() to investigate.
   //DISARMED: long off, short on, ARMED: long on, short off
-  if(loop_cnt % loop_freq <= loop_freq / 10)
+  if(imu.update_cnt % imu.getSampleRate() <= imu.getSampleRate() / 10)
     led.set(!out_armed); //short interval
   else
     led.set(out_armed); //long interval
@@ -578,13 +535,8 @@ void loop_Blink() {
 // Reads accelerometer, gyro, and magnetometer data from IMU and stores it as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. 
 // A simple first-order low-pass filter is used to get rid of high frequency noise in these raw signals. 
 // Finally, the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
-void imu_GetData() {
-  uint32_t t1 = micros();
-  //imu_Read() returns correctly NED oriented and correctly scaled values in g's, deg/sec, and uT (see file imu.h)
-  imu.update();
-  loop_rt_imu = micros() - t1;
-
- //Accelerometer
+void imu_Filter() {
+  //Accelerometer
   //LP filter corrected accelerometer data
   AccX = (1.0 - B_accel) * AccX + B_accel * (imu.ax - cfg.imu_cal_ax);
   AccY = (1.0 - B_accel) * AccY + B_accel * (imu.ay - cfg.imu_cal_ay);
@@ -718,23 +670,23 @@ void control_Angle(bool zero_integrators) {
 
   //Roll PID
   float error_roll = roll_des - ahrs_roll;
-  integral_roll += error_roll * loop_dt;
+  integral_roll += error_roll * imu.dt;
   integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_roll = GyroX;
   roll_PID = 0.01 * (Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll - Kd_ro_pi_angle*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
 
   //Pitch PID
   float error_pitch = pitch_des - ahrs_pitch;
-  integral_pitch += error_pitch * loop_dt;
+  integral_pitch += error_pitch * imu.dt;
   integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_pitch = GyroY; 
   pitch_PID = 0.01 * (Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch - Kd_ro_pi_angle*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
 
   //Yaw PID, stablize on rate from GyroZ
   float error_yaw = yawRate_des - GyroZ;
-  integral_yaw += error_yaw * loop_dt;
+  integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / loop_dt; 
+  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
   yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
 
   //Update derivative variables
@@ -773,16 +725,16 @@ void control_Angle2(bool zero_integrators) {
   //Outer loop - PID on angle for roll & pitch
   //Roll
   float error_roll = roll_des - ahrs_roll;
-  integral_roll_ol += error_roll * loop_dt;
+  integral_roll_ol += error_roll * imu.dt;
   integral_roll_ol = constrain(integral_roll_ol, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = (ahrs_roll - roll_IMU_prev) / loop_dt;  
+  float derivative_roll = (ahrs_roll - roll_IMU_prev) / imu.dt;  
   float roll_des_ol = Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll_ol;// - Kd_ro_pi_angle*derivative_roll;
 
   //Pitch
   float error_pitch = pitch_des - ahrs_pitch; 
-  integral_pitch_ol += error_pitch * loop_dt;
+  integral_pitch_ol += error_pitch * imu.dt;
   integral_pitch_ol = constrain(integral_pitch_ol, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-  float derivative_pitch = (ahrs_pitch - pitch_IMU_prev) / loop_dt; 
+  float derivative_pitch = (ahrs_pitch - pitch_IMU_prev) / imu.dt; 
   float pitch_des_ol = Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch_ol;// - Kd_ro_pi_angle*derivative_pitch;
 
   //Apply loop gain, constrain, and LP filter for artificial damping
@@ -797,24 +749,24 @@ void control_Angle2(bool zero_integrators) {
   //Inner loop - PID on rate for roll & pitch
   //Roll
   error_roll = roll_des_ol - GyroX;
-  integral_roll_il += error_roll * loop_dt;
+  integral_roll_il += error_roll * imu.dt;
   integral_roll_il = constrain(integral_roll_il, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup 
-  derivative_roll = (error_roll - error_roll_prev) / loop_dt;
+  derivative_roll = (error_roll - error_roll_prev) / imu.dt;
   roll_PID = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll_il + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
 
   //Pitch
   error_pitch = pitch_des_ol - GyroY;
-  integral_pitch_il += error_pitch * loop_dt;
+  integral_pitch_il += error_pitch * imu.dt;
   integral_pitch_il = constrain(integral_pitch_il, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  derivative_pitch = (error_pitch - error_pitch_prev) / loop_dt; 
+  derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt; 
   pitch_PID = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch_il + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
   
   //Single loop
   //Yaw
   float error_yaw = yawRate_des - GyroZ;
-  integral_yaw += error_yaw * loop_dt;    
+  integral_yaw += error_yaw * imu.dt;    
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / loop_dt;  
+  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt;  
   yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
   
   //Update derivative variables
@@ -855,23 +807,23 @@ void control_Rate(bool zero_integrators) {
 
   //Roll
   float error_roll = rollRate_des - GyroX;
-  integral_roll += error_roll * loop_dt;
+  integral_roll += error_roll * imu.dt;
   integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = (error_roll - error_roll_prev) / loop_dt;
+  float derivative_roll = (error_roll - error_roll_prev) / imu.dt;
   roll_PID = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
 
   //Pitch
   float error_pitch = pitchRate_des - GyroY;
-  integral_pitch += error_pitch * loop_dt;
+  integral_pitch += error_pitch * imu.dt;
   integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = (error_pitch - error_pitch_prev) / loop_dt;   
+  float derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt;   
   pitch_PID = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
 
   //Yaw, stablize on rate from GyroZ
   float error_yaw = yawRate_des - GyroZ;
-  integral_yaw += error_yaw * loop_dt;
+  integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / loop_dt; 
+  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
   yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
 
   //Update derivative variables
@@ -964,22 +916,16 @@ void out_SetCommands() {
 //                                              SETUP() FUNCTIONS                                                         //
 //========================================================================================================================//
 
-void loop_RateBegin() {
-  loop_time = micros();
-  loop_cnt = 0;    
-}
-
 //set initial quarterion
 void ahrs_Setup() 
 {
   //estimate yaw based on mag only (assumes vehicle is horizontal)
 
-  //warm up imu by getting 100 samples
+  //warm up imu and mag by getting 100 samples
   for(int i=0;i<100;i++) {
     uint32_t start = micros();
     mag.update();
-    imu_GetData();
-    while(micros() - start < 1000000/loop_freq); //wait until next sample time
+    while(micros() - start < 1000000 / imu.getSampleRate()); //wait until next sample time
   }
 
   //calculate yaw angle

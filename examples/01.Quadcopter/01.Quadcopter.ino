@@ -410,7 +410,7 @@ void led_Blink() {
 // A simple first-order low-pass filter is used to get rid of high frequency noise in these raw signals. 
 // Finally, the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
 void imu_Filter() {
- //Accelerometer
+  //Accelerometer
   //LP filter corrected accelerometer data
   AccX = (1.0 - B_accel) * AccX + B_accel * (imu.ax - cfg.imu_cal_ax);
   AccY = (1.0 - B_accel) * AccY + B_accel * (imu.ay - cfg.imu_cal_ay);
