@@ -298,23 +298,26 @@ In the `src` directory you'll find header files for 400+ commercial flight contr
 - New libs for IMU sensors
 - Changed arming logic
 - Loop rate set to 1kHz to match IMU sensor rate
-- Interrupt driven IMU operation by default, but setup/loop still possible
+- Interrupt driven IMU operation, not setup/loop
 
 
 <a name="github"></a>
 ## Flight Controllers on Github
 
-In increasing order of complexity.
+In (approximate) increasing order of complexity.
 
-- [lobodol/drone-flight-controller](https://github.com/lobodol/drone-flight-controller) Arduino ATmega328P, single 700 line ino file, no libs
-- [dRehmFlight](https://github.com/nickrehm/dRehmFlight) Arduino Teensy 4
-- [madflight](https://github.com/qqqlab/madflight) Arduino RP2040, ESP32, and STM32
-- [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) STM32F405
-- [esp-drone](https://github.com/espressif/esp-drone.git) ESP32 (forked from Crazyflie)
-- [Betaflight](https://github.com/betaflight/betaflight) STM32 F4/F7/H7
-- [inav](https://github.com/iNavFlight/inav) STM32 F4/F7/H7
-- [Ardupilot](https://github.com/ArduPilot/ardupilot) STM32 F4/F7/H7 or Linux based
-- [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) STM32 F4/F7/H7
+| Flight Controller | Features | Development Environment | Microcontroller |
+|:-|:-|:-|:-|
+[drone-flight-controller](https://github.com/lobodol/drone-flight-controller) | Single 700 line ino file, no libs | Arduino | ATmega328P
+[dRehmFlight](https://github.com/nickrehm/dRehmFlight) | Quad, Plane, VTOL | Arduino | Arduino Teensy 4
+[madflight](https://github.com/qqqlab/madflight) | Quad, Plane, VTOL, based on dRehmFlight | Arduino | ESP32, RP2040, and STM32
+[esp-fc](https://github.com/rtlopez/esp-fc) | FPV Quad | PlatformIO | ESP32
+[Crazyflie](https://github.com/bitcraze/crazyflie-firmware) | FPV Quad | | STM32F405
+[esp-drone](https://github.com/espressif/esp-drone.git) | FPV Quad, forked from Crazyflie | | ESP32 
+[Betaflight](https://github.com/betaflight/betaflight) | FPV Quad, based on cleanflight | | STM32 F4/F7/H7
+[inav](https://github.com/iNavFlight/inav) | Plane, based on cleanflight | | STM32 F4/F7/H7
+[Ardupilot](https://github.com/ArduPilot/ardupilot) | Quad, Plane, VTOL | Linux waf | STM32 F4/F7/H7 or Linux based
+[PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) | Quad, Plane, VTOL | | STM32 F4/F7/H7 |
 
 
 <a name="disclamer"></a>
