@@ -93,9 +93,6 @@ fast blinking - something is wrong, connect USB serial for info
 //                                                 USER-SPECIFIED DEFINES                                                 //
 //========================================================================================================================//
 
-//--- APPLICATION SETTINGS
-//#define USE_IMU_POLLING //Uncomment poll IMU sensor in loop(), and not via interrupt (keep commented)
-
 //--- RC RECEIVER
 #define RCIN_USE  RCIN_USE_CRSF //RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
 #define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
@@ -308,11 +305,9 @@ void setup() {
   loop_RateBegin();
 
   //start IMU interrupt - do this last in setup(), as the IMU interrupt handler needs all modules configured
-  #ifndef USE_IMU_POLLING
-    imu_interrupt_setup(); //setup imu interrupt handlers
-    delay(100);
-    if(loop_cnt==0) die("IMU interrupt not firing.");
-  #endif
+  imu_interrupt_setup(); //setup imu interrupt handlers
+  delay(100);
+  if(loop_cnt==0) die("IMU interrupt not firing.");
 
   cli.welcome();
 
@@ -324,12 +319,6 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //only call imu_loop here if we're not using interrupts
-  #ifdef USE_IMU_POLLING
-    while ( (micros() - loop_time) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
-    imu_loop();
-  #endif
-
   #ifdef USE_IMU_BUS_SPI
     //if IMU uses SPI bus, then read slower i2c sensors here in loop() to keep imu_loop() as fast as possible
     i2c_sensors_update();
@@ -422,49 +411,48 @@ void imu_loop() {
 //========================================================================================================================//
 //                                          IMU INTERRUPT HANDLER                                                         //
 //========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. By doing this, unused time can be used in loop() 
-// for other functionality. With USE_IMU_POLLING any unused time in loop() is wasted. When using FreeRTOS with 
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with 
 // HW_USE_FREERTOS the IMU update is not executed directly in the interrupt handler, but a high priority task is used. 
 // This prevents FreeRTOS watchdog resets. The delay (latency) from rising edge INT pin to start of imu_loop is approx. 
 // 10 us on ESP32 and 50 us on RP2040.
-#ifndef USE_IMU_POLLING
-  #ifdef HW_USE_FREERTOS
-    TaskHandle_t imu_task_handle;
 
-    void imu_interrupt_setup() {
-      xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
-      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
-    }
+#ifdef HW_USE_FREERTOS
+  TaskHandle_t imu_task_handle;
 
-    void imu_task(void*) {
-      for(;;) {
-        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        imu_loop();
-      }
-    }
+  void imu_interrupt_setup() {
+    xTaskCreate(imu_task, "imu_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &imu_task_handle);
+    //vTaskCoreAffinitySet(IsrTaskHandle, 0);
+    attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING); 
+  }
 
-    void imu_interrupt_handler() {
-      //let imu_task handle the interrupt
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-  #else
-    volatile bool imu_interrupt_busy = false;
-    
-    void imu_interrupt_setup() {
-      attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING);
-    }
-
-    void imu_interrupt_handler() {
-      if(imu_interrupt_busy) return;
-      imu_interrupt_busy = true;
+  void imu_task(void*) {
+    for(;;) {
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
       imu_loop();
-      imu_interrupt_busy = false;
-    } 
-  #endif
+    }
+  }
+
+  void imu_interrupt_handler() {
+    //let imu_task handle the interrupt
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(imu_task_handle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+#else
+  volatile bool imu_interrupt_busy = false;
+  
+  void imu_interrupt_setup() {
+    attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), imu_interrupt_handler, RISING);
+  }
+
+  void imu_interrupt_handler() {
+    if(imu_interrupt_busy) return;
+    imu_interrupt_busy = true;
+    imu_loop();
+    imu_interrupt_busy = false;
+  } 
 #endif
+
 
 //========================================================================================================================//
 //                                          SETUP1() LOOP1() EXECUTING ON SECOND CORE (only ESP32 and RP2040)             //
