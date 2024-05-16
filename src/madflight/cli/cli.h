@@ -48,6 +48,7 @@ public:
     "po        Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt\n"
     "ppwm      Radio pwm (expected: 1000 to 2000)\n"
     "pradio    Scaled radio (expected: -1 to 1)\n"
+    "pimu      IMU loop timing (expected: imu%% < 50)\n"
     "pgyro     Filtered gyro (expected: -250 to 250, 0 at rest)\n"
     "pacc      Filtered accelerometer (expected: -2 to 2; x,y 0 when level, z 1 when level)\n"
     "pmag      Filtered magnetometer (expected: -300 to 300)\n"
@@ -55,7 +56,6 @@ public:
     "ppid      PID output (expected: -1 to 1)\n"
     "pmot      Motor output (expected: 0 to 1)\n"
     "pservo    Servo output (expected: 0 to 1)\n"
-    "ploop     Loop timing in microseconds (expected: 1000000 / loop_freq)\n"
     "pbat      Battery voltage, current, Ah used and Wh used\n"
     "-- BLACK BOX --\n"
     "bbls      List files\n"
@@ -131,7 +131,7 @@ private:
       print_flag[8] = !print_flag[8];
     }else if(cmd == "pservo") {
       print_flag[9] = !print_flag[9];
-    }else if(cmd == "ploop") {
+    }else if(cmd == "pimu") {
       print_flag[10] = !print_flag[10];
     }else if(cmd == "pbat") {
       print_flag[11] = !print_flag[11];
@@ -226,8 +226,6 @@ public:
 
   //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
   void calibrate_IMU2(bool gyro_only = false) {
-    imu_loop_enable = false; //disable running of imu_loop()
-
     //Read IMU values, and average the readings
     int cnt = 3000;
     float axerr = 0;
@@ -237,14 +235,13 @@ public:
     float gyerr = 0;
     float gzerr = 0;
     for(int i=0; i<cnt; i++) {
-      imu.update();
+      imu.waitNewSample();
       axerr += imu.ax;
       ayerr += imu.ay;
       azerr += imu.az;
       gxerr += imu.gx;
       gyerr += imu.gy;
       gzerr += imu.gz;
-      delayMicroseconds(1000000/loop_freq);
     }
     axerr /= cnt;
     ayerr /= cnt;
@@ -294,8 +291,6 @@ public:
     }
     
     Serial.println("Use CLI 'cwrite' to write these values to flash");
-
-    imu_loop_enable = true; //enable running of imu_loop()
   }
 
 /*
@@ -371,7 +366,7 @@ private:
       m[2] = mag.z;
     }else{
       if(!imu.hasMag()) return false;
-      imu.update();
+      imu.waitNewSample();
       m[0] = imu.mx;
       m[1] = imu.my;
       m[2] = imu.mz;
@@ -486,9 +481,10 @@ public:
       print_time = micros();
       print_need_newline = false;
       //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
-      if(print_flag[0])  print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, loop_rt
+      if(print_flag[0])  print_overview(); //prints: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, imu%
       if(print_flag[1])  print_rcin_RadioPWM();     //Prints radio pwm values (expected: 1000 to 2000)
-      if(print_flag[2])  print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)    
+      if(print_flag[2])  print_rcin_RadioScaled();     //Prints scaled radio values (expected: -1 to 1)
+      if(print_flag[10]) print_imu_Rate();      //Prints imu loop rate (expected: imu% < 50)
       if(print_flag[3])  print_imu_GyroData();      //Prints filtered gyro data direct from IMU (expected: -250 to 250, 0 at rest)
       if(print_flag[4])  print_imu_AccData();     //Prints filtered accelerometer data direct from IMU (expected: -2 to 2; x,y 0 when level, z 1 when level)
       if(print_flag[5])  print_imu_MagData();       //Prints filtered magnetometer data direct from IMU (expected: -300 to 300)
@@ -496,11 +492,10 @@ public:
       if(print_flag[7])  print_control_PIDoutput();     //Prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
       if(print_flag[8])  print_out_MotorCommands(); //Prints the values being written to the motors (expected: 0 to 1)
       if(print_flag[9])  print_out_ServoCommands(); //Prints the values being written to the servos (expected: 0 to 1)
-      if(print_flag[10]) print_loop_Rate();      //Prints the time between loops in microseconds (expected: 1000000 / loop_freq)
       if(print_flag[11]) print_bat(); //Prints battery voltage, current, Ah used and Wh used
       //Serial.printf("press:%.1f\ttemp:%.2f\t",baro.press_pa, baro.temp_c); //Prints barometer data
       if(print_need_newline) Serial.println();
-      loop_rt = 0; //reset maximum
+      imu.runtime_tot_max = 0; //reset maximum runtime
     }
   }
 
@@ -514,9 +509,9 @@ public:
     Serial.printf("roll_PID:%+.3f\t",roll_PID);  
     Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
     Serial.printf("sats:%d\t",(int)gps.sat);
-    Serial.printf("loop_rt:%d\t",(int)loop_rt);
-    Serial.printf("loop_cnt:%d\t",(int)loop_cnt); 
-    print_need_newline = true;    
+    Serial.printf("imu%%:%d\t",(int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
+    Serial.printf("imu_cnt:%d\t",(int)imu.update_cnt);
+    print_need_newline = true;
   }
 
   void print_rcin_RadioPWM() {
@@ -573,14 +568,18 @@ public:
     print_need_newline = true;  
   }
 
-  void print_loop_Rate() {
-    static uint32_t loop_cnt_last = 0;
-    Serial.printf("loop_dt:%d\t",(int)(loop_dt * 1000000.0));
-    Serial.printf("loop_rt:%d\t",(int)loop_rt);
-    Serial.printf("loop_rt_imu:%d\t",(int)loop_rt_imu);
-    Serial.printf("loop_cnt:%d\t",(int)loop_cnt);  
-    Serial.printf("loops:%d\t",(int)(loop_cnt - loop_cnt_last));  
-    loop_cnt_last = loop_cnt;
+  void print_imu_Rate() {
+    static uint32_t update_cnt_last = 0;
+    Serial.printf("imu%%:%d\t",(int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
+    Serial.printf("period:%d\t",(int)imu.getSamplePeriod());
+    Serial.printf("dt:%d\t",(int)(imu.dt * 1000000.0));
+    Serial.printf("rt:%d\t",(int)imu.runtime_tot_max);
+    Serial.printf("rt_int:%d\t",(int)imu.runtime_int);
+    Serial.printf("rt_bus:%d\t",(int)imu.runtime_bus);
+    Serial.printf("overruns:%d\t",(int)(imu.overrun_cnt));
+    Serial.printf("cnt:%d\t",(int)imu.update_cnt);
+    Serial.printf("loops:%d\t",(int)(imu.update_cnt - update_cnt_last));
+    update_cnt_last = imu.update_cnt;
     print_need_newline = true;
   }
 

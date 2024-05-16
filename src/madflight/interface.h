@@ -27,6 +27,10 @@ extern Rcin &rcin;
 
 class Imu {
   public:
+    //sample data
+    uint32_t ts = 0; //sample low level interrupt trigger timestamp in us
+    float dt = 0; //time since last sample in seconds
+    uint32_t update_cnt = 0; //number of updates
     float ax = 0; //"North" acceleration in G
     float ay = 0; //"East" acceleration in G
     float az = 0; //"Down" acceleration in G
@@ -36,15 +40,32 @@ class Imu {
     float mx = 0; //"North" magnetic flux in uT
     float my = 0; //"East" magnetic flux in uT
     float mz = 0; //"Down" magnetic flux in uT
-    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
-    virtual int setup(uint32_t sampleRate) = 0;
-    virtual void update() = 0;
-    uint32_t getSampleRate() {return _sampleRate;}
+
+    //interrupt statistics
+    uint32_t overrun_cnt = 0; //number of interrupt overruns (should stay 0)
+    bool _imu_interrupt_busy = false; //is interrupt handler running?
+    uint32_t runtime_int = 0; //interrupt latency from start of interrupt handler to start of interrupt task in us
+    uint32_t runtime_bus = 0; //runtime of SPI/I2C bus transfer in us
+    uint32_t runtime_tot_max = 0; //max runtime imu update including transfer in us
+
+    //pointer to onUpdate event handler
+    void (*onUpdate)(void) = NULL;
+
+    //methods
+    int setup(uint32_t sampleRate);
+    bool waitNewSample(); //wait for new sample, returns false on fail
+    bool hasMag(); //returns true if IMU has a magnetometer
+    uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
+    uint32_t getSamplePeriod() {return (_sampleRate != 0 ? 1000000 / _sampleRate : 1000000);} //sensor sample period in us
+
+    //low level interrupt handler (should be private, but is public, because called from interrupt)
+    void _interrupt_handler();
+
   protected:
     uint32_t _sampleRate = 0; //sensor sample rate in Hz
 };
 
-extern Imu &imu;
+extern Imu imu;
 
 //=================================================================================================
 // Barometer

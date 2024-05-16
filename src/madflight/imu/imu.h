@@ -90,11 +90,10 @@ extern Imu &imu;
   #define IMU_ROTATE()
 #endif
 
+//=====================================================================================================================
+// setup the imu_Sensor object
+//=====================================================================================================================
 
-//setup the imu_Sensor object
-//=====================================================================================================================
-// IMU_USE_SPI_BMI270
-//=====================================================================================================================
 #if IMU_USE == IMU_USE_SPI_BMI270
   #define IMU_TYPE "IMU_USE_SPI_BMI270"
   #define IMU_USE_BUS_SPI
@@ -102,9 +101,6 @@ extern Imu &imu;
   #include "BMI270/BMI270.h"
   BMI270 imu_Sensor(spi, HW_PIN_IMU_CS);
 
-//=====================================================================================================================
-// IMU_USE_SPI_MPU9250
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_SPI_MPU9250
   #define IMU_TYPE "IMU_USE_SPI_MPU9250"
   #define IMU_USE_BUS_SPI
@@ -114,9 +110,6 @@ extern Imu &imu;
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX imu_Sensor(MPUXXXX::MPU9250, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_SPI_MPU6500
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_SPI_MPU6500
   #define IMU_TYPE "IMU_USE_SPI_MPU6500"
   #define IMU_USE_BUS_SPI
@@ -126,9 +119,6 @@ extern Imu &imu;
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6500, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_SPI_MPU6000
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_SPI_MPU6000
   #define IMU_TYPE "IMU_USE_SPI_MPU6000"
   #define IMU_USE_BUS_SPI
@@ -138,9 +128,6 @@ extern Imu &imu;
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_I2C_MPU9250
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_I2C_MPU9250
   #define IMU_TYPE "IMU_USE_I2C_MPU9250"
   #define IMU_USE_BUS_I2C
@@ -150,9 +137,6 @@ extern Imu &imu;
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPU9250, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_I2C_MPU9150
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_I2C_MPU9150
   #define IMU_TYPE "IMU_USE_I2C_MPU9150"
   #define IMU_USE_BUS_I2C
@@ -162,9 +146,6 @@ extern Imu &imu;
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU9150, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_I2C_MPU6500
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_I2C_MPU6500
   #define IMU_TYPE "IMU_USE_I2C_MPU6500"
   #define IMU_USE_BUS_I2C
@@ -174,9 +155,6 @@ extern Imu &imu;
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6500, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_I2C_MPU6050
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_I2C_MPU6050
   #define IMU_TYPE "IMU_USE_I2C_MPU6050"
   #define IMU_USE_BUS_I2C
@@ -186,51 +164,137 @@ extern Imu &imu;
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6050, &mpu_iface);
 
-//=====================================================================================================================
-// IMU_USE_I2C_MPU6000
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_I2C_MPU6000
   #define IMU_TYPE "IMU_USE_I2C_MPU6000"
   #define IMU_USE_BUS_I2C
   #define IMU_HAS_MAG 0
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
-  
-//=====================================================================================================================
+
 // None or undefined
-//=====================================================================================================================
 #elif IMU_USE == IMU_USE_NONE || !defined IMU_USE
   #error "IMU_USE not defined"
-  
-//=====================================================================================================================
+
 // Invalid value
-//=====================================================================================================================
 #else
   #error "invalid IMU_USE value"
 #endif
 
-class ImuGeneric: public Imu {
-  public:
-    bool hasMag() { return IMU_HAS_MAG; }
+//========================================================================================================================//
+// Imu Class Implementation
+//========================================================================================================================//
+
+void _imu_ll_interrupt_setup(); //prototype
+volatile bool _imu_ll_interrupt_busy = false;
+volatile uint32_t _imu_ll_interrupt_ts = 0;
+
+bool Imu::hasMag() { return IMU_HAS_MAG; }
   
-    //returns 0 on success, positive on error, negative on warning
-    int setup(uint32_t sampleRate) {
-      int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
-      _sampleRate = imu_Sensor.get_rate();
-      Serial.printf(IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
-      return rv;
-    }
+//returns 0 on success, positive on error, negative on warning
+int Imu::setup(uint32_t sampleRate) {
+  int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
+  _sampleRate = imu_Sensor.get_rate();
+  Serial.printf(IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
+  onUpdate = NULL;
+  _imu_ll_interrupt_busy = false;
+  _imu_ll_interrupt_ts = 0;
+  overrun_cnt = 0;
+  update_cnt = 0;
+  runtime_int = 0;
+  runtime_bus = 0;
+  runtime_tot_max = 0;
+  dt = 0;
+  ts = micros();
+  _imu_ll_interrupt_setup();
+  return rv;
+}
 
-    void update() {
-    #if IMU_HAS_MAG 
-      imu_Sensor.getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+//wait for new sample, returns false on fail
+bool Imu::waitNewSample() {
+  uint32_t last_cnt = update_cnt;
+  uint32_t start = millis();
+  while( last_cnt == update_cnt && millis() - start <= (10*1000) / _sampleRate );
+  return (last_cnt != update_cnt);
+}
+
+void Imu::_interrupt_handler() {
+  //local copy of timestamp (_imu_ll_interrupt_ts might change during execution of this function)
+  uint32_t sample_ts = _imu_ll_interrupt_ts;
+  
+  //latency between start of low level interrupt handler and start of this method
+  runtime_int = micros() - sample_ts;
+
+  //get sensor data and update timestamps, count
+  #if IMU_HAS_MAG 
+    imu_Sensor.getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+  #else
+    imu_Sensor.getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+  #endif
+  IMU_ROTATE();
+  dt = (sample_ts - ts) / 1000000.0;
+  ts = sample_ts;
+  runtime_bus = micros() - sample_ts - runtime_int; //runtime of SPI/I2C transfer
+  update_cnt++;
+
+  //call external update event handler
+  if(onUpdate) onUpdate();
+
+  uint32_t rt = micros() - sample_ts; //runtime of full update
+  if(runtime_tot_max < rt) runtime_tot_max = rt; //max runtime
+}
+
+//global Imu class instance
+Imu imu;
+
+//========================================================================================================================//
+// _IMU_LL_ IMU Low Level Interrrupt Handler
+//========================================================================================================================//
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with HW_USE_FREERTOS the 
+// IMU update is not executed directly in the interrupt handler, but a high priority task is used. This prevents FreeRTOS 
+// watchdog resets. The delay (latency) from rising edge INT pin to handler is approx. 10 us on ESP32 and 50 us on RP2040.
+
+void _imu_ll_interrupt_handler();
+
+#ifdef HW_USE_FREERTOS
+  TaskHandle_t _imu_ll_task_handle = NULL;
+
+  void _imu_ll_task(void*) {
+    for(;;) {
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+      imu._interrupt_handler();
+    }
+  }
+
+  void _imu_ll_interrupt_setup() {
+    if(!_imu_ll_task_handle) {
+      xTaskCreate(_imu_ll_task, "_imu_ll_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
+    }
+    attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING); 
+  }
+
+#else
+
+  void _imu_ll_interrupt_setup() {
+    attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING);
+  }
+#endif
+
+void _imu_ll_interrupt_handler() {
+  _imu_ll_interrupt_ts = micros();
+  if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
+    imu.overrun_cnt++;
+  } else {
+    _imu_ll_interrupt_busy = true;
+    #ifdef HW_USE_FREERTOS
+      //let RTOS task _imu_ll_task handle the interrupt
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     #else
-      imu_Sensor.getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+      //call interrupt handler directly from interrupt context
+      imu._interrupt_handler();
     #endif
-      IMU_ROTATE();
-    }
-};
-
-ImuGeneric imu_instance;
-
-Imu &imu = imu_instance;
+    _imu_ll_interrupt_busy = false;
+  }
+}

@@ -62,13 +62,13 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 3. Setup the USER-SPECIFIED DEFINES section
 4. If you're not using a default pinout (see below) then setup your board pinout in the BOARD section.
 5. Connect your IMU (gyro/acceleration) sensor as shown below.
-6. Compile and upload Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type 'help' to see the available CLI commands.
-7. Check that IMU sensor and AHRS are working correctly: use CLI print commands to show gyro, accelerometer, magnetometer and roll/pitch/yaw. 
-8. Use CLI to calibate the sensor.
+6. Compile and upload Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type `help` to see the available CLI commands.
+7. Use CLI print commands like `pimu`, `pgyro`, `proll` to Check that IMU sensor and AHRS are working correctly. 
+8. IMPORTANT: Use CLI `calimu` and `calmag` to calibate the sensors.
 9. Connect radio receiver to your development board according to the configured pins.
 10. Edit the RC RECEIVER CONFIG section. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
-11. Check your radio setup: Use CLI print commands to show pwm and scaled radio values.
-12. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI to show motor output.
+11. Check your radio setup: Use CLI `ppwm` and `pradio` to show pwm and scaled radio values.
+12. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI `pmot` to show motor output.
 13. Mount props, go to an wide open space, and FLY!
 
 
@@ -95,7 +95,6 @@ By default madflight has these safety features enabled:
 - The madflight flight controller runs standard `setup()` and `loop()`.
 - It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 - The following modules are used:
-  - `loop` Main loop control
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
   - `rcin` RC INput, retrieves RC receiver data
