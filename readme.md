@@ -2,6 +2,8 @@
 
 ***M**anless **A**erial **D**evice*
 
+_Note: v1.1.1 and v1.1.2-DEV appear to be unstable on RP2040. Please use [release v1.0.3](https://github.com/qqqlab/madflight/releases/tag/v1.0.3) for RP2040 until further notice..._
+
 This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
