@@ -28,30 +28,6 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_USE_I2C_MPU6050 8
 #define IMU_USE_I2C_MPU6000 9
 
-#include "../interface.h"
-
-/* INTERFACE
-class Imu {
-  public:
-    float ax = 0; //"North" acceleration in G
-    float ay = 0; //"East" acceleration in G
-    float az = 0; //"Down" acceleration in G
-    float gx = 0; //"North" rotation speed in deg/s
-    float gy = 0; //"East" rotation speed in deg/s
-    float gz = 0; //"Down" rotation speed in deg/s
-    float mx = 0; //"North" magnetic flux in uT
-    float my = 0; //"East" magnetic flux in uT
-    float mz = 0; //"Down" magnetic flux in uT
-    virtual bool hasMag() = 0; //returns true if IMU has a magnetometer
-    virtual int setup(uint32_t sampleRate) = 0;
-    virtual void update() = 0;
-    uint32_t getSampleRate() {return _sampleRate;}
-  protected:
-    uint32_t _sampleRate = 0; //sensor sample rate in Hz
-};
-
-extern Imu &imu;
-*/
 
 //Available aligns
 #define IMU_ALIGN_CW0 1
@@ -96,14 +72,14 @@ extern Imu &imu;
 
 #if IMU_USE == IMU_USE_SPI_BMI270
   #define IMU_TYPE "IMU_USE_SPI_BMI270"
-  #define IMU_USE_BUS_SPI
+  #define IMU_IS_I2C 0
   #define IMU_HAS_MAG 0
   #include "BMI270/BMI270.h"
   BMI270 imu_Sensor(spi, HW_PIN_IMU_CS);
 
 #elif IMU_USE == IMU_USE_SPI_MPU9250
   #define IMU_TYPE "IMU_USE_SPI_MPU9250"
-  #define IMU_USE_BUS_SPI
+  #define IMU_IS_I2C 0
   #define IMU_HAS_MAG 1
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -112,7 +88,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_SPI_MPU6500
   #define IMU_TYPE "IMU_USE_SPI_MPU6500"
-  #define IMU_USE_BUS_SPI
+  #define IMU_IS_I2C 0
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -121,7 +97,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_SPI_MPU6000
   #define IMU_TYPE "IMU_USE_SPI_MPU6000"
-  #define IMU_USE_BUS_SPI
+  #define IMU_IS_I2C 0
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -130,7 +106,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_I2C_MPU9250
   #define IMU_TYPE "IMU_USE_I2C_MPU9250"
-  #define IMU_USE_BUS_I2C
+  #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 1
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -139,7 +115,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_I2C_MPU9150
   #define IMU_TYPE "IMU_USE_I2C_MPU9150"
-  #define IMU_USE_BUS_I2C
+  #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 1
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -148,7 +124,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_I2C_MPU6500
   #define IMU_TYPE "IMU_USE_I2C_MPU6500"
-  #define IMU_USE_BUS_I2C
+  #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -157,7 +133,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_I2C_MPU6050
   #define IMU_TYPE "IMU_USE_I2C_MPU6050"
-  #define IMU_USE_BUS_I2C
+  #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
@@ -166,7 +142,7 @@ extern Imu &imu;
 
 #elif IMU_USE == IMU_USE_I2C_MPU6000
   #define IMU_TYPE "IMU_USE_I2C_MPU6000"
-  #define IMU_USE_BUS_I2C
+  #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 0
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
@@ -184,12 +160,15 @@ extern Imu &imu;
 // Imu Class Implementation
 //========================================================================================================================//
 
+#include "../interface.h" //Imu class declaration
+
 void _imu_ll_interrupt_setup(); //prototype
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
+bool Imu::usesI2C() { return IMU_IS_I2C; } //returns true if IMU uses I2C bus (not SPI bus)
 bool Imu::hasMag() { return IMU_HAS_MAG; }
-  
+ 
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup(uint32_t sampleRate) {
   int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);

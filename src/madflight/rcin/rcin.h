@@ -11,6 +11,7 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #define RCIN_USE_DSM 3
 #define RCIN_USE_PPM 4
 #define RCIN_USE_PWM 5
+#define RCIN_USE_DEBUG 6
 
 
 #define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
@@ -79,7 +80,6 @@ class RcinCSRF : public Rcin {
           rv = true;
         }
       }
-
       return rv;
     }
 };
@@ -367,6 +367,27 @@ class RcinPWM : public Rcin {
 };
 
 RcinPWM rcin_instance;
+
+//=================================================================================================
+// DEBUG Receiver
+//=================================================================================================
+#elif RCIN_USE == RCIN_USE_DEBUG
+class RcinDebug : public Rcin {
+  public:
+    void setup() {
+      Serial.printf("RCIN_USE_DEBUG\n");
+      pwm = pwm_instance;
+    };
+  private:
+    bool _update() { //returns true if channel pwm data was updated
+      for(int i=0;i<RCIN_NUM_CHANNELS;i++) pwm[i]=1500;
+      return true;
+    }
+  private:
+    uint16_t pwm_instance[RCIN_NUM_CHANNELS];
+};
+
+RcinDebug rcin_instance;
 
 //=================================================================================================
 // Invalid value

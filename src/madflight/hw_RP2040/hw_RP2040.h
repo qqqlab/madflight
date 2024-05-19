@@ -43,7 +43,15 @@ void hw_eeprom_commit() {
 //                    hw_setup()
 //======================================================================================================================//
 
-#define HW_USE_FREERTOS //RP2040 optionally uses FreeRTOS
+//overclocking, supposedly works up to 270 MHz.
+//#ifndef HW_RP2040_SYS_CLK_KHZ
+//  #define HW_RP2040_SYS_CLK_KHZ 200000
+//#endif
+
+#ifdef HW_RP2040_USE_FREERTOS
+  #define HW_USE_FREERTOS //RP2040 optionally uses FreeRTOS
+#endif
+
 #define HW_RTOS_IMUTASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
 
 #ifdef HW_USE_FREERTOS
@@ -55,8 +63,9 @@ void hw_eeprom_commit() {
 
 void hw_setup() 
 { 
-  //Uncomment for overclocking, supposedly works up to 270 MHz.
-  //set_sys_clock_khz(200000, true); 
+#ifdef HW_RP2040_SYS_CLK_KHZ
+  set_sys_clock_khz(HW_RP2040_SYS_CLK_KHZ, true); 
+#endif
 
   Serial.println("USE_HW_RP2040");
   

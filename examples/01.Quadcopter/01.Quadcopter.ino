@@ -29,7 +29,7 @@ OFF - not powered
 startup: a couple blinks then ON while running gyro calibration (don't move)
 blinking long OFF short ON - DISARMED
 blinking long ON short OFF - ARMED
-blink interval longer than 1 second - imu_onUpdate() is taking too much time
+blink interval longer than 1 second - imu_loop() is taking too much time
 fast blinking - something is wrong, connect USB serial for info
 ##########################################################################################################################*/
 
@@ -37,49 +37,60 @@ fast blinking - something is wrong, connect USB serial for info
 //========================================================================================================================//
 //                                                 PINS                                                                   //
 //========================================================================================================================//
-// PINS are setup in the board header file library/src/madflight_board_default_*.h, but you can use these defines to 
-// override the pins. The pin numbers below are the default for Raspberry Pi Pico
+// PINS are defined in the board header file library/src/madflight_board_default_XXX.h, but you can use these defines to 
+// override the pins. 
+
+/*
+//The pin numbers below are an example for an easy soldering ESP32 WeMos LOLIN32-Lite with GY-6500/GY-271/GY-BPM280 sensor modules
 
 //LED:
-//#define HW_PIN_LED       25
-//#define HW_LED_ON         1 //0:low is on, 1:high is on
+#define HW_PIN_LED       22
+#define HW_LED_ON         0 //0:low is on, 1:high is on
 
 //IMU SPI:
-//#define HW_PIN_SPI_MISO  16
-//#define HW_PIN_SPI_MOSI  19
-//#define HW_PIN_SPI_SCLK  18
-//#define HW_PIN_IMU_CS    17
-//#define HW_PIN_IMU_EXTI  22 //external interrupt pin
+#define HW_PIN_SPI_MISO  25
+#define HW_PIN_SPI_MOSI  14
+#define HW_PIN_SPI_SCLK  12
+#define HW_PIN_IMU_CS    32
+#define HW_PIN_IMU_EXTI  33 //external interrupt pin
 
 //I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
-//#define HW_PIN_I2C_SDA   20
-//#define HW_PIN_I2C_SCL   21
+#define HW_PIN_I2C_SDA   23
+#define HW_PIN_I2C_SCL   19
 
-//Outputs:
-//#define HW_OUT_COUNT     12 //number of outputs
-//#define HW_PIN_OUT_LIST  {2,3,4,5,6,7,10,11,12,13,14,15} //list of output pins
+//Motor/Servo Outputs:
+#define HW_OUT_COUNT     4 //number of outputs
+#define HW_PIN_OUT_LIST  {13,15,2,0} //list of output pins
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-//#define HW_PIN_RCIN_RX     1
-//#define HW_PIN_RCIN_TX     0
-//#define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
+#define HW_PIN_RCIN_RX    16
+#define HW_PIN_RCIN_TX     4
+#define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
 
 //GPS:
-//#define HW_PIN_GPS_RX      9 
-//#define HW_PIN_GPS_TX      8
-//#define HW_PIN_GPS_INVERTER -1 //only used for STM32 targets
+#define HW_PIN_GPS_RX     -1 
+#define HW_PIN_GPS_TX     -1
+#define HW_PIN_GPS_INVERTER -1 //only used for STM32 targets
 
 //Battery ADC
-//#define HW_PIN_BAT_V      28
-//#define HW_PIN_BAT_I      -1
+#define HW_PIN_BAT_V      -1
+#define HW_PIN_BAT_I      -1
 
 //BlackBox SPI:
-//#define HW_PIN_SPI2_MISO  -1
-//#define HW_PIN_SPI2_MOSI  -1
-//#define HW_PIN_SPI2_SCLK  -1
-//#define HW_PIN_BB_CS      -1
+#define HW_PIN_SPI2_MISO  -1
+#define HW_PIN_SPI2_MOSI  -1
+#define HW_PIN_SPI2_SCLK  -1
+#define HW_PIN_BB_CS      -1
+*/
+
+//RP2040 specific options
+//#define HW_RP2040_SYS_CLK_KHZ 200000 //overclocking
+//#define HW_RP2040_USE_FREERTOS //enable use of FreeRTOS - experimental
+
+//ESP32 specific options
+//#define USE_ESP32_SOFTWIRE //use bitbang I2C (not hardware I2C) See https://github.com/espressif/esp-idf/issues/4999
 
 //========================================================================================================================//
 //                                                 BOARD                                                                  //
@@ -101,7 +112,7 @@ fast blinking - something is wrong, connect USB serial for info
 #define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
-#define IMU_ALIGN  IMU_ALIGN_CW90 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
+#define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
 #define IMU_I2C_ADR  0x68 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //--- GPS
@@ -136,7 +147,7 @@ const int rcin_cfg_aux_channel   = 6; //Fight mode - 6 position switch
 //throttle pwm values
 const int rcin_cfg_thro_low      = 1250; //used to set rcin_thro_is_low flag when pwm is below. Note: your craft won't arm if this is too low.
 const int rcin_cfg_thro_max      = 1900;
-const float out_armed_speed      = 0.2; //Safety feature: make props spin when armed, the motors spin at this speed when armed and thottle is low. The default 0.2 is probably fairly high, set lower as needed.
+const float out_armed_speed      = 0.2; //Safety feature: make props spin when armed, the motors spin at this speed when armed and throttle is low. The default 0.2 is probably fairly high, set lower as needed.
 
 //roll, pitch, yaw pwm values
 const int rcin_cfg_pwm_min       = 1150;
@@ -162,11 +173,14 @@ const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
 
-//Low Pass Filter parameters. Do not touch unless you know what you are doing.
-float LP_accel       = 70;        //Accelerometer lowpass filter cutoff frequency in Hz (default MPU6050: 50Hz, MPU9250: 70Hz)
-float LP_gyro        = 60;        //Gyro lowpass filter cutoff frequency in Hz (default MPU6050: 35Hz, MPU9250: 60Hz)
-float LP_mag         = 1e10;      //Magnetometer lowpass filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering)
-float LP_radio       = 400;       //Radio input lowpass filter cutoff frequency in Hz (default 400Hz)
+const uint32_t imu_sample_rate = 1000; //imu sample rate in Hz (default 1000) NOTE: not all IMU drivers support this
+const uint32_t baro_sample_rate = 100; //baro sample rate in Hz (default 100)
+
+//Low Pass Filter cutoff frequency in Hz. Do not touch unless you know what you are doing.
+float LP_accel       = 70;        //Accelerometer  (default MPU6050: 50Hz, MPU9250: 70Hz)
+float LP_gyro        = 60;        //Gyro           (default MPU6050: 35Hz, MPU9250: 60Hz)
+float LP_mag         = 1e10;      //Magnetometer   (default 1e10Hz, i.e. no filtering)
+float LP_radio       = 400;       //Radio Input    (default 400Hz)
 
 //AHRS Parameters
 float ahrs_MadgwickB = 0.041;     //Madgwick filter parameter
@@ -216,7 +230,7 @@ float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 bool out_armed = false; //motors will only run if this flag is true
 
 //Low pass filter parameters
-float B_accel ,B_gyro, B_mag, B_radio;
+float B_accel, B_gyro, B_mag, B_radio;
 
 const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 
@@ -225,19 +239,6 @@ const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
 //========================================================================================================================//
 //Note: most madflight modules are header only. By placing the madflight include here allows the modules to access the global variables without declaring them extern.
 #include <madflight.h>
-
-//========================================================================================================================//
-//                  SETUP1() LOOP1() EXECUTING ON SECOND CORE (only for dual core MCUs like ESP32 and RP2040)             //
-//========================================================================================================================//
-//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040
-/*
-void setup1() {
-  Serial.println("setup1()");
-}
-void loop1() {
-  Serial.println("loop1()"); delay(100);
-}
-//*/
 
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
@@ -252,7 +253,7 @@ void setup() {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n",i);
     delay(300);
     led.toggle();
-  }
+  } 
   led.on();
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
@@ -263,7 +264,7 @@ void setup() {
 
   //IMU: keep on trying until no error is returned (some sensors need a couple of tries...)
   while(true) {
-    int rv = imu.setup(1000); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
+    int rv = imu.setup(imu_sample_rate); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
     if(rv<=0) break;
     warn("IMU: init failed rv= " + String(rv) + ". Retrying...\n");
   }
@@ -274,7 +275,7 @@ void setup() {
   B_mag = lowpass_to_beta(LP_mag, imu.getSampleRate());
   B_radio = lowpass_to_beta(LP_radio, imu.getSampleRate());
 
-  baro.setup(); //Barometer
+  baro.setup(baro_sample_rate); //Barometer sample rate 100Hz
   mag.setup(); //External Magnetometer
   bat.setup(); //Battery Monitor
   bb.setup(); //Black Box
@@ -299,15 +300,15 @@ void setup() {
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
 
-  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
-  cli.calibrate_gyro();
+  //start IMU update handler
+  imu.onUpdate = imu_loop;
+  if(!imu.waitNewSample()) die("IMU interrupt not firing.");
 
   //set quarterion to initial yaw, so that AHRS settles faster
   ahrs_Setup();
 
-  //start IMU update handler - do this last in setup(), as the handler needs all modules configured
-  imu.onUpdate = imu_onUpdate;
-  if(!imu.waitNewSample()) die("IMU interrupt not firing.");
+  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
+  cli.calibrate_gyro();
 
   cli.welcome();
 
@@ -319,13 +320,10 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  #ifdef USE_IMU_BUS_SPI
-    //if IMU uses SPI bus, then read slower i2c sensors here in loop() to keep imu_interrupt_handler() as fast as possible
-    i2c_sensors_update();
-  #endif
+  //if IMU uses SPI bus (not I2C bus), then read slower i2c sensors here in loop() to keep imu_loop() as fast as possible
+  if (!imu.usesI2C()) i2c_sensors_update();
 
   gps_loop(); //update gps
-  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated
 
   //send telemetry
   static uint32_t rcin_telem_ts = 0;
@@ -333,8 +331,8 @@ void loop() {
   if(millis() - rcin_telem_ts > 100) {
     rcin_telem_ts = millis();
     rcin_telem_cnt++;
-    rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
-    rcin_telemetry_attitude(ahrs_pitch, ahrs_roll, ahrs_yaw);
+    if(out_armed) rcin_telemetry_flight_mode("ARMED"); else rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
+    rcin_telemetry_attitude(ahrs_pitch, ahrs_roll, ahrs_yaw);  
     if(rcin_telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
     if(rcin_telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
   }
@@ -342,7 +340,9 @@ void loop() {
   cli.loop(); //process CLI commands
 }
 
+//update all I2C sensors, called from loop() with SPI IMU, or called from imu_loop() with I2C IMU
 void i2c_sensors_update() {
+  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated. 
   if(baro.update()) bb.log_baro(); //log if pressure updated
   mag.update();
 }
@@ -351,8 +351,8 @@ void i2c_sensors_update() {
 //                                                   IMU UPDATE LOOP                                                      //
 //========================================================================================================================//
 
-//This is _MAIN_ function of this program. It is called when new IMU data is available.
-void imu_onUpdate() {
+//This is __MAIN__ function of this program. It is called when new IMU data is available.
+void imu_loop() {
   //Blink LED
   led_Blink();
 
@@ -363,7 +363,7 @@ void imu_onUpdate() {
   //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Madgwick filter quaternion update
   ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Mahony filter quaternion update
 
-  //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaterion
+  //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaternion
   ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw);
 
   //Get radio state
@@ -374,8 +374,7 @@ void imu_onUpdate() {
   //rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
 
   //PID Controller - SELECT ONE:
-  control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
-  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
+  control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
   //control_Rate(rcin_thro_is_low); //Stabilize on rate setpoint
 
   //Actuator mixing
@@ -385,16 +384,14 @@ void imu_onUpdate() {
   out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
   out_SetCommands(); //Sends command pulses to motors (only if out_armed=true) and servos
 
-  //if IMU uses i2c bus, then get i2c sensor readings in imu_interrupt_handler() to prevent i2c bus collisions. Alternatively, put the IMU on a separate i2c bus.
-  #ifdef USE_IMU_BUS_I2C
-    i2c_sensors_update();
-  #endif
+  //if IMU uses I2C bus, then get I2C sensor readings in imu_interrupt_handler() to prevent I2C bus collisions. Alternatively, put the IMU on a separate I2C bus.
+  if (imu.usesI2C()) i2c_sensors_update();
 
   //bb.log_imu(); //full speed black box logging of IMU data, memory fills up quickly...
 }
 
 //========================================================================================================================//
-//                      IMU UPDATE LOOP FUNCTIONS - in same order as they are called from imu_onUpdate()                           //
+//                      IMU UPDATE LOOP FUNCTIONS - in same order as they are called from imu_loop()                           //
 //========================================================================================================================//
 
 void led_Blink() {
@@ -407,8 +404,8 @@ void led_Blink() {
 }
 
 // Reads accelerometer, gyro, and magnetometer data from IMU and stores it as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. 
-// A simple first-order low-pass filter is used to get rid of high frequency noise in these raw signals. 
-// Finally, the constant errors found in calibrate_IMU_error() on startup are subtracted from the accelerometer and gyro readings.
+// The constant calibraton errors are subtracted from the raw readings.
+// A simple first-order low-pass filter is used to get rid of high frequency noise. 
 void imu_Filter() {
   //Accelerometer
   //LP filter corrected accelerometer data
@@ -479,9 +476,9 @@ void rcin_Normalize() {
    */
 
   //normalized values
-  //throttle: when stick is back below rcin_cfg_thro_low then rcin_thro = rcin_cfg_thro_low value (approx 0.1), and rcin_thro = 1.0 on full throttle
+  //throttle: 0.0 in range from stick full back to rcin_cfg_thro_low, 1.0 on full throttle
   int pwm = rcin_pwm[rcin_cfg_thro_channel-1];
-  rcin_thro = constrain( ((float)(pwm - rcin_cfg_thro_low)) / (rcin_cfg_thro_max - rcin_cfg_thro_low), out_armed_speed, 1.0);
+  rcin_thro = constrain( ((float)(pwm - rcin_cfg_thro_low)) / (rcin_cfg_thro_max - rcin_cfg_thro_low), 0.0, 1.0);
   rcin_thro_is_low = (pwm <= rcin_cfg_thro_low); 
 
   //roll,pitch,yaw
@@ -529,8 +526,6 @@ void control_Angle(bool zero_integrators) {
   float roll_des = rcin_roll * maxRoll; //Between -maxRoll and +maxRoll
   float pitch_des = rcin_pitch * maxPitch; //Between -maxPitch and +maxPitch
   float yawRate_des = rcin_yaw * maxYawRate; //Between -maxYawRate and +maxYawRate
-
-  //Serial.printf("r_des:%+.2f p_des:%+.2f y_des:%+.2f",roll_des,pitch_des,yawRate_des);
 
   //state vars
   static float integral_roll, integral_pitch, error_yaw_prev, integral_yaw;
@@ -752,7 +747,7 @@ Yaw right               (CCW+ CW-)       -++-
 }
 
 void out_KillSwitchAndFailsafe() {
-  static bool rcin_armed_prev = false; 
+  static bool rcin_armed_prev = true; //initial value is true: forces out_armed false on startup even if arm switch is ON
 
   //Change to ARMED when throttle is low and radio armed switch was flipped from disamed to armed position
   if (!out_armed && rcin_thro_is_low && rcin_armed && !rcin_armed_prev) {
@@ -772,7 +767,7 @@ void out_KillSwitchAndFailsafe() {
     }
   }
 
-  //If armed and throttle is low -> set motor outputs to approx 0.1 (out_armed_speed)
+  //If armed and throttle is low -> set motor outputs to out_armed_speed
   if(out_armed && rcin_thro_is_low) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = out_armed_speed; 
 
   //IF DISARMED -> STOP MOTORS
@@ -830,7 +825,7 @@ float lowpass_to_beta(float f0, float fs) {
 void warn_or_die(String msg, bool never_return) {
   bool do_print = true;
   do{
-    if(do_print) Serial.print(msg);
+    if(do_print) Serial.print(msg + "\n");
     for(int i=0;i<20;i++) {
       led.toggle();
       uint32_t ts = millis();
@@ -842,3 +837,16 @@ void warn_or_die(String msg, bool never_return) {
 }
 void die(String msg) { warn_or_die(msg, true); }
 void warn(String msg) { warn_or_die(msg, false); }
+
+//========================================================================================================================//
+//                  SETUP1() LOOP1() EXECUTING ON SECOND CORE                                                             //
+//========================================================================================================================//
+//Uncomment setup1() and/or loop1() to use the second core on ESP32 / RP2040 with FreeRTOS
+/*
+void setup1() {
+  Serial.println("setup1()");
+}
+void loop1() {
+  Serial.println("loop1()"); delay(100);
+}
+//*/

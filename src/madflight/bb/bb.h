@@ -89,8 +89,8 @@ public:
     if(bbw.isBusy()) return;
     bbw.writeBeginRecord(BB_REC_BARO, "BARO");
     bbw.writeU("ts",micros());
-    bbw.writeU("baro_pa",baro.press_pa); //Barometer pressure (Pa)
-    bbw.writeI("baro_t*100",baro.temp_c*100); //barometer temp (C)
+    bbw.writeU("baro_pa",baro.press); //Barometer pressure (Pa)
+    bbw.writeI("baro_t*100",baro.temp*100); //barometer temp (C)
     bbw.writeEndrecord();
   }
 

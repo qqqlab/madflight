@@ -232,7 +232,6 @@ private:
   uint16_t read16_LE(byte reg);
   int16_t readS16_LE(byte reg);
 
-  uint8_t _i2caddr;
 
   int32_t _sensorID = 0;
   int32_t t_fine;

@@ -55,6 +55,7 @@ class Imu {
     int setup(uint32_t sampleRate);
     bool waitNewSample(); //wait for new sample, returns false on fail
     bool hasMag(); //returns true if IMU has a magnetometer
+    bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)    
     uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
     uint32_t getSamplePeriod() {return (_sampleRate != 0 ? 1000000 / _sampleRate : 1000000);} //sensor sample period in us
 
@@ -73,13 +74,24 @@ extern Imu imu;
 
 class Barometer {
   public:
-    float press_pa = 0; //pressure in Pascal
-    float temp_c = 0; //temperature in Celcius
-    virtual int setup() = 0;
-    virtual bool update() = 0; //returns true if pressure was updated
+    //sample data
+    uint32_t ts = 0; //sample timestamp in us
+    float dt = 0; //time since last sample in seconds
+    float press = 0; //pressure in Pascal
+    float alt = 0; // Approximate International Standard Atmosphere (ISA) Altitude in meter
+    float temp = 0; //temperature in Celcius
+
+    int setup(uint32_t sampleRate);
+    bool update(); //returns true if pressure was updated
+    uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
+    uint32_t getSamplePeriod() {return _samplePeriod;} //sensor sample period in us
+
+  protected:
+    uint32_t _sampleRate = 0; //sensor sample rate in Hz
+    uint32_t _samplePeriod = 0; //sensor sample period in us
 };
 
-extern Barometer &baro;
+extern Barometer baro;
 
 //=================================================================================================
 // Magnetometer
