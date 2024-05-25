@@ -111,7 +111,7 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
-  MPUXXXX imu_Sensor(MPU9250, &mpu_iface);
+  MPUXXXX imu_Sensor(MPUXXXX::MPU9250, &mpu_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU9150
   #define IMU_TYPE "IMU_USE_I2C_MPU9150"
