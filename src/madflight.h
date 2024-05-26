@@ -43,15 +43,56 @@ SOFTWARE.
 float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs (values: 0.0 to 1.0)
 PWM out[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
 
-//include all modules. First set all USE_xxx and MODULE_xxx defines. For example: USE_MAG_QMC5883L and MAG_I2C_ADR
-#include "madflight/cfg/cfg.h" //load config first, so that cfg.xxx can be used by other modules
-#include "madflight/led/led.h"
-#include "madflight/ahrs/ahrs.h"
-#include "madflight/rcin/rcin.h"
-#include "madflight/imu/imu.h"
-#include "madflight/gps/gps.h"
-#include "madflight/baro/baro.h"
-#include "madflight/mag/mag.h"
-#include "madflight/bat/bat.h"
-#include "madflight/bb/bb.h"
-#include "madflight/cli/cli.h" //load CLI last, so that it can access all other modules without using "extern". 
+//for testing individual modules use: #define MF_TEST  MF_TEST_LED | MF_TEST_RCIN
+#define MF_TEST_CFG  0x0001
+#define MF_TEST_LED  0x0002
+#define MF_TEST_AHRS 0x0004
+#define MF_TEST_RCIN 0x0008
+#define MF_TEST_IMU  0x0010
+#define MF_TEST_GPS  0x0020
+#define MF_TEST_BARO 0x0040
+#define MF_TEST_MAG  0x0080
+#define MF_TEST_BAT  0x0100
+#define MF_TEST_BB   0x0200
+#define MF_TEST_CLI  0x0400
+
+
+//include all modules. Before including madflight.h define the all module options, for example: #define IMU_USE IMU_USE_SPI_MPU6500
+//load config first, so that cfg.xxx can be used by other modules
+//load CLI last, so that it can access all other modules without using "extern". 
+
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_CFG)
+  #include "madflight/cfg/cfg.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_LED)
+  #include "madflight/led/led.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_AHRS)
+  #include "madflight/ahrs/ahrs.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_RCIN)
+  #include "madflight/rcin/rcin.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_IMU)
+  #include "madflight/imu/imu.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_GPS)
+  #include "madflight/gps/gps.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_BARO)
+  #include "madflight/baro/baro.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_MAG)
+  #include "madflight/mag/mag.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_BAT)
+  #include "madflight/bat/bat.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_BB)
+  #include "madflight/bb/bb.h"
+#endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_CLI)
+  #include "madflight/cli/cli.h" 
+#endif
+
+

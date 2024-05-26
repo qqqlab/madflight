@@ -14,8 +14,6 @@ rcin_GetPWM(int *pwm) -> fills pwm[0..RCIN_NUM_CHANNELS-1] received PWM values, 
 #define RCIN_USE_DEBUG 6
 
 
-#define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
-
 #include "../interface.h"
 
 /* INTERFACE
@@ -23,8 +21,16 @@ class Rcin {
   public:
     uint16_t *pwm; //pwm channel data. values: 988-2012
     virtual void setup() = 0;
-    bool update(); //returns true if channel pwm data was updated
-    bool connected();
+    bool update() { //returns true if channel pwm data was updated
+      bool rv = _update();
+      if(rv) {
+        update_time = millis();
+      }
+      return rv;
+    }
+    bool connected() {
+      return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
+    }
   private:
     uint32_t update_time = 0;
     virtual bool _update() = 0; //returns true if channel pwm data was updated
@@ -32,18 +38,6 @@ class Rcin {
 
 extern Rcin &rcin;
 */
-
-bool Rcin::update() { //returns true if channel pwm data was updated
-  bool rv = _update();
-  if(rv) {
-    update_time = millis();
-  }
-  return rv;
-}
-bool Rcin::connected() {
-  return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
-}
-
 
 
 //=================================================================================================
@@ -58,13 +52,13 @@ bool Rcin::connected() {
 #elif RCIN_USE == RCIN_USE_CRSF
 
 #include "crsf/crsf.h"
-CRSF crsf;
+CRSF rcin_crsf;
 
 class RcinCSRF : public Rcin {
   public:
     void setup() {
-      Serial.println("RCIN_USE_CRSF");
-      pwm = crsf.channel;
+      Serial.println("RCIN: RCIN_USE_CRSF");
+      pwm = rcin_crsf.channel;
       rcin_Serial->begin(CRSF_BAUD);
     }
 
@@ -74,9 +68,9 @@ class RcinCSRF : public Rcin {
         int c = rcin_Serial->read();
         //print received data
         //if(c == CRSF_ADDRESS_FLIGHT_CONTROLLER) Serial.printf("\nreceived: "); Serial.printf("%02x ",c);
-        if(crsf.update(c)) {
+        if(rcin_crsf.update(c)) {
           //print decoded rc data
-          //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,crsf.channel[i]); Serial.println();
+          //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,rcin_crsf.channel[i]); Serial.println();
           rv = true;
         }
       }

@@ -40,6 +40,13 @@ void hw_eeprom_commit() {
 }
 
 //======================================================================================================================//
+//                    IMU
+//======================================================================================================================//
+#define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE //use FreeRTOS on second core (Note: RP2040 IMU_EXEC_IRQ blocks the system)
+#define IMU_FREERTOS_TASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
+#define HW_RP2040_USE_FREERTOS //enable FreeRTOS
+
+//======================================================================================================================//
 //                    hw_setup()
 //======================================================================================================================//
 
@@ -49,12 +56,6 @@ void hw_eeprom_commit() {
 //#endif
 
 #ifdef HW_RP2040_USE_FREERTOS
-  #define HW_USE_FREERTOS //RP2040 optionally uses FreeRTOS
-#endif
-
-#define HW_RTOS_IMUTASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
-
-#ifdef HW_USE_FREERTOS
   #include <FreeRTOS.h>  //FreeRTOS
   #include <semphr.h>    //FreeRTOS
 #endif
@@ -63,12 +64,17 @@ void hw_eeprom_commit() {
 
 void hw_setup() 
 { 
-#ifdef HW_RP2040_SYS_CLK_KHZ
-  set_sys_clock_khz(HW_RP2040_SYS_CLK_KHZ, true); 
-#endif
+  //print hw info
+  Serial.print("HW_RP2040 ");
+  #ifdef HW_RP2040_USE_FREERTOS
+    Serial.print("HW_RP2040_USE_FREERTOS ");
+  #endif
+  #ifdef HW_RP2040_SYS_CLK_KHZ
+    set_sys_clock_khz(HW_RP2040_SYS_CLK_KHZ, true);
+    Serial.printf(" HW_RP2040_SYS_CLK_KHZ %d",HW_RP2040_SYS_CLK_KHZ);
+  #endif
+  Serial.println();
 
-  Serial.println("USE_HW_RP2040");
-  
   //I2C
   i2c->setSDA(HW_PIN_I2C_SDA);
   i2c->setSCL(HW_PIN_I2C_SCL);
@@ -83,10 +89,20 @@ void hw_setup()
 }
 
 void hw_reboot() {
-  watchdog_enable(1, 1);
+
+  //does not always work with FreeRTOS running
+  watchdog_enable(10, false); //uint32_t delay_ms, bool pause_on_debug
   while(1);
 
-  //alternate method?
+  //does not always work with FreeRTOS running
+  //watchdog_reboot(0, 0, 10); //uint32_t pc, uint32_t sp, uint32_t delay_ms
+  //while(1);
+
+  //alternate method - does not work...
   //#define AIRCR_Register (*((volatile uint32_t*)(PPB_BASE + 0x0ED0C)))
   //AIRCR_Register = 0x5FA0004;
+}
+
+inline uint32_t hw_get_core_num() {
+  return get_core_num();
 }

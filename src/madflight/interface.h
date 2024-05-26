@@ -8,12 +8,22 @@ interface.h - This file defines the interfaces for sensors and other devices
 // Radio Receiver
 //=================================================================================================
 
+#define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
+
 class Rcin {
   public:
     uint16_t *pwm; //pwm channel data. values: 988-2012
     virtual void setup() = 0;
-    bool update(); //returns true if channel pwm data was updated
-    bool connected();
+    bool update() { //returns true if channel pwm data was updated
+      bool rv = _update();
+      if(rv) {
+        update_time = millis();
+      }
+      return rv;
+    }
+    bool connected() {
+      return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
+    }
   private:
     uint32_t update_time = 0;
     virtual bool _update() = 0; //returns true if channel pwm data was updated

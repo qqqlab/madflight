@@ -23,10 +23,10 @@ This file defines:
 #endif
 
 //======================================================================================================================//
-//                    hw_setup()
+//                    IMU
 //======================================================================================================================//
-#define HW_USE_FREERTOS //ESP32 always uses FreeRTOS
-#define HW_RTOS_IMUTASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
+#define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
+#define IMU_FREERTOS_TASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
 
 //--------------------------------------------------------------------
 // RTOS task for setup1() and loop1() on second core
@@ -110,6 +110,10 @@ void hw_setup()
   startLoop1Task();
 }
 
-void hw_reboot() {	
+void hw_reboot() {
   ESP.restart();
+}
+
+uint32_t hw_get_core_num() {
+  return xPortGetCoreID();
 }

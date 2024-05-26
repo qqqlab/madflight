@@ -1,0 +1,3 @@
+# TestMadfight Folder
+
+This folder contains test programs for madflight. Programs will be outdated...

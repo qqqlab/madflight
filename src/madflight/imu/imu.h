@@ -28,7 +28,6 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_USE_I2C_MPU6050 8
 #define IMU_USE_I2C_MPU6000 9
 
-
 //Available aligns
 #define IMU_ALIGN_CW0 1
 #define IMU_ALIGN_CW90 2
@@ -38,6 +37,11 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_ALIGN_CW90FLIP 6
 #define IMU_ALIGN_CW180FLIP 7
 #define IMU_ALIGN_CW270FLIP 8
+
+//Available excecution methods (not all platforms support all methods)
+#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (only works on STM32)
+#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (only works on ESP32, RP2040)
+#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (only works on RP2040)
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -64,6 +68,11 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #define IMU_ROTATE() do{ float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz;   tmp=mx; mx=-my; my=-tmp; mz=-mz; }while(0)
 #else
   #define IMU_ROTATE()
+#endif
+
+//depreciated
+#ifdef HW_USE_FREERTOS
+  #error "HW_USE_FREERTOS is depreciated, use IMU_EXEC_XXX"
 #endif
 
 //=====================================================================================================================
@@ -173,7 +182,7 @@ bool Imu::hasMag() { return IMU_HAS_MAG; }
 int Imu::setup(uint32_t sampleRate) {
   int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
   _sampleRate = imu_Sensor.get_rate();
-  Serial.printf(IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
+  Serial.printf("IMU: " IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
   onUpdate = NULL;
   _imu_ll_interrupt_busy = false;
   _imu_ll_interrupt_ts = 0;
@@ -228,13 +237,15 @@ Imu imu;
 //========================================================================================================================//
 // _IMU_LL_ IMU Low Level Interrrupt Handler
 //========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with HW_USE_FREERTOS the 
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with IMU_EXEC_FREERTOS the 
 // IMU update is not executed directly in the interrupt handler, but a high priority task is used. This prevents FreeRTOS 
 // watchdog resets. The delay (latency) from rising edge INT pin to handler is approx. 10 us on ESP32 and 50 us on RP2040.
 
 void _imu_ll_interrupt_handler();
 
-#ifdef HW_USE_FREERTOS
+//-------------------------------------------------------------------------------------------------------------------------
+#if IMU_EXEC == IMU_EXEC_FREERTOS || IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
+
   TaskHandle_t _imu_ll_task_handle = NULL;
 
   void _imu_ll_task(void*) {
@@ -246,34 +257,51 @@ void _imu_ll_interrupt_handler();
 
   void _imu_ll_interrupt_setup() {
     if(!_imu_ll_task_handle) {
-      xTaskCreate(_imu_ll_task, "_imu_ll_task", 4096, NULL, HW_RTOS_IMUTASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
-      //vTaskCoreAffinitySet(IsrTaskHandle, 0);
+      //xTaskCreatePinnedToCore(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //ESP32 only
+      xTaskCreate(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+      #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
+        int callcore = hw_get_core_num();
+        int othercore = (callcore+1)%2;
+        vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //Sets the core affinity mask for a task, i.e. the cores on which a task can run.
+        Serial.printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
+      #else
+        Serial.println("IMU: IMU_EXEC_FREERTOS");
+      #endif
     }
     attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING); 
   }
-
-#else
-
+  
+  inline void _imu_ll_interrupt_handler2() {
+    //let RTOS task _imu_ll_task handle the interrupt
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+//-------------------------------------------------------------------------------------------------------------------------
+#elif IMU_EXEC == IMU_EXEC_IRQ
   void _imu_ll_interrupt_setup() {
+    Serial.println("IMU: IMU_EXEC_IRQ");
     attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING);
   }
+
+  inline void _imu_ll_interrupt_handler2() {
+      //call interrupt handler directly from interrupt context
+      imu._interrupt_handler();
+  }
+//-------------------------------------------------------------------------------------------------------------------------
+#else
+  #error #define IMU_EXEC is needed, see imu.h for available options
 #endif
 
+
+//main IRQ handler - timestamp + busy wrapper around _imu_ll_interrupt_handler2()
 void _imu_ll_interrupt_handler() {
   _imu_ll_interrupt_ts = micros();
   if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
     imu.overrun_cnt++;
   } else {
     _imu_ll_interrupt_busy = true;
-    #ifdef HW_USE_FREERTOS
-      //let RTOS task _imu_ll_task handle the interrupt
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    #else
-      //call interrupt handler directly from interrupt context
-      imu._interrupt_handler();
-    #endif
+    _imu_ll_interrupt_handler2();
     _imu_ll_interrupt_busy = false;
   }
 }

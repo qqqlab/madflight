@@ -144,7 +144,7 @@ public:
   }
 
   void welcome() {
-    Serial.println("CLI Command Line Interface Started - Type help for help");
+    Serial.println("CLI: Command Line Interface Started - Type help for help");
   }
 
   void help() {
@@ -270,22 +270,23 @@ private:
 public:
 
   void print_boardInfo() {
-    Serial.println("HW_BOARD_NAME=" HW_BOARD_NAME);
+    Serial.print("HW:");
     #ifdef HW_MCU
-      Serial.println("HW_MCU=" HW_MCU);
-    #endif  
-    #ifdef USE_IMU_POLLING
-      Serial.println("USE_IMU_POLLING");
+      Serial.print(" MCU=" HW_MCU);
     #endif
-
-    Serial.printf("HW_PIN_LED=%d\n", HW_PIN_LED);
-    Serial.printf("HW_PIN_SPI_MOSI=%d MISO=%d SCLK=%d\n", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
-    Serial.printf("HW_PIN_IMU_CS=%d\n",HW_PIN_IMU_CS);  
-    Serial.printf("HW_PIN_IMU_EXTI=%d\n",HW_PIN_IMU_EXTI);
-    Serial.printf("HW_PIN_I2C_SDA=%d SCL=%d\n", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
-    Serial.printf("HW_PIN_OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  Serial.println();
-    Serial.printf("HW_PIN_RCIN_RX=%d TX=%d\n", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-    Serial.printf("HW_PIN_GPS_RX=%d TX=%d\n", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+    Serial.print(" BOARD_NAME=" HW_BOARD_NAME);
+    Serial.println();
+    
+    Serial.printf("HW_PIN: LED=%d", HW_PIN_LED);
+    Serial.printf(" SPI_MOSI=%d MISO=%d SCLK=%d", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
+    Serial.printf(" IMU_CS=%d",HW_PIN_IMU_CS);  
+    Serial.printf(" IMU_EXTI=%d",HW_PIN_IMU_EXTI);
+    Serial.printf(" I2C_SDA=%d SCL=%d", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
+    Serial.printf(" OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  
+    for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  
+    Serial.printf(" RCIN_RX=%d TX=%d", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+    Serial.printf(" GPS_RX=%d TX=%d", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+    Serial.println();
   }
 
   void print_i2cScan() {

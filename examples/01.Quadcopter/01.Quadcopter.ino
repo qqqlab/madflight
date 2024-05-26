@@ -204,9 +204,9 @@ float Kp_ro_pi_rate   = 0.15;     //Roll/Pitch P-gain - rate mode
 float Ki_ro_pi_rate   = 0.2;      //Roll/Pitch I-gain - rate mode
 float Kd_ro_pi_rate   = 0.0002;   //Roll/Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
 
-float Kp_yaw         = 0.3;       //Yaw P-gain
-float Ki_yaw         = 0.05;      //Yaw I-gain
-float Kd_yaw         = 0.00015;   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+float Kp_yaw          = 0.3;       //Yaw P-gain
+float Ki_yaw          = 0.05;      //Yaw I-gain
+float Kd_yaw          = 0.00015;   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 //========================================================================================================================//
 //                              DECLARE GLOBAL VARIABLES                                                                  //
@@ -798,7 +798,10 @@ void ahrs_Setup()
   }
 
   //calculate yaw angle
-  if(MagX == 0 && MagY == 0 && MagZ == 0) Serial.println("ahrs_Setup() No Magnetometer");
+  if(MagX == 0 && MagY == 0 && MagZ == 0) {
+    Serial.println("AHRS: No Magnetometer, yaw:0.00");
+    return;
+  }
   float yaw = -atan2(MagY, MagX);
   ahrs_yaw = yaw * rad_to_deg;
   ahrs_pitch = 0;
@@ -810,7 +813,7 @@ void ahrs_Setup()
   q2 = 0;
   q3 = sin(yaw/2);
 
-  Serial.printf("ahrs_Setup() Estimated yaw:%+.2f\n",ahrs_yaw);  
+  Serial.printf("AHRS: Estimated yaw:%+.2f\n",ahrs_yaw);  
 }
 
 //===============================================================================================

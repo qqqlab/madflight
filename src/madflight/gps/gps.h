@@ -1,3 +1,7 @@
+#ifndef GPS_BAUD
+  #define GPS_BAUD 115200
+#endif
+
 #include "gps_nmea_pubx_parser.h"
 
 char gps_buffer[255]; //PUBX messages can be longer than gps standard 85 char

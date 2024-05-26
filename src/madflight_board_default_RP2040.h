@@ -94,24 +94,37 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 //-------------------------------------
 //Include Libraries
 //-------------------------------------
+#include <pico/stdlib.h>               //set_sys_clock_khz()
 #include <Wire.h>                      //I2C communication
 #include <SPI.h>                       //SPI communication
 #include "madflight/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
-#include <pico/stdlib.h>               //set_sys_clock_khz()
+#include "madflight/hw_RP2040/RP2040_SerialIRQ.h"  //Replacement high performance serial driver
 
 //-------------------------------------
 //Bus Setup
 //-------------------------------------
-//uncomment one line only
-SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //uart0 or uart1
-//SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed
 
-//uncomment one line only
-SerialUART *rcin_Serial = new SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //uart0 or uart1
-//SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed
+// GPS Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
+uint8_t gps_txbuf[256];
+uint8_t gps_rxbuf[256];
+SerialIRQ gps_Serial(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
+//SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
+//SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
+
+// RC Input Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
+uint8_t rcin_txbuf[256];
+uint8_t rcin_rxbuf[1024];
+SerialIRQ *rcin_Serial = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
+//SerialUART rcin_Serial = SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
+//SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
 
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
 
 SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
 SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1
+
+// Default overclocking
+//#ifndef HW_RP2040_SYS_CLK_KHZ
+//  #define HW_RP2040_SYS_CLK_KHZ 266000 //double speed overclocking: 266MHz vs 133Mhz
+//#endif

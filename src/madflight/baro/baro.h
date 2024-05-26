@@ -26,7 +26,7 @@ public:
 class BarometerNone: public BarometerSensor {
 public:
   int setup() {
-    Serial.println("BARO_USE_NONE");
+    Serial.println("BARO: BARO_USE_NONE");
     return 0;
   }
 
@@ -56,7 +56,7 @@ public:
     Serial.println();
     unsigned status;
     status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("BARO_USE_BMP280   BARO_I2C_ADR: 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
+    Serial.printf("BARO: BARO_USE_BMP280   BARO_I2C_ADR: 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or try a different address!"));
@@ -112,10 +112,10 @@ public:
     // Ultra low power: MS5611_ULTRA_LOW_POWER
     while(!ms5611.begin(MS5611_ULTRA_HIGH_RES))
     {
-      Serial.println("BARO_USE_MS5611 failed, retry...\n");
+      Serial.println("BARO: BARO_USE_MS5611 failed, retry...\n");
       delay(500);
     }
-    Serial.printf("BARO_USE_MS5611  BARO_I2C_ADR 0x%02X  refresh rate: %d Hz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
+    Serial.printf("BARO: BARO_USE_MS5611  BARO_I2C_ADR 0x%02X  refresh rate: %d Hz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
     return 0;
   }
 
