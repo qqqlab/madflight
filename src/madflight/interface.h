@@ -62,7 +62,7 @@ class Imu {
     void (*onUpdate)(void) = NULL;
 
     //methods
-    int setup(uint32_t sampleRate);
+    int setup(uint32_t sampleRate = 1000); //default: 1000 Hz sample rate
     bool waitNewSample(); //wait for new sample, returns false on fail
     bool hasMag(); //returns true if IMU has a magnetometer
     bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)    
@@ -91,7 +91,7 @@ class Barometer {
     float alt = 0; // Approximate International Standard Atmosphere (ISA) Altitude in meter
     float temp = 0; //temperature in Celcius
 
-    int setup(uint32_t sampleRate);
+    int setup(uint32_t sampleRate = 100); //default: 100 Hz sample rate
     bool update(); //returns true if pressure was updated
     uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
     uint32_t getSamplePeriod() {return _samplePeriod;} //sensor sample period in us

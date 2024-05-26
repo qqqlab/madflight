@@ -320,7 +320,7 @@ madflight works with [arduino-pico v3](https://github.com/earlephilhower/arduino
 
 Dual core, no FPU, FreeRTOS optional.
 
-madflight uses FreeRTOS and executes the IMU loop on the second core, which is pretty much 100% loaded at the standard 133MHz CPU speed. You can overclock the CPU to get some more headroom.
+madflight uses FreeRTOS and executes the IMU loop on the second core, which is 80% loaded at the standard 133MHz CPU speed. You can overclock the CPU to get some more headroom.
 
 #### Serial
 
