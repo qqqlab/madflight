@@ -2,8 +2,6 @@
 
 ***M**anless **A**erial **D**evice*
 
-_Note: v1.1.1 and v1.1.2-DEV appear to be unstable on RP2040. Please use [release v1.0.3](https://github.com/qqqlab/madflight/releases/tag/v1.0.3) for RP2040 until further notice..._
-
 This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
@@ -30,6 +28,7 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 [Pinout RP2040](#pinoutRP2040)  
 [Pinout STM32](#pinoutSTM32)  
 [Pinout STM32 Of-the-shelf Flight Controllers](#pinoutFC)  
+[Arduino Gotchas](#gotchas)  
 [Changes from dRehmFlight](#changes)  
 [Flight Controllers on Github](#github)  
 [Disclaimer](#disclamer)  
@@ -287,6 +286,55 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 ## Pinout STM32 Of-the-shelf Flight Controllers
 
 In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
+
+
+<a name="gotchas"></a>
+## Arduino Gotchas
+
+This project uses the Arduino libraries, which makes it possible to have one code base for very different microcontroller platforms, i.e. ESP32, RP2040, and STM32. However, these Arduino libraries are not 100% identical, which leads to different behavior of madflight on the different platforms:
+
+### ESP32 / ESP32-S3
+
+madflight works with [Arduino ESP32 **v2.** based on the ESP-IDF v4.4.7](https://github.com/espressif/arduino-esp32) 
+
+madflight does **NOT** work with Arduino ESP32 **v3** (based on the ESP-IDF v5.1) - the madflight PWM driver (and possibly other parts) need to be adapted.
+
+#### Dual Core / FPU / FreeRTOS
+
+ESP32 and ESP32-S3 are Dual core CPU, but single core FPU. ESP-IDF implementation limits float usage to single core only, and float can not be used in interrupts. FreeRTOS is always enabled and a watchdog limits interrupt execution time.
+
+madflight uses float and therefor is limited to a single core. The IMU loop runs as high priorty task, triggered by the IMU interrupt.
+
+#### I2C
+Arduino ESP32 has a bug in I2C which causes the bus to hang for 1 second after a failed read, which can happen a couple times per minute. This makes Wire I2C for IMU not a real option... See --> https://github.com/espressif/esp-idf/issues/4999
+
+A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, but this does not work well with all sensors.
+  
+So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
+
+### RP2040
+
+madflight works with [arduino-pico v3](https://github.com/earlephilhower/arduino-pico)
+
+#### Dual Core / FPU / FreeRTOS
+
+Dual core, no FPU, FreeRTOS optional.
+
+madflight uses FreeRTOS and executes the IMU loop on the second core, which is pretty much 100% loaded at the standard 133MHz CPU speed. You can overclock the CPU to get some more headroom.
+
+#### Serial
+
+madflight uses a custom high performance SerialIRQ library.
+
+### STM32
+
+madflight works with [Arduino Core for STM32 v2](https://github.com/stm32duino/Arduino_Core_STM32)
+
+#### Dual Core / FPU / FreeRTOS
+
+Most supported STM32 targets have a single cores with FPU. FreeRTOS support optional.
+
+madflight runs the IMU loop in interrupt context.
 
 
 <a name="changes"></a>
