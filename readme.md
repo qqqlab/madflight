@@ -1,4 +1,4 @@
-<img src="doc/img/logo/madflight_logo_2000x538.png" width="100%" />
+<img src="extras/img/logo/madflight_logo_2000x538.png" width="100%" />
 
 ***M**anless **A**erial **D**evice*
 
@@ -6,7 +6,7 @@ This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight con
 
 `Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
-<img src="doc/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="doc/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="doc/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
+<img src="extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="extras/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
 ## Feedback is Welcome
 
@@ -172,7 +172,7 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 This pinout can be changed as needed in madflight_board_default_ESP32.h
 
-<img src="doc/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
+<img src="extras/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
 
 <a name="pinoutESP32-S3"></a>
@@ -207,7 +207,7 @@ GND | G | USB connector | G | GND
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-<img src="doc/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
+<img src="extras/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
 
 
 <a name="pinoutRP2040"></a>
@@ -242,7 +242,7 @@ Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and 
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-<img src="doc/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="doc/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
+<img src="extras/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="extras/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
 
 <a name="pinoutSTM32"></a>
@@ -279,7 +279,7 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-<img src="doc/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
+<img src="extras/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
 
 
 <a name="pinoutFC"></a>
