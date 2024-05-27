@@ -102,7 +102,7 @@ madflight does **NOT** work with Arduino ESP32 **v3** (based on ESP-IDF v5.1) - 
 
 #### Dual Core / FPU / FreeRTOS
 
-ESP32 and ESP32-S3 have dual core CPU, but single core FPU. ESP-IDF implementation limits (float usage)[https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html#floating-point-usage] to a single core, and float can not be used in interrupts. FreeRTOS is always enabled and a watchdog limits interrupt execution time.
+ESP32 and ESP32-S3 have dual core CPU, but single core FPU. ESP-IDF implementation limits [float usage](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html#floating-point-usage) to a single core, and float can not be used in interrupts. FreeRTOS is always enabled and a watchdog limits interrupt execution time.
 
 madflight uses float and is therefor limited to single core operation. The IMU loop runs as a high priorty task, triggered by the IMU interrupt.
 
