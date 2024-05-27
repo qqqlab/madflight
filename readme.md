@@ -115,10 +115,10 @@ A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, bu
 
 ## Pinout ESP32
 
-Default pinout for ESP32, using the Espressiv ESP32 DevKitC (38 pin) board. This pinout is defined in madflight_board_default_ESP32.h, but can be modified with `#define HW_PIN_XXX` in your program.
+This is the default pinout for ESP32. It is optimized for the Espressiv ESP32 DevKitC (38 pin) board. This pinout is defined in madflight_board_default_ESP32.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | :--: |--: | :-- |
+| --: | :-- | :--: | --: | :-- |
 | 3V3 out      | 3V3 | Antenna side            |  GND | GND
 | reset button | EN |                            | 23 | I2C_SDA
 | SPI_MISO     | VP 36 input only |              | 22 | I2C_SCL
@@ -143,18 +143,16 @@ Note: During boot the input voltage levels (pull up/pull down) on strap pins hav
 
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
-This pinout can be changed as needed in madflight_board_default_ESP32.h
-
 <img src="extras/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
 
 
 ## Pinout ESP32-S3
 
-Default pinout for ESP32-S3, using the Espressiv ESP32-S3 DevKitC-1 (44 pin) board. This pinout is defined in madflight_board_default_ESP32-S3.h, but can be modified with `#define HW_PIN_XXX` in your program.
+This is the default pinout for ESP32-S3. It is optimized for the Espressiv ESP32-S3 DevKitC-1 (44 pin) board. This pinout is defined in madflight_board_default_ESP32-S3.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | :--: |--: | :-- |
+| --: | :-- | :--: | --: | :-- |
 3V3 out | 3V3 | Antenna side | G | GND
 3V3 out | 3V3 | | 43 | TX serial debug UART port
 reset button | RST | | 44 | RX serial debug UART port
@@ -195,18 +193,20 @@ RP2040 has dual core, no FPU, and FreeRTOS is optional.
 
 madflight uses FreeRTOS and executes the 1000Hz IMU loop on the second core, which is 80% loaded at default 133MHz CPU speed. You can overclock the CPU to get some more headroom.
 
+#### PWM
+
+Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and have the same frequency.
+
 #### Serial
 
 madflight uses a custom high performance SerialIRQ library.
 
+## Pinout RP2040 Raspberry Pi Pico
 
-
-## Pinout RP2040
-
-Default pinout for RP2040, using the Raspberry Pi Pico (40 pin) board. This pinout is defined in madflight_board_default_RP2040.h, but can be modified with `#define HW_PIN_XXX` in your program.
+This is the default pinout for RP2040. It is optimized for the Raspberry Pi Pico (40 pin) board. This pinout is defined in madflight_board_default_RP2040.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | :--: |--: | :-- |
+| --: | :-- | :--: | --: | :-- |
 |      RCIN_TX | 0   | USB connector | VBUS     | nc
 |      RCIN_RX | 1   |               | VSYS     | 5V input via diode (*)
 |          GND | GND |               | GND      | GND
@@ -228,11 +228,35 @@ Default pinout for RP2040, using the Raspberry Pi Pico (40 pin) board. This pino
 |        PWM11 | 14  |               | 17       | IMU_CS
 |        PWM12 | 15  | JTAG pins     | 16       | SPI_MISO
 
-Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and have the same frequency.
-
 (*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
 
 <img src="extras/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="extras/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
+
+## Pinout RP2040-Zero
+
+This pinout is optimized for the RP2040-Zero (21 pin) board. This pinout is defined in madflight_board_RP2040-Zero.h, but can be modified with `#define HW_PIN_XXX` in your program.
+
+| Function | GPIO | Board | GPIO | Function |
+| --: | :-- | :--: | --: | :-- |
+| 5V input (*) | 5V  | USB connector | 0 | RCIN_TX
+|          GND | GND |               | 1  | RCIN_RX
+|      3V3 out | 3V3 |               | 2  | PWM1
+|            - | 29  |               | 3  | PWM2
+|        BAT_V | 28  |               | 4  | PWM3
+|     I2C1_SCL | 27  |               | 5  | PWM4
+|     I2C1_SDA | 26  |               | 6  | PWM5
+|     IMU_EXTI | 15  |               | 7  | PWM6
+|              | 14  |               | 8  | GPS_TX
+|              |     |               |    | 
+|              |     |               | 9  | GPS_RX
+|              |     |               | 10 | SPI1_SCLK
+|              |     |               | 11 | SPI1_MISO
+|              |     |               | 12 | SPI1_MOSI
+|              |     |               | 13 | IMU_CS
+
+(*) 5V input via diode from BEC. Without a diode take care not connect USB and the battery at the same time!
+
+<img src="extras/img/RP2040-Zero.jpg" width="45%" />
 
 
 
@@ -251,16 +275,16 @@ madflight runs the IMU loop in interrupt context.
 
 ## Pinout STM32 Of-the-shelf Flight Controllers
 
-In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
+In the `src` directory you'll find 400+ Betaflight configuration files for commercial flight controllers. Include the madflight_board_betaflight_XXX.h header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
 
 
 
-## Pinout STM32
+## Pinout STM32 Black Pill
 
-Default pinout for STM32, using the WeAct STM32F411 Black Pill (40 pin) board. This pinout is defined in madflight_board_default_STM32.h, but can be modified with `#define HW_PIN_XXX` in your program.
+This is the default pinout for STM32. It is optimized for the WeAct STM32F411 Black Pill (40 pin) board. This pinout is defined in madflight_board_default_STM32.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
 | Function | GPIO | Board | GPIO | Function |
-| --: | :-- | :--: |--: | :-- |
+| --: | :-- | :--: | --: | :-- |
 |           nc | VB  |   SWD pins    | 3V3 | 3V3 out
 |          LED | C13 |               | G   | GND
 |            - | C14 |               | 5V  | 5V input (*)

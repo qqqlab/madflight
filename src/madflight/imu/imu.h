@@ -172,6 +172,7 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #include "../interface.h" //Imu class declaration
 
 void _imu_ll_interrupt_setup(); //prototype
+volatile bool _imu_ll_interrupt_enabled = false;
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
@@ -180,6 +181,7 @@ bool Imu::hasMag() { return IMU_HAS_MAG; }
  
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup(uint32_t sampleRate) {
+  _imu_ll_interrupt_enabled = false;
   int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
   _sampleRate = imu_Sensor.get_rate();
   Serial.printf("IMU: " IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
@@ -194,6 +196,7 @@ int Imu::setup(uint32_t sampleRate) {
   dt = 0;
   ts = micros();
   _imu_ll_interrupt_setup();
+  _imu_ll_interrupt_enabled = true;
   return rv;
 }
 
@@ -293,15 +296,16 @@ void _imu_ll_interrupt_handler();
   #error #define IMU_EXEC is needed, see imu.h for available options
 #endif
 
-
 //main IRQ handler - timestamp + busy wrapper around _imu_ll_interrupt_handler2()
 void _imu_ll_interrupt_handler() {
   _imu_ll_interrupt_ts = micros();
-  if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
-    imu.overrun_cnt++;
-  } else {
-    _imu_ll_interrupt_busy = true;
-    _imu_ll_interrupt_handler2();
-    _imu_ll_interrupt_busy = false;
+  if(_imu_ll_interrupt_enabled) {
+    if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
+      imu.overrun_cnt++;
+    } else {
+      _imu_ll_interrupt_busy = true;
+      _imu_ll_interrupt_handler2();
+      _imu_ll_interrupt_busy = false;
+    }
   }
 }

@@ -51,11 +51,13 @@ class LedSingle : public Led {
     void setup(int pin, uint8_t led_on_value) {
       this->pin = pin;
       this->led_on_value = led_on_value;
+      if(pin<0) return;
       pinMode(pin, OUTPUT);
       on();
     }
 
     void set(bool set_on) {
+      if(pin<0) return;
       //if(led_state != set_on) Serial.printf("led_SwitchON(%d)\n", set_on);
       state = set_on;
       digitalWrite( pin, (set_on ? led_on_value : !led_on_value) );

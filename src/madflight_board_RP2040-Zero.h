@@ -1,6 +1,6 @@
 //This pin layout is optimized for Raspberry Pi Pico board: UART, PWM on side; I2C, SPI, PPM on the other side
 
-#define HW_BOARD_NAME "DEFAULT RP2040 BOARD - Raspberry Pi Pico (W)"
+#define HW_BOARD_NAME "RP2040-Zero"
 #define HW_MCU "RP2040" //RP2040 - not all pin combinations are allowed, see datasheet
 
 //-------------------------------------
@@ -10,7 +10,7 @@
 
 //LED:
 #ifndef HW_PIN_LED
-  #define HW_PIN_LED               25 //internal on Raspberry Pi Pico
+  #define HW_PIN_LED               -1 //16 is internal RGB LED on RP2040-Zero
 #endif
 #ifndef HW_LED_ON
   #define HW_LED_ON                 1 //0:low is on, 1:high is on
@@ -18,35 +18,35 @@
 
 //IMU SPI:
 #ifndef HW_PIN_SPI_MOSI
-  #define HW_PIN_SPI_MOSI          16 //spi0: 0, 4, 16(default)   spi1:  8, 12(default)
+  #define HW_PIN_SPI_MOSI          12 //spi0: 0, 4, 16(default)   spi1:  8, 12(default)
 #endif
 #ifndef HW_PIN_SPI_MISO
-  #define HW_PIN_SPI_MISO          19 //spi0: 3, 7, 19(default)   spi1: 11, 15(default)
+  #define HW_PIN_SPI_MISO          11 //spi0: 3, 7, 19(default)   spi1: 11, 15(default)
 #endif
 #ifndef HW_PIN_SPI_SCLK
-  #define HW_PIN_SPI_SCLK          18 //spi0: 2, 6, 18(default)   spi1: 10, 14(default)
+  #define HW_PIN_SPI_SCLK          10 //spi0: 2, 6, 18(default)   spi1: 10, 14(default)
 #endif
 #ifndef HW_PIN_IMU_CS
-  #define HW_PIN_IMU_CS            17 //spi0: 1, 5, 17(default)   spi1:  9, 13(default)
+  #define HW_PIN_IMU_CS            13 //spi0: 1, 5, 17(default)   spi1:  9, 13(default)
 #endif
 #ifndef HW_PIN_IMU_EXTI
-  #define HW_PIN_IMU_EXTI          22
+  #define HW_PIN_IMU_EXTI          15
 #endif
 
 //BARO/MAG I2C:
 #ifndef HW_PIN_I2C_SDA
-  #define HW_PIN_I2C_SDA           20 //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
+  #define HW_PIN_I2C_SDA           26 //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
 #endif
 #ifndef HW_PIN_I2C_SCL
-  #define HW_PIN_I2C_SCL           21 //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
+  #define HW_PIN_I2C_SCL           27 //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
 #endif
 
 //Outputs:
 #ifndef HW_OUT_COUNT
-  #define HW_OUT_COUNT             12
+  #define HW_OUT_COUNT             6
 #endif
 #ifndef HW_PIN_OUT_LIST
-  #define HW_PIN_OUT_LIST {2,3,4,5,6,7,10,11,12,13,14,15}
+  #define HW_PIN_OUT_LIST {2,3,4,5,6,7}
 #endif
 
 //Serial debug on USB Serial port (no GPIO pins)
@@ -119,7 +119,7 @@ SerialIRQ *rcin_Serial = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof
 //SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
 
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
-HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
+HW_WIRETYPE *i2c = &Wire1; //&Wire or &Wire1
 
-SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
-SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1
+SPIClassRP2040 *spi = new SPIClassRP2040(spi1, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
+SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi0, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1

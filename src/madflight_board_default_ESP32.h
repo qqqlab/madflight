@@ -27,7 +27,7 @@
   #define HW_PIN_IMU_CS            18 //   defaults: VSPI  5, HSPI 15
 #endif
 #ifndef HW_PIN_IMU_EXTI
-  #define HW_PIN_IMU_EXTI          39 //VN only used when USE_IMU_INTERRUPT is defined
+  #define HW_PIN_IMU_EXTI          39 // VN silkscreen label
 #endif
 
 //BARO/MAG I2C:

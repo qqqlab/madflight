@@ -48,7 +48,8 @@ class AK8963 {
     int begin()
     {
       _iface->WriteReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus
+      //_iface->WriteReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus --> ONLY DO THIS IN SPI MODE, disables the external I2C interface....
+      _iface->WriteReg(MPUREG_USER_CTRL, 0x20);        // Enable I2C master mode 
 
       int rv = 0;
 

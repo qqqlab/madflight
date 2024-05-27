@@ -105,10 +105,10 @@ class MPU_InterfaceI2C : public MPU_Interface{
       _i2c_adr = i2c_adr;
       freqSlow = MPU_I2C_FREQ_SLOW;
       freqFast = MPU_I2C_FREQ_FAST;
-      setFreq(freqSlow);
     }
 
     virtual void begin() {
+      setFreq(freqSlow);
     }
 
     void setFreq(int freq) {
@@ -120,6 +120,7 @@ class MPU_InterfaceI2C : public MPU_Interface{
       _i2c->write(reg);
       _i2c->write(data);
       _i2c->endTransmission();
+      //Serial.printf("WriteReg(reg0x%02X, data=0x%02X) --> ", reg, data); ReadReg(reg);
       return 0;
     }
 
@@ -131,6 +132,7 @@ class MPU_InterfaceI2C : public MPU_Interface{
       if(bytesReceived == n) {
         _i2c->readBytes(data, bytesReceived);
       }
+      //Serial.printf("ReadRegs(reg=0x%02X, n=%d) --> data[%d]=0x%02X\n", reg, n, bytesReceived, data[0]);
     }
 
 private:
@@ -242,18 +244,18 @@ private:
 #define MPUREG_I2C_MST_DELAY_CTRL  0x67
 #define MPUREG_SIGNAL_PATH_RESET   0x68
 #define MPUREG_MOT_DETECT_CTRL     0x69
-#define MPUREG_USER_CTRL 0x6A
-#define MPUREG_PWR_MGMT_1 0x6B
-#define MPUREG_PWR_MGMT_2 0x6C
-#define MPUREG_BANK_SEL 0x6D
-#define MPUREG_MEM_START_ADDR 0x6E
-#define MPUREG_MEM_R_W 0x6F
-#define MPUREG_DMP_CFG_1 0x70
-#define MPUREG_DMP_CFG_2 0x71
-#define MPUREG_FIFO_COUNTH 0x72
-#define MPUREG_FIFO_COUNTL 0x73
-#define MPUREG_FIFO_R_W 0x74
-#define MPUREG_WHOAMI 0x75
+#define MPUREG_USER_CTRL           0x6A
+#define MPUREG_PWR_MGMT_1          0x6B
+#define MPUREG_PWR_MGMT_2          0x6C
+#define MPUREG_BANK_SEL            0x6D
+#define MPUREG_MEM_START_ADDR      0x6E
+#define MPUREG_MEM_R_W             0x6F
+#define MPUREG_DMP_CFG_1           0x70
+#define MPUREG_DMP_CFG_2           0x71
+#define MPUREG_FIFO_COUNTH         0x72
+#define MPUREG_FIFO_COUNTL         0x73
+#define MPUREG_FIFO_R_W            0x74
+#define MPUREG_WHOAMI              0x75
 #define MPUREG_XA_OFFSET_H         0x77
 #define MPUREG_XA_OFFSET_L         0x78
 #define MPUREG_YA_OFFSET_H         0x7A
