@@ -376,8 +376,9 @@ In (approximate) increasing order of complexity.
 [madflight](https://github.com/qqqlab/madflight) | Quad, Plane, VTOL, based on dRehmFlight | Arduino | ESP32, RP2040, and STM32
 [esp-fc](https://github.com/rtlopez/esp-fc) | FPV Quad | PlatformIO | ESP32
 [Crazyflie](https://github.com/bitcraze/crazyflie-firmware) | FPV Quad | | STM32F405
-[esp-drone](https://github.com/espressif/esp-drone.git) | FPV Quad, forked from Crazyflie | | ESP32 
+[esp-drone](https://github.com/espressif/esp-drone.git) | FPV Quad, based on Crazyflie | | ESP32 
 [Betaflight](https://github.com/betaflight/betaflight) | FPV Quad, based on cleanflight | | STM32 F4/F7/H7
+[EmuFlight](https://github.com/emuflight/EmuFlight) | Multi-rotor, based on cleanflight | | STM32 F4/F7
 [inav](https://github.com/iNavFlight/inav) | Plane, based on cleanflight | | STM32 F4/F7/H7
 [Ardupilot](https://github.com/ArduPilot/ardupilot) | Quad, Plane, VTOL | Linux waf | STM32 F4/F7/H7 or Linux based
 [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) | Quad, Plane, VTOL | | STM32 F4/F7/H7 |
