@@ -8,30 +8,34 @@ This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight con
 
 <img src="extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="25%" /> <img src="extras/img/madflight drone.jpeg" title="madflight drone" width="19.6%" /> <img src="extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="19.1%" />
 
+
+
 ## Feedback is Welcome
 
 I enjoy hacking with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
 
+
+
 ## Documentation
 
 For full documention see [madflight.com](https://madflight.com) and the source code itself.
+
+
 
 ## Quick Start
 
 [Required Hardware](#hardware)  
 [Getting Started](#gettingstarted)  
 [Safety First](#safetyfirst)  
-[Software Design](#softwaredesign)  
+[ESP32 / ESP32-S3 Setup and Pinout](#ESP32)  
+[RP2040 Setup and Pinout](#RP2040)  
+[STM32 Setup and Pinout](#STM32)  
 [Connecting the IMU Sensor](#connectsensor)  
-[Pinout ESP32](#pinoutESP32)  
-[Pinout ESP32-S3](#pinoutESP32-S3)  
-[Pinout RP2040](#pinoutRP2040)  
-[Pinout STM32](#pinoutSTM32)  
-[Pinout STM32 Of-the-shelf Flight Controllers](#pinoutFC)  
-[Arduino Gotchas](#gotchas)  
+[Software Design](#softwaredesign)  
 [Changes from dRehmFlight](#changes)  
 [Flight Controllers on Github](#github)  
 [Disclaimer](#disclamer)  
+
 
 
 <a name="hardware"></a>
@@ -55,6 +59,7 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 - [Optical Flow Sensor](https://github.com/qqqlab/ESP32-Optical-Flow) (I2C)
 
 
+
 <a name="gettingstarted"></a>
 ## Getting Started
 
@@ -63,14 +68,15 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 3. Setup the USER-SPECIFIED DEFINES section
 4. If you're not using a default pinout (see below) then setup your board pinout in the BOARD section.
 5. Connect your IMU (gyro/acceleration) sensor as shown below.
-6. Compile and upload Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type `help` to see the available CLI commands.
+6. Upload Quadcopter.ino to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type `help` to see the available CLI commands.
 7. Use CLI print commands like `pimu`, `pgyro`, `proll` to Check that IMU sensor and AHRS are working correctly. 
 8. IMPORTANT: Use CLI `calimu` and `calmag` to calibate the sensors.
 9. Connect radio receiver to your development board according to the configured pins.
-10. Edit the RC RECEIVER CONFIG section. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
+10. Review the RC RECEIVER CONFIG section. Either match you RC equipment to the settings, or change the settings to match your RC equipment. 
 11. Check your radio setup: Use CLI `ppwm` and `pradio` to show pwm and scaled radio values.
 12. Connect motors (no props) and battery and check that motor outputs are working correctly. For debugging, use CLI `pmot` to show motor output.
 13. Mount props, go to an wide open space, and FLY!
+
 
 
 <a name="safetyfirst"></a>
@@ -86,60 +92,27 @@ By default madflight has these safety features enabled:
 - LED armed/disarmed indicator.
 
 
-<a name="softwaredesign"></a>
-## Software Design
 
-- Keep it simple!!!
-- Forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight)
-- Coded primarily for readability, then for speed and code size.
-- No external dependencies, all modules are included in the `src/madflight` directory.
-- The madflight flight controller runs standard `setup()` and `loop()`.
-- It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
-- The following modules are used:
-  - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
-  - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
-  - `rcin` RC INput, retrieves RC receiver data
-  - `control` PID controller and output mixer
-  - `out` Output to motors and servos
-  - `mag` Magnetometer (external)
-  - `baro` Barometer
-  - `gps` GPS receiver
-  - `bb` Black Box data logger
-  - `cli` Command Line Interface for debugging, configuration and calibration
-  - `cfg` Read and save configuration to flash
-  - `hw` Hardware specific code for STM32, RP2040 and ESP32
-- Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
-- For a quick overview of the objects, see header `src/madflight/interfaces.h` which defines the module interfaces.
-- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. In the `extras` directory your find test programs for the modules, e.g. `extras/TestMadflight/imu.ino`.
-- The module files are usually header only, that is, the header also includes the implemention.
+<a name="ESP32"></a>
+## ESP32 / ESP32-S3 Setup and Pinout
 
+madflight works with [Arduino ESP32 **v2**](https://github.com/espressif/arduino-esp32) (based on ESP-IDF v4.4.7).
 
-<a name="connectsensor"></a>
-## Connecting the IMU Sensor
+madflight does **NOT** work with Arduino ESP32 **v3** (based on ESP-IDF v5.1) - the madflight PWM driver (and possibly other parts) need to be adapted.
 
-SPI sensor: (highly recommended over I2C)
-```
-  Sensor       Dev Board
-SCL/SCLK <---> SPI_SCLK
- SDA/SDI <---> SPI_MOSI
- ADD/SDO <---> SPI_MISO
-     NCS <---> IMU_CS
-     INT <---> IMU_EXTI
-     VCC <---> 3V3
-     GND <---> GND
-```
-I2C sensor:
-```
-  Sensor       Dev Board
-     SCL <---> I2C_SCL 
-     SDA <---> I2C_SDA
-     INT <---> IMU_EXTI
-     VCC <---> 3V3
-     GND <---> GND
-```
+#### Dual Core / FPU / FreeRTOS
 
+ESP32 and ESP32-S3 have dual core CPU, but single core FPU. ESP-IDF implementation limits (float usage)[https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html#floating-point-usage] to a single core, and float can not be used in interrupts. FreeRTOS is always enabled and a watchdog limits interrupt execution time.
 
-<a name="pinoutESP32"></a>
+madflight uses float and is therefor limited to single core operation. The IMU loop runs as a high priorty task, triggered by the IMU interrupt.
+
+#### I2C
+Arduino ESP32 v2.0.17 has an [I2C bug](https://github.com/espressif/esp-idf/issues/4999) which causes the bus to hang for 1 second after a failed read, which can happen a couple times per minute. This makes Wire I2C for IMU not a real option...
+
+A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, but this does not work well with all sensors.
+  
+(!) So, until a better I2C solution is available: use an SPI IMU sensor on ESP32.
+
 ## Pinout ESP32
 
 Default pinout for ESP32, using the Espressiv ESP32 DevKitC (38 pin) board. This pinout is defined in madflight_board_default_ESP32.h, but can be modified with `#define HW_PIN_XXX` in your program.
@@ -175,7 +148,7 @@ This pinout can be changed as needed in madflight_board_default_ESP32.h
 <img src="extras/img/ESP32-DEV-KIT-DevKitC-v4-pinout-mischianti.png" width="60%" />
 
 
-<a name="pinoutESP32-S3"></a>
+
 ## Pinout ESP32-S3
 
 Default pinout for ESP32-S3, using the Espressiv ESP32-S3 DevKitC-1 (44 pin) board. This pinout is defined in madflight_board_default_ESP32-S3.h, but can be modified with `#define HW_PIN_XXX` in your program.
@@ -210,7 +183,24 @@ GND | G | USB connector | G | GND
 <img src="extras/img/esp32-S3-DevKitC-1-original-pinout-high.png" width="60%" />
 
 
-<a name="pinoutRP2040"></a>
+
+<a name="RP2040"></a>
+## RP2040 Setup and Pinout
+
+madflight works with [arduino-pico v3](https://github.com/earlephilhower/arduino-pico)
+
+#### Dual Core / FPU / FreeRTOS
+
+RP2040 has dual core, no FPU, and FreeRTOS is optional.
+
+madflight uses FreeRTOS and executes the 1000Hz IMU loop on the second core, which is 80% loaded at default 133MHz CPU speed. You can overclock the CPU to get some more headroom.
+
+#### Serial
+
+madflight uses a custom high performance SerialIRQ library.
+
+
+
 ## Pinout RP2040
 
 Default pinout for RP2040, using the Raspberry Pi Pico (40 pin) board. This pinout is defined in madflight_board_default_RP2040.h, but can be modified with `#define HW_PIN_XXX` in your program.
@@ -245,7 +235,26 @@ Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and 
 <img src="extras/img/Raspberry-Pi-Pico-rp2040-pinout-mischianti.png" width="45%" /> <img src="extras/img/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png" width="46.8%" />
 
 
-<a name="pinoutSTM32"></a>
+
+<a name="STM32"></a>
+## STM32 Setup and Pinout
+
+madflight works with [Arduino Core for STM32 v2](https://github.com/stm32duino/Arduino_Core_STM32)
+
+#### Dual Core / FPU / FreeRTOS
+
+Most supported STM32 targets have a single cores with FPU. FreeRTOS support optional.
+
+madflight runs the IMU loop in interrupt context.
+
+
+
+## Pinout STM32 Of-the-shelf Flight Controllers
+
+In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
+
+
+
 ## Pinout STM32
 
 Default pinout for STM32, using the WeAct STM32F411 Black Pill (40 pin) board. This pinout is defined in madflight_board_default_STM32.h, but can be modified with `#define HW_PIN_XXX` in your program.
@@ -282,59 +291,63 @@ PWM1-6 are connected to timer1, PWM7-8 to timer3 and PWM9-10 to timer4. PWM pins
 <img src="extras/img/STM32-STM32F4-STM32F411-STM32F411CEU6-pinout-high-resolution.png" width="45%" />
 
 
-<a name="pinoutFC"></a>
-## Pinout STM32 Of-the-shelf Flight Controllers
 
-In the `src` directory you'll find header files for 400+ commercial flight controllers. These are converted Betaflight configuration files. Include the header file of your board, and in your program set '#define HW_USE_XXX' to match your board. 
+<a name="connectsensor"></a>
+## Connecting the IMU Sensor
+
+SPI sensor: (highly recommended over I2C)
+```
+  Sensor       Dev Board
+SCL/SCLK <---> SPI_SCLK
+ SDA/SDI <---> SPI_MOSI
+ ADD/SDO <---> SPI_MISO
+     NCS <---> IMU_CS
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
+I2C sensor:
+```
+  Sensor       Dev Board
+     SCL <---> I2C_SCL 
+     SDA <---> I2C_SDA
+     INT <---> IMU_EXTI
+     VCC <---> 3V3
+     GND <---> GND
+```
 
 
-<a name="gotchas"></a>
-## Arduino Gotchas
 
-This project uses the Arduino libraries, which makes it possible to have one code base for very different microcontroller platforms, i.e. ESP32, RP2040, and STM32. However, these Arduino libraries are not 100% identical, which leads to different behavior of madflight on the different platforms:
+<a name="softwaredesign"></a>
+## Software Design
 
-### ESP32 / ESP32-S3
+- Keep it simple!!!
+- Forked from [dRehmFlight](https://github.com/nickrehm/dRehmFlight)
+- Coded primarily for readability, then for speed and code size.
+- No external dependencies, all modules are included in the `src/madflight` directory.
+- The madflight flight controller runs standard `setup()` and `loop()`.
+- It mainly uses plain Arduino functionality: Serial, Wire, and SPI. This makes it possible to have one code base for very different microcontroller platforms.
+- A few custom libraries are is used for PWM or to work around issues in the standard Arduino libraries.
+- madflight can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
+- This project uses the Arduino libraries, , i.e. ESP32, RP2040, and STM32. :
+- The following modules are used:
+  - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
+  - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
+  - `rcin` RC INput, retrieves RC receiver data
+  - `control` PID controller and output mixer
+  - `out` Output to motors and servos
+  - `mag` Magnetometer (external)
+  - `baro` Barometer
+  - `gps` GPS receiver
+  - `bb` Black Box data logger
+  - `cli` Command Line Interface for debugging, configuration and calibration
+  - `cfg` Read and save configuration to flash
+  - `hw` Hardware specific code for STM32, RP2040 and ESP32
+- Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
+- For a quick overview of the objects, see header `src/madflight/interfaces.h` which defines the module interfaces.
+- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. In the `extras` directory your find test programs for the modules, e.g. `extras/TestMadflight/imu.ino`.
+- The module files are usually header only, that is, the header also includes the implemention.
 
-madflight works with [Arduino ESP32 **v2.** based on the ESP-IDF v4.4.7](https://github.com/espressif/arduino-esp32) 
-
-madflight does **NOT** work with Arduino ESP32 **v3** (based on the ESP-IDF v5.1) - the madflight PWM driver (and possibly other parts) need to be adapted.
-
-#### Dual Core / FPU / FreeRTOS
-
-ESP32 and ESP32-S3 are Dual core CPU, but single core FPU. ESP-IDF implementation limits float usage to single core only, and float can not be used in interrupts. FreeRTOS is always enabled and a watchdog limits interrupt execution time.
-
-madflight uses float and therefor is limited to a single core. The IMU loop runs as high priorty task, triggered by the IMU interrupt.
-
-#### I2C
-Arduino ESP32 has a bug in I2C which causes the bus to hang for 1 second after a failed read, which can happen a couple times per minute. This makes Wire I2C for IMU not a real option... See --> https://github.com/espressif/esp-idf/issues/4999
-
-A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, but this does not work well with all sensors.
-  
-So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
-
-### RP2040
-
-madflight works with [arduino-pico v3](https://github.com/earlephilhower/arduino-pico)
-
-#### Dual Core / FPU / FreeRTOS
-
-Dual core, no FPU, FreeRTOS optional.
-
-madflight uses FreeRTOS and executes the IMU loop on the second core, which is 80% loaded at the standard 133MHz CPU speed. You can overclock the CPU to get some more headroom.
-
-#### Serial
-
-madflight uses a custom high performance SerialIRQ library.
-
-### STM32
-
-madflight works with [Arduino Core for STM32 v2](https://github.com/stm32duino/Arduino_Core_STM32)
-
-#### Dual Core / FPU / FreeRTOS
-
-Most supported STM32 targets have a single cores with FPU. FreeRTOS support optional.
-
-madflight runs the IMU loop in interrupt context.
 
 
 <a name="changes"></a>
