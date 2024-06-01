@@ -58,18 +58,34 @@ class PWM
       int ch = findFreeChannel(freq);
       if(ch<0) return false;
 
-      //find maximum number of bits, or exit if less than 7
-      int act_freq;
-      int bits = LEDC_TIMER_BIT_MAX;
-      while(1) {
-        act_freq = ledcSetup(ch, freq, bits);
-        if(act_freq > 0) break;
-        bits--;
-        if(bits < 7) return false;
-      }
-
-      ledcWrite(ch, 0); //start with no output
-      ledcAttachPin(pin, ch);      
+      #if ESP_ARDUINO_VERSION_MAJOR >= 3
+        // ---- implementation for Arduino-ESP32 v3.x.x	----
+        //find maximum number of bits, or exit if less than 7
+        int act_freq = freq; //TODO
+        int bits = LEDC_TIMER_BIT_MAX;
+        while(1) {
+          bool found = ledcAttachChannel(pin, freq, bits, ch);
+          if(found > 0) break;
+          bits--;
+          if(bits < 7) return false;
+        }
+        //start with no output
+        ledcWrite(ch, 0); 
+      #else 
+        // ---- implementation for Arduino-ESP32 v2.x.x	----
+        //find maximum number of bits, or exit if less than 7
+        int act_freq;
+        int bits = LEDC_TIMER_BIT_MAX;
+        while(1) {
+          act_freq = ledcSetup(ch, freq, bits); 
+          if(act_freq > 0) break;
+          bits--;
+          if(bits < 7) return false;
+        }
+        //start with no output
+        ledcWrite(ch, 0);
+        ledcAttachPin(pin, ch);
+      #endif
 
       this->ch = ch;
       this->bits = bits;
