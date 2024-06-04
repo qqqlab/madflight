@@ -98,9 +98,9 @@ By default madflight has these safety features enabled:
 <a name="ESP32"></a>
 ## ESP32 / ESP32-S3 Setup and Pinout
 
-madflight works with [Arduino ESP32 **v2**](https://github.com/espressif/arduino-esp32) (based on ESP-IDF v4.4.7).
+madflight works with [Arduino ESP32 v3.x.x](https://github.com/espressif/arduino-esp32)
 
-madflight does **NOT** work with Arduino ESP32 **v3** (based on ESP-IDF v5.1) - the madflight PWM driver (and possibly other parts) need to be adapted.
+madflight v1.1.2 and earlier works with Arduino ESP32 v2.x.x
 
 #### Dual Core / FPU / FreeRTOS
 
@@ -109,11 +109,13 @@ ESP32 and ESP32-S3 have dual core CPU, but single core FPU. ESP-IDF implementati
 madflight uses float and is therefor limited to single core operation. The IMU loop runs as a high priorty task, triggered by the IMU interrupt.
 
 #### I2C
-Arduino ESP32 v2.0.17 has an [I2C bug](https://github.com/espressif/esp-idf/issues/4999) which causes the bus to hang for 1 second after a failed read, which can happen a couple times per minute. This makes Wire I2C for IMU not a real option...
+Arduino-ESP32 v2.0.17 has an [I2C bug](https://github.com/espressif/esp-idf/issues/4999) which causes the bus to hang for 1 second after a failed read, which can happen a couple times per minute. This makes Wire I2C for IMU not a real option...
 
 A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, but this does not work well with all sensors.
   
 (!) So, until a better I2C solution is available: use an SPI IMU sensor on ESP32.
+
+NOTE: not tested on Arduino-ESP32 v3.x.x yet
 
 ## Pinout ESP32
 
