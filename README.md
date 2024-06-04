@@ -412,7 +412,7 @@ In (approximate) increasing order of complexity.
 [PX4-Autopilot](https://github.com/PX4/PX4-Autopilot) | Quad, Plane, VTOL | | STM32 F4/F7/H7 |
 
 
-<img src="https://api.star-history.com/svg?repos=qqqlab/madflight&type=Date" width="48%" />&nbsp;&nbsp;<img src="https://api.star-history.com/svg?repos=lobodol/drone-flight-controller,nickrehm/dRehmFlight,rtlopez/esp-fc,bitcraze/crazyflie-firmware,espressif/esp-drone,betaflight/betaflight,emuflight/EmuFlight,iNavFlight/inav,ArduPilot/ardupilot,PX4/PX4-Autopilot&type=Date" width="48%" />
+<img src="https://api.star-history.com/svg?repos=qqqlab/madflight,rtlopez/esp-fc,lobodol/drone-flight-controller,emuflight/EmuFlight,espressif/esp-drone,nickrehm/dRehmFlight&type=Date" width="48%" /> <img src="https://api.star-history.com/svg?repos=bitcraze/crazyflie-firmware,iNavFlight/inav,PX4/PX4-Autopilot,betaflight/betaflight,ArduPilot/ardupilot&type=Date" width="48%" />
 
 
 <a name="disclamer"></a>
