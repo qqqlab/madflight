@@ -115,7 +115,7 @@ A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, bu
   
 (!) So, until a better I2C solution is available: use an SPI IMU sensor on ESP32.
 
-NOTE: not tested on Arduino-ESP32 v3.x.x yet
+NOTE: as of June 2024 this bug is apparently fixed, but not yet tested with madflight.
 
 ## Pinout ESP32
 
@@ -189,7 +189,7 @@ GND | G | USB connector | G | GND
 <a name="RP2040"></a>
 ## RP2040 Setup and Pinout
 
-madflight works with [arduino-pico v3](https://github.com/earlephilhower/arduino-pico)
+madflight works with [arduino-pico v3.x.x](https://github.com/earlephilhower/arduino-pico)
 
 #### Dual Core / FPU / FreeRTOS
 
@@ -267,7 +267,7 @@ This pinout is optimized for the RP2040-Zero (21 pin) board. This pinout is defi
 <a name="STM32"></a>
 ## STM32 Setup and Pinout
 
-madflight works with [Arduino Core for STM32 v2](https://github.com/stm32duino/Arduino_Core_STM32)
+madflight works with [Arduino Core for STM32 v2.x.x](https://github.com/stm32duino/Arduino_Core_STM32)
 
 #### Dual Core / FPU / FreeRTOS
 
@@ -355,9 +355,8 @@ I2C sensor:
 - No external dependencies, all modules are included in the `src/madflight` directory.
 - The madflight flight controller runs standard `setup()` and `loop()`.
 - It mainly uses plain Arduino functionality: Serial, Wire, and SPI. This makes it possible to have one code base for very different microcontroller platforms.
-- A few custom libraries are is used for PWM or to work around issues in the standard Arduino libraries.
+- Hardware platform specific libraries are used for PWM and to work around issues in the standard Arduino libraries.
 - madflight can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
-- This project uses the Arduino libraries, , i.e. ESP32, RP2040, and STM32. :
 - The following modules are used:
   - `imu` Inertial Measurement Unit, retrieves accelerometer, gyroscope, and magnetometer sensor data
   - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
