@@ -50,7 +50,7 @@
 
 //RC Receiver:
 #ifndef HW_PIN_RCIN_RX
-  #define HW_PIN_RCIN_RX            5 //also used as PPM input
+  #define HW_PIN_RCIN_RX           35 //also used as PPM input
 #endif
 #ifndef HW_PIN_RCIN_TX
   #define HW_PIN_RCIN_TX           32

@@ -83,7 +83,7 @@ fast blinking - something is wrong, connect USB serial for info
 #define HW_PIN_SPI2_MOSI  -1
 #define HW_PIN_SPI2_SCLK  -1
 #define HW_PIN_BB_CS      -1
-*/
+//*/
 
 //RP2040 specific options
 //#define HW_RP2040_SYS_CLK_KHZ 200000 //overclocking
@@ -250,7 +250,7 @@ void setup() {
 
   //6 second startup delay
   for(int i=20;i>0;i--) { 
-    Serial.printf(MADFLIGHT_VERSION " starting %d ...\n",i);
+    Serial.printf(MADFLIGHT_VERSION " on " HW_ARDUINO_STR " starting %d ...\n",i);
     delay(300);
     led.toggle();
   } 

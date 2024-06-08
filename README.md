@@ -2,8 +2,6 @@
 
 ***M**anless **A**erial **D**evice*
 
-__*NOTE: madflight v1.1.2 works with Arduino-ESP 2.x.x, use madflight v1.1.3-DEV for Arduino-ESP 3.x.x (download this repository from Github)*__
-
 This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
@@ -98,9 +96,9 @@ By default madflight has these safety features enabled:
 <a name="ESP32"></a>
 ## ESP32 / ESP32-S3 Setup and Pinout
 
-madflight works with [Arduino ESP32 v3.x.x](https://github.com/espressif/arduino-esp32)
+madflight works with [Arduino-ESP32 v3.x.x](https://github.com/espressif/arduino-esp32)
 
-madflight v1.1.2 and earlier works with Arduino ESP32 v2.x.x
+madflight v1.1.2 and earlier works with Arduino-ESP32 v2.x.x
 
 #### Dual Core / FPU / FreeRTOS
 
@@ -115,7 +113,8 @@ A workaround is to use #define USE_ESP32_SOFTWIRE which enables software I2C, bu
   
 (!) So, until a better I2C solution is available: use an SPI IMU sensor on ESP32.
 
-NOTE: as of June 2024 this bug is apparently fixed, but not yet tested with madflight.
+NOTE: as of June 2024 this bug is apparently fixed, but not yet confirmed with madflight.
+
 
 ## Pinout ESP32
 
@@ -267,7 +266,7 @@ This pinout is optimized for the RP2040-Zero (21 pin) board. This pinout is defi
 <a name="STM32"></a>
 ## STM32 Setup and Pinout
 
-madflight works with [Arduino Core for STM32 v2.x.x](https://github.com/stm32duino/Arduino_Core_STM32)
+madflight works with [stm32duino Arduino Core for STM32 v2.x.x](https://github.com/stm32duino/Arduino_Core_STM32)
 
 #### Dual Core / FPU / FreeRTOS
 

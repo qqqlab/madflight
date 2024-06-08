@@ -16,6 +16,10 @@ This file defines:
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
+#define df2xstr(s)              #s
+#define df2str(s)               df2xstr(s)
+#define HW_ARDUINO_STR "Arduino_Core_STM32 v" df2str(STM32_CORE_VERSION_MAJOR) "." df2str(STM32_CORE_VERSION_MINOR) "." df2str(STM32_CORE_VERSION_PATCH)
+
 //Arduino IDE settings:
 //Board: Generic STM32xxx
 //Board part number: select according your board
