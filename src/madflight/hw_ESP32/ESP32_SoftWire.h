@@ -139,6 +139,7 @@ SOFTWARE.
 //-----------------------------------------------------------------------------------------
 
 #include "ESP32_SoftWire.h"
+#include <soc/gpio_struct.h>
 
 #define SDA_HI() GPIO.out_w1ts = _sda_mask // Do not drive SDA (set pin high-impedance)
 #define SDA_LO() GPIO.out_w1tc = _sda_mask // Actively drive SDA signal low
