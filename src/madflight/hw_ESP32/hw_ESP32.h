@@ -11,6 +11,16 @@ This file defines:
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
+//Arduino-ESP32 version string
+#ifndef ESP_ARDUINO_VERSION_MAJOR
+#define ESP_ARDUINO_VERSION_MAJOR 0
+#endif
+#ifndef ESP_ARDUINO_VERSION_MINOR
+#define ESP_ARDUINO_VERSION_MINOR 0
+#endif
+#ifndef ESP_ARDUINO_VERSION_PATCH
+#define ESP_ARDUINO_VERSION_PATCH 0
+#endif
 #define mf_df2xstr(s)              #s
 #define mf_df2str(s)               mf_df2xstr(s)
 #define HW_ARDUINO_STR "Arduino-ESP32 v" mf_df2str(ESP_ARDUINO_VERSION_MAJOR) "." mf_df2str(ESP_ARDUINO_VERSION_MINOR) "." mf_df2str(ESP_ARDUINO_VERSION_PATCH)

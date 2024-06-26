@@ -62,7 +62,7 @@ class PWM
         // ---- implementation for Arduino-ESP32 v3.x.x	----
         //find maximum number of bits, or exit if less than 7
         int act_freq = freq; //TODO
-        int bits = LEDC_TIMER_BIT_MAX;
+        int bits = LEDC_TIMER_BIT_MAX - 1; //maximum number of bits
         while(1) {
           bool found = ledcAttachChannel(pin, freq, bits, ch);
           if(found > 0) break;
@@ -75,7 +75,7 @@ class PWM
         // ---- implementation for Arduino-ESP32 v2.x.x	----
         //find maximum number of bits, or exit if less than 7
         int act_freq;
-        int bits = LEDC_TIMER_BIT_MAX;
+        int bits = LEDC_TIMER_BIT_MAX - 1; //maximum number of bits
         while(1) {
           act_freq = ledcSetup(ch, freq, bits); 
           if(act_freq > 0) break;
