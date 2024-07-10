@@ -20,12 +20,15 @@ class MPUXXXX {
         MPU9250
     };
 
-    float accel[3];
-    float gyro[3];
-    float mag[3];
-    float temperature;
+    //raw measurements in NED frame
+    int16_t rawa[3]; //accelerometer
+    int16_t rawg[3]; //gyroscope
+    int16_t rawm[3]; //magnetometer
+    int16_t rawt; //temperature
+
     float acc_multiplier;
     float gyro_multiplier;
+    float mag_multiplier[3]; //multipliers for magnetometer in NED frame
 
   private:
   
@@ -41,7 +44,6 @@ class MPUXXXX {
 
     AK8963 *mag9250; //magnetometer of MPU9250
     AK8975 *mag9150; //magnetometer of MPU9150
-    float* mag_multiplier; //pointer to multipliers in magnetometer object
 
     MPUXXXX(MPU_Type type, MPU_Interface *iface) {
         _type = type;
@@ -102,15 +104,23 @@ class MPUXXXX {
       //MPU9150: enable AK8975 magnetometer
       if(_type==MPU9150) {
         mag9150 = new AK8975(_iface);
-        mag_multiplier = mag9150->mag_multiplier;
-        return mag9150->begin();
+        int rv = mag9150->begin();
+        //multipliers (should be positive) - sensor orientation for mag is WND
+        mag_multiplier[1] = mag9150->mag_multiplier[0]; //E = W (sign is set in read6()/read9())
+        mag_multiplier[0] = mag9150->mag_multiplier[1]; //N = N
+        mag_multiplier[2] = mag9150->mag_multiplier[2]; //D = D
+        return rv;
       }
 
       //MPU9150: enable AK8963 magnetometer
       if(_type==MPU9250) {
         mag9250 = new AK8963(_iface);
-        mag_multiplier = mag9250->mag_multiplier;
-        return mag9250->begin();
+        int rv = mag9250->begin();
+        //multipliers (should be positive) - sensor orientation for mag is WND
+        mag_multiplier[1] = mag9250->mag_multiplier[0]; //E = W (sign is set in read6()/read9())
+        mag_multiplier[0] = mag9250->mag_multiplier[1]; //N = N
+        mag_multiplier[2] = mag9250->mag_multiplier[2]; //D = D
+        return rv;
       }
 
       return 0;
@@ -178,6 +188,9 @@ class MPUXXXX {
         }
     }
 
+    float getTemperature() {
+      return (((float)rawt-21)/333.87)+21;
+    }
 
     //================================================================
     // Read 6 value acc/gyro sensor data
@@ -190,44 +203,29 @@ class MPUXXXX {
     void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz)
     {
       read6();
-      //sensor orientation for acc/gyro is NWU
-      *ax = -accel[0];
-      *ay = accel[1];
-      *az = accel[2];
-      *gx = gyro[0];
-      *gy = -gyro[1];
-      *gz = -gyro[2];
+      *ax = rawa[0] * acc_multiplier;
+      *ay = rawa[1] * acc_multiplier;
+      *az = rawa[2] * acc_multiplier;
+      *gx = rawg[0] * gyro_multiplier;
+      *gy = rawg[1] * gyro_multiplier;
+      *gz = rawg[2] * gyro_multiplier;
     }
 
     void read6()
     {
-        uint8_t response[14];
-        int16_t bit_data;
-        float data;
-        int i,pos;
-
+        uint8_t d[14]; //response is 14 bytes = 6 acc + 2 temp + 6 gyro
         _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,14);
-        // Get accelerometer value (6 bytes)
-        pos = 0;
-        for(i = 0; i < 3; i++) {
-            bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-            data = (float)bit_data;
-            accel[i] = data * acc_multiplier;
-            pos += 2;;
-        }
-        // Get temperature (2 bytes)
-        bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-        data = (float)bit_data;
-        temperature = ((data-21)/333.87)+21;
-        pos += 2;
-        // Get gyroscope value (6 bytes)
-        for(i=0; i < 3; i++) {
-            bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-            data = (float)bit_data;
-            gyro[i] = data * gyro_multiplier;
-            pos += 2;
-        }
+        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 20); 
+        // Get accelerometer (6 bytes) - sensor orientation for acc/gyro is NWU
+        rawa[0] = -(int16_t)((d[0]<<8) | d[1]); //-N = -N
+        rawa[1] =  (int16_t)((d[2]<<8) | d[3]); //-E =  W
+        rawa[2] =  (int16_t)((d[4]<<8) | d[5]); //-D =  U
+        // Get temperature (2 bytes) 
+        rawt = (int16_t)((d[6]<<8) | d[7]);
+        // Get gyroscope (6 bytes) - sensor orientation for acc/gyro is NWU
+        rawg[0] =  (int16_t)((d[ 8]<<8) | d[ 9]); //N =  N
+        rawg[1] = -(int16_t)((d[10]<<8) | d[11]); //E = -W
+        rawg[2] = -(int16_t)((d[12]<<8) | d[13]); //D = -U
     }
 
 
@@ -242,56 +240,37 @@ class MPUXXXX {
     void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz)
     {
       read9();
-      //sensor orientation for acc/gyro is NWU
-      *ax = -accel[0]; //-N
-      *ay = accel[1];  //-E
-      *az = accel[2];  //-D
-      *gx = gyro[0];   //N
-      *gy = -gyro[1];  //E
-      *gz = -gyro[2];  //D
-      //sensor orientation for mag is WND
-      *mx = mag[1];    //N
-      *my = -mag[0];   //E
-      *mz = mag[2];    //D
+      *ax = rawa[0] * acc_multiplier;
+      *ay = rawa[1] * acc_multiplier;
+      *az = rawa[2] * acc_multiplier;
+      *gx = rawg[0] * gyro_multiplier;
+      *gy = rawg[1] * gyro_multiplier;
+      *gz = rawg[2] * gyro_multiplier;
+      *mx = rawm[0] * mag_multiplier[0];
+      *my = rawm[1] * mag_multiplier[1];
+      *mz = rawm[2] * mag_multiplier[2];
     }
 
     //read sensor data (axis as defined by sensor)
     void read9()
     {
-        uint8_t response[20]; //response is 21 bytes = 6 acc + 2 temp + 6 gyro + 6 mag + 1 magstatus (last byte not retrieved)
-        int16_t bit_data;
-        float data;
-        int i,pos;
-
+        uint8_t d[20]; //response is 21 bytes = 6 acc + 2 temp + 6 gyro + 6 mag + 1 magstatus (last byte not retrieved)
         _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H,response,20); 
-        // Get accelerometer value (6 bytes)
-        pos = 0;
-        for(i = 0; i < 3; i++) {
-            bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-            data = (float)bit_data;
-            accel[i] = data * acc_multiplier;
-            pos += 2;;
-        }
-        // Get temperature (2 bytes)
-        bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-        data = (float)bit_data;
-        temperature = ((data-21)/333.87)+21;
-        pos += 2;
-        // Get gyroscope value (6 bytes)
-        for(i=0; i < 3; i++) {
-            bit_data = ((int16_t)response[pos]<<8) | response[pos+1];
-            data = (float)bit_data;
-            gyro[i] = data * gyro_multiplier;
-            pos += 2;
-        }
-        // Get Magnetometer value (6 bytes)
-        for(i=0; i < 3; i++) {
-            bit_data = ((int16_t)response[pos+1]<<8) | response[pos];
-            data = (float)bit_data;
-            mag[i] = data * mag_multiplier[i];
-            pos += 2;
-        }
+        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 20); 
+        // Get accelerometer (6 bytes) - sensor orientation for acc/gyro is NWU
+        rawa[0] = -(int16_t)((d[0]<<8) | d[1]); //-N = -N
+        rawa[1] =  (int16_t)((d[2]<<8) | d[3]); //-E =  W
+        rawa[2] =  (int16_t)((d[4]<<8) | d[5]); //-D =  U
+        // Get temperature (2 bytes) 
+        rawt = (int16_t)((d[6]<<8) | d[7]);
+        // Get gyroscope (6 bytes) - sensor orientation for acc/gyro is NWU
+        rawg[0] =  (int16_t)((d[ 8]<<8) | d[ 9]); //N =  N
+        rawg[1] = -(int16_t)((d[10]<<8) | d[11]); //E = -W
+        rawg[2] = -(int16_t)((d[12]<<8) | d[13]); //D = -U
+        // Get Magnetometer (6 bytes) - sensor orientation for mag is WND - NOTE: swapped byte order
+        rawm[1] = -(int16_t)(d[14] | (d[15]<<8)); //E = -W
+        rawm[0] =  (int16_t)(d[16] | (d[17]<<8)); //N = N
+        rawm[2] =  (int16_t)(d[18] | (d[19]<<8)); //D = D
 
         //this hack appears to help to get more reasonable mag values from MPU9150
         if(_type == MPU9150) {
