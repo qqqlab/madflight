@@ -3,17 +3,17 @@
 #pragma once
 
 void cli_print_overview() {
-  Serial.printf("CH%d:%d\t",1,rcin_pwm[0]);  
-  Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
-  Serial.printf("gx:%+.2f\t",GyroX);
-  Serial.printf("ax:%+.2f\t",AccX);
-  Serial.printf("mx:%+.2f\t",MagX);
-  Serial.printf("ahrs_roll:%+.1f\t",ahrs_roll);
-  Serial.printf("roll_PID:%+.3f\t",roll_PID);  
+  Serial.printf("CH%d:%d\t", 1, rcin_pwm[0]);  
+  Serial.printf("rcin_roll:%+.2f\t", rcin_roll);
+  Serial.printf("gx:%+.2f\t", ahrs.gx);
+  Serial.printf("ax:%+.2f\t", ahrs.ax);
+  Serial.printf("mx:%+.2f\t", ahrs.mx);
+  Serial.printf("ahrs.roll:%+.1f\t", ahrs.roll);
+  Serial.printf("roll_PID:%+.3f\t", roll_PID);  
   Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
-  Serial.printf("sats:%d\t",(int)gps.sat);
-  Serial.printf("imu%%:%d\t",(int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
-  Serial.printf("imu_cnt:%d\t",(int)imu.update_cnt);
+  Serial.printf("sats:%d\t", (int)gps.sat);
+  Serial.printf("imu%%:%d\t", (int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
+  Serial.printf("imu_cnt:%d\t", (int)imu.update_cnt);
 }
 
 void cli_print_rcin_RadioPWM() {
@@ -22,30 +22,30 @@ void cli_print_rcin_RadioPWM() {
 }
 
 void cli_print_rcin_RadioScaled() {
-  Serial.printf("rcin_thro:%.2f\t",rcin_thro);
-  Serial.printf("rcin_roll:%+.2f\t",rcin_roll);
-  Serial.printf("rcin_pitch:%+.2f\t",rcin_pitch);
-  Serial.printf("rcin_yaw:%+.2f\t",rcin_yaw);
-  Serial.printf("rcin_arm:%d\t",rcin_armed);
-  Serial.printf("rcin_aux:%d\t",rcin_aux);
-  Serial.printf("out_armed:%d\t",out_armed);
+  Serial.printf("rcin_thro:%.2f\t", rcin_thro);
+  Serial.printf("rcin_roll:%+.2f\t", rcin_roll);
+  Serial.printf("rcin_pitch:%+.2f\t", rcin_pitch);
+  Serial.printf("rcin_yaw:%+.2f\t", rcin_yaw);
+  Serial.printf("rcin_arm:%d\t", rcin_armed);
+  Serial.printf("rcin_aux:%d\t", rcin_aux);
+  Serial.printf("out_armed:%d\t", out_armed);
 }
 
 void cli_print_imu_GyroData() {
-  Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t",GyroX,GyroY,GyroZ);
+  Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahrs.gx, ahrs.gy, ahrs.gz);
 }
 
 void cli_print_imu_AccData() {
-  Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t",AccX,AccY,AccZ);
+  Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahrs.ax, ahrs.ay, ahrs.az);
 }
 
 void cli_print_imu_MagData() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t",MagX,MagY,MagZ); 
+  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahrs.mx, ahrs.my, ahrs.mz); 
 }
 
 void cli_print_ahrs_RollPitchYaw() {
-  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t",ahrs_roll,ahrs_pitch,ahrs_yaw);
-  Serial.printf("yaw_mag:%+.1f\t",-atan2(MagY, MagX) * rad_to_deg);
+  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahrs.roll, ahrs.pitch, ahrs.yaw);
+  Serial.printf("yaw_mag:%+.1f\t",-atan2(ahrs.my, ahrs.mx) * Ahrs::rad_to_deg);
 }
 
 void cli_print_control_PIDoutput() {
@@ -63,15 +63,15 @@ void cli_print_out_ServoCommands() {
 
 void cli_print_imu_Rate() {
   static uint32_t update_cnt_last = 0;
-  Serial.printf("imu%%:%d\t",(int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
-  Serial.printf("period:%d\t",(int)imu.getSamplePeriod());
-  Serial.printf("dt:%d\t",(int)(imu.dt * 1000000.0));
-  Serial.printf("rt:%d\t",(int)imu.runtime_tot_max);
-  Serial.printf("rt_int:%d\t",(int)imu.runtime_int);
-  Serial.printf("rt_bus:%d\t",(int)imu.runtime_bus);
-  Serial.printf("overruns:%d\t",(int)(imu.overrun_cnt));
-  Serial.printf("cnt:%d\t",(int)imu.update_cnt);
-  Serial.printf("loops:%d\t",(int)(imu.update_cnt - update_cnt_last));
+  Serial.printf("imu%%:%d\t", (int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
+  Serial.printf("period:%d\t", (int)imu.getSamplePeriod());
+  Serial.printf("dt:%d\t", (int)(imu.dt * 1000000.0));
+  Serial.printf("rt:%d\t", (int)imu.runtime_tot_max);
+  Serial.printf("rt_int:%d\t", (int)imu.runtime_int);
+  Serial.printf("rt_bus:%d\t", (int)imu.runtime_bus);
+  Serial.printf("overruns:%d\t", (int)(imu.overrun_cnt));
+  Serial.printf("cnt:%d\t", (int)imu.update_cnt);
+  Serial.printf("loops:%d\t", (int)(imu.update_cnt - update_cnt_last));
   update_cnt_last = imu.update_cnt;
 }
 
@@ -99,7 +99,7 @@ struct cli_print_s {
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 struct cli_print_s cli_print_options[] = {
-  {"po", "Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs_roll, pid_roll, motor1, imu%", cli_print_overview},
+  {"po", "Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs.roll, pid_roll, motor1, imu%", cli_print_overview},
   {"ppwm", "Radio pwm (expected: 1000 to 2000)", cli_print_rcin_RadioPWM},
   {"pradio", "Scaled radio (expected: -1 to 1)", cli_print_rcin_RadioScaled},
   {"pimu", "IMU loop timing (expected: imu%% < 50)", cli_print_imu_Rate},
@@ -208,7 +208,11 @@ private:
     cmdline = ""; //clear command line
 
     Serial.println( "> " + cmd + " " + arg1 + " " + arg2 );
+    this->executeCmd(cmd, arg1, arg2);
+  }
 
+public:
+  void executeCmd(String cmd, String arg1 = "", String arg2 = "") {
     //process print commands
     for (int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
       if (cmd == cli_print_options[i].cmd) {

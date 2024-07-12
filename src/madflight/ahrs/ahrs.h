@@ -1,411 +1,298 @@
-//ahrs code moved here to declutter main .ino file
+/*=================================================================================================
+Each BARO_USE_xxx section in this file defines a specific Barometer class
+=================================================================================================*/
+//needs modules: imu, mag, and cfg
 
-extern const float rad_to_deg;
+#pragma once
 
-float q0 = 1.0f; //Initialize quaternion for Madgwick filter (shared between ahrs_Madgwick6DOF and ahrs_Madgwick9DOF)
-float q1 = 0.0f;
-float q2 = 0.0f;
-float q3 = 0.0f;
+#define AHRS_USE_MAHONY 1 //default when AHRS_USE is not defined
+#define AHRS_USE_MAHONY_BF 2 //betaflight flavored: only use accel if near 1G
+#define AHRS_USE_MADGWICK 3
+#define AHRS_USE_VQF 4
 
-void ahrs_ComputeAngles(float *roll, float *pitch, float *yaw) {
-  //compute angles - NWU
-  *roll = atan2(q0*q1 + q2*q3, 0.5f - q1*q1 - q2*q2) * rad_to_deg; //degrees
-  *pitch = asin(constrain(-2.0f * (q1*q3 - q0*q2), -1.0, 1.0)) * rad_to_deg; //degrees - use constrain() to prevent NaN due to rounding
-  *yaw = atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3) * rad_to_deg; //degrees
-}
+#include "../interface.h"
 
-//==============================================================================================================
-//  Madgwick
-//==============================================================================================================
-extern float ahrs_MadgwickB;
-void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt);
-void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt);
+/*class definition in interface.h
 
-void ahrs_Madgwick(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
-  //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
-  if( (mx == 0.0f) && (my == 0.0f) && (mz == 0.0f) ) {
-    _ahrs_Madgwick6DOF(gx, gy, gz, ax, ay, az, dt);
+class Ahrs {
+  public:
+    float gx = 0, gy = 0, gz = 0; //corrected and filtered imu gyro measurements in deg/sec
+    float ax = 0, ay = 0, az = 0; //corrected and filtered imu accel measurements in g
+    float mx = 0, my = 0, mz = 0; //corrected and filtered external magnetometer or internal imu mag measurements in uT
+    float q[4] = {1,0,0,0};  //quaternion NED reference frame
+    float roll = 0;          //roll in degrees - roll right is positive
+    float pitch = 0;         //pitch in degrees - pitch up is positive
+    float yaw = 0;           //yaw in degrees - yaw right is positive
+    float B_gyr = 1.0; //gyr filter constant
+    float B_acc = 1.0; //acc filter constant
+    float B_mag = 1.0; //mag filter constant
+
+    static constexpr float rad_to_deg = 57.2957795132f;
+    static constexpr float deg_to_rad = 0.0174532925199f;
+
+    virtual void setup(float gyrLpFreq, float accLpFreq, float magLpFreq) = 0;
+    virtual void setInitalOrientation() {}
+    void update(); //get imu+mag data, filter it, and call fusionUpdate() to update q
+
+    static float lowpass_to_beta(float f0, float fs); //compute beta coeffient for low pass filter
+
+  protected:
+    virtual void fusionUpdate() = 0;
+    void computeAngles();
+    void setFromMag(float *q);
+};
+
+extern Ahrs &ahrs;
+*/
+
+
+void Ahrs::update() {
+  // get sensor data from imu and mag
+  // correct the sensor data with the calibration values
+  // use simple first-order low-pass filter to get rid of high frequency noise
+  // store filtered data in ax ay az gx gy gz mx my mz
+  // call the sensor fusion algorithm to update q
+  // compute euler angles from q
+  
+  //Low-pass filtered, corrected accelerometer data
+  ax = (1.0 - B_acc) * ax + B_acc * (imu.ax - cfg.imu_cal_ax);
+  ay = (1.0 - B_acc) * ay + B_acc * (imu.ay - cfg.imu_cal_ay);
+  az = (1.0 - B_acc) * az + B_acc * (imu.az - cfg.imu_cal_az);
+
+  //Low-pass filtered, corrected gyro data
+  gx = (1.0 - B_gyr) * gx + B_gyr * (imu.gx - cfg.imu_cal_gx);
+  gy = (1.0 - B_gyr) * gy + B_gyr * (imu.gy - cfg.imu_cal_gy);
+  gz = (1.0 - B_gyr) * gz + B_gyr * (imu.gz - cfg.imu_cal_gz);
+
+  //External Magnetometer 
+  float _mx = mag.x;
+  float _my = mag.y;
+  float _mz = mag.z;
+  //If no external mag, then use internal mag
+  if(_mx == 0 && _my == 0 && _mz == 0) {
+    _mx = imu.mx;
+    _my = imu.my;
+    _mz = imu.mz;
+  }
+  //update the mag values
+  if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
+    //Correct the mag values with the calibration values
+    _mx = (_mx - cfg.mag_cal_x) * cfg.mag_cal_sx;
+    _my = (_my - cfg.mag_cal_y) * cfg.mag_cal_sy;
+    _mz = (_mz - cfg.mag_cal_z) * cfg.mag_cal_sz;
+    //Low-pass filtered magnetometer data
+    mx = (1.0 - B_mag) * mx + B_mag * _mx;
+    my = (1.0 - B_mag) * my + B_mag * _my;
+    mz = (1.0 - B_mag) * mz + B_mag * _mz;
   }else{
-    _ahrs_Madgwick9DOF(gx, gy, gz, ax, ay, az, mx, my, mz, dt);
+    mx = 0;
+    my = 0;
+    mz = 0;
   }
+  
+  //call fusionUpdate to update q
+  fusionUpdate();
+  
+  //update euler angles
+  computeAngles();
 }
 
-void _ahrs_Madgwick9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
-  //DESCRIPTION: Attitude estimation through sensor fusion - 9DOF
-  /*
-   * This function fuses the accelerometer gyro, and magnetometer readings AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, and MagZ for attitude estimation.
-   * Don't worry about the math. There is a tunable parameter ahrs_MadgwickB in the user specified variable section which basically
-   * adjusts the weight of gyro data in the state estimate. Higher beta leads to noisier estimate, lower 
-   * beta leads to slower to respond estimate. It is currently tuned for 2kHz loop rate. This function updates the ahrs_roll,
-   * ahrs_pitch, and ahrs_yaw variables which are in degrees.
-   */
-  float recipNorm;
-  float s0, s1, s2, s3;
-  float qDot1, qDot2, qDot3, qDot4;
-  float hx, hy;
-  float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
-
-  //Convert gyroscope degrees/sec to radians/sec
-  gx *= 0.0174533f;
-  gy *= 0.0174533f;
-  gz *= 0.0174533f;
-
-  //Rate of change of quaternion from gyroscope
-  qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
-  qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
-  qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
-  qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
-
-  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
-  float alen2 = ax * ax + ay * ay + az * az;
-  if (0.81 <= alen2 && alen2 <= 1.21) {
-    
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(alen2);
-    ax *= recipNorm;
-    ay *= recipNorm;
-    az *= recipNorm;
-
-    //Normalise magnetometer measurement
-    recipNorm = 1.0/sqrtf(mx * mx + my * my + mz * mz);
-    mx *= recipNorm;
-    my *= recipNorm;
-    mz *= recipNorm;
-
-    //Auxiliary variables to avoid repeated arithmetic
-    _2q0mx = 2.0f * q0 * mx;
-    _2q0my = 2.0f * q0 * my;
-    _2q0mz = 2.0f * q0 * mz;
-    _2q1mx = 2.0f * q1 * mx;
-    _2q0 = 2.0f * q0;
-    _2q1 = 2.0f * q1;
-    _2q2 = 2.0f * q2;
-    _2q3 = 2.0f * q3;
-    _2q0q2 = 2.0f * q0 * q2;
-    _2q2q3 = 2.0f * q2 * q3;
-    q0q0 = q0 * q0;
-    q0q1 = q0 * q1;
-    q0q2 = q0 * q2;
-    q0q3 = q0 * q3;
-    q1q1 = q1 * q1;
-    q1q2 = q1 * q2;
-    q1q3 = q1 * q3;
-    q2q2 = q2 * q2;
-    q2q3 = q2 * q3;
-    q3q3 = q3 * q3;
-
-    //Reference direction of Earth's magnetic field
-    hx = mx * q0q0 - _2q0my * q3 + _2q0mz * q2 + mx * q1q1 + _2q1 * my * q2 + _2q1 * mz * q3 - mx * q2q2 - mx * q3q3;
-    hy = _2q0mx * q3 + my * q0q0 - _2q0mz * q1 + _2q1mx * q2 - my * q1q1 + my * q2q2 + _2q2 * mz * q3 - my * q3q3;
-    _2bx = sqrtf(hx * hx + hy * hy);
-    _2bz = -_2q0mx * q2 + _2q0my * q1 + mz * q0q0 + _2q1mx * q3 - mz * q1q1 + _2q2 * my * q3 - mz * q2q2 + mz * q3q3;
-    _4bx = 2.0f * _2bx;
-    _4bz = 2.0f * _2bz;
-
-    //Gradient decent algorithm corrective step
-    s0 = -_2q2 * (2.0f * q1q3 - _2q0q2 - ax) + _2q1 * (2.0f * q0q1 + _2q2q3 - ay) - _2bz * q2 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q3 + _2bz * q1) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q2 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s1 = _2q3 * (2.0f * q1q3 - _2q0q2 - ax) + _2q0 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q1 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + _2bz * q3 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s2 = -_2q0 * (2.0f * q1q3 - _2q0q2 - ax) + _2q3 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q2 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    s3 = _2q1 * (2.0f * q1q3 - _2q0q2 - ax) + _2q2 * (2.0f * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
-    recipNorm = 1.0/sqrtf(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
-    s0 *= recipNorm;
-    s1 *= recipNorm;
-    s2 *= recipNorm;
-    s3 *= recipNorm;
-
-    //Apply feedback step
-    qDot1 -= ahrs_MadgwickB * s0;
-    qDot2 -= ahrs_MadgwickB * s1;
-    qDot3 -= ahrs_MadgwickB * s2;
-    qDot4 -= ahrs_MadgwickB * s3;
+void Ahrs::setFromMag(float *q) {
+  //warm up mag by getting 100 samples (imu should be running already)
+  for(int i=0;i<100;i++) {
+    uint32_t start = micros();
+    mag.update();
+    while(micros() - start < 1000000 / imu.getSampleRate()); //wait until next sample time
   }
+  
+  //update mx and my from mag or imu
+  update();
 
-  //Integrate rate of change of quaternion to yield quaternion
-  q0 += qDot1 * dt;
-  q1 += qDot2 * dt;
-  q2 += qDot3 * dt;
-  q3 += qDot4 * dt;
-
-  //Normalize quaternion
-  recipNorm = 1.0/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-  q0 *= recipNorm;
-  q1 *= recipNorm;
-  q2 *= recipNorm;
-  q3 *= recipNorm;
-}
-
-void _ahrs_Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
-  //DESCRIPTION: Attitude estimation through sensor fusion - 6DOF
-  /*
-   * See description of ahrs_Madgwick() for more information. This is a 6DOF implimentation for when magnetometer data is not
-   * available (for example when using the recommended MPU6050 IMU for the default setup).
-   */
-  float recipNorm;
-  float s0, s1, s2, s3;
-  float qDot1, qDot2, qDot3, qDot4;
-  float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
-
-  //Convert gyroscope degrees/sec to radians/sec
-  gx *= 0.0174533f;
-  gy *= 0.0174533f;
-  gz *= 0.0174533f;
-
-  //Rate of change of quaternion from gyroscope
-  qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
-  qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
-  qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
-  qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
-
-  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
-  float alen2 = ax * ax + ay * ay + az * az;
-  if (0.81 <= alen2 && alen2 <= 1.21) {
-    
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(alen2);
-    ax *= recipNorm;
-    ay *= recipNorm;
-    az *= recipNorm;
-
-    //Auxiliary variables to avoid repeated arithmetic
-    _2q0 = 2.0f * q0;
-    _2q1 = 2.0f * q1;
-    _2q2 = 2.0f * q2;
-    _2q3 = 2.0f * q3;
-    _4q0 = 4.0f * q0;
-    _4q1 = 4.0f * q1;
-    _4q2 = 4.0f * q2;
-    _8q1 = 8.0f * q1;
-    _8q2 = 8.0f * q2;
-    q0q0 = q0 * q0;
-    q1q1 = q1 * q1;
-    q2q2 = q2 * q2;
-    q3q3 = q3 * q3;
-
-    //Gradient decent algorithm corrective step
-    s0 = _4q0 * q2q2 + _2q2 * ax + _4q0 * q1q1 - _2q1 * ay;
-    s1 = _4q1 * q3q3 - _2q3 * ax + 4.0f * q0q0 * q1 - _2q0 * ay - _4q1 + _8q1 * q1q1 + _8q1 * q2q2 + _4q1 * az;
-    s2 = 4.0f * q0q0 * q2 + _2q0 * ax + _4q2 * q3q3 - _2q3 * ay - _4q2 + _8q2 * q1q1 + _8q2 * q2q2 + _4q2 * az;
-    s3 = 4.0f * q1q1 * q3 - _2q1 * ax + 4.0f * q2q2 * q3 - _2q2 * ay;
-    recipNorm = 1.0/sqrtf(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); //normalise step magnitude
-    s0 *= recipNorm;
-    s1 *= recipNorm;
-    s2 *= recipNorm;
-    s3 *= recipNorm;
-
-    //Apply feedback step
-    qDot1 -= ahrs_MadgwickB * s0;
-    qDot2 -= ahrs_MadgwickB * s1;
-    qDot3 -= ahrs_MadgwickB * s2;
-    qDot4 -= ahrs_MadgwickB * s3;
-  }
-
-  //Integrate rate of change of quaternion to yield quaternion
-  q0 += qDot1 * dt;
-  q1 += qDot2 * dt;
-  q2 += qDot3 * dt;
-  q3 += qDot4 * dt;
-
-  //Normalise quaternion
-  recipNorm = 1.0/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-  q0 *= recipNorm;
-  q1 *= recipNorm;
-  q2 *= recipNorm;
-  q3 *= recipNorm;
-}
-
-//==============================================================================================================
-//  Mahony
-//==============================================================================================================
-//source: https://github.com/PaulStoffregen/MahonyAHRS
-
-extern float ahrs_Mahony2KP;		// 2 * proportional gain (Kp)
-extern float ahrs_Mahony2KI;		// 2 * integral gain (Ki)
-//float q0, q1, q2, q3;	// quaternion of sensor frame relative to auxiliary frame (defined above)
-float integralFBx = 0, integralFBy = 0, integralFBz = 0;  // integral error terms scaled by Ki
-
-void _ahrs_Mahony9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt);
-void _ahrs_Mahony6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt);
-
-void ahrs_Mahony(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
-  //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
-  if( (mx == 0.0f) && (my == 0.0f) && (mz == 0.0f) ) {
-    _ahrs_Mahony6DOF(gx, gy, gz, ax, ay, az, dt);
+  //calculate yaw angle
+  if(mx == 0 && my == 0 && mz == 0) {
+    yaw = 0;
+    pitch = 0;
+    roll = 0;
+    q[0] = 1;
+    q[1] = 0;
+    q[2] = 0;
+    q[3] = 0;
+    Serial.println("AHRS: No Magnetometer, yaw:0.00");
   }else{
-    _ahrs_Mahony9DOF(gx, gy, gz, ax, ay, az, mx, my, mz, dt);
+    float yaw_rad = -atan2(my, mx);
+    yaw = yaw_rad * rad_to_deg;
+    pitch = 0;
+    roll = 0;
+    q[0] = cos(yaw_rad/2);
+    q[1] = 0;
+    q[2] = 0;
+    q[3] = sin(yaw_rad/2);
+    Serial.printf("AHRS: Estimated yaw:%+.2f\n", yaw);
   }
 }
 
-void _ahrs_Mahony9DOF(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
-	float recipNorm;
-	float q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
-	float hx, hy, bx, bz;
-	float halfvx, halfvy, halfvz, halfwx, halfwy, halfwz;
-	float halfex, halfey, halfez;
-	float qa, qb, qc;
-
-	// Convert gyroscope degrees/sec to radians/sec
-	gx *= 0.0174533f;
-	gy *= 0.0174533f;
-	gz *= 0.0174533f;
-
-  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
-  float alen2 = ax * ax + ay * ay + az * az;
-  if (0.81 <= alen2 && alen2 <= 1.21) {
-    
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(alen2);
-		ax *= recipNorm;
-		ay *= recipNorm;
-		az *= recipNorm;
-
-		// Normalise magnetometer measurement
-		recipNorm = 1.0f/sqrtf(mx * mx + my * my + mz * mz);
-		mx *= recipNorm;
-		my *= recipNorm;
-		mz *= recipNorm;
-
-		// Auxiliary variables to avoid repeated arithmetic
-		q0q0 = q0 * q0;
-		q0q1 = q0 * q1;
-		q0q2 = q0 * q2;
-		q0q3 = q0 * q3;
-		q1q1 = q1 * q1;
-		q1q2 = q1 * q2;
-		q1q3 = q1 * q3;
-		q2q2 = q2 * q2;
-		q2q3 = q2 * q3;
-		q3q3 = q3 * q3;
-
-		// Reference direction of Earth's magnetic field
-		hx = 2.0f * (mx * (0.5f - q2q2 - q3q3) + my * (q1q2 - q0q3) + mz * (q1q3 + q0q2));
-		hy = 2.0f * (mx * (q1q2 + q0q3) + my * (0.5f - q1q1 - q3q3) + mz * (q2q3 - q0q1));
-		bx = sqrtf(hx * hx + hy * hy);
-		bz = 2.0f * (mx * (q1q3 - q0q2) + my * (q2q3 + q0q1) + mz * (0.5f - q1q1 - q2q2));
-
-		// Estimated direction of gravity and magnetic field
-		halfvx = q1q3 - q0q2;
-		halfvy = q0q1 + q2q3;
-		halfvz = q0q0 - 0.5f + q3q3;
-		halfwx = bx * (0.5f - q2q2 - q3q3) + bz * (q1q3 - q0q2);
-		halfwy = bx * (q1q2 - q0q3) + bz * (q0q1 + q2q3);
-		halfwz = bx * (q0q2 + q1q3) + bz * (0.5f - q1q1 - q2q2);
-
-		// Error is sum of cross product between estimated direction
-		// and measured direction of field vectors
-		halfex = (ay * halfvz - az * halfvy) + (my * halfwz - mz * halfwy);
-		halfey = (az * halfvx - ax * halfvz) + (mz * halfwx - mx * halfwz);
-		halfez = (ax * halfvy - ay * halfvx) + (mx * halfwy - my * halfwx);
-
-		// Compute and apply integral feedback if enabled
-		if(ahrs_Mahony2KI > 0.0f) {
-			// integral error scaled by Ki
-			integralFBx += ahrs_Mahony2KI * halfex * dt;
-			integralFBy += ahrs_Mahony2KI * halfey * dt;
-			integralFBz += ahrs_Mahony2KI * halfez * dt;
-			gx += integralFBx;	// apply integral feedback
-			gy += integralFBy;
-			gz += integralFBz;
-		} else {
-			integralFBx = 0.0f;	// prevent integral windup
-			integralFBy = 0.0f;
-			integralFBz = 0.0f;
-		}
-
-		// Apply proportional feedback
-		gx += ahrs_Mahony2KP * halfex;
-		gy += ahrs_Mahony2KP * halfey;
-		gz += ahrs_Mahony2KP * halfez;
-	}
-
-	// Integrate rate of change of quaternion
-	gx *= 0.5f * dt;		// pre-multiply common factors
-	gy *= 0.5f * dt;
-	gz *= 0.5f * dt;
-	qa = q0;
-	qb = q1;
-	qc = q2;
-	q0 += (-qb * gx - qc * gy - q3 * gz);
-	q1 += (qa * gx + qc * gz - q3 * gy);
-	q2 += (qa * gy - qb * gz + q3 * gx);
-	q3 += (qa * gz + qb * gy - qc * gx);
-
-	// Normalise quaternion
-	recipNorm = 1.0f/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-	q0 *= recipNorm;
-	q1 *= recipNorm;
-	q2 *= recipNorm;
-	q3 *= recipNorm;
+//compute euler angles from q
+void Ahrs::computeAngles() {
+  roll = atan2(q[0]*q[1] + q[2]*q[3], 0.5f - q[1]*q[1] - q[2]*q[2]) * rad_to_deg; //degrees - roll right is positive
+  pitch = asin(constrain(-2.0f * (q[1]*q[3] - q[0]*q[2]), -1.0, 1.0)) * rad_to_deg; //degrees - pitch up is positive - use constrain() to prevent NaN due to rounding
+  yaw = atan2(q[1]*q[2] + q[0]*q[3], 0.5f - q[2]*q[2] - q[3]*q[3]) * rad_to_deg; //degrees - yaw right is positive
 }
 
-void _ahrs_Mahony6DOF(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
-	float recipNorm;
-	float halfvx, halfvy, halfvz;
-	float halfex, halfey, halfez;
-	float qa, qb, qc;
 
-	// Convert gyroscope degrees/sec to radians/sec
-	gx *= 0.0174533f;
-	gy *= 0.0174533f;
-	gz *= 0.0174533f;
-
-  //Compute feedback only if accelerometer measurement is in range 0.9g - 1.1g
-  float alen2 = ax * ax + ay * ay + az * az;
-  if (0.81 <= alen2 && alen2 <= 1.21) {
-    
-    //Normalise accelerometer measurement
-    recipNorm = 1.0/sqrtf(alen2);
-		ax *= recipNorm;
-		ay *= recipNorm;
-		az *= recipNorm;
-
-		// Estimated direction of gravity
-		halfvx = q1 * q3 - q0 * q2;
-		halfvy = q0 * q1 + q2 * q3;
-		halfvz = q0 * q0 - 0.5f + q3 * q3;
-
-		// Error is sum of cross product between estimated
-		// and measured direction of gravity
-		halfex = (ay * halfvz - az * halfvy);
-		halfey = (az * halfvx - ax * halfvz);
-		halfez = (ax * halfvy - ay * halfvx);
-
-		// Compute and apply integral feedback if enabled
-		if(ahrs_Mahony2KI > 0.0f) {
-			// integral error scaled by Ki
-			integralFBx += ahrs_Mahony2KI * halfex * dt;
-			integralFBy += ahrs_Mahony2KI * halfey * dt;
-			integralFBz += ahrs_Mahony2KI * halfez * dt;
-			gx += integralFBx;	// apply integral feedback
-			gy += integralFBy;
-			gz += integralFBz;
-		} else {
-			integralFBx = 0.0f;	// prevent integral windup
-			integralFBy = 0.0f;
-			integralFBz = 0.0f;
-		}
-
-		// Apply proportional feedback
-		gx += ahrs_Mahony2KP * halfex;
-		gy += ahrs_Mahony2KP * halfey;
-		gz += ahrs_Mahony2KP * halfez;
-	}
-
-	// Integrate rate of change of quaternion
-	gx *= 0.5f * dt;		// pre-multiply common factors
-	gy *= 0.5f * dt;
-	gz *= 0.5f * dt;
-	qa = q0;
-	qb = q1;
-	qc = q2;
-	q0 += (-qb * gx - qc * gy - q3 * gz);
-	q1 += (qa * gx + qc * gz - q3 * gy);
-	q2 += (qa * gy - qb * gz + q3 * gx);
-	q3 += (qa * gz + qb * gy - qc * gx);
-
-	// Normalise quaternion
-	recipNorm = 1.0f/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-	q0 *= recipNorm;
-	q1 *= recipNorm;
-	q2 *= recipNorm;
-	q3 *= recipNorm;
+//lowpass frequency to filter beta constant
+float Ahrs::lowpass_to_beta(float f0, float fs) {
+  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
+
+
+//=================================================================================================
+// Mahony or undefined
+//=================================================================================================
+#if AHRS_USE == AHRS_USE_MAHONY || AHRS_USE == AHRS_USE_MAHONY_BF || !defined AHRS_USE
+
+#include "mahony/mahony.h"
+class AhrsMahony : public Ahrs {
+public:
+  void setup(float gyrLpFreq, float accLpFreq, float magLpFreq) {
+    #if AHRS_USE == AHRS_USE_MAHONY_BF
+      Serial.println("AHRS: AHRS_USE_MAHONY_BF");
+    #else
+      Serial.println("AHRS: AHRS_USE_MAHONY");
+    #endif
+
+    B_gyr = lowpass_to_beta(gyrLpFreq, imu.getSampleRate());
+    B_acc = lowpass_to_beta(accLpFreq, imu.getSampleRate());
+    B_mag = lowpass_to_beta(magLpFreq, imu.getSampleRate());
+  }
+
+  //estimate yaw based on mag only (assumes vehicle is horizontal)  
+  void setInitalOrientation() {
+    float qnew[4];
+    setFromMag(qnew);
+    q0 = qnew[0];
+    q1 = qnew[1];
+    q2 = qnew[2];
+    q3 = qnew[3];
+  }
+
+protected:
+  void fusionUpdate() {
+    ahrs_Mahony(gx*deg_to_rad, gy*deg_to_rad, gz*deg_to_rad, ax, ay, az, mx, my, mz, imu.dt);
+    q[0] = q0;
+    q[1] = q1;
+    q[2] = q2;
+    q[3] = q3;
+  }
+};
+AhrsMahony ahrs_instance;
+
+//=================================================================================================
+// Madgwick
+//=================================================================================================
+#elif AHRS_USE == AHRS_USE_MADGWICK
+
+#include "madgwick/madgwick.h"
+class AhrsMadgwick : public Ahrs {
+public:
+  void setup(float gyrLpFreq, float accLpFreq, float magLpFreq) {
+    Serial.println("AHRS: AHRS_USE_MADGWICK");
+    
+    B_gyr = lowpass_to_beta(gyrLpFreq, imu.getSampleRate());
+    B_acc = lowpass_to_beta(accLpFreq, imu.getSampleRate());
+    B_mag = lowpass_to_beta(magLpFreq, imu.getSampleRate());
+  }
+
+  //estimate yaw based on mag only (assumes vehicle is horizontal)  
+  void setInitalOrientation() {
+    float qnew[4];
+    setFromMag(qnew);
+    q0 = qnew[0];
+    q1 = qnew[1];
+    q2 = qnew[2];
+    q3 = qnew[3];
+  }
+
+protected:
+  void fusionUpdate() {
+    ahrs_Madgwick(gx*deg_to_rad, gy*deg_to_rad, gz*deg_to_rad, ax, ay, az, mx, my, mz, imu.dt);
+    q[0] = q0;
+    q[1] = q1;
+    q[2] = q2;
+    q[3] = q3;
+  }
+};
+AhrsMadgwick ahrs_instance;
+
+//=================================================================================================
+// VQF - see https://github.com/dlaidig/vqf
+//=================================================================================================
+#elif AHRS_USE == AHRS_USE_VQF
+
+#include "vqf/vqf.h"
+class AhrsVqf : public Ahrs {
+public:
+  void setup(float gyrLpFreq, float accLpFreq, float magLpFreq) {
+    Serial.println("AHRS: AHRS_USE_VQF");
+
+    //do not use filter for VQF, feed the data directly into the filter
+    (void)gyrLpFreq;
+    (void)accLpFreq;
+    (void)magLpFreq;
+    B_gyr = 1.0;
+    B_acc = 1.0;
+    B_mag = 1.0;
+
+    initVqf(1.0/imu.getSampleRate(), 1.0/imu.getSampleRate(), 1.0/imu.getSampleRate());
+  }
+
+  //TODO (?)
+  void setInitalOrientation() {}
+
+protected:
+  void fusionUpdate() {
+    //convert to ENU from NED: xE = yE, yN = xE, zU = -zD 
+    float gyr[3] = {gy*deg_to_rad, gx*deg_to_rad, -gz*deg_to_rad}; //gyr in rad/sec
+    float acc[3] = {ay*9.81f, ax*9.81f, -az*9.81f}; //acc in m/s/s -  acc[] horizontal: [0, 0, -9.81], nose down:[0, 9.81, 0], right down: [9.81, 0, 0]
+    float mag[3] = {mx, -my, mz}; //mag no unit - mag[] horizontal pointing north: [15, 0, 40], east: [0,15,40]
+
+    //get fused q_enu in ENU frame
+    float q_enu[4];
+    if (mx==0 && my==0 && mz==0) {
+      updateGyr(gyr);
+      updateAcc(acc);
+      getQuat6D(q_enu);
+    }else{
+      updateGyr(gyr);
+      updateAcc(acc);
+      updateMag(mag);
+      getQuat9D(q_enu);
+    }
+    
+    //convert q_enu to NED reference frame
+    float q_trans[4] = {0,M_SQRT2/2,M_SQRT2/2,0}; //ENU to NED
+    quatMultiply(q_enu, q_trans, q);
+
+  }
+
+  static void quatMultiply(const vqf_real_t q1[4], const vqf_real_t q2[4], vqf_real_t out[4])
+  {
+      vqf_real_t w = q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3];
+      vqf_real_t x = q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2];
+      vqf_real_t y = q1[0] * q2[2] - q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1];
+      vqf_real_t z = q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0];
+      out[0] = w; out[1] = x; out[2] = y; out[3] = z;
+  }
+
+};
+
+AhrsVqf ahrs_instance;
+//=================================================================================================
+// Invalid value
+//=================================================================================================
+#else
+  #error "invalid AHRS_USE value"
+#endif
+
+
+//global AHRS class instance
+Ahrs &ahrs = ahrs_instance;

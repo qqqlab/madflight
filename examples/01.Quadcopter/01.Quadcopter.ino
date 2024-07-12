@@ -97,11 +97,11 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 #define RCIN_NUM_CHANNELS 5 //number of receiver channels (minimal 5)
 
 //--- IMU SENSOR
-#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_BMI270, IMU_USE_SPI_MPU9250, IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU6000, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
+#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU9250,IMU_USE_SPI_MPU6000, IMU_USE_SPI_BMI270, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
-//If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs_roll, pitch-up gives positive ahrs_pitch, and yaw-right gives positive ahrs_yaw
-#define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
-#define IMU_I2C_ADR  0x68 //IMU I2C address. If unknown, use CLI 'i2c'
+//If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs.roll, pitch-up gives positive ahrs.pitch, and yaw-right gives positive ahrs.yaw
+#define IMU_ALIGN  IMU_ALIGN_CW90 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
+#define IMU_I2C_ADR  0x69 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //========================================================================================================================//
 //                                               RC RECEIVER CONFIG                                                       //
@@ -136,20 +136,15 @@ const int rcin_cfg_arm_max       = 2200;
 //number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..HW_OUT_COUNT-1] are servos
 const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
-enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4}; 
+enum out_enum {MOTOR1, MOTOR2, MOTOR3, MOTOR4}; 
 
-const uint32_t imu_sample_rate = 1000; //imu sample rate in Hz (default 1000) NOTE: not all IMU drivers support this
+const uint32_t imu_sample_rate = 1000; //imu sample rate in Hz (default 1000) NOTE: not all IMU drivers support a different rate
 
 //Low Pass Filter cutoff frequency in Hz. Do not touch unless you know what you are doing.
-float LP_accel       = 70;        //Accelerometer  (default MPU6050: 50Hz, MPU9250: 70Hz)
-float LP_gyro        = 60;        //Gyro           (default MPU6050: 35Hz, MPU9250: 60Hz)
+float LP_acc         = 70;        //Accelerometer  (default MPU6050: 50Hz, MPU9250: 70Hz)
+float LP_gyr         = 60;        //Gyro           (default MPU6050: 35Hz, MPU9250: 60Hz)
 float LP_mag         = 1e10;      //Magnetometer   (default 1e10Hz, i.e. no filtering)
 float LP_radio       = 400;       //Radio Input    (default 400Hz)
-
-//AHRS Parameters
-float ahrs_MadgwickB = 0.041;     //Madgwick filter parameter
-float ahrs_Mahony2KP = 2 * 0.5;		//Mahony: 2 * proportional gain (Kp)
-float ahrs_Mahony2KI = 2 * 0.0;		//Mahony: 2 * integral gain (Ki)
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
@@ -183,10 +178,6 @@ bool rcin_armed; //status of arm switch, true = armed
 bool rcin_thro_is_low; //status of throttle stick, true = throttle low
 int rcin_aux; // six position switch connected to aux channel, values 0-5
 
-//IMU:
-float AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ; //corrected and filtered IMU measurements
-float ahrs_roll, ahrs_pitch, ahrs_yaw;  //ahrs_Madgwick() estimate output in degrees. Positive angles are: roll right, yaw right, pitch up
-
 //Controller:
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
@@ -194,9 +185,7 @@ float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 bool out_armed = false; //motors will only run if this flag is true
 
 //Low pass filter parameters
-float B_accel, B_gyro, B_mag, B_radio;
-
-const float rad_to_deg = 57.29577951; //radians to degrees conversion constant
+float B_radio;
 
 //========================================================================================================================//
 //                                                 INCLUDE MADFLIGHT LIBRARY                                              //
@@ -234,10 +223,7 @@ void setup() {
   }
 
   //set filter parameters after imu.setup(), as imu.setup() can modify requested sample rate
-  B_accel = lowpass_to_beta(LP_accel, imu.getSampleRate());
-  B_gyro = lowpass_to_beta(LP_gyro, imu.getSampleRate());
-  B_mag = lowpass_to_beta(LP_mag, imu.getSampleRate());
-  B_radio = lowpass_to_beta(LP_radio, imu.getSampleRate());
+  B_radio = Ahrs::lowpass_to_beta(LP_radio, imu.getSampleRate()); //Note: uses imu sample rate because radio filter is applied in imu_loop
 
   //Motors
   for(int i=0;i<out_MOTOR_COUNT;i++) {
@@ -249,14 +235,14 @@ void setup() {
     out[i].writeFactor(out_command[i]); //start the PWM output to the motors
   }
 
+  ahrs.setup(LP_gyr, LP_acc, LP_mag); //setup low pass filters for Mahony/Madgwick filters
+  ahrs.setInitalOrientation(); //do this before IMU update handler is started
+
   //start IMU update handler
   imu.onUpdate = imu_loop;
-  if(!imu.waitNewSample()) die("IMU interrupt not firing. Is IMU data ready interrupt pin IMU_EINT connected?");
+  if(!imu.waitNewSample()) die("IMU interrupt not firing. Is IMU data ready interrupt pin IMU_EXTI connected?");
 
-  //set quarterion to initial yaw, so that AHRS settles faster
-  ahrs_Setup();
-
-  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
+  //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate accelerometer and magnetometer.)
   cli.calibrate_gyro();
 
   cli.welcome();
@@ -281,15 +267,8 @@ void imu_loop() {
   //Blink LED
   led_Blink();
 
-  // Apply low-pass filters to remove noise
-  imu_Filter(); 
-
-  //ahrs filter method: Madgwick or Mahony - SELECT ONE:
-  //ahrs_Madgwick(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Madgwick filter quaternion update
-  ahrs_Mahony(GyroX, GyroY, GyroZ, AccX, AccY, AccZ, MagX, MagY, MagZ, imu.dt); //Mahony filter quaternion update
-
-  //get ahrs_roll, ahrs_pitch, and ahrs_yaw angle estimates (degrees) from quaternion
-  ahrs_ComputeAngles(&ahrs_roll, &ahrs_pitch, &ahrs_yaw);
+  //Sensor fusion: update ahrs.roll, ahrs.pitch, and ahrs.yaw angle estimates (degrees) from IMU data
+  ahrs.update(); 
 
   //Get radio state
   rcin_GetCommands(); //Pulls current available radio commands
@@ -321,39 +300,6 @@ void led_Blink() {
     led.set(!out_armed); //short interval
   else
     led.set(out_armed); //long interval
-}
-
-// Reads accelerometer, gyro, and magnetometer data from IMU and stores it as AccX, AccY, AccZ, GyroX, GyroY, GyroZ, MagX, MagY, MagZ. 
-// The constant calibraton errors are subtracted from the raw readings.
-// A simple first-order low-pass filter is used to get rid of high frequency noise. 
-void imu_Filter() {
-  //Accelerometer
-  //LP filter corrected accelerometer data
-  AccX = (1.0 - B_accel) * AccX + B_accel * (imu.ax - cfg.imu_cal_ax);
-  AccY = (1.0 - B_accel) * AccY + B_accel * (imu.ay - cfg.imu_cal_ay);
-  AccZ = (1.0 - B_accel) * AccZ + B_accel * (imu.az - cfg.imu_cal_az);
-
-  //Gyro
-  //LP filter corrected gyro data
-  GyroX = (1.0 - B_gyro) * GyroX + B_gyro * (imu.gx - cfg.imu_cal_gx);
-  GyroY = (1.0 - B_gyro) * GyroY + B_gyro * (imu.gy - cfg.imu_cal_gy);
-  GyroZ = (1.0 - B_gyro) * GyroZ + B_gyro * (imu.gz - cfg.imu_cal_gz);
-
-  //Magnetometer
-  if( ! (imu.mx == 0 && imu.my == 0 && imu.mz == 0) ) {
-    //Correct the mag values with the calculated error values
-    float mx = (imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx;
-    float my = (imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy;
-    float mz = (imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz;
-    //LP filter magnetometer data
-    MagX = (1.0 - B_mag) * MagX + B_mag * mx;
-    MagY = (1.0 - B_mag) * MagY + B_mag * my;
-    MagZ = (1.0 - B_mag) * MagZ + B_mag * mz;
-  }else{
-    MagX = 0;
-    MagY = 0;
-    MagZ = 0;
-  }
 }
 
 void rcin_GetCommands() {
@@ -416,7 +362,7 @@ void control_Angle(bool zero_integrators) {
   //DESCRIPTION: Computes control commands based on state error (angle)
   /*
    * Basic PID control to stablize on angle setpoint based on desired states roll_des, pitch_des, and yaw_des computed in 
-   * rcin_Normalize(). Error is simply the desired state minus the actual state (ex. roll_des - ahrs_roll). Two safety features
+   * rcin_Normalize(). Error is simply the desired state minus the actual state (ex. roll_des - ahrs.roll). Two safety features
    * are implimented here regarding the I terms. The I terms are saturated within specified limits on startup to prevent 
    * excessive buildup. This can be seen by holding the vehicle at an angle and seeing the motors ramp up on one side until
    * they've maxed out throttle...saturating I to a specified limit fixes this. The second feature defaults the I terms to 0
@@ -444,21 +390,21 @@ void control_Angle(bool zero_integrators) {
   }
 
   //Roll PID
-  float error_roll = roll_des - ahrs_roll;
+  float error_roll = roll_des - ahrs.roll;
   integral_roll += error_roll * imu.dt;
   integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = GyroX;
+  float derivative_roll = ahrs.gx;
   roll_PID = 0.01 * (Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll - Kd_ro_pi_angle*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
 
   //Pitch PID
-  float error_pitch = pitch_des - ahrs_pitch;
+  float error_pitch = pitch_des - ahrs.pitch;
   integral_pitch += error_pitch * imu.dt;
   integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = GyroY; 
+  float derivative_pitch = ahrs.gy; 
   pitch_PID = 0.01 * (Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch - Kd_ro_pi_angle*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
 
-  //Yaw PID, stablize on rate from GyroZ
-  float error_yaw = yawRate_des - GyroZ;
+  //Yaw PID, stablize on rate from GyroZ - TODO: use compass heading, not gyro rate
+  float error_yaw = yawRate_des - ahrs.gz;
   integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
@@ -495,21 +441,21 @@ void control_Rate(bool zero_integrators) {
   }
 
   //Roll
-  float error_roll = rollRate_des - GyroX;
+  float error_roll = rollRate_des - ahrs.gx;
   integral_roll += error_roll * imu.dt;
   integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_roll = (error_roll - error_roll_prev) / imu.dt;
   roll_PID = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
 
   //Pitch
-  float error_pitch = pitchRate_des - GyroY;
+  float error_pitch = pitchRate_des - ahrs.gy;
   integral_pitch += error_pitch * imu.dt;
   integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt;   
   pitch_PID = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
 
   //Yaw, stablize on rate from GyroZ
-  float error_yaw = yawRate_des - GyroZ;
+  float error_yaw = yawRate_des - ahrs.gz;
   integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
@@ -594,49 +540,9 @@ void out_SetCommands() {
   for(int i=0;i<HW_OUT_COUNT;i++) out[i].writeFactor( out_command[i] );
 }
 
-//========================================================================================================================//
-//                                              SETUP() FUNCTIONS                                                         //
-//========================================================================================================================//
-
-//set initial quarterion
-void ahrs_Setup() 
-{
-  //estimate yaw based on mag only (assumes vehicle is horizontal)
-
-  //warm up imu and mag by getting 100 samples
-  for(int i=0;i<100;i++) {
-    uint32_t start = micros();
-    mag.update();
-    while(micros() - start < 1000000 / imu.getSampleRate()); //wait until next sample time
-  }
-
-  //calculate yaw angle
-  if(MagX == 0 && MagY == 0 && MagZ == 0) {
-    Serial.println("AHRS: No Magnetometer, yaw:0.00");
-    return;
-  }
-  float yaw = -atan2(MagY, MagX);
-  ahrs_yaw = yaw * rad_to_deg;
-  ahrs_pitch = 0;
-  ahrs_roll = 0;
-
-  //set initial quarterion
-  q0 = cos(yaw/2);
-  q1 = 0;
-  q2 = 0;
-  q3 = sin(yaw/2);
-
-  Serial.printf("AHRS: Estimated yaw:%+.2f\n",ahrs_yaw);  
-}
-
 //===============================================================================================
 // HELPERS
 //===============================================================================================
-
-//lowpass frequency to filter beta constant
-float lowpass_to_beta(float f0, float fs) {
-  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
-}
 
 void warn_or_die(String msg, bool never_return) {
   bool do_print = true;

@@ -1,3 +1,10 @@
+//TODO: convert to v1.2.0
+
+void setup() {}
+void loop() {}
+
+#if 0
+
 //Arduino ESP32 / ESP32-S3 / RP2040 / STM32 Flight Controller
 //GPL-3.0 license
 //Copyright (c) 2024 madflight https://madflight.com
@@ -968,3 +975,5 @@ void warn_or_die(String msg, bool never_return) {
 }
 void die(String msg) { warn_or_die(msg, true); }
 void warn(String msg) { warn_or_die(msg, false); }
+
+#endif

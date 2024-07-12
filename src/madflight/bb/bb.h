@@ -49,18 +49,18 @@ public:
     if(bbw.isBusy()) return; //sets busy flag
     bbw.writeBeginRecord(BB_REC_IMU, "IMU");
     bbw.writeU("ts",micros());
-    bbw.writeI("ax*100",AccX*100); //G
-    bbw.writeI("ay*100",AccY*100); //G
-    bbw.writeI("az*100",AccZ*100); //G
-    bbw.writeI("gx*10",GyroX*10); //dps
-    bbw.writeI("gy*10",GyroY*10); //dps
-    bbw.writeI("gz*10",GyroZ*10); //dps
-    bbw.writeI("mx*100",MagX*100); //uT
-    bbw.writeI("my*100",MagX*100); //uT
-    bbw.writeI("mz*100",MagX*100); //uT
-    bbw.writeI("roll*10",ahrs_roll*10); //deg
-    bbw.writeI("pitch*10",ahrs_pitch*10);; //deg
-    bbw.writeI("yaw*10",ahrs_yaw*10);; //deg
+    bbw.writeI("ax*100",ahrs.ax*100); //G
+    bbw.writeI("ay*100",ahrs.ay*100); //G
+    bbw.writeI("az*100",ahrs.az*100); //G
+    bbw.writeI("gx*10",ahrs.gx*10); //dps
+    bbw.writeI("gy*10",ahrs.gy*10); //dps
+    bbw.writeI("gz*10",ahrs.gz*10); //dps
+    bbw.writeI("mx*100",ahrs.mx*100); //uT
+    bbw.writeI("my*100",ahrs.my*100); //uT
+    bbw.writeI("mz*100",ahrs.mz*100); //uT
+    bbw.writeI("roll*10",ahrs.roll*10); //deg
+    bbw.writeI("pitch*10",ahrs.pitch*10);; //deg
+    bbw.writeI("yaw*10",ahrs.yaw*10);; //deg
     bbw.writeEndrecord(); //clears busy flag
   }
 
