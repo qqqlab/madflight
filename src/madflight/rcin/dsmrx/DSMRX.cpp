@@ -47,7 +47,8 @@ void DSMRX::handleSerialEvent(uint8_t value, uint32_t usec)
 
     // put the data in buffer
     if (_rxBufPos < BUFFER_SIZE) {
-        _rxBuf[_rxBufPos++] = value;
+        _rxBuf[_rxBufPos] = value;
+        _rxBufPos = _rxBufPos + 1; //keep c++20 compiler happy, does not like volatile _rxBufPos++ or _rxBufPos+=1
     }
 
     // parse frame if done

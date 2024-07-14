@@ -117,7 +117,7 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 #define IMU_I2C_ADR  0x69 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //-- AHRS sensor fusion 
-#define AHRS_USE AHRS_USE_VQF // AHRS_USE_VQF, AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK
+#define AHRS_USE AHRS_USE_MAHONY // AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
 
 //--- GPS
 #define GPS_BAUD  115200
@@ -298,7 +298,7 @@ void setup() {
   if(!imu.waitNewSample()) die("IMU interrupt not firing.");
 
   //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
-  //cli.calibrate_gyro();
+  cli.calibrate_gyro();
 
   cli.welcome();
 
