@@ -244,7 +244,7 @@ void setup() {
   //6 second startup delay
   for(int i=20;i>0;i--) { 
     Serial.printf(MADFLIGHT_VERSION " on " HW_ARDUINO_STR " starting %d ...\n",i);
-    //delay(300);
+    delay(300);
     led.toggle();
   } 
   led.on();
