@@ -34,6 +34,7 @@ class MPUXXXX {
   
     MPU_Interface *_iface;
     MPU_Type _type;
+    int _rate_hz;
 
   public:
 
@@ -51,14 +52,13 @@ class MPUXXXX {
     }
 
     int get_rate() {
-      return 1000; //actual data rate is always 1000
+      return _rate_hz;
     }
 
     //return 0 on success, positive on error, negative on warning
+    //Actual sample rate is set to the max possible rate smaller than/equal to the requested rate. 
+    //I.e. 99999..1000->1000, 999..500->500, 499..333->333, 332..250->250, etc
     int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
-      //actual data rate is always 1000
-      (void)(rate_hz); //suppress compiler warnings
-      
       //start interface
       _iface->begin();
       _iface->setFreqSlow();
@@ -69,6 +69,17 @@ class MPUXXXX {
       _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source XGyro
       _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
       _iface->WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);    // Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
+
+      //sample rate: 
+      if(rate_hz > 1000) {
+        rate_hz = 1000;
+      }else if(rate_hz < 1000) {
+        int div = 1000 / (rate_hz + 1);
+        if(div > 255) div = 255;
+        rate_hz = 1000 / (div + 1);
+        _iface->WriteReg(MPUREG_SMPLRT_DIV, div);
+      }
+      _rate_hz = rate_hz;
 
       //set scale
       set_acc_resolution(); //do this first, then scale

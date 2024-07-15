@@ -69,6 +69,7 @@ void cli_print_imu_Rate() {
   Serial.printf("rt:%d\t", (int)imu.runtime_tot_max);
   Serial.printf("rt_int:%d\t", (int)imu.runtime_int);
   Serial.printf("rt_bus:%d\t", (int)imu.runtime_bus);
+  Serial.printf("rt_fus:%d\t", (int)(imu.runtime_tot_max - imu.runtime_bus - imu.runtime_int));
   Serial.printf("overruns:%d\t", (int)(imu.overrun_cnt));
   Serial.printf("cnt:%d\t", (int)imu.update_cnt);
   Serial.printf("loops:%d\t", (int)(imu.update_cnt - update_cnt_last));
