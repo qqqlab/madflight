@@ -1014,7 +1014,7 @@ void resetState()
     vqf_fill_double(state.magNormDipLpState, 2*2, NaN);  // std::fill(state.magNormDipLpState, state.magNormDipLpState + 2*2, NaN);
 }
 
-void setup()
+static void setupVqf()
 {
     // assert(coeffs.gyrTs > 0);
     // assert(coeffs.accTs > 0);
@@ -1061,5 +1061,5 @@ void initVqf(vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t magTs)
     coeffs.magTs = magTs > 0 ? magTs : gyrTs;
 
     init_params();
-    setup();
+    setupVqf();
 }

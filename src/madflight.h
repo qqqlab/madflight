@@ -44,6 +44,7 @@ float out_command[HW_OUT_COUNT] = {0}; //Mixer outputs (values: 0.0 to 1.0)
 PWM out[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
 
 //for testing individual modules use: #define MF_TEST  MF_TEST_LED | MF_TEST_RCIN
+#define MF_TEST_BASE 0x0000
 #define MF_TEST_CFG  0x0001
 #define MF_TEST_LED  0x0002
 #define MF_TEST_AHRS 0x0004
