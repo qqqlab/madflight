@@ -38,36 +38,35 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 //========================================================================================================================//
 //                                                 PINS                                                                   //
 //========================================================================================================================//
-// PINS are defined in the board header file library/src/madflight_board_default_XXX.h, but you can use these defines to 
-// override the pins. 
+// Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
+// Uncomment the defines below to create your own pinout, leave commented if you want to use the default pinout.
 
 /*
-//The pin numbers below are an example for an easy soldering ESP32 WeMos LOLIN32-Lite with GY-6500/GY-271/GY-BPM280 sensor modules
 
 //LED:
-#define HW_PIN_LED       22
+#define HW_PIN_LED       -1
 #define HW_LED_ON         0 //0:low is on, 1:high is on
 
 //IMU SPI:
-#define HW_PIN_SPI_MISO  25
-#define HW_PIN_SPI_MOSI  14
-#define HW_PIN_SPI_SCLK  12
-#define HW_PIN_IMU_CS    32
-#define HW_PIN_IMU_EXTI  33 //external interrupt pin
+#define HW_PIN_SPI_MISO  15
+#define HW_PIN_SPI_MOSI   5
+#define HW_PIN_SPI_SCLK   4
+#define HW_PIN_IMU_CS    17
+#define HW_PIN_IMU_EXTI  16 //external interrupt pin
 
 //I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
-#define HW_PIN_I2C_SDA   23
-#define HW_PIN_I2C_SCL   19
+#define HW_PIN_I2C_SDA   13
+#define HW_PIN_I2C_SCL   14
 
 //Motor/Servo Outputs:
 #define HW_OUT_COUNT     4 //number of outputs
-#define HW_PIN_OUT_LIST  {13,15,2,0} //list of output pins
+#define HW_PIN_OUT_LIST  {13,14,21,47} //list of output pins
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-#define HW_PIN_RCIN_RX    16
-#define HW_PIN_RCIN_TX     4
+#define HW_PIN_RCIN_RX    12
+#define HW_PIN_RCIN_TX    11
 #define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
 
 //GPS:
@@ -102,18 +101,18 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 //#include <madflight_board_betaflight_MTKS-MATEKH743.h>
 
 //========================================================================================================================//
-//                                                 USER-SPECIFIED DEFINES                                                 //
+//                                                 HARDWARE                                                               //
 //========================================================================================================================//
 
 //--- RC RECEIVER
 #define RCIN_USE  RCIN_USE_CRSF // RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
-#define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
+#define RCIN_NUM_CHANNELS  6 //number of receiver channels (minimal 6)
 
 //--- IMU SENSOR
-#define IMU_USE  IMU_USE_SPI_MPU6500 // IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU9250,IMU_USE_SPI_MPU6000, IMU_USE_SPI_BMI270, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
+#define IMU_USE  IMU_USE_SPI_MPU9250 // IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU9250,IMU_USE_SPI_MPU6000, IMU_USE_SPI_BMI270, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs.roll, pitch-up gives positive ahrs.pitch, and yaw-right gives positive ahrs.yaw
-#define IMU_ALIGN  IMU_ALIGN_CW90 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
+#define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
 #define IMU_I2C_ADR  0x69 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //-- AHRS sensor fusion 
@@ -137,7 +136,7 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 #define BB_USE  BB_USE_NONE //BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
 
 //========================================================================================================================//
-//                                               RC RECEIVER CONFIG                                                       //
+//                                               RC RECEIVER                                                              //
 //========================================================================================================================//
 
 //set channels
@@ -177,6 +176,12 @@ const int out_MOTOR_COUNT = 4;
 //name the outputs, to make code more readable
 enum out_enum {MOTOR1,MOTOR2,MOTOR3,MOTOR4,SERVO1,SERVO2,SERVO3,SERVO4,SERVO5,SERVO6,SERVO7,SERVO8,SERVO9,SERVO10,SERVO11,SERVO12}; 
 
+//flight modes
+enum rcin_fm_enum {RATE, ANGLE}; //available flight modes: RATE stabilize rate, ANGLE stabilize angle
+const char* rcin_fm_str[] = {"RATE","ANGLE"};
+rcin_fm_enum rcin_fm_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+rcin_fm_enum rcin_fm = (rcin_fm_enum)0; //current flight mode
+
 const uint32_t imu_sample_rate = 1000; //imu sample rate in Hz (default 1000) NOTE: not all IMU drivers support a different rate
 const uint32_t baro_sample_rate = 100; //baro sample rate in Hz (default 100)
 
@@ -213,7 +218,8 @@ float Kd_yaw          = 0.00015;   //Yaw D-gain (be careful when increasing too 
 
 //Radio communication:
 int rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
-float rcin_thro, rcin_roll, rcin_pitch, rcin_yaw; //rcin_thro 0(cutoff) to 1(full); rcin_roll, rcin_pitch, rcin_yaw -1(left,down) to 1(right,up) with 0 center stick
+float rcin_thro; //throttle: 0(cutoff) to 1(full);
+float rcin_roll, rcin_pitch, rcin_yaw;  // roll,pitch,yaw: -1(left,down) to 1(right,up) with 0 center stick
 bool rcin_armed; //status of arm switch, true = armed
 bool rcin_thro_is_low; //status of throttle stick, true = throttle low
 int rcin_aux; // six position switch connected to aux channel, values 0-5
@@ -242,11 +248,13 @@ void setup() {
   Serial.begin(115200); //start console serial
 
   //6 second startup delay
+  String ino = String(__FILE__).substring(ino.lastIndexOf("\\")+1);
   for(int i=20;i>0;i--) { 
-    Serial.printf(MADFLIGHT_VERSION " on " HW_ARDUINO_STR " starting %d ...\n",i);
+    Serial.printf("%s " MADFLIGHT_VERSION " starting %d ...\n", ino.c_str(), i);
     delay(300);
     led.toggle();
   } 
+  Serial.printf("Arduino library: " HW_ARDUINO_STR "\n");
   led.on();
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
@@ -321,7 +329,8 @@ void loop() {
   if(millis() - rcin_telem_ts > 100) {
     rcin_telem_ts = millis();
     rcin_telem_cnt++;
-    if(out_armed) rcin_telemetry_flight_mode("ARMED"); else rcin_telemetry_flight_mode("madflight"); //only first 14 char get transmitted
+    String fm_str = String(out_armed ? "*" : "") + rcin_fm_str[rcin_fm];
+    rcin_telemetry_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
     rcin_telemetry_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
     if(rcin_telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
     if(rcin_telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
@@ -356,9 +365,14 @@ void imu_loop() {
   //Uncomment to debug without remote (and no battery!) - pitch drone up: motors m1,m3 should increase and m2,m4 decrease; bank right: m1,m2 increase; yaw right: m1,m4 increase
   //rcin_thro = 0.5; rcin_thro_is_low = false; rcin_roll = 0; rcin_pitch = 0; rcin_yaw = 0; rcin_armed = true; rcin_aux = 0; out_armed = true;
 
-  //PID Controller - SELECT ONE:
-  control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
-  //control_Rate(rcin_thro_is_low); //Stabilize on rate setpoint
+  //PID Controller
+  switch(rcin_fm) {
+    case ANGLE:
+      control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
+      break;
+    default:
+      control_Rate(rcin_thro_is_low); //Stabilize on rate setpoint
+  }
 
   //Actuator mixing
   control_Mixer(); //Mixes PID outputs to scaled actuator commands -- custom mixing assignments done here
@@ -430,9 +444,10 @@ void rcin_Normalize() {
   pwm = rcin_pwm[rcin_cfg_arm_channel-1];
   rcin_armed = (rcin_cfg_arm_min <= pwm && pwm <= rcin_cfg_arm_max);
 
-  //aux 6 position switch
+  //aux 6 position switch (flight mode)
   int spacing = (rcin_cfg_aux_max - rcin_cfg_aux_min) / 5;
-  rcin_aux = ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing; //output 0,1,2,3,4,5
+  rcin_aux = constrain( ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing, 0, 5); //output 0..5
+  rcin_fm = rcin_fm_map[rcin_aux];
 }
 
 //helper to nomalize a channel based on min,center,max calibration

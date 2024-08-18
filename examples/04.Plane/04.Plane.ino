@@ -62,11 +62,10 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 //========================================================================================================================//
 //                                                 PINS                                                                   //
 //========================================================================================================================//
-// PINS are defined in the board header file library/src/madflight_board_default_XXX.h, but you can use these defines to 
-// override the pins. 
+// Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
+// Uncomment the defines below to create your own pinout, leave commented if you want to use the default pinout.
 
-///*
-//Pin layout for WeMos LOLIN S3 ESP32-S3 with MPU-9250 module directly soldered
+/*
 
 //LED:
 #define HW_PIN_LED       -1
@@ -481,8 +480,8 @@ void rcin_Normalize() {
 
   //aux 6 position switch (flight mode)
   int spacing = (rcin_cfg_aux_max - rcin_cfg_aux_min) / 5;
-  rcin_aux = ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing; //output: 0,1,2,3,4,5
-  rcin_fm = rcin_fm_map[constrain(rcin_aux,0,5)];
+  rcin_aux = constrain( ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing, 0, 5); //output 0..5
+  rcin_fm = rcin_fm_map[rcin_aux];
 
   //flaps
   rcin_flaps = constrain( ((float)(rcin_pwm[rcin_cfg_flaps_channel-1] - rcin_cfg_pwm_min)) / (rcin_cfg_pwm_max - rcin_cfg_pwm_min), 0.0, 1.0); //output: 0.0 to 1.0
