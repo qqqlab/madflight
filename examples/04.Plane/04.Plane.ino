@@ -1,13 +1,15 @@
 /*#########################################################################################################################
 
-WARNING: This program is highly experimental - not flight tested at all - it was only tested that it compiles!
+WARNING: This program is highly experimental - not flight tested at all - it was only dry run tested!
 
 This is just a quick first attempt to make a plane controller, it has two flight modes: MANUAL and FBWA.
 
 ## MANUAL Mode
+
 Regular RC control, no stabilization. All RC inputs are passed through to the servo outputs.
 
 ## FBWA Fly By Wire A Mode (inspired by ArduPilot)
+
 This is the most popular mode for assisted flying, and is the best mode for inexperienced flyers. In this mode the
 plane will hold the roll and pitch specified by the control sticks. So if you hold the aileron stick hard right then the 
 plane will hold its pitch level and will bank right by the angle specified in the roll limit parameter. It is not possible 
@@ -19,16 +21,22 @@ the throttle, and to lose altitude you should lower the throttle.
 
 In FBWA mode the rudder is under manual control.
 
-## Suggested Setup Procedure
-Do a dry run first. Keep the plane in your hand. Set it to MANUAL, and move the rc controls and make sure that the aileron,
-elevator, and rudder move in the correct direction. If incorrect: modify the #define OUT_ELEVATOR_DOWN etc. statements.
+## Setup Procedure
+
+First edit sections "PINS", "BOARD", "HARDWARE", "RC RECEIVER", "OUTPUTS". Use CLI to verify things work as expected.
+
+Then do a dry run:
+
+Set to MANUAL and power up the plane. Move the rc controls and make sure that the aileron, elevator, and rudder move in 
+the correct direction. Arm the plane, and carefully test the motor, then disarm.
+If incorrect: modify the #define OUT_ELEVATOR_DOWN etc. statements.
 
 Then set to FBWA flight mode, keep the radio sticks centered, and move the plane around, to make sure that the control 
 surfaces work to oppose the move, that is: pitching the plane down should move elevator up, banking right should deflect 
 the right aileron down, left aileron up. 
 
-Another thing that needs to be set are the PID parameters. Again, check by setting to FBWA mode and adjust the PID parameters
-until the control surfaces react quickly, but don't oscillate, on changes in attitude.
+Another thing that needs to be set are the PID parameters. Set to FBWA mode and adjust the PID parameters so that the 
+control surfaces react quickly, but don't oscillate, on changes in attitude.
 
 ###########################################################################################################################
 
@@ -58,7 +66,7 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 // override the pins. 
 
 ///*
-//WeMos LOLIN S3 ESP32-S3 with MPU-9250 module directly soldered
+//Pin layout for WeMos LOLIN S3 ESP32-S3 with MPU-9250 module directly soldered
 
 //LED:
 #define HW_PIN_LED       -1
@@ -118,18 +126,18 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 //#include <madflight_board_betaflight_MTKS-MATEKH743.h>
 
 //========================================================================================================================//
-//                                                 USER-SPECIFIED DEFINES                                                 //
+//                                                 HARDWARE                                                               //
 //========================================================================================================================//
 
 //--- RC RECEIVER
 #define RCIN_USE  RCIN_USE_CRSF // RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
-#define RCIN_NUM_CHANNELS 6 //number of receiver channels (minimal 6)
+#define RCIN_NUM_CHANNELS  7 //number of receiver channels (minimal 6)
 
 //--- IMU SENSOR
 #define IMU_USE  IMU_USE_SPI_MPU9250 // IMU_USE_SPI_MPU6500, IMU_USE_SPI_MPU9250,IMU_USE_SPI_MPU6000, IMU_USE_SPI_BMI270, IMU_USE_I2C_MPU9250, IMU_USE_I2C_MPU9150, IMU_USE_I2C_MPU6500, IMU_USE_I2C_MPU6050, IMU_USE_I2C_MPU6000
 //Set sensor orientation. The label is yaw / roll (in that order) needed to rotate the sensor from it's normal position to it's mounted position.
 //If not sure what is needed: use CLI 'proll' and try each setting until roll-right gives positive ahrs.roll, pitch-up gives positive ahrs.pitch, and yaw-right gives positive ahrs.yaw
-#define IMU_ALIGN  IMU_ALIGN_CW0 //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
+#define IMU_ALIGN  IMU_ALIGN_CW90FLIP //IMU_ALIGN_CW0, IMU_ALIGN_CW90, IMU_ALIGN_CW180, IMU_ALIGN_CW270, IMU_ALIGN_CW0FLIP, IMU_ALIGN_CW90FLIP, IMU_ALIGN_CW180FLIP, IMU_ALIGN_CW270FLIP
 #define IMU_I2C_ADR  0x69 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //-- AHRS sensor fusion 
@@ -153,21 +161,21 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 #define BB_USE  BB_USE_NONE //BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
 
 //========================================================================================================================//
-//                                               RC RECEIVER CONFIG                                                       //
+//                                               RC RECEIVER                                                              //
 //========================================================================================================================//
 
-//set channels
+//set channels (1..RCIN_NUM_CHANNELS)
 const int rcin_cfg_thro_channel  = 1; //low pwm = zero throttle/stick back, high pwm = full throttle/stick forward
 const int rcin_cfg_roll_channel  = 2; //low pwm = left, high pwm = right
 const int rcin_cfg_pitch_channel = 3; //low pwm = pitch up/stick back, high pwm = pitch down/stick forward
 const int rcin_cfg_yaw_channel   = 4; //low pwm = left, high pwm = right
 const int rcin_cfg_arm_channel   = 5; //ARM/DISARM switch
 const int rcin_cfg_aux_channel   = 6; //Fight mode - 6 position switch
+const int rcin_cfg_flaps_channel = 7; //Flaps
 
 //throttle pwm values
 const int rcin_cfg_thro_low      = 1250; //used to set rcin_thro_is_low flag when pwm is below. Note: your craft won't arm if this is too low.
 const int rcin_cfg_thro_max      = 1900;
-const float out_armed_speed      = 0.2; //Safety feature: make props spin when armed, the motors spin at this speed when armed and throttle is low. The default 0.2 is probably fairly high, set lower as needed.
 
 //roll, pitch, yaw pwm values
 const int rcin_cfg_pwm_min       = 1150;
@@ -185,17 +193,25 @@ int rcin_cfg_aux_min = 1165; //lowest switch pwm
 int rcin_cfg_aux_max = 1815; //higest switch pwm
 
 //========================================================================================================================//
-//                                               USER-SPECIFIED VARIABLES                                                 //
+//                                               OUTPUTS                                                                  //
 //========================================================================================================================//
 
 //number of motors - out[0..out_MOTOR_COUNT-1] are motors, out[out_MOTOR_COUNT..HW_OUT_COUNT-1] are servos
 const int out_MOTOR_COUNT = 1;
-//define output channels for the used outputs (see control_Mixer() for available names)
-#define OUT_MOTOR1 0 //full throttle on high pwm
-#define OUT_LEFT_AILERON_UP 1 //left aileron deflects up on high pwm
-#define OUT_RIGHT_AILERON_DOWN 2 //right aileron deflects down on high pwm
+
+//define outputs and their channels 1..HW_OUT_COUNT (see control_Mixer() for available outputs)
+//select output name based on what the output does when pwm is high. For example: If the right aileron goes down on high 
+//pwm and is connected to output channel 2 use #define OUT_RIGHT_AILERON_DOWN 2
+#define OUT_MOTOR1 1 //full throttle on high pwm
+#define OUT_LEFT_AILERON_UP 2 //left aileron deflects up on high pwm (and right aileron down, otherwise use two servo channels)
+//#define OUT_RIGHT_AILERON_DOWN 3 //right aileron deflects down on high pwm
 #define OUT_ELEVATOR_UP 3 //elevator deflects up on high pwm
 #define OUT_RUDDER_LEFT 4 //rudder deflects left on high pwm
+#define OUT_FLAPS_UP_HALF 5 //flaps deflect up on high pwm, but only use 0.5 to 1.0 servo range
+
+//========================================================================================================================//
+//                                               USER-SPECIFIED VARIABLES                                                 //
+//========================================================================================================================//
 
 //flight modes
 enum rcin_fm_enum {MANUAL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, FBWA stabilize roll/pitch angles
@@ -214,40 +230,40 @@ float LP_radio       = 400;       //Radio Input    (default 400Hz)
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
-float maxRoll        = 30.0;      //Max roll angle in degrees for angle mode (maximum ~70 degrees)
-float maxPitch       = 30.0;      //Max pitch angle in degrees for angle mode (maximum ~70 degrees)
-float maxRollRate    = 30.0;      //Max roll rate in deg/sec for rate mode 
-float maxPitchRate   = 30.0;      //Max pitch rate in deg/sec for rate mode
-float maxYawRate     = 160.0;     //Max yaw rate in deg/sec for angle and rate mode
+float maxRoll        = 45.0;      //Max roll angle in degrees for FBWA mode
+float maxPitch       = 30.0;      //Max pitch angle in degrees for FBWA mode
 
-float Kp_roll        = 0.2;      //Roll P-gain
-float Ki_roll        = 0.1;      //Roll I-gain
-float Kd_roll        = 0.05;     //Roll D-gain
+//Kp scaling: full control surface deflection on 100/Kp degree error 
+float Kp_roll        = 1.1;    //Roll P-gain
+float Ki_roll        = 0;      //Roll I-gain
+float Kd_roll        = 0;      //Roll D-gain
 
-float Kp_pitch       = 0.2;      //Pitch P-gain
-float Ki_pitch       = 0.1;      //Pitch I-gain
-float Kd_pitch       = 0.05;     //Pitch D-gain
+float Kp_pitch       = 3.3;    //Pitch P-gain
+float Ki_pitch       = 0;      //Pitch I-gain
+float Kd_pitch       = 0;      //Pitch D-gain
 
-float Kp_yaw         = 0.3;       //Yaw P-gain
-float Ki_yaw         = 0.05;      //Yaw I-gain
-float Kd_yaw         = 0.00015;   //Yaw D-gain
+//float Kp_yaw         = 0.3;       //Yaw P-gain
+//float Ki_yaw         = 0.05;      //Yaw I-gain
+//float Kd_yaw         = 0.00015;   //Yaw D-gain
 
 //========================================================================================================================//
 //                              DECLARE GLOBAL VARIABLES                                                                  //
 //========================================================================================================================//
 
 //Radio communication:
-int rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
-float rcin_thro, rcin_roll, rcin_pitch, rcin_yaw; //rcin_thro 0(cutoff) to 1(full); rcin_roll, rcin_pitch, rcin_yaw -1(left,down) to 1(right,up) with 0 center stick
-bool rcin_armed; //status of arm switch, true = armed
-bool rcin_thro_is_low; //status of throttle stick, true = throttle low
-int rcin_aux; // six position switch connected to aux channel, values 0-5
+int   rcin_pwm[RCIN_NUM_CHANNELS]; //filtered raw PWM values
+float rcin_thro; //throttle: 0(cutoff) to 1(full);
+float rcin_roll, rcin_pitch, rcin_yaw;  // roll,pitch,yaw: -1(left,down) to 1(right,up) with 0 center stick
+bool  rcin_armed; //status of arm switch, true = armed
+bool  rcin_thro_is_low; //status of throttle stick, true = throttle low
+int   rcin_aux; // six position switch connected to aux channel, values 0-5
+float rcin_flaps; //flaps 0.0:up, 1.0:full down
 
-//Controller:
+//PID controller output
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
 //Flight status
-bool out_armed = false; //motors will only run if this flag is true
+bool  out_armed = false; //motors will only run if this flag is true
 
 //Low pass filter parameters
 float B_radio;
@@ -267,9 +283,7 @@ void setup() {
   Serial.begin(115200); //start console serial
 
   //6 second startup delay
-  String ino = __FILE__;
-//  ino = (ino.substring((ino.lastIndexOf(".")), (ino.lastIndexOf("\\")) + 1));
-  ino = ino.substring(ino.lastIndexOf("\\")+1);
+  String ino = String(__FILE__).substring(ino.lastIndexOf("\\")+1);
   for(int i=20;i>0;i--) { 
     Serial.printf("%s " MADFLIGHT_VERSION " starting %d ...\n", ino.c_str(), i);
     delay(300);
@@ -463,12 +477,15 @@ void rcin_Normalize() {
 
   //arm switch
   pwm = rcin_pwm[rcin_cfg_arm_channel-1];
-  rcin_armed = (rcin_cfg_arm_min <= pwm && pwm <= rcin_cfg_arm_max);
+  rcin_armed = (rcin_cfg_arm_min <= pwm && pwm <= rcin_cfg_arm_max); //output: true/false
 
   //aux 6 position switch (flight mode)
   int spacing = (rcin_cfg_aux_max - rcin_cfg_aux_min) / 5;
-  rcin_aux = ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing; //output 0,1,2,3,4,5
+  rcin_aux = ( rcin_pwm[rcin_cfg_aux_channel-1] - rcin_cfg_aux_min + spacing/2) / spacing; //output: 0,1,2,3,4,5
   rcin_fm = rcin_fm_map[constrain(rcin_aux,0,5)];
+
+  //flaps
+  rcin_flaps = constrain( ((float)(rcin_pwm[rcin_cfg_flaps_channel-1] - rcin_cfg_pwm_min)) / (rcin_cfg_pwm_max - rcin_cfg_pwm_min), 0.0, 1.0); //output: 0.0 to 1.0
 }
 
 //helper to nomalize a channel based on min,center,max calibration
@@ -580,62 +597,76 @@ void control_Mixer() {
 
   //motor: full throttle on rcin_thro
   #ifdef OUT_MOTOR1 //full throttle on high pwm
-    out_command[OUT_MOTOR1] = +rcin_thro;
+    out_command[OUT_MOTOR1-1] = +rcin_thro;
   #endif
   #ifdef OUT_MOTOR1_REVERSED //reversed: idle throttle on high pwm
-    out_command[OUT_MOTOR1_REVERSED] = 1.0 - rcin_thro;
+    out_command[OUT_MOTOR1_REVERSED-1] = 1.0 - rcin_thro;
   #endif  
   #ifdef OUT_MOTOR2 //full throttle on high pwm
-    out_command[OUT_MOTOR2] = +rcin_thro;
+    out_command[OUT_MOTOR2-1] = +rcin_thro;
   #endif  
   #ifdef OUT_MOTOR2_REVERSED //reversed: idle throttle on high pwm
-    out_command[OUT_MOTOR2_REVERSED] = 1.0 - rcin_thro;
+    out_command[OUT_MOTOR2_REVERSED-1] = 1.0 - rcin_thro;
   #endif 
 
   //aileron: when roll_PID positive -> roll right -> deflect left aileron down, deflect right aileron up
   #ifdef OUT_LEFT_AILERON_DOWN //left aileron deflects down on high pwm
-    out_command[OUT_LEFT_AILERON_DOWN] = +roll_PID/2.0 + 0.5;
+    out_command[OUT_LEFT_AILERON_DOWN-1] = +roll_PID/2.0 + 0.5;
   #endif
   #ifdef OUT_RIGHT_AILERON_UP //right aileron deflects up on high pwm
-    out_command[OUT_RIGHT_AILERON_UP] = +roll_PID/2.0 + 0.5;
+    out_command[OUT_RIGHT_AILERON_UP-1] = +roll_PID/2.0 + 0.5;
   #endif
   #ifdef OUT_LEFT_AILERON_UP //reversed: left aileron deflects up on high pwm
-    out_command[OUT_LEFT_AILERON_UP] = -roll_PID/2.0 + 0.5;
+    out_command[OUT_LEFT_AILERON_UP-1] = -roll_PID/2.0 + 0.5;
   #endif
   #if defined(OUT_RIGHT_AILERON_DOWN) //reversed: right aileron deflects down on high pwm
-    out_command[OUT_RIGHT_AILERON_DOWN] = -roll_PID/2.0 + 0.5;
+    out_command[OUT_RIGHT_AILERON_DOWN-1] = -roll_PID/2.0 + 0.5;
   #endif
 
   //elevator: when pitch_PID is positive -> pitch up -> deflect elevator down 
   #ifdef OUT_ELEVATOR_DOWN //elevator deflects down on high pwm
-    out_command[OUT_ELEVATOR_UP] = +pitch_PID/2.0 + 0.5;
+    out_command[OUT_ELEVATOR_UP-1] = +pitch_PID/2.0 + 0.5;
   #endif
   #ifdef OUT_ELEVATOR_UP //reversed: elevator deflects up on high pwm
-    out_command[OUT_ELEVATOR_UP] = -pitch_PID/2.0 + 0.5; //pitch up = pitch_PID positive, elevator down 
+    out_command[OUT_ELEVATOR_UP-1] = -pitch_PID/2.0 + 0.5;
   #endif
 
   //rudder: when yaw_PID is positive -> yaw right -> deflect rudder right
   #ifdef OUT_RUDDER_RIGHT //rudder deflects right on high pwm 
-    out_command[OUT_RUDDER_RIGHT] = +yaw_PID/2.0 + 0.5;
+    out_command[OUT_RUDDER_RIGHT-1] = +yaw_PID/2.0 + 0.5;
   #endif  
   #ifdef OUT_RUDDER_LEFT //reversed: rudder deflects left on high pwm
-    out_command[OUT_RUDDER_LEFT] = -yaw_PID/2.0 + 0.5;
+    out_command[OUT_RUDDER_LEFT-1] = -yaw_PID/2.0 + 0.5;
   #endif
+
+  //flaps:
+  #ifdef OUT_FLAPS_DOWN //flaps deflect down on high pwm
+    out_command[OUT_FLAPS_DOWN-1] = +rcin_flaps;
+  #endif
+  #ifdef OUT_FLAPS_DOWN_HALF //flaps deflect down on high pwm (but only use servo range 0.5 to 1.0)
+    out_command[OUT_FLAPS_DOWN_HALF-1] = +rcin_flaps/2.0 + 0.5;
+  #endif  
+  #ifdef OUT_FLAPS_UP //reversed: flaps deflect up on high pwm
+    out_command[OUT_FLAPS_UP-1] = -rcin_flaps;
+  #endif
+  #ifdef OUT_FLAPS_UP_HALF //flaps deflect up on high pwm (but only use servo range 0.5 to 1.0)
+    out_command[OUT_FLAPS_UP_HALF-1] = -rcin_flaps/2.0 + 0.5;
+  #endif 
 
   //delta wing:
   // when roll_PID positive -> roll right -> deflect left elevon down, deflect right elevon up
   // when pitch_PID is positive -> pitch up -> deflect left elevon down, deflect right elevon down 
   #ifdef OUT_LEFT_ELEVON_DOWN //left elevon deflects down on high input
-    out_command[OUT_LEFT_ELEVON_DOWN] = +roll_PID/2.0 +pitch_PID/2.0 + 0.5;
+    out_command[OUT_LEFT_ELEVON_DOWN-1] = +roll_PID/2.0 +pitch_PID/2.0 + 0.5;
   #endif
   #ifdef OUT_RIGHT_ELEVON_UP //right elevon deflects up on high input
-    out_command[OUT_RIGHT_ELEVON_UP] = +roll_PID/2.0 -pitch_PID/2.0 + 0.5;
+    out_command[OUT_RIGHT_ELEVON_UP-1] = +roll_PID/2.0 -pitch_PID/2.0 + 0.5;
   #endif
   #ifdef OUT_LEFT_ELEVON_UP //reversed: left elevon deflects down on high input
-    out_command[OUT_LEFT_ELEVON_UP] = -roll_PID/2.0 -pitch_PID/2.0 + 0.5;
+    out_command[OUT_LEFT_ELEVON_UP-1] = -roll_PID/2.0 -pitch_PID/2.0 + 0.5;
   #endif  
   #ifdef OUT_RIGHT_ELEVON_DOWN //reversed: right elevon deflects down on high input
-    out_command[OUT_RIGHT_ELEVON_DOWN] = -roll_PID/2.0 +pitch_PID/2.0 + 0.5;
+    out_command[OUT_RIGHT_ELEVON_DOWN-1] = -roll_PID/2.0 +pitch_PID/2.0 + 0.5;
   #endif 
 
   //0.0 is zero throttle if connecting to ESC for conventional PWM, 1.0 is max throttle
@@ -662,9 +693,6 @@ void out_KillSwitchAndFailsafe() {
       Serial.println("OUT: DISARMED (rcin lost connection)");
     }
   }
-
-  //If armed and throttle is low -> set motor outputs to out_armed_speed
-  if(out_armed && rcin_thro_is_low) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = out_armed_speed; 
 
   //IF DISARMED -> STOP MOTORS
   if(!out_armed) for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = 0; 
