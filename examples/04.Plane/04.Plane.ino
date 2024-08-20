@@ -2,11 +2,15 @@
 
 WARNING: This program is highly experimental - not flight tested at all - it was only dry run tested!
 
-This is just a quick first attempt to make a plane controller, it has two flight modes: MANUAL and FBWA.
+This is just a quick first attempt to make a plane controller, it has 3 flight modes: MANUAL, ROLL and FBWA.
 
 ## MANUAL Mode
 
 Regular RC control, no stabilization. All RC inputs are passed through to the servo outputs.
+
+## ROLL Mode
+
+Stabilize roll angle
 
 ## FBWA Fly By Wire A Mode (inspired by ArduPilot)
 
@@ -25,7 +29,11 @@ In FBWA mode the rudder is under manual control.
 
 First edit sections "PINS", "BOARD", "HARDWARE", "RC RECEIVER", "OUTPUTS". Use CLI to verify things work as expected.
 
-Then do a dry run:
+Calibrate gyro, accelerometer, and magnetometer --- important!!!
+
+Connect power and then let plane sit for 15 seconds, during this time the gyro biases are re-calibrated.
+
+Do a dry run:
 
 Set to MANUAL and power up the plane. Move the rc controls and make sure that the aileron, elevator, and rudder move in 
 the correct direction. Arm the plane, and carefully test the motor, then disarm.
@@ -62,10 +70,10 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 //========================================================================================================================//
 //                                                 PINS                                                                   //
 //========================================================================================================================//
-// Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
-// Uncomment the defines below to create your own pinout, leave commented if you want to use the default pinout.
 
-/*
+/* Place an additional / at the beginning of this line to setup our own pinout below, otherwise default pins from library/src/madflight_board_default_XXX.h are used
+
+//Example pinout for LOLIN S3 (ESP32S3) with SPI MPU-9250 module directly soldered
 
 //LED:
 #define HW_PIN_LED       -1
@@ -79,8 +87,8 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 #define HW_PIN_IMU_EXTI  16 //external interrupt pin
 
 //I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
-#define HW_PIN_I2C_SDA   13
-#define HW_PIN_I2C_SCL   14
+#define HW_PIN_I2C_SDA   -1
+#define HW_PIN_I2C_SCL   -1
 
 //Motor/Servo Outputs:
 #define HW_OUT_COUNT     6 //number of outputs
@@ -213,10 +221,9 @@ const int out_MOTOR_COUNT = 1;
 //========================================================================================================================//
 
 //flight modes
-enum rcin_fm_enum {MANUAL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, FBWA stabilize roll/pitch angles
-const char* rcin_fm_str[] = {"MANUAL","FBWA"};
-rcin_fm_enum rcin_fm_map[6] {MANUAL, MANUAL, MANUAL, FBWA, FBWA, FBWA}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: MANUAL/FBWA)
-rcin_fm_enum rcin_fm = (rcin_fm_enum)0; //current flight mode
+enum rcin_fm_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
+const char* rcin_fm_str[] = {"MANUAL", "ROLL", "FBWA"}; //flight mode names used for telemetry
+rcin_fm_enum rcin_fm_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
 
 const uint32_t imu_sample_rate = 1000; //imu sample rate in Hz (default 1000) NOTE: not all IMU drivers support a different rate
 const uint32_t baro_sample_rate = 100; //baro sample rate in Hz (default 100)
@@ -228,18 +235,20 @@ float LP_mag         = 1e10;      //Magnetometer   (default 1e10Hz, i.e. no filt
 float LP_radio       = 400;       //Radio Input    (default 400Hz)
 
 //Controller parameters (take note of defaults before modifying!): 
-float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
-float maxRoll        = 45.0;      //Max roll angle in degrees for FBWA mode
-float maxPitch       = 30.0;      //Max pitch angle in degrees for FBWA mode
+float i_limit        = 25;        //PID Integrator saturation level, mostly for safety
+float maxRoll        = 45;        //Max roll angle in degrees for ROLL, FBWA modes
+float maxPitch       = 30;        //Max pitch angle in degrees for FBWA mode
+float fbwa_pitch_offset = 3;      //FBWA pitch up angle for neutral stick
 
-//Kp scaling: full control surface deflection on 100/Kp degree error 
-float Kp_roll        = 1.1;    //Roll P-gain
-float Ki_roll        = 0;      //Roll I-gain
-float Kd_roll        = 0;      //Roll D-gain
+//roll PID constants
+float Kp_roll        = (1.0/90);  //Roll P-gain - apply full aileron on 90 degree roll error
+float Ki_roll        = 0;         //Roll I-gain
+float Kd_roll        = (1.0/180); //Roll D-gain - apply full opposite aileron when roll rate is 180 degrees/sec towards desired setpoint
 
-float Kp_pitch       = 3.3;    //Pitch P-gain
-float Ki_pitch       = 0;      //Pitch I-gain
-float Kd_pitch       = 0;      //Pitch D-gain
+//pitch PID constants
+float Kp_pitch       = (1.0/30);  //Pitch P-gain - apply full elevator on 30 degree pitch error
+float Ki_pitch       = 0;         //Pitch I-gain
+float Kd_pitch       = (1.0/90);  //Pitch D-gain - apply full opposite elevator when pitch rate is 90 degrees/sec towards desired setpoint
 
 //float Kp_yaw         = 0.3;       //Yaw P-gain
 //float Ki_yaw         = 0.05;      //Yaw I-gain
@@ -262,6 +271,7 @@ float rcin_flaps; //flaps 0.0:up, 1.0:full down
 float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
 
 //Flight status
+rcin_fm_enum rcin_fm = (rcin_fm_enum)0; //current flight mode
 bool  out_armed = false; //motors will only run if this flag is true
 
 //Low pass filter parameters
@@ -282,9 +292,8 @@ void setup() {
   Serial.begin(115200); //start console serial
 
   //6 second startup delay
-  String ino = String(__FILE__).substring(ino.lastIndexOf("\\")+1);
   for(int i=20;i>0;i--) { 
-    Serial.printf("%s " MADFLIGHT_VERSION " starting %d ...\n", ino.c_str(), i);
+    Serial.printf("Plane " MADFLIGHT_VERSION " starting %d ...\n", i);
     delay(300);
     led.toggle();
   } 
@@ -401,6 +410,9 @@ void imu_loop() {
 
   //PID Controller
   switch(rcin_fm) {
+    case ROLL:
+      control_ROLL(rcin_thro_is_low); //Stabilize on roll angle setpoints
+      break;    
     case FBWA:
       control_FBWA(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoints
       break;
@@ -517,7 +529,7 @@ In FBWA mode the rudder is under manual control.
 
   //desired values
   float roll_des = rcin_roll * maxRoll; //Between -maxRoll and +maxRoll
-  float pitch_des = rcin_pitch * maxPitch; //Between -maxPitch and +maxPitch
+  float pitch_des = rcin_pitch * maxPitch + fbwa_pitch_offset; //Between fbwa_pitch_offset-maxPitch and fbwa_pitch_offset+maxPitch
 
   //state vars
   static float integral_roll, integral_pitch, error_yaw_prev, integral_yaw;
@@ -534,14 +546,14 @@ In FBWA mode the rudder is under manual control.
   integral_roll += error_roll * imu.dt;
   integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_roll = ahrs.gx;
-  roll_PID = constrain(0.01 * (Kp_roll*error_roll + Ki_roll*integral_roll - Kd_roll*derivative_roll), -1.0f, 1.0f); //Scaled by .01 to bring within -1 to 1 range
+  roll_PID = Kp_roll*error_roll + Ki_roll*integral_roll - Kd_roll*derivative_roll; //nominal output -1 to 1 (can be larger)
 
   //Pitch PID - stabilize desired pitch angle
   float error_pitch = pitch_des - ahrs.pitch;
   integral_pitch += error_pitch * imu.dt;
   integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_pitch = ahrs.gy; 
-  pitch_PID = constrain(0.01 * (Kp_pitch*error_pitch + Ki_pitch*integral_pitch - Kd_pitch*derivative_pitch), -1.0f, 1.0f); //Scaled by .01 to bring within -1 to 1 range
+  pitch_PID = Kp_pitch*error_pitch + Ki_pitch*integral_pitch - Kd_pitch*derivative_pitch; //nominal output -1 to 1 (can be larger)
 
   //Yaw PID - passthru rcin
   yaw_PID = rcin_yaw;
@@ -560,6 +572,36 @@ In FBWA mode the rudder is under manual control.
   error_yaw_prev = error_yaw;
   */  
 }
+
+void control_ROLL(bool zero_integrators) {
+  //inputs: roll_des, pitch_des, yawRate_des
+  //outputs: roll_PID, pitch_PID, yaw_PID
+
+  //desired values
+  float roll_des = rcin_roll * maxRoll; //Between -maxRoll and +maxRoll
+
+  //state vars
+  static float integral_roll;
+
+  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
+  if(zero_integrators) {
+    integral_roll = 0;
+  }
+
+  //Roll PID - stabilize desired roll angle
+  float error_roll = roll_des - ahrs.roll;
+  integral_roll += error_roll * imu.dt;
+  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
+  float derivative_roll = ahrs.gx;
+  roll_PID = Kp_roll*error_roll + Ki_roll*integral_roll - Kd_roll*derivative_roll; //nominal output -1 to 1 (can be larger)
+
+  //Pitch PID - passthru rcin
+  pitch_PID = rcin_pitch;
+
+  //Yaw PID - passthru rcin
+  yaw_PID = rcin_yaw; 
+}
+
 
 void control_MANUAL() {
 /* MANUAL Mode
@@ -592,7 +634,7 @@ void control_Mixer() {
     yaw_PID    -1: yaw left/stick left       1: yaw right/stick right
    */
 
-  //Plane mixing - PID values are -1 to +1, SERVO values are 0 to 1
+  //Plane mixing - PID values are -1 to +1 (nominal), SERVO values are 0 to 1 (clipped by pwm class)
 
   //motor: full throttle on rcin_thro
   #ifdef OUT_MOTOR1 //full throttle on high pwm

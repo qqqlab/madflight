@@ -248,9 +248,8 @@ void setup() {
   Serial.begin(115200); //start console serial
 
   //6 second startup delay
-  String ino = String(__FILE__).substring(ino.lastIndexOf("\\")+1);
   for(int i=20;i>0;i--) { 
-    Serial.printf("%s " MADFLIGHT_VERSION " starting %d ...\n", ino.c_str(), i);
+    Serial.printf("QuadAdv " MADFLIGHT_VERSION " starting %d ...\n", i);
     delay(300);
     led.toggle();
   } 

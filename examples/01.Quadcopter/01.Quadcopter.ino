@@ -203,10 +203,11 @@ void setup() {
 
   //6 second startup delay
   for(int i=20;i>0;i--) { 
-    Serial.printf(MADFLIGHT_VERSION " on " HW_ARDUINO_STR " starting %d ...\n",i);
+    Serial.printf("Quad " MADFLIGHT_VERSION " starting %d ...\n", i);
     delay(300);
     led.toggle();
   } 
+  Serial.printf("Arduino library: " HW_ARDUINO_STR "\n");
   led.on();
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
