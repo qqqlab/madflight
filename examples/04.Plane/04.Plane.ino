@@ -1,8 +1,8 @@
 /*#########################################################################################################################
 
-WARNING: This program is highly experimental - not flight tested at all - it was only dry run tested!
+WARNING: This program is experimental - it was only flight-tested in a couple of flights
 
-This is just a quick first attempt to make a plane controller, it has 3 flight modes: MANUAL, ROLL and FBWA.
+This program is an airplane controller, it has 3 flight modes: MANUAL, ROLL and FBWA.
 
 ## MANUAL Mode
 
@@ -43,7 +43,7 @@ Then set to FBWA flight mode, keep the radio sticks centered, and move the plane
 surfaces work to oppose the move, that is: pitching the plane down should move elevator up, banking right should deflect 
 the right aileron down, left aileron up. 
 
-Another thing that needs to be set are the PID parameters. Set to FBWA mode and adjust the PID parameters so that the 
+Another thing that needs to be set are the PID parameters. Set to ROLL or FBWA mode and adjust the PID parameters so that the 
 control surfaces react quickly, but don't oscillate, on changes in attitude.
 
 ###########################################################################################################################
@@ -116,13 +116,6 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 #define HW_PIN_SPI2_SCLK  -1
 #define HW_PIN_BB_CS      -1
 //*/
-
-//RP2040 specific options
-//#define HW_RP2040_SYS_CLK_KHZ 200000 //overclocking
-//#define HW_RP2040_USE_FREERTOS //enable use of FreeRTOS - experimental
-
-//ESP32 specific options
-//#define USE_ESP32_SOFTWIRE //use bitbang I2C (not hardware I2C) See https://github.com/espressif/esp-idf/issues/4999
 
 //========================================================================================================================//
 //                                                 BOARD                                                                  //
@@ -301,7 +294,7 @@ void setup() {
   led.on();
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
-  cfg.begin(); //read config from EEPROM
+  cfg.begin(); //read config from EEPROM 
   cli.print_boardInfo(); //print board info and pinout
   cli.print_i2cScan(); //print i2c scan
   rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
@@ -344,6 +337,17 @@ void setup() {
   ahrs.setup(LP_gyr, LP_acc, LP_mag); //setup low pass filters for Mahony/Madgwick filters
   ahrs.setInitalOrientation(); //do this before IMU update handler is started
 
+//pinMode(9,INPUT);
+/*
+int v1 = 0;
+while(1) {
+  int v2=digitalRead(9);
+  if(v1!=v2) {
+    Serial.printf("v=%d\n",v1);
+    v1=v2;
+  }
+}
+*/
   //start IMU update handler
   imu.onUpdate = imu_loop;
   if(!imu.waitNewSample()) die("IMU interrupt not firing.");

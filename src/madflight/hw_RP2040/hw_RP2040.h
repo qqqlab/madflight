@@ -44,9 +44,13 @@ void hw_eeprom_commit() {
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
-#define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE //use FreeRTOS on second core (Note: RP2040 IMU_EXEC_IRQ blocks the system)
-#define IMU_FREERTOS_TASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
-#define HW_RP2040_USE_FREERTOS //enable FreeRTOS
+#ifdef PICO_RP2350
+  #define IMU_EXEC IMU_EXEC_IRQ
+#else
+  #define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE //use FreeRTOS on second core (Note: RP2040 IMU_EXEC_IRQ blocks the system)
+  #define IMU_FREERTOS_TASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
+  #define HW_RP2040_USE_FREERTOS //enable FreeRTOS
+#endif
 
 //======================================================================================================================//
 //                    hw_setup()
@@ -88,6 +92,9 @@ void hw_setup()
   bb_spi->begin();
 
   hw_eeprom_begin();
+
+  //IMU
+  pinMode(HW_PIN_IMU_EXTI, INPUT); //needed for RP2350, should not hurt for RP2040
 }
 
 void hw_reboot() {

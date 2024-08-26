@@ -39,9 +39,9 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_ALIGN_CW270FLIP 8
 
 //Available excecution methods (not all platforms support all methods)
-#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (only works on STM32)
-#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (only works on ESP32, RP2040)
-#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (only works on RP2040)
+#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (works on STM32, RP2350. Does NOT work on ESP32)
+#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
+#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
 
 //default settings
 #ifndef IMU_GYRO_DPS
