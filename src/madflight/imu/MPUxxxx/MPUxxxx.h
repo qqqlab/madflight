@@ -226,7 +226,7 @@ class MPUXXXX {
     {
         uint8_t d[14]; //response is 14 bytes = 6 acc + 2 temp + 6 gyro
         _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 20); 
+        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 14); 
         // Get accelerometer (6 bytes) - sensor orientation for acc/gyro is NWU
         rawa[0] = -(int16_t)((d[0]<<8) | d[1]); //-N = -N
         rawa[1] =  (int16_t)((d[2]<<8) | d[3]); //-E =  W
