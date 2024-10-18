@@ -2,7 +2,7 @@
 
 ***M**anless **A**erial **D**evice*
 
-This is an Arduino library to build ESP32 / ESP32-S3 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
+This is an Arduino library to build ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32 flight controllers. A functional DIY flight controller can be build for under $10 from readily available development boards and sensor breakout boards. Ideal if you want to try out new flight control concepts, without first having to setup a build environment and without having to read through thousands lines of code to find the spot where you want to change something.
 
 `Quadcopter.ino` is a 1000 line demo program for a quadcopter. It has been flight tested on ESP32, ESP32-S3, RP2040, and STM32F405 microcontrollers with the Arduino IDE. The program can be easily adapted to control your plane or VTOL craft. The source code has extensive documentation explaning what the settings and functions do.
 
@@ -28,7 +28,7 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 [Getting Started](#gettingstarted)  
 [Safety First](#safetyfirst)  
 [ESP32 / ESP32-S3 Setup and Pinout](#ESP32)  
-[RP2040 Setup and Pinout](#RP2040)  
+[RP2350 / RP2040 Setup and Pinout](#RP2040)  
 [STM32 Setup and Pinout](#STM32)  
 [Connecting the IMU Sensor](#connectsensor)  
 [Software Design](#softwaredesign)  
@@ -42,7 +42,7 @@ For full documention see [madflight.com](https://madflight.com) and the source c
 ## Required Hardware
 
 - Development board: 
-  - RP2040 (e.g. Raspberry Pi Pico)
+  - RP2350 RP2040 (e.g. Raspberry Pi Pico 2)
   - or ESP32/ESP32-S3 (e.g. Espressiv DevKitC)
   - or STM32 (e.g. Black Pill or a commercial flight controller)
 - SPI IMU sensor (BMI270, MPU9250, MP6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
@@ -186,15 +186,19 @@ GND | G | USB connector | G | GND
 
 
 <a name="RP2040"></a>
-## RP2040 Setup and Pinout
+## RP2350 / RP2040 Setup and Pinout
 
-madflight works with [arduino-pico v3.x.x](https://github.com/earlephilhower/arduino-pico)
+madflight works with [arduino-pico v4.x.x](https://github.com/earlephilhower/arduino-pico)
 
 #### Dual Core / FPU / FreeRTOS
 
-RP2040 has dual core, no FPU, and FreeRTOS is optional.
+RP2350 (Pico2) has dual core, dual FPU, but no FreeRTOS (arduino pico v4.0.1)
 
-madflight uses FreeRTOS and executes the 1000Hz IMU loop on the second core, which is 80% loaded at default 133MHz CPU speed. You can overclock the CPU to get some more headroom.
+RP2040 (Pico) has dual core, no FPU, and FreeRTOS is optional.
+
+madflight uses float and is much happier with RP2350 over RP2040.
+
+madflight on RP2040 uses FreeRTOS and executes the 1000Hz IMU loop on the second core, which is 80% loaded at default 133MHz CPU speed. You can overclock the CPU to get some more headroom.
 
 #### PWM
 
@@ -204,7 +208,7 @@ Consecutive even/odd PWM pins (e.g. pins 2,3 or 10,11) share the same timer and 
 
 madflight uses a custom high performance SerialIRQ library.
 
-## Pinout RP2040 Raspberry Pi Pico
+## Pinout Raspberry Pi Pico / Pico2
 
 This is the default pinout for RP2040. It is optimized for the Raspberry Pi Pico (40 pin) board. This pinout is defined in madflight_board_default_RP2040.h, but can be modified with `#define HW_PIN_XXX` in your program.
 
@@ -379,7 +383,7 @@ I2C sensor:
 <a name="changes"></a>
 ## Changes from dRehmFlight
 
-- Add support for RP2040, ESP32, ESP32-S3, and STM32
+- Add support for RP2040, RP2350, ESP32, ESP32-S3, and STM32
 - Dropped Teensy support, but could be re-added by creating a hw_TEENSY.h file. (I just don't have the hardware to test on)
 - Moved all hardware specific code to hw_XXX.h and added hardware specific libraries
 - Reduced the number of global variables
