@@ -1,39 +1,14 @@
-/*This pin layout is optimized for Espressif ESP32-S3-DevKitC-1 - 44 pin pin board
+//This pin layout is optimized for Espressif ESP32-S3-DevKitC-1 (44 pin) board, use "ESP32-S3 Dev Module" as board in Arduino IDE
+//see https://madflight.com for details
 
-Arduino IDE setup for Espressif ESP32-S3-DevKitC-1 with ESP32-S3-WROOM-2-N32R8V module:
-board: ESP32S3 Dev Module
-  Flash Mode: OPI 80MHz
-  Flash Size: 32MB (256Mb)
-
-Regular setup with 3 Serial ports (Serial, Serial1 and Serial2)
-  USB CDC On Boot: Disabled 
-  --> Serial connected to "UART", error 'Serial0' was not declared
-
-Add USB as 4th serial port (Serial, Serial0, Serial1 and Serial2)
-  USB CDC On Boot: Enabled
-  USB DFU On Boot: Disabled
-  USB Mode: USB-OTG (TinyUSB)
-  --> Serial connected to "USB", Serial0 connected to "UART"
-
-Settings for programming via "UART" micro usb port (programming works without pressing boot/reset buttons)
-  Upload Mode: UART0 / Hardware CDC
-
-Settings for programming via "USB" micro usb port (need to press boot/reset buttons for programming)
-  Upload Mode: USB-OTG CDC (TinyUSB)
-Programming/debugging: 
-  press boot, press+release reset, release boot, then upload
-  press+release reset, then open serial monitor
-
-*/
-
-#define HW_BOARD_NAME "DEFAULT ESP32-S3 BOARD - Espressif ESP32-S3-DevKitC-1 - 44 pin" 
+#define HW_BOARD_NAME "DEFAULT ESP32-S3 BOARD" 
 #define HW_MCU "ESP32-S3" //ESP32-S3 - Most pins can be assigned freely
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
 #ifndef HW_PIN_LED
-  #define HW_PIN_LED               38 //Note: plus RGB_LED on pin 48, some versions have RGB_LED on pin 38 and no LED
+  #define HW_PIN_LED               38
 #endif
 #ifndef HW_LED_ON
   #define HW_LED_ON                 1 //0:low is on, 1:high is on

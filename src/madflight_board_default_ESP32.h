@@ -1,6 +1,7 @@
 //This pin layout is optimized for Espressif ESP32 DevKitC 38 pin board, use "ESP32 Dev Module" as board in Arduino IDE
+//see https://madflight.com for details
 
-#define HW_BOARD_NAME "DEFAULT ESP32 BOARD - Espressif ESP32-DevKitC 38 pin" 
+#define HW_BOARD_NAME "DEFAULT ESP32 BOARD" 
 #define HW_MCU "ESP32" //ESP32 - Most pins can be assigned freely
 
 //NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.

@@ -1,7 +1,8 @@
-//This pin layout is optimized for Raspberry Pi Pico board: UART, PWM on side; I2C, SPI, PPM on the other side
+//This pin layout is optimized for Raspberry Pi Pico/Pico2 board: UART, PWM on side; I2C, SPI, PPM on the other side
+//see https://madflight.com for details
 
-#define HW_BOARD_NAME "DEFAULT RP2040 BOARD - Raspberry Pi Pico (W)"
-#define HW_MCU "RP2040" //RP2040 - not all pin combinations are allowed, see datasheet
+#define HW_BOARD_NAME "DEFAULT RP2350/RP2040 BOARD"
+#define HW_MCU "RP2350/RP2040" //RP2350/RP2040 - not all pin combinations are allowed, see datasheet
 
 //-------------------------------------
 // PIN DEFINITIONS

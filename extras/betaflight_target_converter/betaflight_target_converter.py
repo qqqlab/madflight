@@ -6,7 +6,7 @@ DEBUG = False
 #DEBUG = True
 
 source_dirname = "betaflight_source"
-destination_prefix = "../madflight_board_betaflight_"
+destination_prefix = "../../src/madflight_board_betaflight_"
 
 ignore_defines = ["USE_GYRO", "USE_ACC.*", "USE_MAG", "USE_BARO", "USE_FLASH"]
 
