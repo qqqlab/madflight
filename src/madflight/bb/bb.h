@@ -25,6 +25,7 @@ Note: this header needs to be included after all globals are defined in madfligh
 #define BB_USE_INTFLASH 2 //internal QSPI/OSPI flash
 #define BB_USE_FLASH 3 //external SPI flash
 #define BB_USE_RAM 4 //internal RAM (or PSRAM on ESP32)
+#define BB_USE_SDCARD 5 //SDCARD with MMC interface
 
 #include "BlackBox_Defines.h"
 #include "BlackBoxWriter.h"
@@ -40,6 +41,7 @@ private:
     BB_REC_BAT,
     BB_REC_BARO,
     BB_REC_GPS,
+    BB_REC_MODE,
   };
 
 public:
@@ -103,6 +105,17 @@ public:
     bbw.writeEndrecord();
   }
 
+  void log_mode(uint8_t mode = 0, const char* name = nullptr) {
+    if(bbw.isBusy()) return;
+    bbw.writeBeginRecord(BB_REC_MODE, "MODE");
+    bbw.writeU("ts",micros()); 
+    bbw.writeU("mode",mode);
+    //bbw.writeString("name",name);
+    bbw.writeEndrecord();
+  }
+
+
+
   void start() {
     if(isStarted) return;
     isStarted = true;
@@ -113,7 +126,9 @@ public:
     log_imu();
     log_pid();
     log_bat();
+    log_baro();
     log_gps();
+    log_mode();
     //start logging
     bbw.startLogging();
   }
@@ -161,26 +176,214 @@ private:
 };
 
 //=====================================================================================================================
+// Logging to SDCARD with MMC interface
+//=====================================================================================================================
+#if BB_USE == BB_USE_SDCARD
+
+//TODO SD SPI
+
+#if !defined(HW_PIN_SDMMC_CLK) || HW_PIN_SDMMC_CLK == -1 || !defined(HW_PIN_SDMMC_CMD) || HW_PIN_SDMMC_CMD == -1 || !defined(HW_PIN_SDMMC_DATA) || HW_PIN_SDMMC_DATA == -1
+  #error BB_USE_SDMMC needs HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA
+#endif
+
+#include "SD_MMC.h"
+
+class BlackBoxFS_SDMMC : public BlackBoxFS {
+private:
+  bool setup_done = false;
+  uint8_t buf_write[512];
+  int buf_write_idx;
+  String filename;
+  fs::FS fs = SD_MMC;
+  File file;
+
+public:
+  //setup the file system
+  void setup() {
+    Serial.printf("BB: BB_USE_SDCARD Interface=MMC ");
+    setup_done = mmc_setup();
+  }
+
+public:
+  void writeOpen() {
+    if(setup_done) {
+      memset(buf_write, 0xff, sizeof(buf_write));
+      buf_write_idx = 0;
+      mmc_logOpen(fs, "/log");
+      if(file) {
+        Serial.printf("BB: started %s\n", filename.c_str());
+        return;
+      }
+    }
+    Serial.println("BB: start failed");
+  }
+
+  void writeChar(uint8_t c) {
+    if(!file) return;
+    if(buf_write_idx < sizeof(buf_write)) {
+     buf_write[buf_write_idx++] = c;
+    }
+    if(buf_write_idx >= sizeof(buf_write)) {
+      file.write(buf_write, sizeof(buf_write));
+      file.flush();
+      memset(buf_write, 0xff, sizeof(buf_write));
+      buf_write_idx = 0;
+      //Serial.println("BB: write sector");
+    }
+  }
+
+  void writeClose() {
+    if(buf_write_idx>0) {
+      file.write(buf_write, buf_write_idx);
+    }
+    file.close();
+  }
+
+  void readOpen(int fileno) {
+  }
+
+  uint8_t readChar() {
+    return 0xff;
+  }
+
+  void erase() {
+  }
+
+  void dir() {
+    if(!setup_done) return;
+    mmc_listDir(fs, "/log", 0);
+  }
+
+private:
+
+  bool mmc_setup() {
+    SD_MMC.setPins(HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA);
+    if (!SD_MMC.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
+      Serial.println("Card Mount Failed");
+      return false;
+    }
+
+    uint8_t cardType = SD_MMC.cardType();
+    if(cardType == CARD_NONE){
+        Serial.println("No SD_MMC card attached");
+        return false;
+    }
+    Serial.print("CardType=");
+    if(cardType == CARD_MMC){
+        Serial.print("MMC");
+    } else if(cardType == CARD_SD){
+        Serial.print("SD");
+    } else if(cardType == CARD_SDHC){
+        Serial.print("SDHC");
+    } else {
+        Serial.print("UNKNOWN");
+    }
+
+    Serial.printf(" SectorSize=%d ", SD_MMC.sectorSize());
+    Serial.printf(" CardSize=%lluMB", SD_MMC.cardSize() / (1024 * 1024));
+    Serial.printf(" used:%lluMB", SD_MMC.usedBytes()/ (1024 * 1024));
+    Serial.printf(" free:%lluMB", (SD_MMC.totalBytes() - SD_MMC.usedBytes()) / (1024 * 1024));
+    Serial.println();
+
+    return true;
+  }
+
+  void mmc_listDir(fs::FS &fs, const char * dirname, uint8_t levels){
+      Serial.printf("Listing directory: %s\n", dirname);
+
+      File root = fs.open(dirname);
+      if(!root){
+          Serial.println("Failed to open directory");
+          return;
+      }
+      if(!root.isDirectory()){
+          Serial.println("Not a directory");
+          return;
+      }
+
+      File file = root.openNextFile();
+      while(file){
+          if(file.isDirectory()){
+              Serial.print("DIR:");
+              Serial.println(file.name());
+              if(levels){
+                  mmc_listDir(fs, file.path(), levels -1);
+              }
+          } else {
+              Serial.print(file.name());
+              Serial.print("   ");
+              Serial.println(file.size());
+          }
+          file = root.openNextFile();
+      }
+
+    Serial.printf("SDCARD: used:%lluMB", SD_MMC.usedBytes()/ (1024 * 1024));
+    Serial.printf(" free:%lluMB\n", (SD_MMC.totalBytes() - SD_MMC.usedBytes()) / (1024 * 1024));
+  }
+
+  void mmc_logOpen(fs::FS &fs, const char * dirname){
+      File root = fs.open(dirname);
+      if(!root){
+         if(!fs.mkdir(dirname)){
+            Serial.println("BB: mkdir /log failed");
+            return;
+        }
+        root = fs.open(dirname);
+        if(!root) {
+            Serial.println("BB: mkdir /log failed");
+            return;
+        }
+      }
+      if(!root.isDirectory()){
+          Serial.println("BB: /log Not a directory");
+          return;
+      }
+
+      File dirfile = root.openNextFile();
+      int maxnr = 0;
+      while(dirfile){
+        String fn = String(dirfile.name());
+        if(fn.endsWith(".bin")) {
+          int nr = fn.toInt();
+          if(maxnr<nr) maxnr = nr;
+        }
+        dirfile = root.openNextFile();
+      }
+      filename = String(dirname) + '/' + String(maxnr+1) + ".bin";
+      Serial.println(filename);
+      file = fs.open(filename, FILE_WRITE, true);
+  }
+
+};
+
+BlackBoxFS_SDMMC bb_fs;
+
+
+//=====================================================================================================================
 // Logging to FLASH (internal or external)
 //=====================================================================================================================
-#if BB_USE == BB_USE_INTFLASH || BB_USE == BB_USE_FLASH
+#elif BB_USE == BB_USE_INTFLASH || BB_USE == BB_USE_FLASH
 
 #include "SPIFlash/Adafruit_SPIFlashBase.h"
 
 #if BB_USE == BB_USE_FLASH
   Adafruit_FlashTransport_SPI flashTransport(HW_PIN_BB_CS, bb_spi);
-#elif defined(ARDUINO_ARCH_ESP32)
-  // ESP32 use same flash device that store code for file system.
-  // SPIFlash will parse partition.cvs to detect FATFS/SPIFS partition to use
-  Adafruit_FlashTransport_ESP32 flashTransport;
-#elif defined(ARDUINO_ARCH_RP2040)
-  // RP2040 use same flash device that store code for file system. Therefore we
-  // only need to specify start address and size (no need SPI or SS)
-  // By default (start=0, size=0), values that match file system setting in
-  // 'Tools->Flash Size' menu selection will be used.
-  Adafruit_FlashTransport_RP2040 flashTransport;
-#else
-  #error BB_USE_INTFLASH No internal flash defined for your board !
+#elif BB_USE == BB_USE_INTFLASH
+  #if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 use same flash device that store code for file system.
+    // SPIFlash will parse partition.cvs to detect FATFS/SPIFS partition to use
+    Adafruit_FlashTransport_ESP32 flashTransport;
+  #elif defined(ARDUINO_ARCH_RP2040)
+    // RP2040 use same flash device that store code for file system. Therefore we
+    // only need to specify start address and size (no need SPI or SS)
+    // By default (start=0, size=0), values that match file system setting in
+    // 'Tools->Flash Size' menu selection will be used.
+    Adafruit_FlashTransport_RP2040 flashTransport;
+  #else
+    #error BB_USE_INTFLASH No internal flash defined for your board !
+  #endif
+#elif
+  #error Missing define BB_USE_FLASH or BB_USE_INTFLASH
 #endif
 
 Adafruit_SPIFlashBase flash(&flashTransport);
@@ -203,13 +406,13 @@ public:
     Serial.printf("BB_USE_FLASH  JEDEC=%X size=%d free=%d\n", flash.getJEDECID(), flash.size(), flash.size()-flash_write_addr);
   }
 
-  virtual void writeOpen() {
+  void writeOpen() {
     memset(buf_write, 0xff, 256);
     buf_write_idx = 0;
     flash_write_addr = findStartPage();
   }
 
-  virtual void writeChar(uint8_t c) {
+  void writeChar(uint8_t c) {
     if(buf_write_idx < 256) {
      buf_write[buf_write_idx++] = c;
     }
@@ -221,7 +424,7 @@ public:
     }
   }
 
-  virtual void writeClose() {
+  void writeClose() {
     if(buf_write_idx==0) return;
     //write 0xff in unused part of page
     memset(buf_write + buf_write_idx, 0xff, 256 - buf_write_idx);
@@ -230,8 +433,7 @@ public:
     flash_write_addr += 256;
   }
 
-
-  virtual void readOpen(int fileno) {
+  void readOpen(int fileno) {
     int adr[100];
     int filecnt = findFiles(adr,100);
     if(fileno <= 0) {
@@ -243,7 +445,7 @@ public:
     readSeek( adr[fileno] );
   }
 
-  virtual uint8_t readChar() {
+  uint8_t readChar() {
     if(buf_read_idx >= 256) {
       flash.readBuffer(flash_read_addr, buf_read, 256);
       flash_read_addr += 256;
@@ -251,7 +453,6 @@ public:
     }
     return buf_read[buf_read_idx++];
   }
-
 
   void erase() {
     Serial.println("Erasing flash, might take a while...");
@@ -314,7 +515,6 @@ private:
     }
     return page_max * pagelen;
   }
-
 
   void readSeek(uint32_t adr) {
     buf_read_idx = 256; //force read flash on next callback_bbReadChar()

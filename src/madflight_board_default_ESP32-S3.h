@@ -8,7 +8,7 @@
 
 //LED:
 #ifndef HW_PIN_LED
-  #define HW_PIN_LED               38
+  #define HW_PIN_LED                2
 #endif
 #ifndef HW_LED_ON
   #define HW_LED_ON                 1 //0:low is on, 1:high is on
@@ -85,6 +85,17 @@
 #endif
 #ifndef HW_PIN_BB_CS
   #define HW_PIN_BB_CS             -1
+#endif
+
+//SDCARD via MMC interface:
+#ifndef HW_PIN_SDMMC_DATA
+  #define HW_PIN_SDMMC_DATA        40
+#endif
+#ifndef HW_PIN_SDMMC_CLK
+  #define HW_PIN_SDMMC_CLK         39
+#endif
+#ifndef HW_PIN_SDMMC_CMD
+  #define HW_PIN_SDMMC_CMD         38
 #endif
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
