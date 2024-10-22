@@ -340,8 +340,8 @@ void loop() {
 
 //update all I2C sensors, called from loop() with SPI IMU, or called from imu_loop() with I2C IMU
 void i2c_sensors_update() {
-  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated. 
-  if(baro.update()) bb.log_baro(); //log if pressure updated
+  if(bat.update()) bb_log_bat(); //update battery, and log if battery was updated. 
+  if(baro.update()) bb_log_baro(); //log if pressure updated
   mag.update();
 }
 
@@ -383,7 +383,7 @@ void imu_loop() {
   //if IMU uses I2C bus, then get I2C sensor readings in imu_interrupt_handler() to prevent I2C bus collisions. Alternatively, put the IMU on a separate I2C bus.
   if (imu.usesI2C()) i2c_sensors_update();
 
-  //bb.log_imu(); //full speed black box logging of IMU data, memory fills up quickly...
+  //bb_log_imu(); //full speed black box logging of IMU data, memory fills up quickly...
 }
 
 //========================================================================================================================//

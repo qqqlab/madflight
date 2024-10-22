@@ -169,10 +169,10 @@ public:
     Serial.printf(
     "-- BLACK BOX --\n"
     "bbls      List files\n"
-    "bbdump n  Dump file n in CSV format\n"
     "bbstart   Start logging\n"
     "bbstop    Stop logging\n"
     "bberase   Erase bb device\n"
+    "bbbench   Benchmark\n"
     "-- CONFIG --\n"
     "set [name] [value]\n"
     "clist     List config\n"
@@ -236,14 +236,14 @@ public:
       cli_print_all(true);
     }else if (cmd == "bbls") {
       bb.dir();
-    }else if (cmd == "bbdump") {
-      bb.csvDump(arg1.toInt());
     }else if (cmd == "bbstart") {
       bb.start();
     }else if (cmd == "bbstop") {
       bb.stop();
     }else if (cmd == "bberase") {
       bb.erase();
+    }else if (cmd == "bbbench") {
+      bb.bench();
     }else if (cmd == "set") {
       cfg.set(arg1, arg2);
     }else if (cmd == "clist") {

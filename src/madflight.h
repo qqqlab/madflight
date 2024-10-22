@@ -1,4 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v1.2.1-DEV"
+#define MADFLIGHT_VERSION "madflight v1.3.0-DEV"
 
 /*==========================================================================================
 madflight - Flight Controller for ESP32 / RP2040 / STM32
