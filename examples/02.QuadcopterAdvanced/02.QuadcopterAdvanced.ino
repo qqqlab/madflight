@@ -50,7 +50,7 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 //   3) Custom - Remove /* below to enable the CUSTOM PINS section, and define own pinout.
 //
 //========================================================================================================================//
-#include <madflight_board_betaflight_MTKS-MATEKH743.h>
+
 /*
 //========================================================================================================================//
 //                                              CUSTOM PINS                                                               //
