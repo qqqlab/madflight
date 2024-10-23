@@ -49,9 +49,9 @@ class BlackBox {
     void log_bat() {}
     void log_gps() {}
     void log_imu() {}
-    void log_mode(uint8_t fm, const char* name) {}
-    void log_msg(const char* msg) {}
-    void log_parm(const char* name, float value, float default_value) {}
+    void log_mode(uint8_t fm, const char* name) {(void)fm;(void)name;}
+    void log_msg(const char* msg) {(void)msg;}
+    void log_parm(const char* name, float value, float default_value) {(void)name;(void)value;(void)default_value;}
     void log_pid() {}
 
     //Blackbox Interface
@@ -62,7 +62,7 @@ class BlackBox {
     void dir() {}
     void bench() {}
     void info() {}
-    void csvDump(int fileno) {}
+    void csvDump(int fileno) {(void)fileno;}
 };
 
 BlackBox bb;

@@ -70,35 +70,53 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 //========================================================================================================================//
 //                                                 PINS                                                                   //
 //========================================================================================================================//
+//
+// You have 3 options to setup the pins (gpio numbers) for the flight controller:
+//
+//   1) Default - Leave this section as is and see https://madflight.com for default pinout diagrams for the supported
+//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
+// 
+//   2) Header - #include the BetaFlight flight controller you want to use. See library/madflight/src for all available 
+//      boards. For example: #include <madflight_board_betaflight_MTKS-MATEKH743.h>
+// 
+//   3) Custom - Remove /* below to enable the CUSTOM PINS section, and define own pinout.
+//
+//========================================================================================================================//
 
-/* Place an additional / at the beginning of this line to setup our own pinout below, otherwise default pins from library/src/madflight_board_default_XXX.h are used
+/*
+//========================================================================================================================//
+//                                              CUSTOM PINS                                                               //
+//========================================================================================================================//
 
-//Example pinout for LOLIN S3 (ESP32S3) with SPI MPU-9250 module directly soldered
+#define HW_BOARD_NAME "My Custom Board" //REQUIRED: Give your board a name - without a name the default pinout is loaded!!!
+
+//NOTE: Don't use the same gpio number twice. All pins here get configured, even if they are not used. Set pin to -1 to disable.
+//NOTE: Not all pins can be freely configured. Read the processor datasheet, or use the default pinout.
 
 //LED:
-#define HW_PIN_LED       -1
-#define HW_LED_ON         0 //0:low is on, 1:high is on
+#define HW_PIN_LED        -1
+#define HW_LED_ON          0 //0:low is on, 1:high is on
 
 //IMU SPI:
-#define HW_PIN_SPI_MISO  15
-#define HW_PIN_SPI_MOSI   5
-#define HW_PIN_SPI_SCLK   4
-#define HW_PIN_IMU_CS    17
-#define HW_PIN_IMU_EXTI  16 //external interrupt pin
+#define HW_PIN_SPI_MISO   -1
+#define HW_PIN_SPI_MOSI   -1
+#define HW_PIN_SPI_SCLK   -1
+#define HW_PIN_IMU_CS     -1
+#define HW_PIN_IMU_EXTI   -1 //REQUIRED: IMU external interrupt pin (required for SPI and I2C sensors)
 
-//I2C for BARO, MAG, BAT sensors and for IMU if not using SPI
-#define HW_PIN_I2C_SDA   -1
-#define HW_PIN_I2C_SCL   -1
+//I2C for BARO, MAG, BAT sensors (and for IMU if not using SPI IMU)
+#define HW_PIN_I2C_SDA    -1
+#define HW_PIN_I2C_SCL    -1
 
 //Motor/Servo Outputs:
-#define HW_OUT_COUNT     6 //number of outputs
-#define HW_PIN_OUT_LIST  {13,14,21,47,48,45} //list of output pins
+#define HW_OUT_COUNT      4 //number of outputs
+#define HW_PIN_OUT_LIST   {-1,-1,-1,-1} //list of output pins, enter exactly HW_OUT_COUNT pins.
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-#define HW_PIN_RCIN_RX    12
-#define HW_PIN_RCIN_TX    11
+#define HW_PIN_RCIN_RX    -1
+#define HW_PIN_RCIN_TX    -1
 #define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
 
 //GPS:
@@ -110,20 +128,26 @@ Copyright (c) 2024 https://github.com/qqqlab/madflight
 #define HW_PIN_BAT_V      -1
 #define HW_PIN_BAT_I      -1
 
-//BlackBox SPI:
+//Black Box SPI (for sdcard or external flash chip):
 #define HW_PIN_SPI2_MISO  -1
 #define HW_PIN_SPI2_MOSI  -1
 #define HW_PIN_SPI2_SCLK  -1
 #define HW_PIN_BB_CS      -1
+
+//Black Box SDCARD via MMC interface:
+#define HW_PIN_SDMMC_DATA -1
+#define HW_PIN_SDMMC_CLK  -1
+#define HW_PIN_SDMMC_CMD  -1
 //*/
 
-//========================================================================================================================//
-//                                                 BOARD                                                                  //
-//========================================================================================================================//
-// Uncomment/change the following #include to the flight controller you want to use, or leave commented out to use the
-// default board pinout (madflight_board_default_*.h). See library/madflight/src for all available boards
+//RP2040 specific options
+//#define HW_RP2040_SYS_CLK_KHZ 200000 //overclocking
+//#define HW_RP2040_USE_FREERTOS //enable use of FreeRTOS - experimental
 
-//#include <madflight_board_betaflight_MTKS-MATEKH743.h>
+//ESP32 specific options
+//#define USE_ESP32_SOFTWIRE //use bitbang I2C (not hardware I2C) See https://github.com/espressif/esp-idf/issues/499
+
+
 
 //========================================================================================================================//
 //                                                 HARDWARE                                                               //

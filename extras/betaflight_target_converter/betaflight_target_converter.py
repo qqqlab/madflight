@@ -5,8 +5,9 @@ import datetime
 DEBUG = False
 #DEBUG = True
 
-source_dirname = "betaflight_source"
-destination_prefix = "../../src/madflight_board_betaflight_"
+source_dirname = "betaflight_source" # copy from https://github.com/betaflight/unified-targets/tree/master/configs/default
+destination_path = "../../src/"
+destination_prefix = "madflight_board_betaflight_"
 
 ignore_defines = ["USE_GYRO", "USE_ACC.*", "USE_MAG", "USE_BARO", "USE_FLASH"]
 
@@ -27,9 +28,10 @@ def convert(filename) :
             return 0
     
     #in and output files
-    infile = source_dirname + "/" + filename
+    infile           = source_dirname + "/" + filename
     strippedfilename = re.sub(r"(.config$)", r"", filename)
-    outfile = destination_prefix + strippedfilename + ".h"
+    outfilename      = destination_prefix + strippedfilename + ".h"
+    outfile          = destination_path + outfilename
 
     #read lines from infile
     f = open(infile,"r")
@@ -146,7 +148,7 @@ def convert(filename) :
     fprint( "Manufacturer ID: " + manufacturer_id )
     fprint( "" )
     fprint( "//copy this line to madflight.ino to use this flight controller (or copy/paste the whole file)" )
-    fprint( "#include \"boards/" + outfile + "\"" )
+    fprint( "#include <" + outfilename + ">" )
     fprint( "==============================================================================*/" )
 
     fprint( "" )
@@ -167,102 +169,50 @@ def convert(filename) :
 
     fprint( "" )
     fprint( "//LED:" )
-    fprint( "#ifndef HW_PIN_LED" )
-    fprint( "  #define HW_PIN_LED       " + resources.get("LED:1","-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_LED_ON" )
-    fprint( "  #define HW_LED_ON        1 //0:low is on, 1:high is on" )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_LED       " + resources.get("LED:1","-1") )
+    fprint( "#define HW_LED_ON        1 //0:low is on, 1:high is on" )
 
     spi = sets.get("gyro_1_spibus","1")
     fprint( "" )
     fprint( "//IMU SPI: (SPI"+spi+")" )
-    fprint( "#ifndef HW_PIN_SPI_MISO" )
-    fprint( "  #define HW_PIN_SPI_MISO  " + resources.get("SPI_MISO:" + spi,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_SPI_MOSI" )
-    fprint( "  #define HW_PIN_SPI_MOSI  " + resources.get("SPI_MOSI:" + spi,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_SPI_SCLK" )
-    fprint( "  #define HW_PIN_SPI_SCLK  " + resources.get("SPI_SCK:" + spi,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_IMU_CS" )
-    fprint( "  #define HW_PIN_IMU_CS    " + resources.get("GYRO_CS:1","-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_IMU_EXTI" )
-    fprint( "  #define HW_PIN_IMU_EXTI  " + resources.get("GYRO_EXTI:1","-1") )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_SPI_MISO  " + resources.get("SPI_MISO:" + spi,"-1") )
+    fprint( "#define HW_PIN_SPI_MOSI  " + resources.get("SPI_MOSI:" + spi,"-1") )
+    fprint( "#define HW_PIN_SPI_SCLK  " + resources.get("SPI_SCK:" + spi,"-1") )
+    fprint( "#define HW_PIN_IMU_CS    " + resources.get("GYRO_CS:1","-1") )
+    fprint( "#define HW_PIN_IMU_EXTI  " + resources.get("GYRO_EXTI:1","-1") )
 
     i2c = sets.get("mag_i2c_device")
     i2c = sets.get("baro_i2c_device",i2c)
     if i2c is None: i2c = "1"
     fprint( "" )
     fprint( "//BARO/MAG I2C: (I2C"+i2c+")" )
-    fprint( "#ifndef HW_PIN_I2C_SDA" )
-    fprint( "  #define HW_PIN_I2C_SDA   " + resources.get("I2C_SCL:" + i2c,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_I2C_SCL" )
-    fprint( "  #define HW_PIN_I2C_SCL   " + resources.get("I2C_SDA:" + i2c,"-1") )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_I2C_SDA   " + resources.get("I2C_SCL:" + i2c,"-1") )
+    fprint( "#define HW_PIN_I2C_SCL   " + resources.get("I2C_SDA:" + i2c,"-1") )
 
     fprint( "" )
     fprint( "//Outputs:" )
-    fprint( "#ifndef HW_OUT_COUNT" )
-    fprint( "  #define HW_OUT_COUNT     " + str(len(motors)) )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_OUT_LIST" )
-    fprint( "  #define HW_PIN_OUT_LIST {" + ",".join(motors) + "}" )
-    fprint( "#endif" )
+    fprint( "#define HW_OUT_COUNT     " + str(len(motors)) )
+    fprint( "#define HW_PIN_OUT_LIST  {" + ",".join(motors) + "}" )
 
     fprint( "" )
     fprint( "//RC Receiver: (SERIAL"+rcin_serial+")" )
-    fprint( "#ifndef HW_PIN_RCIN_RX" )
-    fprint( "  #define HW_PIN_RCIN_RX   " + resources.get("SERIAL_RX:"+rcin_serial,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_RCIN_TX" )
-    fprint( "  #define HW_PIN_RCIN_TX   " + resources.get("SERIAL_TX:"+rcin_serial,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_RCIN_INVERTER" )
-    fprint( "  #define HW_PIN_RCIN_INVERTER  " + resources.get("INVERTER:"+rcin_serial,"-1") )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_RCIN_RX   " + resources.get("SERIAL_RX:"+rcin_serial,"-1") )
+    fprint( "#define HW_PIN_RCIN_TX   " + resources.get("SERIAL_TX:"+rcin_serial,"-1") )
+    fprint( "#define HW_PIN_RCIN_INVERTER  " + resources.get("INVERTER:"+rcin_serial,"-1") )
 
     fprint( "" )
     fprint( "//GPS: (SERIAL"+gps_serial+")" )
-    fprint( "#ifndef HW_PIN_GPS_RX" )
-    fprint( "  #define HW_PIN_GPS_RX    " + resources.get("SERIAL_RX:"+gps_serial,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_GPS_TX" )
-    fprint( "  #define HW_PIN_GPS_TX    " + resources.get("SERIAL_TX:"+gps_serial,"-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_GPS_INVERTER" )
-    fprint( "  #define HW_PIN_GPS_INVERTER  " + resources.get("INVERTER:"+gps_serial,"-1") )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_GPS_RX    " + resources.get("SERIAL_RX:"+gps_serial,"-1") )
+    fprint( "#define HW_PIN_GPS_TX    " + resources.get("SERIAL_TX:"+gps_serial,"-1") )
+    fprint( "#define HW_PIN_GPS_INVERTER  " + resources.get("INVERTER:"+gps_serial,"-1") )
 
     fprint( "" )
     fprint( "//Battery ADC voltage and current inputs:" )
-    fprint( "#ifndef HW_PIN_BAT_V" )
-    fprint( "  #define HW_PIN_BAT_V     " + resources.get("ADC_BATT:1","-1") )
-    fprint( "#endif" )
-    fprint( "#ifndef HW_PIN_BAT_I" )
-    fprint( "  #define HW_PIN_BAT_I     " + resources.get("ADC_CURR:1","-1") )
-    fprint( "#endif" )
+    fprint( "#define HW_PIN_BAT_V     " + resources.get("ADC_BATT:1","-1") )
+    fprint( "#define HW_PIN_BAT_I     " + resources.get("ADC_CURR:1","-1") )
 
     fprint( "" )
-    fprint( "const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;" )
-
-    fprint( "" )
-    fprint( "//Include Libraries" )
-    fprint( "#include <Wire.h> //I2C communication" )
-    fprint( "#include <SPI.h> //SPI communication" )
-    fprint( "#include \"madflight/hw_STM32/STM32_PWM.h\" //Servo and oneshot" )
-
-    fprint( "" )
-    fprint( "//Bus Setup" )
-    fprint( "HardwareSerial *rcin_Serial = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);" )
-    fprint( "HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);" )
-    fprint( "typedef TwoWire HW_WIRETYPE; //define the class to use for I2C" )
-    fprint( "HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1" )
-    fprint( "SPIClass *spi = &SPI;" )
+    fprint( "//-------------------------------------" )
 
     fprint( "" )
     fprint( "//Serial" )

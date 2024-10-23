@@ -580,6 +580,7 @@ class BlackBox {
     }
     
     void csvDump(int fileno) {
+      (void) fileno;
       Serial.println("Not implemented for BB_SDCARD");
     }
 };

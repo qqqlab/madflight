@@ -96,11 +96,11 @@ public:
     bbw.writeEndrecord(); //clears busy flag
   }
   
-  void log_mode(uint8_t fm, const char* name) {}
+  void log_mode(uint8_t fm, const char* name) {(void)fm;(void)name;}
   
-  void log_msg(const char* msg) {}
+  void log_msg(const char* msg) {(void)msg;}
   
-  void log_parm(const char* name, float value, float default_value) {}
+  void log_parm(const char* name, float value, float default_value) {(void)name;(void)value;(void)default_value;}
   
   void log_pid() {
     if(bbw.isBusy()) return;

@@ -25,6 +25,7 @@ This file defines:
 #define mf_df2str(s)               mf_df2xstr(s)
 #define HW_ARDUINO_STR "Arduino-ESP32 v" mf_df2str(ESP_ARDUINO_VERSION_MAJOR) "." mf_df2str(ESP_ARDUINO_VERSION_MINOR) "." mf_df2str(ESP_ARDUINO_VERSION_PATCH)
 
+
 //======================================================================================================================//
 //                    DEFAULT BOARD
 //======================================================================================================================//
@@ -36,15 +37,97 @@ This file defines:
   #endif
 #endif
 
+
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
 #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
 #define IMU_FREERTOS_TASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
 
-//--------------------------------------------------------------------
+
+//======================================================================================================================//
+//  hw_setup()
+//======================================================================================================================//
+
+const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
+
+/*--------------------------------------------------------------------------------------------------
+  IMPORTANT
+  
+  ESP32 Wire has a bug in I2C which causes the bus to hang for 1 second after a failed read, which can 
+  happen a couple times per minute. This makes Wire I2C for IMU not a real option... 
+  See --> https://github.com/espressif/esp-idf/issues/4999
+
+  Uncomment USE_ESP32_SOFTWIRE to use software I2C, but this does not work well with all sensors...
+  
+  So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
+----------------------------------------------------------------------------------------------------*/  
+//#define USE_ESP32_SOFTWIRE //uncomment to use SoftWire instead of Wire
+
+//-------------------------------------
+//Include Libraries
+//-------------------------------------
+#ifdef USE_ESP32_SOFTWIRE
+  #include "madflight/HW_ESP32/ESP32_SoftWire.h"
+#else
+  #include <Wire.h>
+#endif
+#include <SPI.h>                         //SPI communication
+#include "madflight/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
+
+//-------------------------------------
+//Bus Setup
+//-------------------------------------
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#define VSPI FSPI
+#endif  
+HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
+HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
+SPIClass spi1 = SPIClass(HSPI); // VSPI or HSPI(default) - used for IMU
+SPIClass spi2 = SPIClass(VSPI);  // VSPI(default) or HSPI - used for BB and other functions
+
+#ifdef USE_ESP32_SOFTWIRE
+  typedef SoftWire HW_WIRETYPE; //typedef to force IMU to use SoftWire
+  typedef SoftWire TwoWire; //typedef to force BARO to use SoftWire
+  HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
+#else
+  typedef TwoWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
+  HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
+#endif
+
+SPIClass *spi = &spi1;
+SPIClass *bb_spi = &spi2;
+
+//prototypes
+void hw_eeprom_begin();
+void startLoop1Task();
+
+void hw_setup()
+{
+  Serial.println(HW_BOARD_NAME);
+
+  rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+
+  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+
+  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
+
+  if(HW_PIN_SPI_SCLK>=0 && HW_PIN_SPI_MISO>=0 && HW_PIN_SPI_MOSI>=0) {
+    spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
+  }
+
+  if(HW_PIN_SPI2_SCLK>=0 && HW_PIN_SPI2_MISO>=0 && HW_PIN_SPI2_MOSI>=0) {
+    spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
+  }
+
+  hw_eeprom_begin();
+
+  startLoop1Task();
+}
+
+//======================================================================================================================//
 // RTOS task for setup1() and loop1() on second core
-//--------------------------------------------------------------------
+//======================================================================================================================//
 TaskHandle_t loop1TaskHandle = NULL;
 extern void setup1() __attribute__((weak));
 extern void loop1() __attribute__((weak));
@@ -76,6 +159,7 @@ void startLoop1Task() {
 #endif
 }
 
+
 //======================================================================================================================//
 //  EEPROM
 //======================================================================================================================//
@@ -97,32 +181,10 @@ void hw_eeprom_commit() {
   EEPROM.commit();
 }
 
+
 //======================================================================================================================//
-//  hw_setup()
+//  MISC
 //======================================================================================================================//
-
-void hw_setup()
-{
-  Serial.println(HW_BOARD_NAME);
-
-  rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-
-  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-
-  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
-
-  if(HW_PIN_SPI_SCLK>=0 && HW_PIN_SPI_MISO>=0 && HW_PIN_SPI_MOSI>=0) {
-    spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
-  }
-
-  if(HW_PIN_SPI2_SCLK>=0 && HW_PIN_SPI2_MISO>=0 && HW_PIN_SPI2_MOSI>=0) {
-    spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
-  }
-
-  hw_eeprom_begin();
-
-  startLoop1Task();
-}
 
 void hw_reboot() {
   ESP.restart();
