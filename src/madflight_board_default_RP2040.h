@@ -44,10 +44,10 @@
 
 //Outputs:
 #ifndef HW_OUT_COUNT
-  #define HW_OUT_COUNT             12
+  #define HW_OUT_COUNT              8
 #endif
 #ifndef HW_PIN_OUT_LIST
-  #define HW_PIN_OUT_LIST {2,3,4,5,6,7,10,11,12,13,14,15}
+  #define HW_PIN_OUT_LIST {2,3,4,5,6,7,10,11}
 #endif
 
 //Serial debug on USB Serial port (no GPIO pins)
@@ -78,16 +78,16 @@
 
 //BlackBox SPI:
 #ifndef HW_PIN_SPI2_MISO
-  #define HW_PIN_SPI2_MISO         -1
+  #define HW_PIN_SPI2_MISO         12
 #endif
 #ifndef HW_PIN_SPI2_MOSI
-  #define HW_PIN_SPI2_MOSI         -1
+  #define HW_PIN_SPI2_MOSI         15
 #endif
 #ifndef HW_PIN_SPI2_SCLK
-  #define HW_PIN_SPI2_SCLK         -1
+  #define HW_PIN_SPI2_SCLK         14
 #endif
 #ifndef HW_PIN_BB_CS
-  #define HW_PIN_BB_CS             -1
+  #define HW_PIN_BB_CS             13
 #endif
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;

@@ -87,6 +87,17 @@
   #define HW_PIN_BB_CS             -1
 #endif
 
+//BlackBox SDCARD via MMC interface: (can only use specific pins on ESP32, and has strapping restrictions, read the docs first!)
+#ifndef HW_PIN_SDMMC_DATA
+  #define HW_PIN_SDMMC_DATA        -1
+#endif
+#ifndef HW_PIN_SDMMC_CLK
+  #define HW_PIN_SDMMC_CLK         -1
+#endif
+#ifndef HW_PIN_SDMMC_CMD
+  #define HW_PIN_SDMMC_CMD         -1
+#endif
+
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 

@@ -87,7 +87,7 @@
   #define HW_PIN_BB_CS             -1
 #endif
 
-//SDCARD via MMC interface:
+//BlackBox SDCARD via MMC interface: (can use any pin on ESP32-S3)
 #ifndef HW_PIN_SDMMC_DATA
   #define HW_PIN_SDMMC_DATA        40
 #endif
