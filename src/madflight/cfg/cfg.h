@@ -17,9 +17,10 @@ const String _cfg_names[] = {
   
   "bat_cal_v",
   "bat_cal_i",
-  ""}; //last entry empty
+};
 
 #define CFG_LEN_OFFSET 6 //offset in bytes to _len
+#define CFG_PARAM_OFFSET 8 //offset to first parameter
 
 class Config {
   //Only add new config values (use only float) at end of this list, when reading an old config without the new value, the new value will be set to the default defined here
@@ -30,8 +31,8 @@ protected:
   uint8_t _header1 = 'a'; //0x61
   uint8_t _header2 = 'd'; //0x64
   uint8_t _header3 = 'f'; //0x66
-  uint16_t _crc = 0;
-  uint16_t _len = 0;
+  uint16_t _crc = 0; //crc starting from _len
+  uint16_t _len = 0; //sizeof(Config)
 public:
   float imu_cal_ax = 0; //accel X zero offset calibration
   float imu_cal_ay = 0; //accel Y zero offset calibration
@@ -51,7 +52,7 @@ public:
   float bat_cal_i = 1; //battery ADC current scale calibration, value is actual_current_in_A / adc_reading, INA226: Rshunt value in Ohm
 
   Config() {
-    _len = lenExpected();
+    _len = sizeof(Config);
   }
 
   void begin() {
@@ -59,28 +60,40 @@ public:
     read();
   }
 
+  //get number of parameters
+  uint16_t valueCount() {
+    return (sizeof(Config) - CFG_PARAM_OFFSET) / sizeof(float);
+  }
+
+  //get parameter name and value for index
+  bool getNameValue(uint16_t index, String* name, float* value) {
+    if(index>=valueCount()) return false;
+    *name = _cfg_names[index];
+    *value = (&imu_cal_ax)[index];
+    return true;
+  }
+
   //print all config values
   void list() {
-    float *values = ((float*)&(this->imu_cal_ax));
-    int i = 0;
-    while(_cfg_names[i] != "") {
-      Serial.printf("set %s %f\n", _cfg_names[i].c_str(), values[i]);
+    String name;
+    float value;
+    uint16_t i = 0;
+    while(getNameValue(i,&name,&value)) {
+      Serial.printf("set %s %f\n", name.c_str(), value);
       i++;
     }
   }
 
-  //set a config value
+  //set a parameter value
   void set(String name, String val) {
     name.toLowerCase();
     float *values = ((float*)&(this->imu_cal_ax));
-    int i = 0;
-    while(_cfg_names[i] != "") {
+    for(uint16_t i=0;i<valueCount();i++) {
       if(_cfg_names[i] == name) {
         values[i] = val.toFloat();
         Serial.printf("set %s %f\n", _cfg_names[i].c_str(), values[i]);
         return;
       }
-      i++;
     }
     Serial.printf("ERROR %s not found\n", name.c_str());
   }
@@ -88,15 +101,15 @@ public:
   //load defaults
   void clear() {
     Config cfg2;
-    memcpy(this, &cfg2, lenExpected());
+    memcpy(this, &cfg2, sizeof(Config));
   }
 
-  //read config from flash
+  //read parameters from flash
   void read() {
     //create a new config and read "eeprom" data into it
     Config cfg2;
     uint8_t *buf = (uint8_t *)&cfg2;
-    uint16_t n = lenExpected();
+    uint16_t n = sizeof(Config);
     Serial.printf("eeprom_read[%d]:", n);
     for(uint16_t i=0; i<n; i++) {
       buf[i] = hw_eeprom_read(i);
@@ -106,7 +119,7 @@ public:
     
     //check header & crc
     if(cfg2._header0 == 'm' && cfg2._header1 == 'a' && cfg2._header2 == 'd' && cfg2._header3 == 'f' && cfg2.crc() == cfg2.crcCalc()) {
-      memcpy(this, &cfg2, lenExpected());
+      memcpy(this, &cfg2, sizeof(Config)); //copy sizeof(Config) not actual number of bytes read, this sets missing parameters to default values
       Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", (int)cfg2.len(), (int)cfg2.crc());
     }else{
       Serial.printf("CFG: EEPROM Config invalid, using defaults. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
@@ -115,10 +128,10 @@ public:
 
   //write config to flash
   void write() {
-    _len = lenExpected();
+    _len = sizeof(Config);
     _crc = crcCalc();
     uint8_t *buf = (uint8_t *)this;
-    uint16_t n = lenExpected();
+    uint16_t n = sizeof(Config);
     Serial.printf("eeprom_write[%d]:", n);
     for(int i=0; i<n; i++) {
       hw_eeprom_write(i, buf[i]);
@@ -126,10 +139,6 @@ public:
     }
     hw_eeprom_commit();
     Serial.println();
-  }
-
-  uint16_t lenExpected() {
-    return sizeof(Config);
   }
 
   uint16_t len() {
@@ -142,7 +151,7 @@ public:
 
   //returns 0x10000 on fail, 16 bit crc on success
   uint32_t crcCalc() {
-    if( _len <= CFG_LEN_OFFSET || _len > lenExpected() ) return 0x10000;
+    if( _len <= CFG_LEN_OFFSET || _len > sizeof(Config) ) return 0x10000;
     
     uint8_t *Buffer = ((uint8_t*)this) + CFG_LEN_OFFSET; // skip crc
     int Length = _len - CFG_LEN_OFFSET; // skip crc

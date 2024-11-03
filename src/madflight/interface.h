@@ -13,9 +13,9 @@ class Ahrs {
     float ax = 0, ay = 0, az = 0; //corrected and filtered imu accel measurements in g
     float mx = 0, my = 0, mz = 0; //corrected and filtered external magnetometer or internal imu mag measurements in uT
     float q[4] = {1,0,0,0};  //quaternion NED reference frame
-    float roll = 0;          //roll in degrees - roll right is positive
-    float pitch = 0;         //pitch in degrees - pitch up is positive
-    float yaw = 0;           //yaw in degrees - yaw right is positive
+    float roll = 0;          //roll in degrees: -180 to 180, roll right is positive
+    float pitch = 0;         //pitch in degrees: -90 to 90, pitch up is positive
+    float yaw = 0;           //yaw in degrees: -180 to 180, yaw right is positive
     float B_gyr = 1.0; //gyr filter constant
     float B_acc = 1.0; //acc filter constant
     float B_mag = 1.0; //mag filter constant
@@ -70,7 +70,7 @@ extern Rcin &rcin;
 
 class Imu {
   public:
-    //sample data
+    //imu sample data (raw, uncorrected and unfiltered) 
     uint32_t ts = 0; //sample low level interrupt trigger timestamp in us
     float dt = 0; //time since last sample in seconds
     uint32_t update_cnt = 0; //number of updates
@@ -117,14 +117,16 @@ extern Imu imu;
 
 class Barometer {
   public:
-    //sample data
-    uint32_t ts = 0; //sample timestamp in us
-    float dt = 0; //time since last sample in seconds
-    float press = 0; //pressure in Pascal
-    float alt = 0; // Approximate International Standard Atmosphere (ISA) Altitude in meter
-    float temp = 0; //temperature in Celcius
+    //Barometer sample data
+    uint32_t ts = 0;  // Sample timestamp in us
+    float dt = 0;     // Time since last sample in seconds
+    float press = 0;  // Pressure in Pascal
+    float altRaw = 0; // Approximate International Standard Atmosphere (ISA) Altitude in meter
+    float alt = 0;    // Filtered approximate International Standard Atmosphere (ISA) Altitude in meter
+    float vz = 0;     // Filtered vertical speed in m/s, down is negative
+    float temp = 0;   // Temperature in Celcius
 
-    int setup(uint32_t sampleRate = 100); //default: 100 Hz sample rate
+    int setup(uint32_t sampleRate = 100, float filterAltHertz = 2.0, float filterVzHertz = 0.5); //default: 100 Hz sample rate
     bool update(); //returns true if pressure was updated
     uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
     uint32_t getSamplePeriod() {return _samplePeriod;} //sensor sample period in us
@@ -132,6 +134,8 @@ class Barometer {
   protected:
     uint32_t _sampleRate = 0; //sensor sample rate in Hz
     uint32_t _samplePeriod = 0; //sensor sample period in us
+    float B_alt = 1.0; //alt filter constant
+    float B_vz = 1.0; //vz filter constant
 };
 
 extern Barometer baro;
@@ -163,8 +167,8 @@ class Battery {
   public:
     float i = 0; //Battery current (A)
     float v = 0; //battery voltage (V)
-    float w = 0; //battery power (W)    
-    float mah = 0; //battery usage (Ah)
+    float w = 0; //battery power (W)
+    float mah = 0; //battery usage (mAh)
     float wh = 0; //battery usage (Wh)
     uint32_t interval_us = 10000; //update interval in us
     virtual void setup() = 0;

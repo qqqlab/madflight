@@ -85,8 +85,9 @@ void cli_print_bat() {
 
 void cli_print_baro() {
   Serial.printf("baro.alt:%.2f\t", baro.alt);
-  Serial.printf("baro.press:%.1f\t", baro.press);
-  Serial.printf("baro.temp:%.2f\t", baro.temp);
+  Serial.printf("vz:%.1f\t", baro.vz);
+  Serial.printf("press:%.1f\t", baro.press);
+  Serial.printf("temp:%.2f\t", baro.temp);
 }
 
 struct cli_print_s {

@@ -140,20 +140,38 @@ BarometerMS5611 baro_sensor;
 
 #include "../interface.h"
 
-int Barometer::setup(uint32_t sampleRate) {
+int Barometer::setup(uint32_t sampleRate, float filterAltHertz, float filterVzHertz) {
   _sampleRate = sampleRate;
   _samplePeriod = 1000000 / sampleRate;
+  B_alt = constrain(1 - exp(-2 * PI * filterAltHertz / sampleRate), 0.0f, 1.0f);
+  B_vz = constrain(1 - exp(-2 * PI * filterVzHertz / sampleRate), 0.0f, 1.0f);
   dt = 0;
   ts = micros();
-  return baro_sensor.setup();
+  int rv = baro_sensor.setup();
+  if(rv != 0) {
+    press = 0;
+    temp = 0;
+    alt = 0;
+    altRaw = 0;
+    vz = 0;
+  }else{
+    update(); //get first reading
+    alt = altRaw; //jumpstart filtered altitude
+  }
+  Serial.printf("BARO: sample_rate=%dHz filt_alt=%.1fHz filt_vz=%.1fHz rv=%d \n", (int)sampleRate, filterAltHertz, filterVzHertz, rv);
+  return rv;
 }
 
 bool Barometer::update() {
   if (micros() - ts >= _samplePeriod) {
-    baro_sensor.update(&press, &temp);
-    alt = (101325.0 - press) / 12.0;
     uint32_t tsnew = micros();
     dt = (tsnew - ts) / 1000000.0;
+    baro_sensor.update(&press, &temp);
+    altRaw = (101325.0 - press) / 12.0;
+    float altnew = (1.0 - B_alt) * alt + B_alt * altRaw; //Low-pass filtered altitude
+    float vznew = (altnew - alt) / dt;
+    vz = (1.0 - B_vz) * vz + B_vz * vznew; //Low-pass filtered velocity
+    alt = altnew;
     ts = tsnew;
     return true;
   }

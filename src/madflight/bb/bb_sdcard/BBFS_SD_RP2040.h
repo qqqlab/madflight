@@ -82,7 +82,9 @@ public:
   }
 
   void write(const uint8_t *buf, const uint8_t len) override {
-    for(int i=0;i<len;i++) writeChar(buf[i]);
+    for(int i=0;i<len;i++) {
+      writeChar(buf[i]);
+    }
   }
 
   void close() override {
@@ -124,7 +126,11 @@ public:
           Serial.println("BB: bench - malloc failed");
           return;
       }
-      
+
+      if(SD.exists(path)) {
+        SD.remove(path);
+      }
+
       file = SD.open(path, FILE_WRITE);
       if(!file){
           Serial.println("BB: bench - Failed to open file for writing");
