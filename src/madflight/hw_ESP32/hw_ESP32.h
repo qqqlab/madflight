@@ -2,7 +2,6 @@
 This file contains all necessary functions and code for ESP32 hardware platforms
 
 This file defines:
-  HW_PIN_xxx -> The pin assignments
   *rcin_Serial -> Serial port for RCIN
   *spi -> SPI port
   *i2c -> I2C port
@@ -25,9 +24,8 @@ This file defines:
 #define mf_df2str(s)               mf_df2xstr(s)
 #define HW_ARDUINO_STR "Arduino-ESP32 v" mf_df2str(ESP_ARDUINO_VERSION_MAJOR) "." mf_df2str(ESP_ARDUINO_VERSION_MINOR) "." mf_df2str(ESP_ARDUINO_VERSION_PATCH)
 
-
 //======================================================================================================================//
-//                    DEFAULT BOARD
+//                    DEFAULT PINS
 //======================================================================================================================//
 #ifndef HW_BOARD_NAME
   #ifdef CONFIG_IDF_TARGET_ESP32S3
@@ -37,13 +35,16 @@ This file defines:
   #endif
 #endif
 
-
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
 #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
 #define IMU_FREERTOS_TASK_PRIORITY 31 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31
 
+//======================================================================================================================//
+//                    FREERTOS
+//======================================================================================================================//
+#define FREERTOS_DEFAULT_STACK_SIZE 2048 //stack size on ESP32 is in bytes, not in 32bit words
 
 //======================================================================================================================//
 //  hw_setup()
@@ -106,19 +107,25 @@ void hw_setup()
 {
   Serial.println(HW_BOARD_NAME);
 
-  rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+  #if defined(HW_PIN_RCIN_RX) && defined(HW_PIN_RCIN_TX)
+    rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+  #endif
+  
+  #if defined(HW_PIN_GPS_RX) && defined(HW_PIN_GPS_TX)
+    gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+  #endif
 
-  gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-
-  i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
-
-  if(HW_PIN_SPI_SCLK>=0 && HW_PIN_SPI_MISO>=0 && HW_PIN_SPI_MOSI>=0) {
+  #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
+    i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
+  #endif
+  
+  #if defined(HW_PIN_SPI_SCLK) && defined(HW_PIN_SPI_MISO) && defined(HW_PIN_SPI_MOSI)
     spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
-  }
+  #endif
 
-  if(HW_PIN_SPI2_SCLK>=0 && HW_PIN_SPI2_MISO>=0 && HW_PIN_SPI2_MOSI>=0) {
+  #if defined(HW_PIN_SPI2_SCLK) && defined(HW_PIN_SPI2_MISO) && defined(HW_PIN_SPI2_MOSI)
     spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
-  }
+  #endif
 
   hw_eeprom_begin();
 

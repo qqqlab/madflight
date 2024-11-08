@@ -261,7 +261,7 @@ void _imu_ll_interrupt_handler();
   void _imu_ll_interrupt_setup() {
     if(!_imu_ll_task_handle) {
       //xTaskCreatePinnedToCore(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //ESP32 only
-      xTaskCreate(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+      xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
         int callcore = hw_get_core_num();
         int othercore = (callcore+1)%2;

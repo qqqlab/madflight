@@ -110,12 +110,12 @@ public:
     Config cfg2;
     uint8_t *buf = (uint8_t *)&cfg2;
     uint16_t n = sizeof(Config);
-    Serial.printf("eeprom_read[%d]:", n);
+    //Serial.printf("eeprom_read[%d]:", n);
     for(uint16_t i=0; i<n; i++) {
       buf[i] = hw_eeprom_read(i);
-      Serial.printf("%02X ",buf[i]);
+      //Serial.printf("%02X ",buf[i]);
     }
-    Serial.println();
+    //Serial.println();
     
     //check header & crc
     if(cfg2._header0 == 'm' && cfg2._header1 == 'a' && cfg2._header2 == 'd' && cfg2._header3 == 'f' && cfg2.crc() == cfg2.crcCalc()) {

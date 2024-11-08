@@ -23,15 +23,14 @@ cnt = [0] * 256
 fmtpos = [0] * 256
 recpos = [0] * 256
 
+miss_i = 0
 miss_cnt = 0
 
 i = 0
 
 while i<dlen:
-#    if(d[i]==0xa3 and d[i+1]==0x95): print("\n")
-#    print("{:02X} ".format(d[i]), end="")
-    
     if d[i]==0xa3 and d[i+1]==0x95 and d[i+2]==0x80 :
+        #we got a FMT message
         t = d[i+3]
         len[t] = d[i+4]
         name[t] = d[i+5:i+5+4].decode("ascii").rstrip('\x00')
@@ -42,18 +41,29 @@ while i<dlen:
         #print("{:5d} FMT: typ:{:02X} len:{:2d} name:{:<4}".format(i,t,ln,n))
         i += len[0x80]
     elif d[i]==0xa3 and d[i+1]==0x95 :
+        #we got a message
         t = d[i+2]
         n = name[t]
         ln = len[t]
-        cnt[t] += 1
-        if recpos[t]==0: 
-            recpos[t]=i
-            #print("{:5d} {}: len:{:2d}".format(i, n, ln))
-        i += ln
+        if(ln==0):
+            #message type unknown
+            miss_cnt += 1
+            if i!=miss_i+1: print("\n{:08X}:".format(i), end="")
+            #print("MISS {:02X} ".format(d[i]), end="")
+            miss_i = i
+            i += 1
+        else:
+            cnt[t] += 1
+            if recpos[t]==0: 
+                recpos[t]=i
+                #print("{:5d} {}: len:{:2d}".format(i, n, ln))
+            i += ln
     else:
+        #we got a miss
         miss_cnt += 1
-        #print("{:02X} ".format(d[i]), end="")
+        #print("MISS {:02X} ".format(d[i]), end="")
         i += 1
+print()
 
 #print unused types
 typ_cnt = 0
@@ -87,10 +97,12 @@ for i in range(256):
         if max_len<len[i]: max_len = len[i]
         #print("{:02X} len:{:3d} cnt:{:6d} fmtpos:{:6d} recpos:{:6d} name:{}".format(i,len[i],cnt[i],fmtpos[i],recpos[i],name[i]))
         print("{: <4} {:6d} 0x{:02X} {:3d} {: <16} {}".format(name[i],cnt[i],i,len[i],fmt[i],cols[i]))
+print("File Bytes     :",dlen)
+print("Error Bytes    :",miss_cnt)
 print("Type Count     :",typ_cnt)
 print("Max Record Len :",max_len)
 print("Record Count   :",rec_cnt)
-print("Parse Errors   :",miss_cnt)
+
 
 
 """

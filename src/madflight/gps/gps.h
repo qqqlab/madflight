@@ -30,8 +30,13 @@ void gps_debug() {
   }
 }
 
-void gps_loop() {
+//returns true if position was updated
+bool gps_loop() {
+  bool updated = false;
   while(gps_Serial.available()) {
-    gps.process((char)gps_Serial.read());
+    if(gps.process((char)gps_Serial.read())) {
+      updated=true;
+    }
   }
+  return updated;
 }

@@ -4,8 +4,6 @@
 #define HW_BOARD_NAME "DEFAULT ESP32 BOARD" 
 #define HW_MCU "ESP32" //ESP32 - Most pins can be assigned freely
 
-//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
-
 //LED:
 #define HW_PIN_LED                2 //Note: ESP32 DevKitC has no on-board LED
 #define HW_LED_ON                 1 //0:low is on, 1:high is on
@@ -38,15 +36,15 @@
 
 //Battery ADC
 #define HW_PIN_BAT_V             34
-#define HW_PIN_BAT_I             -1
+//#define HW_PIN_BAT_I
 
 //BlackBox SPI:
-#define HW_PIN_SPI2_MISO         -1
-#define HW_PIN_SPI2_MOSI         -1
-#define HW_PIN_SPI2_SCLK         -1
-#define HW_PIN_BB_CS             -1
+//#define HW_PIN_SPI2_MISO
+//#define HW_PIN_SPI2_MOSI
+//#define HW_PIN_SPI2_SCLK
+//#define HW_PIN_BB_CS
 
 //BlackBox SDCARD via MMC interface: (can only use specific pins on ESP32, and has strapping restrictions, read the docs first!)
-#define HW_PIN_SDMMC_DATA        -1
-#define HW_PIN_SDMMC_CLK         -1
-#define HW_PIN_SDMMC_CMD         -1
+//#define HW_PIN_SDMMC_DATA
+//#define HW_PIN_SDMMC_CLK
+//#define HW_PIN_SDMMC_CMD

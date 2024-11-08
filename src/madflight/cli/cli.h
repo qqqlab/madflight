@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "FreeRTOS_ps.h"
+
 void cli_print_overview() {
   Serial.printf("CH%d:%d\t", 1, rcin_pwm[0]);  
   Serial.printf("rcin_roll:%+.2f\t", rcin_roll);
@@ -45,11 +47,12 @@ void cli_print_imu_MagData() {
 
 void cli_print_ahrs_RollPitchYaw() {
   Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahrs.roll, ahrs.pitch, ahrs.yaw);
-  Serial.printf("yaw_mag:%+.1f\t",-atan2(ahrs.my, ahrs.mx) * Ahrs::rad_to_deg);
 }
 
 void cli_print_control_PIDoutput() {
-  Serial.printf("roll_PID:%+.3f\tpitch_PID:%+.3f\tyaw_PID:%+.3f\t",roll_PID,pitch_PID,yaw_PID);
+  Serial.printf("roll_PID:%+.3f\t",roll_PID);
+  Serial.printf("pitch_PID:%+.3f\t",pitch_PID);
+  Serial.printf("yaw_PID:%+.3f\t",yaw_PID);
 }
 
 void cli_print_out_MotorCommands() {
@@ -90,14 +93,22 @@ void cli_print_baro() {
   Serial.printf("temp:%.2f\t", baro.temp);
 }
 
+void cli_print_gps() {
+  Serial.printf("gps.time:%d\t", (int)gps.time);
+  Serial.printf("date:%d\t", (int)gps.date);
+  Serial.printf("sat:%d\t", (int)gps.sat);
+  Serial.printf("lat:%d\t", (int)gps.lat);
+  Serial.printf("lon:%d\t", (int)gps.lon);
+  Serial.printf("alt:%.3f\t", (float)gps.alt/1000.0);
+}
+
 struct cli_print_s {
   String cmd;
   String info;
   void (*function)(void);
 };
 
-
-#define CLI_PRINT_FLAG_COUNT 13
+#define CLI_PRINT_FLAG_COUNT 14
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 struct cli_print_s cli_print_options[] = {
@@ -114,6 +125,7 @@ struct cli_print_s cli_print_options[] = {
   {"pservo", "Servo output (expected: 0 to 1)", cli_print_out_ServoCommands},
   {"pbat", "Battery voltage, current, Ah used and Wh used", cli_print_bat},
   {"pbaro", "Barometer", cli_print_baro},
+  {"pgps", "GPS", cli_print_gps},
 };
 
 
@@ -154,6 +166,7 @@ public:
     "-- INFO & TOOLS --\n"
     "help or ? This info\n"
     "board     Board info and pinout\n"
+    "ps        Task list\n"    
     "i2c       I2C scan\n"
     "reboot    Reboot flight controller\n"
     "-- PRINT --\n"
@@ -268,6 +281,8 @@ public:
       calibrate_IMU();
     }else if (cmd == "calmag") {
       calibrate_Magnetometer();
+    }else if (cmd == "ps") {
+      freertos_ps();
     }else if (cmd != "") {
       Serial.println("ERROR Unknown command - Type help for help");
     }
@@ -289,16 +304,104 @@ public:
     Serial.print(" BOARD_NAME=" HW_BOARD_NAME);
     Serial.println();
     
-    Serial.printf("HW_PIN: LED=%d", HW_PIN_LED);
-    Serial.printf(" SPI_MOSI=%d MISO=%d SCLK=%d", HW_PIN_SPI_MOSI, HW_PIN_SPI_MISO, HW_PIN_SPI_SCLK);
-    Serial.printf(" IMU_CS=%d",HW_PIN_IMU_CS);  
-    Serial.printf(" IMU_EXTI=%d",HW_PIN_IMU_EXTI);
-    Serial.printf(" I2C_SDA=%d SCL=%d", HW_PIN_I2C_SDA, HW_PIN_I2C_SCL);
-    Serial.printf(" OUT[%d]=%d", HW_OUT_COUNT, HW_PIN_OUT[0]);  
-    for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);  
-    Serial.printf(" RCIN_RX=%d TX=%d", HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-    Serial.printf(" GPS_RX=%d TX=%d", HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-    Serial.println();
+    //LED
+    #ifdef HW_PIN_LED
+      Serial.printf("HW_PIN_LED:            %d\n",HW_PIN_LED);
+    #endif
+    //#ifdef HW_LED_ON
+    //  Serial.printf("HW_LED_ON:             %d\n",HW_LED_ON);
+    //#endif
+
+    //IMU SPI:
+    #ifdef HW_PIN_SPI_MISO
+      Serial.printf("HW_PIN_SPI_MISO:       %d\n",HW_PIN_SPI_MISO);
+    #endif
+    #ifdef HW_PIN_SPI_MOSI
+      Serial.printf("HW_PIN_SPI_MOSI:       %d\n",HW_PIN_SPI_MOSI);
+    #endif
+    #ifdef HW_PIN_SPI_SCLK
+      Serial.printf("HW_PIN_SPI_SCLK:       %d\n",HW_PIN_SPI_SCLK);
+    #endif
+    #ifdef HW_PIN_IMU_CS
+      Serial.printf("HW_PIN_IMU_CS:         %d\n",HW_PIN_IMU_CS);
+    #endif
+    #ifdef HW_PIN_IMU_EXTI
+      Serial.printf("HW_PIN_IMU_EXTI:       %d\n",HW_PIN_IMU_EXTI);
+    #endif
+
+    //I2C for BARO, MAG, BAT sensors (and for IMU if not using SPI IMU)
+    #ifdef HW_PIN_I2C_SDA
+      Serial.printf("HW_PIN_I2C_SDA:        %d\n",HW_PIN_I2C_SDA);
+    #endif
+    #ifdef HW_PIN_I2C_SCL
+      Serial.printf("HW_PIN_I2C_SCL:        %d\n",HW_PIN_I2C_SCL);
+    #endif
+
+    //Motor/Servo Outputs:
+    #ifdef HW_OUT_COUNT
+      Serial.printf("HW_PIN_OUT[%d]:         %d", HW_OUT_COUNT, HW_PIN_OUT[0]);
+      for(int i=1; i<HW_OUT_COUNT; i++) Serial.printf(",%d", HW_PIN_OUT[i]);
+      Serial.println();
+    #endif
+
+    //Serial debug on USB Serial port (no GPIO pins)
+
+    //RC Receiver:
+    #ifdef HW_PIN_RCIN_RX
+      Serial.printf("HW_PIN_RCIN_RX:        %d\n",HW_PIN_RCIN_RX);
+    #endif
+    #ifdef HW_PIN_RCIN_TX
+      Serial.printf("HW_PIN_RCIN_TX:        %d\n",HW_PIN_RCIN_TX);
+    #endif
+    #ifdef HW_PIN_RCIN_INVERTER
+      Serial.printf("HW_PIN_RCIN_INVERTER:  %d\n",HW_PIN_RCIN_INVERTER);
+    #endif
+
+    //GPS:
+    #ifdef HW_PIN_GPS_RX
+      Serial.printf("HW_PIN_GPS_RX:         %d\n",HW_PIN_GPS_RX);
+    #endif
+    #ifdef HW_PIN_GPS_TX
+      Serial.printf("HW_PIN_GPS_TX:         %d\n",HW_PIN_GPS_TX);
+    #endif
+    #ifdef HW_PIN_GPS_INVERTER
+      Serial.printf("HW_PIN_GPS_INVERTER:   %d\n",HW_PIN_GPS_INVERTER);
+    #endif
+
+    //Battery ADC
+    #ifdef HW_PIN_BAT_V
+      Serial.printf("HW_PIN_BAT_V:          %d\n",HW_PIN_BAT_V);
+    #endif
+    #ifdef HW_PIN_BAT_I
+      Serial.printf("HW_PIN_BAT_I:          %d\n",HW_PIN_BAT_I);
+    #endif
+
+    //Black Box SPI (for sdcard or external flash chip):
+    #ifdef HW_PIN_SPI2_MISO
+      Serial.printf("HW_PIN_SPI2_MISO:      %d\n",HW_PIN_SPI2_MISO);
+    #endif
+    #ifdef HW_PIN_SPI2_MOSI
+      Serial.printf("HW_PIN_SPI2_MOSI:      %d\n",HW_PIN_SPI2_MOSI);
+    #endif
+    #ifdef HW_PIN_SPI2_SCLK
+      Serial.printf("HW_PIN_SPI2_SCLK:      %d\n",HW_PIN_SPI2_SCLK);
+    #endif
+    #ifdef HW_PIN_BB_CS
+      Serial.printf("HW_PIN_BB_CS:          %d\n",HW_PIN_BB_CS);
+    #endif
+
+    //Black Box SDCARD via MMC interface:
+    #ifdef HW_PIN_SDMMC_DATA
+      Serial.printf("HW_PIN_SDMMC_DATA:     %d\n",HW_PIN_SDMMC_DATA);
+    #endif
+    #ifdef HW_PIN_SDMMC_CLK
+      Serial.printf("HW_PIN_SDMMC_CLK:      %d\n",HW_PIN_SDMMC_CLK);
+    #endif
+    #ifdef HW_PIN_SDMMC_CMD
+      Serial.printf("HW_PIN_SDMMC_CMD:      %d\n",HW_PIN_SDMMC_CMD);
+    #endif
+
+    Serial.flush();
   }
 
   void print_i2cScan() {

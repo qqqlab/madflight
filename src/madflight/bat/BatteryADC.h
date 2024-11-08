@@ -28,14 +28,12 @@ class BatteryADC: public Battery {
         v = 0;
         mah = 0;
         wh = 0;
-        Serial.printf("HW_PIN_BAT_V=%d\n", HW_PIN_BAT_V);
-        if(HW_PIN_BAT_V != -1) {
-          pinMode(HW_PIN_BAT_V, INPUT);
-        }
-        Serial.printf("HW_PIN_BAT_I=%d\n", HW_PIN_BAT_I);
-        if(HW_PIN_BAT_I != -1) {
-          pinMode(HW_PIN_BAT_I, INPUT);
-        }
+        #ifdef HW_PIN_BAT_V
+            pinMode(HW_PIN_BAT_V, INPUT);
+        #endif
+        #ifdef HW_PIN_BAT_I
+            pinMode(HW_PIN_BAT_I, INPUT);
+        #endif
         analogReadResolution(16);
     }
 
@@ -47,12 +45,12 @@ class BatteryADC: public Battery {
             uint32_t dt = now - ts;
             float dt_h = dt / 3600e6;
             ts = now;
-            if(HW_PIN_BAT_V != -1) {
-                v = cfg.bat_cal_v * analogRead(HW_PIN_BAT_V);
-            }
-            if(HW_PIN_BAT_I != -1) {
-                i = cfg.bat_cal_v * analogRead(HW_PIN_BAT_I);
-            }
+            #ifdef HW_PIN_BAT_V
+                 v = cfg.bat_cal_v * analogRead(HW_PIN_BAT_V);
+            #endif
+            #ifdef HW_PIN_BAT_I
+                 i = cfg.bat_cal_v * analogRead(HW_PIN_BAT_I);
+            #endif
             w = v * i;
             mah += i * dt_h * 1000;
             wh += w * dt_h;

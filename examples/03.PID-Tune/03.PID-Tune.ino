@@ -23,18 +23,17 @@ CCW -->   <-- CW
 Arming: Set throttle low, then flip arm switch from DISARMED to ARMED.
 Disarming: Flip arm switch from ARMED to DISARMED, at any throttle position. "Kill switch".
 
-LED Status
-==========
-OFF - not powered
-startup: a couple blinks then ON while running gyro calibration (don't move)
-blinking long OFF short ON - DISARMED
-blinking long ON short OFF - ARMED
-blink interval longer than 1 second - imu_loop() is taking too much time
-fast blinking - something is wrong, connect USB serial for info
+LED State                              Meaning
+---------                              -------
+OFF                                    Not powered
+ON                                     Startup (don't move, running gyro calibration)
+Blinking long OFF short ON             DISARMED
+Blinking long ON short OFF             ARMED
+Blink interval longer than 1 second    imu_loop() is taking too much time
+fast blinking                          Something is wrong, connect USB serial for info
 
-GPL-3.0 license
-Copyright (c) 2023-2024 https://github.com/qqqlab/madflight
-Copyright (c) 2022 Nicholas Rehm - dRehmFlight
+MIT license
+Copyright (c) 2023-2024 https://madflight.com
 ##########################################################################################################################*/
 
 
@@ -61,59 +60,58 @@ Copyright (c) 2022 Nicholas Rehm - dRehmFlight
 
 #define HW_BOARD_NAME "My Custom Board" //REQUIRED: Give your board a name - without a name the default pinout is loaded!!!
 
-//NOTE: Don't use the same gpio number twice. All pins here get configured, even if they are not used. Set pin to -1 to disable.
+//Replace 'pp' with the gpio number you want to use, or comment out the #define if the pin is not used
 //NOTE: Not all pins can be freely configured. Read the processor datasheet, or use the default pinout.
 
 //LED:
-#define HW_PIN_LED        -1
+#define HW_PIN_LED        pp
 #define HW_LED_ON          0 //0:low is on, 1:high is on
 
 //IMU SPI:
-#define HW_PIN_SPI_MISO   -1
-#define HW_PIN_SPI_MOSI   -1
-#define HW_PIN_SPI_SCLK   -1
-#define HW_PIN_IMU_CS     -1
-#define HW_PIN_IMU_EXTI   -1 //REQUIRED: IMU external interrupt pin (required for SPI and I2C sensors)
+#define HW_PIN_SPI_MISO   pp
+#define HW_PIN_SPI_MOSI   pp
+#define HW_PIN_SPI_SCLK   pp
+#define HW_PIN_IMU_CS     pp
+#define HW_PIN_IMU_EXTI   pp //REQUIRED: IMU external interrupt pin (required for SPI and I2C sensors)
 
 //I2C for BARO, MAG, BAT sensors (and for IMU if not using SPI IMU)
-#define HW_PIN_I2C_SDA    -1
-#define HW_PIN_I2C_SCL    -1
+#define HW_PIN_I2C_SDA    pp
+#define HW_PIN_I2C_SCL    pp
 
 //Motor/Servo Outputs:
 #define HW_OUT_COUNT      4 //number of outputs
-#define HW_PIN_OUT_LIST   {-1,-1,-1,-1} //list of output pins, enter exactly HW_OUT_COUNT pins.
+#define HW_PIN_OUT_LIST   {pp,pp,pp,pp} //list of output pins, enter exactly HW_OUT_COUNT pins.
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-#define HW_PIN_RCIN_RX    -1
-#define HW_PIN_RCIN_TX    -1
-#define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
+#define HW_PIN_RCIN_RX    pp
+#define HW_PIN_RCIN_TX    pp
+#define HW_PIN_RCIN_INVERTER pp //only used for STM32 targets
 
 //GPS:
-#define HW_PIN_GPS_RX     -1 
-#define HW_PIN_GPS_TX     -1
-#define HW_PIN_GPS_INVERTER -1 //only used for STM32 targets
+#define HW_PIN_GPS_RX     pp 
+#define HW_PIN_GPS_TX     pp
+#define HW_PIN_GPS_INVERTER pp //only used for STM32 targets
 
 //Battery ADC
-#define HW_PIN_BAT_V      -1
-#define HW_PIN_BAT_I      -1
+#define HW_PIN_BAT_V      pp
+#define HW_PIN_BAT_I      pp
 
 //Black Box SPI (for sdcard or external flash chip):
-#define HW_PIN_SPI2_MISO  -1
-#define HW_PIN_SPI2_MOSI  -1
-#define HW_PIN_SPI2_SCLK  -1
-#define HW_PIN_BB_CS      -1
+#define HW_PIN_SPI2_MISO  pp
+#define HW_PIN_SPI2_MOSI  pp
+#define HW_PIN_SPI2_SCLK  pp
+#define HW_PIN_BB_CS      pp
 
 //Black Box SDCARD via MMC interface:
-#define HW_PIN_SDMMC_DATA -1
-#define HW_PIN_SDMMC_CLK  -1
-#define HW_PIN_SDMMC_CMD  -1
+#define HW_PIN_SDMMC_DATA pp
+#define HW_PIN_SDMMC_CLK  pp
+#define HW_PIN_SDMMC_CMD  pp
 //*/
 
 //RP2040 specific options
 //#define HW_RP2040_SYS_CLK_KHZ 200000 //overclocking
-//#define HW_RP2040_USE_FREERTOS //enable use of FreeRTOS - experimental
 
 //ESP32 specific options
 //#define USE_ESP32_SOFTWIRE //use bitbang I2C (not hardware I2C) See https://github.com/espressif/esp-idf/issues/499
@@ -263,11 +261,10 @@ void setup() {
 
   //6 second startup delay
   for(int i=20;i>0;i--) { 
-    Serial.printf(MADFLIGHT_VERSION " on " HW_ARDUINO_STR " starting %d ...\n",i);
+    Serial.printf("PID-Tune " MADFLIGHT_VERSION " starting %d ...\n", i);
     delay(300);
-    led.toggle();
-  } 
-  led.on();
+  }
+  Serial.printf("Arduino library: " HW_ARDUINO_STR "\n");
 
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
   cfg.begin(); //read config from EEPROM
@@ -324,7 +321,7 @@ void setup() {
 
   cli.welcome();
 
-  led.off(); //Set built in LED off to signal end of startup
+  led.enable(); //Set LED off to signal end of startup, and enable blinking by imu_loop()
 }
 
 //========================================================================================================================//

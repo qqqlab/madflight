@@ -32,6 +32,11 @@ This file defines:
 #endif
 
 //======================================================================================================================//
+//                    FREERTOS
+//======================================================================================================================//
+#define FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
+
+//======================================================================================================================//
 //                    hw_setup()
 //======================================================================================================================//
 
@@ -60,19 +65,29 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 //Bus Setup
 //-------------------------------------
 
-// GPS Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
-uint8_t gps_txbuf[256];
-uint8_t gps_rxbuf[256];
-SerialIRQ gps_Serial(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
-//SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
-//SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
+#if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
+  // GPS Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
+  uint8_t gps_txbuf[256];
+  uint8_t gps_rxbuf[256];
+  SerialIRQ gps_Serial(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
+  //SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
+  //SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
+#else
+  //DUMMY
+  SerialUART gps_Serial = SerialUART(uart1, -1, -1);
+#endif
 
-// RC Input Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
-uint8_t rcin_txbuf[256];
-uint8_t rcin_rxbuf[1024];
-SerialIRQ *rcin_Serial = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
-//SerialUART rcin_Serial = SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
-//SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
+#if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
+  // RC Input Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
+  uint8_t rcin_txbuf[256];
+  uint8_t rcin_rxbuf[1024];
+  SerialIRQ *rcin_Serial = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
+  //SerialUART rcin_Serial = SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
+  //SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
+#else
+  //DUMMY
+  SerialUART *rcin_Serial = new SerialUART(uart0, -1, -1);
+#endif
 
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1

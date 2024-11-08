@@ -6,88 +6,45 @@
 //-------------------------------------
 // PIN DEFINITIONS
 //-------------------------------------
-//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
-#ifndef HW_PIN_LED
-  #define HW_PIN_LED               -1 //16 is internal RGB LED on RP2040-Zero
-#endif
-#ifndef HW_LED_ON
-  #define HW_LED_ON                 1 //0:low is on, 1:high is on
-#endif
+//#define HW_PIN_LED                //16 is internal RGB LED on RP2040-Zero
+#define HW_LED_ON                 1 //0:low is on, 1:high is on
 
 //IMU SPI:
-#ifndef HW_PIN_SPI_MOSI
-  #define HW_PIN_SPI_MOSI          12 //spi0: 0, 4, 16(default)   spi1:  8, 12(default)
-#endif
-#ifndef HW_PIN_SPI_MISO
-  #define HW_PIN_SPI_MISO          11 //spi0: 3, 7, 19(default)   spi1: 11, 15(default)
-#endif
-#ifndef HW_PIN_SPI_SCLK
-  #define HW_PIN_SPI_SCLK          10 //spi0: 2, 6, 18(default)   spi1: 10, 14(default)
-#endif
-#ifndef HW_PIN_IMU_CS
-  #define HW_PIN_IMU_CS            13 //spi0: 1, 5, 17(default)   spi1:  9, 13(default)
-#endif
-#ifndef HW_PIN_IMU_EXTI
-  #define HW_PIN_IMU_EXTI          15
-#endif
+#define HW_PIN_SPI_MOSI          12 //spi0: 0, 4, 16(default)   spi1:  8, 12(default)
+#define HW_PIN_SPI_MISO          11 //spi0: 3, 7, 19(default)   spi1: 11, 15(default)
+#define HW_PIN_SPI_SCLK          10 //spi0: 2, 6, 18(default)   spi1: 10, 14(default)
+#define HW_PIN_IMU_CS            13 //spi0: 1, 5, 17(default)   spi1:  9, 13(default)
+#define HW_PIN_IMU_EXTI          15
 
 //BARO/MAG I2C:
-#ifndef HW_PIN_I2C_SDA
-  #define HW_PIN_I2C_SDA           26 //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
-#endif
-#ifndef HW_PIN_I2C_SCL
-  #define HW_PIN_I2C_SCL           27 //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
-#endif
+#define HW_PIN_I2C_SDA           26 //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
+#define HW_PIN_I2C_SCL           27 //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
 
 //Outputs:
-#ifndef HW_OUT_COUNT
-  #define HW_OUT_COUNT             6
-#endif
-#ifndef HW_PIN_OUT_LIST
-  #define HW_PIN_OUT_LIST {2,3,4,5,6,7}
-#endif
+#define HW_OUT_COUNT             6
+#define HW_PIN_OUT_LIST {2,3,4,5,6,7}
 
 //Serial debug on USB Serial port (no GPIO pins)
 
 //RC Receiver:
-#ifndef HW_PIN_RCIN_RX
-  #define HW_PIN_RCIN_RX            1 //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default) , this pin is also used as PPM input
-#endif
-#ifndef HW_PIN_RCIN_TX
-  #define HW_PIN_RCIN_TX            0 //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
-#endif
+#define HW_PIN_RCIN_RX            1 //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default) , this pin is also used as PPM input
+#define HW_PIN_RCIN_TX            0 //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
 
 //GPS:
-#ifndef HW_PIN_GPS_RX
-  #define HW_PIN_GPS_RX             9 //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
-#endif
-#ifndef HW_PIN_GPS_TX
-  #define HW_PIN_GPS_TX             8 //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
-#endif
+#define HW_PIN_GPS_RX             9 //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
+#define HW_PIN_GPS_TX             8 //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
 
 //Battery ADC
-#ifndef HW_PIN_BAT_V
-  #define HW_PIN_BAT_V             28 //pin A2
-#endif
-#ifndef HW_PIN_BAT_I
-  #define HW_PIN_BAT_I             -1
-#endif
+#define HW_PIN_BAT_V             28 //pin A2
+//#define HW_PIN_BAT_I
 
 //BlackBox SPI:
-#ifndef HW_PIN_SPI2_MISO
-  #define HW_PIN_SPI2_MISO         -1
-#endif
-#ifndef HW_PIN_SPI2_MOSI
-  #define HW_PIN_SPI2_MOSI         -1
-#endif
-#ifndef HW_PIN_SPI2_SCLK
-  #define HW_PIN_SPI2_SCLK         -1
-#endif
-#ifndef HW_PIN_BB_CS
-  #define HW_PIN_BB_CS             -1
-#endif
+//#define HW_PIN_SPI2_MISO
+//#define HW_PIN_SPI2_MOSI
+//#define HW_PIN_SPI2_SCLK
+//#define HW_PIN_BB_CS
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 

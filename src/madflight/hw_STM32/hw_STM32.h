@@ -31,25 +31,26 @@ This file defines:
 //USB cable: upload method "STM32CubeProgrammer (DFU)" --> press boot button, connect usb cable (or press/release reset) 
 //ST-LINK dongle: upload method "STM32CubeProgrammer (SWD)" --> press boot, press/release reset button (or power board)
 
-
 //======================================================================================================================//
-//                    DEFAULT BOARD (used if no board set in madflight.ino)                                             //
+//                    DEFAULT PINS
 //======================================================================================================================//
 #ifndef HW_BOARD_NAME
   #include <madflight_board_default_STM32.h>
 #endif
-
 
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
 #define IMU_EXEC IMU_EXEC_IRQ //STM FreeRTOS not supported (yet), so use IMU as interrupt
 
+//======================================================================================================================//
+//                    FREERTOS
+//======================================================================================================================//
+#define FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
 
 //======================================================================================================================//
 //                    hw_setup()
 //======================================================================================================================//
-
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 //Include Libraries
@@ -58,11 +59,24 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include "madflight/hw_STM32/STM32_PWM.h" //Servo and oneshot
 
 //Bus Setup
-HardwareSerial *rcin_Serial = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+#if defined(HW_PIN_RCIN_RX) && defined(HW_PIN_RCIN_TX)
+  HardwareSerial *rcin_Serial = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+#else
+  HardwareSerial *rcin_Serial = new HardwareSerial(-1, -1); //DUMMY
+#endif
+
+#if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
+  HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+#else
+  HardwareSerial gps_Serial(-1, -1); //DUMMY
+#endif
+
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
+
 SPIClass *spi = &SPI;
+
+//TODO: SPIClass *bb_spi;
 
 //prototype
 void hw_eeprom_begin();
@@ -72,23 +86,31 @@ void hw_setup()
   Serial.println("USE_HW_STM32");
   
   //Serial RX Inverters
-  pinMode(HW_PIN_RCIN_INVERTER, OUTPUT);
-  digitalWrite(HW_PIN_RCIN_INVERTER, LOW); //not inverted
-  pinMode(HW_PIN_GPS_INVERTER, OUTPUT);
-  digitalWrite(HW_PIN_GPS_INVERTER, LOW); //not inverted
-
+  #ifdef HW_PIN_RCIN_INVERTER
+    pinMode(HW_PIN_RCIN_INVERTER, OUTPUT);
+    digitalWrite(HW_PIN_RCIN_INVERTER, LOW); //not inverted
+  #endif
+  #ifdef HW_PIN_GPS_INVERTER  
+    pinMode(HW_PIN_GPS_INVERTER, OUTPUT);
+    digitalWrite(HW_PIN_GPS_INVERTER, LOW); //not inverted
+  #endif
+  
   //I2C
-  i2c->setSDA(HW_PIN_I2C_SDA);
-  i2c->setSCL(HW_PIN_I2C_SCL);
-  i2c->setClock(1000000);
-  i2c->begin();
+  #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
+    i2c->setSDA(HW_PIN_I2C_SDA);
+    i2c->setSCL(HW_PIN_I2C_SCL);
+    i2c->setClock(1000000);
+    i2c->begin();
+  #endif
 
-  //SPI 
-  spi->setMISO(HW_PIN_SPI_MISO);
-  spi->setSCLK(HW_PIN_SPI_SCLK);
-  spi->setMOSI(HW_PIN_SPI_MOSI);
-  //spi->setSSEL(HW_PIN_IMU_CS); //don't set CS here, it is done in the driver to be compatible with other hardware platforms
-  spi->begin();
+  //SPI
+  #if defined(HW_PIN_SPI_SCLK) && defined(HW_PIN_SPI_MISO) && defined(HW_PIN_SPI_MOSI)
+    spi->setMISO(HW_PIN_SPI_MISO);
+    spi->setSCLK(HW_PIN_SPI_SCLK);
+    spi->setMOSI(HW_PIN_SPI_MOSI);
+    //spi->setSSEL(HW_PIN_IMU_CS); //don't set CS here, it is done in the driver to be compatible with other hardware platforms
+    spi->begin();
+  #endif
 
   hw_eeprom_begin();
 }
@@ -96,7 +118,6 @@ void hw_setup()
 //======================================================================================================================//
 //  EEPROM
 //======================================================================================================================//
-
 #if defined(DATA_EEPROM_BASE)
   //----------------------------------------------------------------------------------------------------------
   //unbuffered write - very slow because writes whole flash page for each byte, i.e. 1 second per changed byte
@@ -155,11 +176,9 @@ void hw_setup()
   } 
 #endif
 
-
 //======================================================================================================================//
 //  MISC
 //======================================================================================================================//
-
 void hw_reboot() {
   NVIC_SystemReset();
 }

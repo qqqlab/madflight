@@ -81,7 +81,8 @@ public:
     return false;
   }
 
-  void writeChar(uint8_t c) override {
+private:
+  void _writeChar(uint8_t c) {
     if(!file) return;
     if(wbuf_len < sizeof(wbuf)) {
      wbuf[wbuf_len++] = c;
@@ -94,8 +95,9 @@ public:
     }
   }
 
+public:
   void write(const uint8_t *buf, const uint8_t len) override {
-    for(int i=0;i<len;i++) writeChar(buf[i]);
+    for(int i=0;i<len;i++) _writeChar(buf[i]);
   }
 
   void close() override {

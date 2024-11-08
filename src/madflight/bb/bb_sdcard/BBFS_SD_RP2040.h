@@ -37,7 +37,7 @@ private:
   uint8_t wbuf[512];
   uint32_t wbuf_len = 0;
   String filename;
-  File file;
+  File file = {};
 
 public:
   //setup the file system
@@ -50,7 +50,7 @@ public:
     close();
 
     int attempt = 0;
-    while(++attempt<2) {
+    while(++attempt<3) {
       if(sd_setup()) {
         memset(wbuf, 0xff, sizeof(wbuf));
         wbuf_len = 0;
@@ -62,13 +62,15 @@ public:
         }
       }
 
+      Serial.println("BB: start retry");
       setup_done = false; //force setup to re-run
     }
     Serial.println("BB: start FAILED");
     return false;
   }
 
-  void writeChar(uint8_t c) override {
+private:
+  void _writeChar(uint8_t c) {
     if(!file) return;
     if(wbuf_len < sizeof(wbuf)) {
      wbuf[wbuf_len++] = c;
@@ -81,18 +83,25 @@ public:
     }
   }
 
+public:
   void write(const uint8_t *buf, const uint8_t len) override {
     for(int i=0;i<len;i++) {
-      writeChar(buf[i]);
+      _writeChar(buf[i]);
     }
   }
 
   void close() override {
-    if(wbuf_len>0) {
-      file.write(wbuf, wbuf_len);
-      wbuf_len = 0;
+    if(file) {
+      if(wbuf_len>0) {
+        file.write(wbuf, wbuf_len);
+        wbuf_len = 0;
+      }
+      file.flush();
+      int len = file.size();
+      file.close();
+      file = {};
+      Serial.printf("BB: stop file=%s len=%d\n", filename.c_str(), len);
     }
-    file.close();
   }
 
   void erase() override {
@@ -101,7 +110,7 @@ public:
     }
   }
 
-  void dir () override {
+  void dir() override {
     int attempt = 0;
     while(++attempt<2) {
       if(sd_setup()) {
@@ -110,7 +119,6 @@ public:
       setup_done = false; //force setup to re-run
     }
   }
-
 
   void bench() override {
       const char* path = "madfli.ght";

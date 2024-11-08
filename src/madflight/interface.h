@@ -189,10 +189,12 @@ class Led {
     void off();
     void toggle();
     void blink(int times);
+    void enable();
   protected:
     bool state = false;
     int pin = -1;
     uint8_t led_on_value = 0;
+    bool enabled = false;
 };
 
 extern Led &led;

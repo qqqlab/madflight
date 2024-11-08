@@ -18,7 +18,6 @@
 //-------------------------------------
 // PIN DEFINITIONS
 //-------------------------------------
-//NOTE: DON'T USE SAME PIN TWICE. All pins here get configured, even if they are not used. Set pin to -1 to disable.
 
 //LED:
 #define HW_PIN_LED             PC13
@@ -56,7 +55,7 @@
 #define HW_PIN_BAT_I            PB1
 
 //BlackBox SPI:
-#define HW_PIN_SPI2_MISO         -1
-#define HW_PIN_SPI2_MOSI         -1
-#define HW_PIN_SPI2_SCLK         -1
-#define HW_PIN_BB_CS             -1
+//#define HW_PIN_SPI2_MISO
+//#define HW_PIN_SPI2_MOSI
+//#define HW_PIN_SPI2_SCLK
+//#define HW_PIN_BB_CS

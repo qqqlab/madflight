@@ -13,10 +13,12 @@ class Led {
     void off();
     void toggle();
     void blink(int times);
+    void enable();
   protected:
     bool state = false;
     int pin = -1;
     uint8_t led_on_value = 0;
+    bool enabled = false;
 };
 
 extern Led &led;
@@ -45,6 +47,11 @@ void Led::blink(int times) {
   delay(2000);
 }
 
+void Led::enable() {
+  enabled = true;
+  off();
+}
+
 
 class LedSingle : public Led {
   public:
@@ -53,11 +60,13 @@ class LedSingle : public Led {
       this->led_on_value = led_on_value;
       if(pin<0) return;
       pinMode(pin, OUTPUT);
+      enabled = true;
       on();
+      enabled = false;
     }
 
     void set(bool set_on) {
-      if(pin<0) return;
+      if(!enabled || pin<0) return;
       //if(led_state != set_on) Serial.printf("led_SwitchON(%d)\n", set_on);
       state = set_on;
       digitalWrite( pin, (set_on ? led_on_value : !led_on_value) );

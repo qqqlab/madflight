@@ -178,8 +178,8 @@ public:
     uart_deinit(uart_inst);
 
     //set pins
-    gpio_set_function(HW_PIN_RCIN_RX, GPIO_FUNC_UART);
-    gpio_set_function(HW_PIN_RCIN_TX, GPIO_FUNC_UART);
+    gpio_set_function(rpin, GPIO_FUNC_UART);
+    gpio_set_function(tpin, GPIO_FUNC_UART);
 
     //properties
     baud_actual = uart_init(uart_inst, baud); //The call will return the actual baud rate selected
