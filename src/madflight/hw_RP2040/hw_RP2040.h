@@ -34,6 +34,8 @@ This file defines:
 //======================================================================================================================//
 //                    FREERTOS
 //======================================================================================================================//
+#include <FreeRTOS.h>
+#include <semphr.h>
 #define FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
 
 //======================================================================================================================//
@@ -44,11 +46,6 @@ This file defines:
 //#ifndef HW_RP2040_SYS_CLK_KHZ
 //  #define HW_RP2040_SYS_CLK_KHZ 200000
 //#endif
-
-#ifdef HW_RP2040_USE_FREERTOS
-  #include <FreeRTOS.h>  //FreeRTOS
-  #include <semphr.h>    //FreeRTOS
-#endif
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 

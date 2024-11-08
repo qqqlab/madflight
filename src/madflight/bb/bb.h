@@ -3,7 +3,7 @@ BB: madflight black box data logger
 
 MIT License
 
-Copyright (c) 2024 qqqlab - https://github.com/qqqlab
+Copyright (c) 2024 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,56 +24,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-
 #define BB_USE_NONE 1
-//bb_flash.h
-#define BB_USE_INTFLASH 101 //internal QSPI/OSPI flash
-#define BB_USE_FLASH 102 //external SPI flash
-#define BB_USE_RAM 103 //internal RAM (or PSRAM on ESP32)
 //bb_sdcard.h
-#define BB_USE_SD 201 //SDCARD with 1-bit SPI interface
-#define BB_USE_SDMMC 202 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BB_USE_SDDEBUG 203 //print log to Serial
+#define BB_USE_SD 2 //SDCARD with 1-bit SPI interface
+#define BB_USE_SDMMC 3 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
+#define BB_USE_SDDEBUG 4 //print log to Serial
 
+
+#include "../interface.h" //defines class BlackBox
 
 //=====================================================================================================================
 // No Logging
 //=====================================================================================================================
 #if !defined BB_USE || BB_USE == BB_USE_NONE
 
-//black box public interface
-class BlackBox {
-  public:
-    //loggers
-    void log_baro() {}
-    void log_bat() {}
-    void log_gps() {}
-    void log_imu() {}
-    void log_mode(uint8_t fm, const char* name) {(void)fm;(void)name;}
-    void log_msg(const char* msg) {(void)msg;}
-    void log_parm(const char* name, float value, float default_value) {(void)name;(void)value;(void)default_value;}
-    void log_pid() {}
-    void log_att() {}
-
-    //Blackbox Interface
-    void setup() {}
-    void start() {}
-    void stop() {}
-    void erase() {}
-    void dir() {}
-    void bench() {}
-    void info() {}
-    void csvDump(int fileno) {(void)fileno;}
-};
-
-BlackBox bb;
-
-//=====================================================================================================================
-// Logging to flash (internal or external)
-//=====================================================================================================================
-#elif BB_USE < BB_USE_SD
-
-#include "bb_flash/bb_flash.h"
+BlackBox bb_instance;
+BlackBox &bb = bb_instance;
 
 //=====================================================================================================================
 // Logging to SDCARD (SPI or MMC interface)

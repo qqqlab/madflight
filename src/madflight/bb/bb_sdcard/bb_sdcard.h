@@ -3,7 +3,7 @@ BB: madflight black box data logger in ArduPilot Binary Log data format
 
 MIT License
 
-Copyright (c) 2024 qqqlab - https://github.com/qqqlab
+Copyright (c) 2024 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@ SOFTWARE.
 
 /* moved to bb/bb.h
 #define BB_USE_NONE 1
-#define BB_USE_SD 201 //SDCARD with 1-bit SPI interface
-#define BB_USE_SDMMC 202 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BB_USE_SDDEBUG 203 //print log to Serial
+#define BB_USE_SD 2 //SDCARD with 1-bit SPI interface
+#define BB_USE_SDMMC 3 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
+#define BB_USE_SDDEBUG 4 //print log to Serial
 */
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
@@ -777,14 +777,14 @@ TaskHandle_t BinLog::xHandle = NULL;
 // Black Box public interface
 //=====================================================================================================================
 
-class BlackBox {
+class BlackBox_SD : public BlackBox {
   public:
   //-------------------------------
   //loggers
   //-------------------------------
 
 
-    void log_baro() {
+    void log_baro() override {
       BinLog bl("BARO");
       bl.TimeUS();                      //uint64_t TimeUS: Time since system startup [us]
       bl.u8("I", 0, 1, "instance");     //uint8_t I: barometer sensor instance number [-]
@@ -801,7 +801,7 @@ class BlackBox {
       bl.flt("AltRaw", baro.altRaw, 1, "m");
     } 
 
-    void log_bat() {
+    void log_bat() override {
       BinLog bl("BAT");
       bl.TimeUS();                      //uint64_t TimeUS: Time since system startup [us]
       bl.u8("I", 0, 1, "instance");     //uint8_t Inst: battery instance number [-]
@@ -821,7 +821,7 @@ class BlackBox {
 //"QBBIHBcLLeffffB", "TimeUS,I,Status,GMS,GWk,NSats,HDop,Lat,Lng,Alt,Spd,GCrs,VZ,Yaw,U", 
 //"s#-s-S-DUmnhnh-", 
 //"F--C-0BGGB000--" , true }
-    void log_gps() {
+    void log_gps() override {
       BinLog bl("GPS");                 // Information received from GNSS systems attached to the autopilot
       bl.TimeUS();                      //uint64_t TimeUS 1e-6 [s]: Time since system startup [us]
       bl.u8("I", 0, 1, "instance");     //uint8_t I 0 [instance]: GPS instance number
@@ -844,7 +844,8 @@ class BlackBox {
       //bl.u32("D",gps.date);  //date as DDMMYY
     }
 
-    void log_pos(float homeAlt, float OriginAlt) {
+/*
+    void log_pos(float homeAlt, float OriginAlt) override {
       BinLog bl("POS");
       bl.TimeUS(); //uint64_t TimeUS 1e-6 [s]: Time since system startup [us]
       bl.i32latlon("Lat", gps.lat, 1e-7, "deglatitude");
@@ -853,9 +854,10 @@ class BlackBox {
       bl.flt("RelHomeAlt", gps.alt/1000.0 - homeAlt, 1, "m");
       bl.flt("RelOriginAlt", gps.alt/1000.0 - OriginAlt, 1, "m");
     }
+*/
 
     //AHRS roll/pitch/yaw plus filtered+corrected IMU data
-    void log_ahrs() {
+    void log_ahrs() override {
       BinLog bl("AHRS"); 
       bl.TimeUS();
       bl.i16("ax",ahrs.ax*100, 1e-2, "G"); //G
@@ -872,7 +874,7 @@ class BlackBox {
       bl.i16("yaw",ahrs.yaw*100, 1e-2, "deg");; //deg -180 to 180
     }
 
-    void log_att() {
+    void log_att() override {
       BinLog bl("ATT");
       bl.TimeUS(millis());
       bl.i16("DesRoll",0, 1e-2, "deg");
@@ -887,7 +889,7 @@ class BlackBox {
     }
 
     //raw (unfiltered but corrected) IMU data
-    void log_imu() {
+    void log_imu() override {
       BinLog bl("IMU"); 
       bl.TimeUS(imu.ts);
       bl.i16("ax",(imu.ax - cfg.imu_cal_ax)*100, 1e-2, "G"); //G
@@ -903,7 +905,7 @@ class BlackBox {
         bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
       #else
         //get from imu
-        if(imu.hasMag() {
+        if(imu.hasMag()) {
           bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
           bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
           bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
@@ -914,7 +916,7 @@ class BlackBox {
       bl.i16("yaw",ahrs.yaw*100, 1e-2, "deg");; //deg -180 to 180
     }
 
-    void log_mode(uint8_t fm, const char* name) {
+    void log_mode(uint8_t fm, const char* name) override {
       BinLog bl("MODE");
       bl.TimeUS();
       bl.u8flightmode("Mode",fm);
@@ -935,40 +937,36 @@ class BlackBox {
   // Blackbox interface
   //-------------------------------
 public:
-    void setup() {
+    void setup() override {
       BinLog::setup();
       bbfs.setup();
     }
 
-    void start() {
+    void start() override {
       BinLog::start();
     }
 
-    void stop() {
+    void stop() override {
       BinLog::stop();
     }
 
-    void erase() {
+    void erase() override {
       stop();
       bbfs.erase();
     }
 
-    void dir() {
+    void dir() override {
       bbfs.dir();
     }
 
-    void bench() {
+    void bench() override {
       bbfs.bench();
     }
 
-    void info() {
+    void info() override {
       bbfs.info();
-    }
-
-    void csvDump(int fileno) {
-      (void) fileno;
-      Serial.println("Not implemented for BB_SDCARD");
     }
 };
 
-BlackBox bb;
+BlackBox_SD bb_instance;
+BlackBox &bb = bb_instance;

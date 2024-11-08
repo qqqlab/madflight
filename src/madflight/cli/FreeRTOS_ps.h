@@ -1,4 +1,29 @@
-/* FreeRTOS Process List
+/*==========================================================================================
+FreeRTOS_ps.h - FreeRTOS Process List
+
+MIT License
+
+Copyright (c) 2024 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+/*
 
 Example output:
 
@@ -20,7 +45,7 @@ PR:   The priority to which the task will return if the task's current priority 
 NI:   The priority at which the task was running.
 Core: The core affinity mask for the task. 1=task will run only on core0, 2=only on core1, 3=both core0 and core1
 
-NOTE: on RP2040 the 32bit trace timer is running at F_CPU, with wraps in 30 seconds at 150MHz. Only when the calls between ps are less than 30 seconds you get reliable results for CPU%, otherwise it might look like this:
+NOTE: on RP2350/RP2040 the 32bit trace timer is running at F_CPU, with wraps in 30 seconds at 150MHz. Only when the calls between ps are less than 30 seconds you get reliable results for CPU%, otherwise it might look like this:
 
 TID Name          CPU% Free S PR NI Core
   8 IMU          557.2%  425 X  7  7  2
@@ -34,8 +59,9 @@ TID Name          CPU% Free S PR NI Core
 
 */
 
-#include <FreeRTOS.h>
-#include <task.h>
+//NOTE: required FreeRTOS headers should be included before including this file (different platforms use different headers...)
+//#include <FreeRTOS.h>
+//#include <task.h>
 
 char freertos_taskStatusChar(eTaskState eCurrentState) {
   switch(eCurrentState)

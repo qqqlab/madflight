@@ -130,7 +130,7 @@ Copyright (c) 2023-2024 https://madflight.com
 #define IMU_I2C_ADR  0x69 //IMU I2C address. If unknown, use CLI 'i2c'
 
 //-- AHRS sensor fusion 
-#define AHRS_USE AHRS_USE_MAHONY // AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
+#define AHRS_USE  AHRS_USE_MAHONY // AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
 
 //--- GPS
 #define GPS_BAUD  115200
@@ -147,7 +147,7 @@ Copyright (c) 2023-2024 https://madflight.com
 #define BAT_USE  BAT_USE_NONE // BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
-#define BB_USE  BB_USE_NONE //BB_USE_SD spi sdcard, BB_USE_SDMMC mmc sdcard, BB_USE_INTFLASH internal flash, BB_USE_FLASH external flash, BB_USE_RAM ram or psram, BB_USE_NONE
+#define BB_USE  BB_USE_NONE //BB_USE_SD spi sdcard, BB_USE_SDMMC mmc sdcard, BB_USE_NONE
 
 //========================================================================================================================//
 //                                               RC RECEIVER                                                              //
