@@ -213,18 +213,20 @@ float maxRollRate    = 30.0;      //Max roll rate in deg/sec for rate mode
 float maxPitchRate   = 30.0;      //Max pitch rate in deg/sec for rate mode
 float maxYawRate     = 160.0;     //Max yaw rate in deg/sec for angle and rate mode
 
-float Kp_ro_pi_angle  = 0.2;      //Roll/Pitch P-gain - angle mode 
-float Ki_ro_pi_angle  = 0.1;      //Roll/Pitch I-gain - angle mode
-float Kd_ro_pi_angle  = 0.05;     //Roll/Pitch D-gain - angle mode (has no effect on control_Angle2)
-float B_loop_ro_pi    = 0.9;      //Roll/Pitch damping term for control_Angle2(), lower is more damping (must be between 0 to 1)
+//PID Angle Mode 
+float Kp_ro_pi_angle  = 0.2;      //Roll/Pitch P-gain
+float Ki_ro_pi_angle  = 0.1;      //Roll/Pitch I-gain
+float Kd_ro_pi_angle  = 0.05;     //Roll/Pitch D-gain
+float Kp_yaw_angle    = 0.6;      //Yaw P-gain
+float Kd_yaw_angle    = 0.1;      //Yaw D-gain
 
-float Kp_ro_pi_rate   = 0.15;     //Roll/Pitch P-gain - rate mode
-float Ki_ro_pi_rate   = 0.2;      //Roll/Pitch I-gain - rate mode
-float Kd_ro_pi_rate   = 0.0002;   //Roll/Pitch D-gain - rate mode (be careful when increasing too high, motors will begin to overheat!)
-
-float Kp_yaw          = 0.3;       //Yaw P-gain
-float Ki_yaw          = 0.05;      //Yaw I-gain
-float Kd_yaw          = 0.00015;   //Yaw D-gain (be careful when increasing too high, motors will begin to overheat!)
+//PID Rate Mode 
+float Kp_ro_pi_rate   = 0.15;     //Roll/Pitch rate P-gain
+float Ki_ro_pi_rate   = 0.2;      //Roll/Pitch rate I-gain
+float Kd_ro_pi_rate   = 0.0002;   //Roll/Pitch rate D-gain (be careful when increasing too high, motors will begin to overheat!)
+float Kp_yaw_rate     = 0.3;       //Yaw rate P-gain
+float Ki_yaw_rate     = 0.05;      //Yaw rate I-gain
+float Kd_yaw_rate     = 0.00015;   //Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 //========================================================================================================================//
 //                              DECLARE GLOBAL VARIABLES                                                                  //
@@ -239,7 +241,7 @@ bool rcin_thro_is_low; //status of throttle stick, true = throttle low
 int rcin_aux; // six position switch connected to aux channel, values 0-5
 
 //Controller:
-float roll_PID = 0, pitch_PID = 0, yaw_PID = 0;
+float roll_PID = 0, pitch_PID = 0, yaw_PID = 0, yaw_desired = 0;
 
 //Flight status
 bool out_armed = false; //motors will only run if this flag is true
@@ -321,6 +323,9 @@ void setup() {
 
   cli.welcome();
 
+  //set initial desired yaw
+  yaw_desired = ahrs.yaw;
+
   led.enable(); //Set LED off to signal end of startup, and enable blinking by imu_loop()
 }
 
@@ -379,7 +384,7 @@ void imu_loop() {
   //PID Controller
   switch(rcin_fm) {
     case ANGLE:
-      control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
+      control_Angle(rcin_thro_is_low); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;
     default:
       control_Rate(rcin_thro_is_low); //Stabilize on rate setpoint
@@ -472,6 +477,16 @@ float _rcin_ChannelNormalize(int val, int min, int center, int max, int deadband
   return rev * 1.0;
 }
 
+//returns angle in range -180 to 180
+float degreeModulus(float v) {
+  if(v >= 180) {
+    return fmod(v + 180, 360) - 180; //note: fmod(x,360) returns values between -360 and 360, not 0 and 360 as integer mod() does
+  }else if(v < -180.0) {
+    return fmod(v - 180, 360) + 180;
+  }
+  return v;
+}
+
 void control_Angle(bool zero_integrators) {
   //DESCRIPTION: Computes control commands based on state error (angle)
   /*
@@ -494,13 +509,13 @@ void control_Angle(bool zero_integrators) {
   float yawRate_des = rcin_yaw * maxYawRate; //Between -maxYawRate and +maxYawRate
 
   //state vars
-  static float integral_roll, integral_pitch, error_yaw_prev, integral_yaw;
+  static float integral_roll, integral_pitch, error_yawRate_prev, integral_yawRate;
 
   //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
   if(zero_integrators) {
     integral_roll = 0;
     integral_pitch = 0;
-    integral_yaw = 0;
+    integral_yawRate = 0;
   }
 
   //Roll PID
@@ -517,108 +532,35 @@ void control_Angle(bool zero_integrators) {
   float derivative_pitch = ahrs.gy; 
   pitch_PID = 0.01 * (Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch - Kd_ro_pi_angle*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
 
-  //Yaw PID, stablize on rate from GyroZ - TODO: use compass heading, not gyro rate
-  float error_yaw = yawRate_des - ahrs.gz;
-  integral_yaw += error_yaw * imu.dt;
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
-  yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
+  //Yaw PID
+  if(-0.02 < rcin_yaw && rcin_yaw < 0.02) {
+    //Yaw stick centered: hold yaw_desired
+    float error_yaw = degreeModulus(yaw_desired - ahrs.yaw);
+    float desired_yawRate = error_yaw / 0.5; //set desired yawRate such that it gets us to desired yaw in 0.5 second
+    float derivative_yaw = desired_yawRate - ahrs.gz;
+    yaw_PID = 0.01 * (Kp_yaw_angle*error_yaw + Kd_yaw_angle*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
 
-  //Update derivative variables
-  error_yaw_prev = error_yaw;
-}
+    //update yaw rate controller
+    error_yawRate_prev = 0;
+  }else{
+    //Yaw stick not centered: stablize on rate from GyroZ
+    float error_yawRate = yawRate_des - ahrs.gz;
+    integral_yawRate += error_yawRate * imu.dt;
+    integral_yawRate = constrain(integral_yawRate, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
+    float derivative_yawRate = (error_yawRate - error_yawRate_prev) / imu.dt; 
+    yaw_PID = 0.01 * (Kp_yaw_rate*error_yawRate + Ki_yaw_rate*integral_yawRate + Kd_yaw_rate*derivative_yawRate); //Scaled by .01 to bring within -1 to 1 range
 
-void control_Angle2(bool zero_integrators) {
-  //DESCRIPTION: Computes control commands based on state error (angle) in cascaded scheme
-  /*
-   * Gives better performance than control_Angle() but requires much more tuning. Not reccommended for first-time setup.
-   * See the documentation for tuning this controller.
-   */
+    //Update derivative variables
+    error_yawRate_prev = error_yawRate;
 
-  //inputs: roll_des, pitch_des, yawRate_des
-  //outputs: roll_PID, pitch_PID, yaw_PID
-
-  //desired values
-  float roll_des = rcin_roll * maxRoll; //Between -maxRoll and +maxRoll
-  float pitch_des = rcin_pitch * maxPitch; //Between -maxPitch and +maxPitch
-  float yawRate_des = rcin_yaw * maxYawRate; //Between -maxYawRate and +maxYawRate
-
-  //state vars
-  static float integral_roll_ol, integral_roll_il, error_roll_prev, roll_IMU_prev, roll_des_prev;
-  static float integral_pitch_ol, integral_pitch_il, error_pitch_prev, pitch_IMU_prev, pitch_des_prev;
-  static float integral_yaw, error_yaw_prev;
-
-  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
-  if(zero_integrators) {
-    integral_roll_ol = 0;
-    integral_roll_il = 0;
-    integral_pitch_ol = 0;
-    integral_pitch_il = 0;
-    integral_yaw = 0;
+    //update yaw controller: 
+    yaw_desired = ahrs.yaw; //set desired yaw to current yaw, the yaw angle controller will hold this value
   }
-
-  //Outer loop - PID on angle for roll & pitch
-  //Roll
-  float error_roll = roll_des - ahrs.roll;
-  integral_roll_ol += error_roll * imu.dt;
-  integral_roll_ol = constrain(integral_roll_ol, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = (ahrs.roll - roll_IMU_prev) / imu.dt;  
-  float roll_des_ol = Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll_ol;// - Kd_ro_pi_angle*derivative_roll;
-
-  //Pitch
-  float error_pitch = pitch_des - ahrs.pitch; 
-  integral_pitch_ol += error_pitch * imu.dt;
-  integral_pitch_ol = constrain(integral_pitch_ol, -i_limit, i_limit); //saturate integrator to prevent unsafe buildup
-  float derivative_pitch = (ahrs.pitch - pitch_IMU_prev) / imu.dt; 
-  float pitch_des_ol = Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch_ol;// - Kd_ro_pi_angle*derivative_pitch;
-
-  //Apply loop gain, constrain, and LP filter for artificial damping
-  float Kl = 30.0;
-  roll_des_ol = Kl*roll_des_ol;
-  pitch_des_ol = Kl*pitch_des_ol;
-  roll_des_ol = constrain(roll_des_ol, -240.0, 240.0);
-  pitch_des_ol = constrain(pitch_des_ol, -240.0, 240.0);
-  roll_des_ol = (1.0 - B_loop_ro_pi)*roll_des_prev + B_loop_ro_pi*roll_des_ol;
-  pitch_des_ol = (1.0 - B_loop_ro_pi)*pitch_des_prev + B_loop_ro_pi*pitch_des_ol;
-
-  //Inner loop - PID on rate for roll & pitch
-  //Roll
-  error_roll = roll_des_ol - ahrs.gx;
-  integral_roll_il += error_roll * imu.dt;
-  integral_roll_il = constrain(integral_roll_il, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup 
-  derivative_roll = (error_roll - error_roll_prev) / imu.dt;
-  roll_PID = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll_il + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
-
-  //Pitch
-  error_pitch = pitch_des_ol - ahrs.gy;
-  integral_pitch_il += error_pitch * imu.dt;
-  integral_pitch_il = constrain(integral_pitch_il, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt; 
-  pitch_PID = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch_il + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
-  
-  //Single loop
-  //Yaw
-  float error_yaw = yawRate_des - ahrs.gz;
-  integral_yaw += error_yaw * imu.dt;    
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt;  
-  yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
-  
-  //Update derivative variables
-  error_roll_prev = error_roll;
-  roll_IMU_prev = ahrs.roll;
-  roll_des_prev = roll_des_ol;
-  error_pitch_prev = error_pitch;
-  pitch_IMU_prev = ahrs.pitch;
-  pitch_des_prev = pitch_des_ol;
-  error_yaw_prev = error_yaw;
 }
 
 void control_Rate(bool zero_integrators) {
-  //DESCRIPTION: Computes control commands based on state error (rate)
-  /*
-   * See explanation for control_Angle(). Everything is the same here except the error is now the desired rate - raw gyro reading.
-   */
+  //Computes control commands based on state error (rate)
+  //See explanation for control_Angle(). Everything is the same here except the error is now: desired rate - raw gyro reading.
 
   //inputs: roll_des, pitch_des, yawRate_des
   //outputs: roll_PID, pitch_PID, yaw_PID
@@ -659,7 +601,7 @@ void control_Rate(bool zero_integrators) {
   integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
   float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
-  yaw_PID = 0.01 * (Kp_yaw*error_yaw + Ki_yaw*integral_yaw + Kd_yaw*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
+  yaw_PID = 0.01 * (Kp_yaw_rate*error_yaw + Ki_yaw_rate*integral_yaw + Kd_yaw_rate*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
 
   //Update derivative variables
   error_roll_prev = error_roll;

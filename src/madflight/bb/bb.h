@@ -53,6 +53,7 @@ class BlackBox {
     void log_msg(const char* msg) {(void)msg;}
     void log_parm(const char* name, float value, float default_value) {(void)name;(void)value;(void)default_value;}
     void log_pid() {}
+    void log_att() {}
 
     //Blackbox Interface
     void setup() {}
