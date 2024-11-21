@@ -10,7 +10,7 @@ This is an Arduino library to build ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32 f
 
 ## Feedback is Welcome
 
-I enjoy hacking with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of Stars, Issues, Pull Requests, or Discussions. Thanks!
+I enjoy hacking with electronics and I'm attempting to write some decent code for this project. If you enjoy it as well, please leave some feedback in the form of &star;&star;&star; Stars, Issues, Pull Requests, or Discussions. Thanks!
 
 ## Required Hardware
 
