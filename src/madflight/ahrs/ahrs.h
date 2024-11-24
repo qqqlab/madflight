@@ -55,14 +55,14 @@ void Ahrs::update() {
   // compute euler angles from q
   
   //Low-pass filtered, corrected accelerometer data
-  ax = (1.0 - B_acc) * ax + B_acc * (imu.ax - cfg.imu_cal_ax);
-  ay = (1.0 - B_acc) * ay + B_acc * (imu.ay - cfg.imu_cal_ay);
-  az = (1.0 - B_acc) * az + B_acc * (imu.az - cfg.imu_cal_az);
+  ax += B_acc * ((imu.ax - cfg.IMU_CAL_AX) - ax);
+  ay += B_acc * ((imu.ay - cfg.IMU_CAL_AY) - ay);
+  az += B_acc * ((imu.az - cfg.IMU_CAL_AZ) - az);
 
   //Low-pass filtered, corrected gyro data
-  gx = (1.0 - B_gyr) * gx + B_gyr * (imu.gx - cfg.imu_cal_gx);
-  gy = (1.0 - B_gyr) * gy + B_gyr * (imu.gy - cfg.imu_cal_gy);
-  gz = (1.0 - B_gyr) * gz + B_gyr * (imu.gz - cfg.imu_cal_gz);
+  gx += B_gyr * ((imu.gx - cfg.IMU_CAL_GX) - gx);
+  gy += B_gyr * ((imu.gy - cfg.IMU_CAL_GY) - gy);
+  gz += B_gyr * ((imu.gz - cfg.IMU_CAL_GZ) - gz);
 
   //External Magnetometer 
   float _mx = mag.x;
@@ -77,13 +77,13 @@ void Ahrs::update() {
   //update the mag values
   if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
     //Correct the mag values with the calibration values
-    _mx = (_mx - cfg.mag_cal_x) * cfg.mag_cal_sx;
-    _my = (_my - cfg.mag_cal_y) * cfg.mag_cal_sy;
-    _mz = (_mz - cfg.mag_cal_z) * cfg.mag_cal_sz;
+    _mx = (_mx - cfg.MAG_CAL_X) * cfg.MAG_CAL_SX;
+    _my = (_my - cfg.MAG_CAL_Y) * cfg.MAG_CAL_SY;
+    _mz = (_mz - cfg.MAG_CAL_Z) * cfg.MAG_CAL_SZ;
     //Low-pass filtered magnetometer data
-    mx = (1.0 - B_mag) * mx + B_mag * _mx;
-    my = (1.0 - B_mag) * my + B_mag * _my;
-    mz = (1.0 - B_mag) * mz + B_mag * _mz;
+    mx += B_mag * (_mx - mx);
+    my += B_mag * (_my - my);
+    mz += B_mag * (_mz - mz);
   }else{
     mx = 0;
     my = 0;

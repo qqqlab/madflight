@@ -13,7 +13,7 @@
 #define HW_PIN_RCIN_INVERTER -1 //only used for STM32 targets
 //*/
 
-#define MF_TEST MF_TEST_RCIN
+#define MF_TEST MF_TEST_RCIN // | MF_TEST_CLI
 #include <madflight.h>
 
 
@@ -21,6 +21,7 @@ void setup() {
   Serial.begin(115200);
   while(!Serial);
 
+  //cli.print_boardInfo(); //print board info and pinout
   hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
 
   rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.

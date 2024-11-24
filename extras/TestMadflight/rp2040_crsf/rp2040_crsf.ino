@@ -71,7 +71,7 @@ void loop() {
   Serial.print(" dt=");
   Serial.print(dt);
   Serial.print(" imurt=");
-  Serial.print(imu.runtime_tot_max);          
+  Serial.print(imu.stat_runtime_max);          
   Serial.println();
   delay(100);
 }
@@ -322,7 +322,7 @@ void loop() {
     //Serial.printf(" baud:%d ", (int)uart.baud_actual); 
     Serial.printf(" cnt_imu_loop:%d", (int)cnt_imu_loop); cnt_imu_loop=0;
     Serial.printf(" az:%f", imu.az); 
-    Serial.printf(" runtime_tot_max:%d", (int)imu.runtime_tot_max); imu.runtime_tot_max=0;
+    Serial.printf(" stat_runtime_max:%d", (int)imu.stat_runtime_max); imu.stat_runtime_max=0;
     
     //Serial.printf(" bytes:%d", (int)cnt_rxbytes); cnt_rxbytes=0;
     Serial.printf(" avail:%d", (int)rcin_Serial->available());
@@ -384,7 +384,7 @@ void loop() {
   //Serial.printf(" baud:%d ", (int)uart.baud_actual); 
   Serial.printf(" cnt_imu_loop:%d", (int)cnt_imu_loop); cnt_imu_loop=0;
   Serial.printf(" az:%f", imu.az); 
-  Serial.printf(" runtime_tot_max:%d", (int)imu.runtime_tot_max); imu.runtime_tot_max=0;
+  Serial.printf(" stat_runtime_max:%d", (int)imu.stat_runtime_max); imu.stat_runtime_max=0;
   
   //Serial.printf(" bytes:%d", (int)cnt_rxbytes); cnt_rxbytes=0;
   Serial.printf(" avail:%d", (int)uart.available());

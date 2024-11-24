@@ -6,11 +6,14 @@ Each BARO_USE_xxx section in this file defines a specific Barometer class
 
 #define BARO_USE_NONE 1
 #define BARO_USE_BMP280 2
-#define BARO_USE_MS5611 3
+#define BARO_USE_BMP388 3
+#define BARO_USE_BMP390 4
+#define BARO_USE_MS5611 5
+
 
 class BarometerSensor {
 public:
-  virtual int setup() = 0;
+  virtual int setup(uint32_t sampleRate) = 0;
   virtual bool update(float *press, float *temp) = 0; //returns true if pressure was updated
 };
 
@@ -25,7 +28,8 @@ public:
 #if BARO_USE == BARO_USE_NONE || !defined BARO_USE
 class BarometerNone: public BarometerSensor {
 public:
-  int setup() {
+  int setup(uint32_t sampleRate) {
+    (void) sampleRate;
     Serial.println("BARO: BARO_USE_NONE");
     return 0;
   }
@@ -52,8 +56,8 @@ Adafruit_BMP280 baro_BMP280(i2c);
 class BarometerBMP280: public BarometerSensor {
 
 public:
-  int setup() {
-    Serial.println();
+  int setup(uint32_t sampleRate) {
+    (void) sampleRate;
     unsigned status;
     status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
     Serial.printf("BARO: BARO_USE_BMP280   BARO_I2C_ADR: 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
@@ -89,6 +93,58 @@ public:
 BarometerBMP280 baro_sensor;
 
 //=================================================================================================
+// BMP390 / BMP388
+//=================================================================================================
+#elif BARO_USE == BARO_USE_BMP390 || BARO_USE == BARO_USE_BMP388
+
+#include "bmp3/bmp3.h"
+
+bfs::Bmp3 bmp(&Wire, (bfs::Bmp3::I2cAddr)BARO_I2C_ADR);
+
+class BarometerBMP390: public BarometerSensor {
+
+public:
+  int setup(uint32_t sampleRate) {
+    Serial.printf("BARO: BARO_USE_BMP390/BARO_USE_BMP388  BARO_I2C_ADR: 0x%02X\n", BARO_I2C_ADR);
+    if (!bmp.Begin()) {
+      Serial.println("BARO: BARO_USE_BMP390/BARO_USE_BMP388 sensor not found");
+      return 1;
+    }
+
+    bmp.ConfigFilterCoef(bfs::Bmp3::FILTER_COEF_OFF);
+
+    //set equal or next higher sample rate
+    if(sampleRate > 100) {
+      //f = 200;
+      bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_1X_TEMP_1X);
+    }else if(sampleRate > 50) {
+      //f = 100;
+      bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_2X_TEMP_1X);
+    }else if(sampleRate > 25) {
+      //f = 50;
+      bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_8X_TEMP_1X);
+    }else if(sampleRate > 12) {
+      //f = 25;
+      bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_16X_TEMP_2X);
+    }else {
+      //f = 12.5;
+      bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_32X_TEMP_2X); //12.5Hz
+    }
+
+    return 0;
+  }
+
+  bool update(float *press, float *temp) {
+    if (!bmp.Read()) return false;
+    *press = bmp.pres_pa();
+    *temp = bmp.die_temp_c();
+    return true;
+  }
+};
+
+BarometerBMP390 baro_sensor;
+
+//=================================================================================================
 // MS5611
 //=================================================================================================
 #elif BARO_USE == BARO_USE_MS5611
@@ -103,7 +159,8 @@ public:
   //float press_pa = 0;
   //float temp_c = 0;
 
-  int setup() {
+  int setup(uint32_t sampleRate) {
+    (void) sampleRate;
     // Initialize MS5611 sensor
     // Ultra high resolution: MS5611_ULTRA_HIGH_RES
     // (default) High resolution: MS5611_HIGH_RES
@@ -147,7 +204,7 @@ int Barometer::setup(uint32_t sampleRate, float filterAltHertz, float filterVzHe
   B_vz = constrain(1 - exp(-2 * PI * filterVzHertz / sampleRate), 0.0f, 1.0f);
   dt = 0;
   ts = micros();
-  int rv = baro_sensor.setup();
+  int rv = baro_sensor.setup(sampleRate);
   if(rv != 0) {
     press = 0;
     temp = 0;
@@ -168,9 +225,9 @@ bool Barometer::update() {
     dt = (tsnew - ts) / 1000000.0;
     baro_sensor.update(&press, &temp);
     altRaw = (101325.0 - press) / 12.0;
-    float altnew = (1.0 - B_alt) * alt + B_alt * altRaw; //Low-pass filtered altitude
+    float altnew = alt + B_alt * (altRaw - alt); //Low-pass filtered altitude
     float vznew = (altnew - alt) / dt;
-    vz = (1.0 - B_vz) * vz + B_vz * vznew; //Low-pass filtered velocity
+    vz += B_vz * (vznew - vz); //Low-pass filtered velocity
     alt = altnew;
     ts = tsnew;
     return true;

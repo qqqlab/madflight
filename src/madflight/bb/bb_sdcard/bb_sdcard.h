@@ -36,7 +36,7 @@ SOFTWARE.
 //#define FREERTOS_DEFAULT_STACK_SIZE - defined in hw_xxx.h
 
 #define LOG_TYPE_LEN  64    // max number of message types
-#define QUEUE_LENGTH  50    // max number of messages in the queue
+#define QUEUE_LENGTH  100    // max number of messages in the queue
 #define MAX_MSG_LEN   89    // max message len is FMT with 89 (0x59) bytes
 
 #define HEAD_BYTE1  0xA3
@@ -233,6 +233,8 @@ public:
     msg_end();
   }
 
+  uint8_t keepFree = 5; //number of queue spots to keep free when sending messages 
+
 private:
   uint8_t buf[128];
   uint8_t buflen = 0;
@@ -354,7 +356,7 @@ private:
     }
 
     //queue message
-    queueSend(buf,buflen);
+    queueSend(buf,buflen, keepFree); //keep a few queue spots free for more important messages (such as FMT)
 
     inhibit = true;
   }
@@ -490,10 +492,11 @@ public:
   enum State_t { READY, STARTING, STARTED };
   static State_t state;
   static uint32_t startMicros;
+  static uint32_t missCnt;
 
   static void setup() {
     queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue);
-    if(xTaskCreate(bb_task, "BB", FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL)+1, &xHandle) != pdPASS ){
+    if(xTaskCreate(bb_task, "BB", FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       Serial.println("BB: Task creation failed");
     }
   }
@@ -514,6 +517,7 @@ private:
 
     //log file time start now
     startMicros = micros();
+    missCnt = 0;
 
     //write headers (flush often)
     FMT_sendFMT(); //send FMT for FMT
@@ -537,9 +541,9 @@ private:
     
     //write parameters (plot.ardupilot.org needs at least one)
     String name;
-    float value;
+    float value = 0;
     int i = 0;
-    while(cfg.getNameValue(i,&name,&value)) {
+    while(cfg.getNameAndValue(i,&name,&value)) {
       log_header_parm(name.c_str(), value, 0);
       queueFlush();
       i++;
@@ -562,14 +566,14 @@ private:
 public:
   static void stop() {
     command = STOP;
-    //send zero length message to wake up BB task
+    //send zero length message to wake up BB task to process command
     uint8_t msg = 0;
     xQueueSend(queue, (void*)&msg, 0);
   }
 
   static void start() {
     command = START;
-    //send zero length message to wake up BB task
+    //send zero length message to wake up BB task to process command
     uint8_t msg = 0;
     xQueueSend(queue, (void*)&msg, 0);
   }
@@ -589,10 +593,13 @@ private:
 
 
   //append message to queue
-  static bool queueSend(uint8_t *buf, uint8_t len) {
+  static bool queueSend(uint8_t *buf, uint8_t len, uint8_t keepfree = 0) {
+    if(keepfree && uxQueueSpacesAvailable(queue) < keepfree) return false;
     //NOTE: random data will pad the message - improve this?
     buf[0] = len; //overwrite header1 with message length
-    return ( xQueueSend(queue, (void*)buf, 0) == pdPASS );
+    bool ok = ( xQueueSend(queue, (void*)buf, 0) == pdPASS );
+    if(!ok) missCnt++;
+    return ok;
   }
 
 private:
@@ -766,6 +773,7 @@ StaticQueue_t BinLog::xStaticQueue = {};
 uint8_t BinLog::ucQueueStorageArea[QUEUE_LENGTH * sizeof(msg_t)] = {};
 BinLog::State_t BinLog::state = READY;
 BinLog::Command_t BinLog::command = NONE;
+uint32_t BinLog::missCnt = 0;
 
 
 
@@ -876,7 +884,7 @@ class BlackBox_SD : public BlackBox {
 
     void log_att() override {
       BinLog bl("ATT");
-      bl.TimeUS(millis());
+      bl.TimeUS();
       bl.i16("DesRoll",0, 1e-2, "deg");
       bl.i16("Roll",ahrs.roll*100, 1e-2, "deg");
       bl.i16("DesPitch",0, 1e-2, "deg");
@@ -890,25 +898,26 @@ class BlackBox_SD : public BlackBox {
 
     //raw (unfiltered but corrected) IMU data
     void log_imu() override {
-      BinLog bl("IMU"); 
+      BinLog bl("IMU");
+      bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
       bl.TimeUS(imu.ts);
-      bl.i16("ax",(imu.ax - cfg.imu_cal_ax)*100, 1e-2, "G"); //G
-      bl.i16("ay",(imu.ay - cfg.imu_cal_ay)*100, 1e-2, "G"); //G
-      bl.i16("az",(imu.az - cfg.imu_cal_az)*100, 1e-2, "G"); //G
-      bl.i16("gx",(imu.gx - cfg.imu_cal_gx)*10, 1e-1, "deg/s"); //dps
-      bl.i16("gy",(imu.gy - cfg.imu_cal_gy)*10, 1e-1, "deg/s"); //dps
-      bl.i16("gz",(imu.gz - cfg.imu_cal_gz)*10, 1e-1, "deg/s"); //dps
+      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*100, 1e-2, "G"); //G
+      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*100, 1e-2, "G"); //G
+      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*100, 1e-2, "G"); //G
+      bl.i16("gx",(imu.gx - cfg.IMU_CAL_GX)*10, 1e-1, "deg/s"); //dps
+      bl.i16("gy",(imu.gy - cfg.IMU_CAL_GY)*10, 1e-1, "deg/s"); //dps
+      bl.i16("gz",(imu.gz - cfg.IMU_CAL_GZ)*10, 1e-1, "deg/s"); //dps
       #if MAG_USE != MAG_USE_NONE
         //get from magnetometer
-        bl.i16("mx",((mag.x - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-        bl.i16("my",((mag.y - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-        bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
+        bl.i16("mx",((mag.x - cfg.MAG_CAL_X) * cfg.MAG_CAL_SX)*100, 1e-2, "uT"); //uT
+        bl.i16("my",((mag.y - cfg.MAG_CAL_Y) * cfg.MAG_CAL_SY)*100, 1e-2, "uT"); //uT
+        bl.i16("mz",((mag.z - cfg.MAG_CAL_Z) * cfg.MAG_CAL_SZ)*100, 1e-2, "uT"); //uT
       #else
         //get from imu
         if(imu.hasMag()) {
-          bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-          bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-          bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
+          bl.i16("mx",((imu.mx - cfg.MAG_CAL_X) * cfg.MAG_CAL_SX)*100, 1e-2, "uT"); //uT
+          bl.i16("my",((imu.my - cfg.MAG_CAL_Y) * cfg.MAG_CAL_SY)*100, 1e-2, "uT"); //uT
+          bl.i16("mz",((imu.mz - cfg.MAG_CAL_Z) * cfg.MAG_CAL_SZ)*100, 1e-2, "uT"); //uT
         }
       #endif
       bl.i16("roll",ahrs.roll*100, 1e-2, "deg"); //deg -180 to 180
@@ -931,6 +940,15 @@ class BlackBox_SD : public BlackBox {
 
     void log_parm(const char* name, float value, float default_value) {
       BinLog::log_parm(name, value, default_value);
+    }
+
+    //system status
+    void log_sys() override {
+      BinLog bl("SYS");
+      bl.TimeUS();
+      bl.u32("BBm",BinLog::missCnt);
+      bl.u32("IMi",imu.interrupt_cnt);
+      bl.i32("IMm",imu.interrupt_cnt - imu.update_cnt);
     }
 
   //-------------------------------

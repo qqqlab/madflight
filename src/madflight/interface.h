@@ -60,31 +60,33 @@ class Ahrs {
 extern Ahrs &ahrs;
 
 //=================================================================================================
-// Radio Receiver
+// RCIN - Radio Receiver
 //=================================================================================================
 
-#define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
-
-class Rcin {
+class Rcin_interface {
   public:
-    uint16_t *pwm; //pwm channel data. values: 988-2012
     virtual void setup() = 0;
-    bool update() { //returns true if channel pwm data was updated
-      bool rv = _update();
-      if(rv) {
-        update_time = millis();
-      }
-      return rv;
-    }
-    bool connected() {
-      return ((uint32_t)millis() - update_time <= (RCIN_TIMEOUT) );
-    }
-  private:
-    uint32_t update_time = 0;
-    virtual bool _update() = 0; //returns true if channel pwm data was updated
+    virtual bool update() = 0; //returns true if channel pwm data was updated
+    virtual bool connected() = 0;
+    virtual void calibrate() = 0; //interactive calibration
+
+    uint16_t *pwm; //pwm channel data. values: 988-2012
+    float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
+    float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
+    float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
+    float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
+    float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
+    bool arm = false; //arm switch state
+    uint8_t flightmode = 0; //flightmode 0 to 5
 };
 
-extern Rcin &rcin;
+extern Rcin_interface &rcin;
+
+//telemetry
+void rcin_telemetry_gps(int32_t latitude, int32_t longitude, uint16_t groundspeed, uint16_t gps_heading, uint16_t altitude, uint8_t num_satellites);
+void rcin_telemetry_flight_mode(const char *flight_mode);
+void rcin_telemetry_attitude(float pitch, float roll, float yaw);
+void rcin_telemetry_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining);
 
 //=================================================================================================
 // IMU
@@ -95,7 +97,6 @@ class Imu {
     //imu sample data (raw, uncorrected and unfiltered) 
     uint32_t ts = 0; //sample low level interrupt trigger timestamp in us
     float dt = 0; //time since last sample in seconds
-    uint32_t update_cnt = 0; //number of updates
     float ax = 0; //"North" acceleration in G
     float ay = 0; //"East" acceleration in G
     float az = 0; //"Down" acceleration in G
@@ -107,11 +108,18 @@ class Imu {
     float mz = 0; //"Down" magnetic flux in uT
 
     //interrupt statistics
+    volatile uint32_t interrupt_cnt = 0; //number of times interrupt was triggered since start
+    uint32_t update_cnt = 0; //number of times imu task was executed since start
     uint32_t overrun_cnt = 0; //number of interrupt overruns (should stay 0)
     bool _imu_interrupt_busy = false; //is interrupt handler running?
-    uint32_t runtime_int = 0; //interrupt latency from start of interrupt handler to start of interrupt task in us
-    uint32_t runtime_bus = 0; //runtime of SPI/I2C bus transfer in us
-    uint32_t runtime_tot_max = 0; //max runtime imu update including transfer in us
+    
+    //statistics - sum of values since last statReset()
+    uint32_t stat_cnt = 0; //number of accumulated samples
+    uint32_t stat_reset_ts = 0; //last time statReset() was called
+    uint32_t stat_latency = 0; //summed  interrupt latency from start of interrupt handler to start of interrupt task in us
+    uint32_t stat_io_runtime = 0; //summed  runtime of SPI/I2C io transfer in us
+    uint32_t stat_runtime = 0; //summed  runtime imu update including io transfer in us
+    uint32_t stat_runtime_max = 0; //max runtime imu update including transfer in us, since last reset to 0
 
     //pointer to onUpdate event handler
     void (*onUpdate)(void) = NULL;
@@ -120,9 +128,10 @@ class Imu {
     int setup(uint32_t sampleRate = 1000); //default: 1000 Hz sample rate
     bool waitNewSample(); //wait for new sample, returns false on fail
     bool hasMag(); //returns true if IMU has a magnetometer
-    bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)    
+    bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)
     uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
     uint32_t getSamplePeriod() {return (_sampleRate != 0 ? 1000000 / _sampleRate : 1000000);} //sensor sample period in us
+    void statReset();
 
     //low level interrupt handler (should be private, but is public, because called from interrupt)
     void _interrupt_handler();
@@ -134,7 +143,7 @@ class Imu {
 extern Imu imu;
 
 //=================================================================================================
-// Barometer
+// BARO - Barometer
 //=================================================================================================
 
 class Barometer {
@@ -163,7 +172,7 @@ class Barometer {
 extern Barometer baro;
 
 //=================================================================================================
-// Magnetometer
+// MAG - Magnetometer
 //=================================================================================================
 
 class Magnetometer {
@@ -182,7 +191,7 @@ class Magnetometer {
 extern Magnetometer &mag;
 
 //=================================================================================================
-// Battery
+// BAT - Battery
 //=================================================================================================
 
 class Battery {
@@ -205,7 +214,7 @@ extern Battery &bat;
 
 class Led {
   public:
-    virtual void setup(int pin, uint8_t led_on_value) = 0;
+    virtual void setup() = 0;
     virtual void set(bool set_on) = 0;
     void on();
     void off();
@@ -221,7 +230,10 @@ class Led {
 
 extern Led &led;
 
-//black box public interface
+//=================================================================================================
+// BB - Black Box Logging
+//=================================================================================================
+
 class BlackBox {
   public:
     //loggers
@@ -235,6 +247,7 @@ class BlackBox {
     virtual void log_pid() {}
     virtual void log_att() {}
     virtual void log_ahrs() {}
+    virtual void log_sys() {}
 
     //Blackbox Interface
     virtual void setup() {} //setup blackbox
@@ -247,3 +260,38 @@ class BlackBox {
 };
 
 extern BlackBox &bb;
+
+//=================================================================================================
+// OUT - Motor and servo output driver
+//=================================================================================================
+
+class Out {
+  public:
+    bool armed = false;
+    float command[HW_OUT_COUNT] = {0}; //last commanded outputs (values: 0.0 to 1.0)
+    PWM pwm[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
+    char type[HW_OUT_COUNT] = {'X'};
+
+    void setup();
+    bool setupMotor(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setupServo(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    void set(uint8_t i, float value); //set output
+
+  private:
+    bool _setupOutput(char typ, uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
+};
+
+extern Out out;
+
+//=================================================================================================
+// PID - PID controllers
+//=================================================================================================
+
+class PID {
+  public:
+    float PID = 0; //PID output value
+};
+
+PID PIDroll;
+PID PIDpitch;
+PID PIDyaw;

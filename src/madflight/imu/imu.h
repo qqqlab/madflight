@@ -189,14 +189,13 @@ int Imu::setup(uint32_t sampleRate) {
   _imu_ll_interrupt_busy = false;
   _imu_ll_interrupt_ts = 0;
   overrun_cnt = 0;
-  update_cnt = 0;
-  runtime_int = 0;
-  runtime_bus = 0;
-  runtime_tot_max = 0;
   dt = 0;
   ts = micros();
+  statReset();
   _imu_ll_interrupt_setup();
   _imu_ll_interrupt_enabled = true;
+  interrupt_cnt = 0;
+  update_cnt = 0;
   return rv;
 }
 
@@ -208,12 +207,26 @@ bool Imu::waitNewSample() {
   return (last_cnt != update_cnt);
 }
 
+void Imu::statReset() {
+    stat_cnt = 0; //number of accumulated samples
+    stat_latency = 0; //summed interrupt latency from start of interrupt handler to start of interrupt task in us
+    stat_io_runtime = 0; //summed runtime of SPI/I2C io transfer in us
+    stat_runtime = 0; //summed runtime imu update including io transfer in us
+    stat_runtime_max = 0; //max runtime imu update including transfer in us, since last reset to 0
+    stat_reset_ts = micros(); //last time statReset() was called
+}
+
+
+//this function executes whenever the imu task is triggered
 void Imu::_interrupt_handler() {
   //local copy of timestamp (_imu_ll_interrupt_ts might change during execution of this function)
-  uint32_t sample_ts = _imu_ll_interrupt_ts;
+  uint32_t interrupt_ts = _imu_ll_interrupt_ts;
+  
+  //start of task timestamp
+  uint32_t task_ts = micros();
   
   //latency between start of low level interrupt handler and start of this method
-  runtime_int = micros() - sample_ts;
+  stat_latency += task_ts - _imu_ll_interrupt_ts;
 
   //get sensor data and update timestamps, count
   #if IMU_HAS_MAG 
@@ -222,16 +235,18 @@ void Imu::_interrupt_handler() {
     imu_Sensor.getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
   #endif
   IMU_ROTATE();
-  dt = (sample_ts - ts) / 1000000.0;
-  ts = sample_ts;
-  runtime_bus = micros() - sample_ts - runtime_int; //runtime of SPI/I2C transfer
+  dt = (interrupt_ts - ts) / 1000000.0;
+  ts = interrupt_ts;
+  stat_io_runtime += micros() - task_ts; //runtime of SPI/I2C transfer
   update_cnt++;
 
   //call external update event handler
   if(onUpdate) onUpdate();
 
-  uint32_t rt = micros() - sample_ts; //runtime of full update
-  if(runtime_tot_max < rt) runtime_tot_max = rt; //max runtime
+  uint32_t rt = micros() - task_ts; //runtime of full update
+  stat_runtime += rt;
+  if(stat_runtime_max < rt) stat_runtime_max = rt; //max runtime
+  stat_cnt++;
 }
 
 //global Imu class instance
@@ -300,6 +315,7 @@ void _imu_ll_interrupt_handler();
 void _imu_ll_interrupt_handler() {
   _imu_ll_interrupt_ts = micros();
   if(_imu_ll_interrupt_enabled) {
+    imu.interrupt_cnt = imu.interrupt_cnt + 1; //NOTE: "imu.interrupt_cnt++" gives warning: '++' expression of 'volatile'-qualified type is deprecated
     if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
       imu.overrun_cnt++;
     } else {

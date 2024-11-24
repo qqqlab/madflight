@@ -60,7 +60,7 @@ INA226 bat_ina226;
 class BatteryINA226: public Battery {
   public:
   void setup() {
-    float Rshunt = cfg.bat_cal_i; //ohm
+    float Rshunt = cfg.BAT_CAL_I; //ohm
     float iMaxExpected = 0.080 / Rshunt; // ampere (max 80mv shunt voltage)
 
     // Default INA226 address is 0x40

@@ -29,32 +29,31 @@ SOFTWARE.
 #include "FreeRTOS_ps.h"
 
 void cli_print_overview() {
-  Serial.printf("CH%d:%d\t", 1, rcin_pwm[0]);  
-  Serial.printf("rcin_roll:%+.2f\t", rcin_roll);
-  Serial.printf("gx:%+.2f\t", ahrs.gx);
-  Serial.printf("ax:%+.2f\t", ahrs.ax);
-  Serial.printf("mx:%+.2f\t", ahrs.mx);
+  Serial.printf("rcin.pwm%d:%d\t", 1, rcin.pwm[0]);
+  Serial.printf("rcin.roll:%+.2f\t", rcin.roll);
+  Serial.printf("ahrs.gx:%+.2f\t", ahrs.gx);
+  Serial.printf("ahrs.ax:%+.2f\t", ahrs.ax);
+  Serial.printf("ahrs.mx:%+.2f\t", ahrs.mx);
   Serial.printf("ahrs.roll:%+.1f\t", ahrs.roll);
-  Serial.printf("roll_PID:%+.3f\t", roll_PID);  
-  Serial.printf("m%d%%:%1.0f\t", 1, 100*out_command[0]);
-  Serial.printf("sats:%d\t", (int)gps.sat);
-  Serial.printf("imu%%:%d\t", (int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
-  Serial.printf("imu_cnt:%d\t", (int)imu.update_cnt);
+  Serial.printf("PID.roll:%+.3f\t", PIDroll.PID);
+  Serial.printf("out.%c%d%%:%1.0f\t", out.type[0], 0, 100*out.command[0]);
+  Serial.printf("gps.sats:%d\t", (int)gps.sat);
+  Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
+  Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
 }
 
 void cli_print_rcin_RadioPWM() {
   Serial.printf("rcin_con:%d\t",rcin.connected());
-  for(int i=0;i<RCIN_NUM_CHANNELS;i++) Serial.printf("pwm%d:%d\t",i+1,rcin_pwm[i]);
+  for(int i=0;i<RCIN_NUM_CHANNELS;i++) Serial.printf("pwm%d:%d\t",i+1,rcin.pwm[i]);
 }
 
 void cli_print_rcin_RadioScaled() {
-  Serial.printf("rcin_thro:%.2f\t", rcin_thro);
-  Serial.printf("rcin_roll:%+.2f\t", rcin_roll);
-  Serial.printf("rcin_pitch:%+.2f\t", rcin_pitch);
-  Serial.printf("rcin_yaw:%+.2f\t", rcin_yaw);
-  Serial.printf("rcin_arm:%d\t", rcin_armed);
-  Serial.printf("rcin_aux:%d\t", rcin_aux);
-  Serial.printf("out_armed:%d\t", out_armed);
+  Serial.printf("rcin.throttle:%.2f\t", rcin.throttle);
+  Serial.printf("roll:%+.2f\t", rcin.roll);
+  Serial.printf("pitch:%+.2f\t", rcin.pitch);
+  Serial.printf("yaw:%+.2f\t", rcin.yaw);
+  Serial.printf("arm:%d\t", rcin.arm);
+  Serial.printf("flightmode:%d\t", rcin.flightmode);
 }
 
 void cli_print_imu_GyroData() {
@@ -74,33 +73,47 @@ void cli_print_ahrs_RollPitchYaw() {
 }
 
 void cli_print_control_PIDoutput() {
-  Serial.printf("roll_PID:%+.3f\t",roll_PID);
-  Serial.printf("pitch_PID:%+.3f\t",pitch_PID);
-  Serial.printf("yaw_PID:%+.3f\t",yaw_PID);
+  Serial.printf("PID.roll:%+.3f\t",PIDroll.PID);
+  Serial.printf("pitch:%+.3f\t",PIDpitch.PID);
+  Serial.printf("yaw:%+.3f\t",PIDyaw.PID);
 }
 
-void cli_print_out_MotorCommands() {
-  Serial.printf("out_armed:%d\t", out_armed);
-  for(int i=0;i<out_MOTOR_COUNT;i++) Serial.printf("m%d%%:%1.0f\t", i+1, 100*out_command[i]);
-}
-
-void cli_print_out_ServoCommands() {
-  for(int i=out_MOTOR_COUNT;i<HW_OUT_COUNT;i++) Serial.printf("s%d%%:%1.0f\t", i-out_MOTOR_COUNT+1, 100*out_command[i]);
+void cli_print_out_Command() {
+  Serial.printf("out.armed:%d\t", out.armed);
+  for(int i=0;i<HW_OUT_COUNT;i++) {
+    if(out.type[i]!='X') {
+      Serial.printf("%c%d%%:%1.0f\t", out.type[i], i, 100*out.command[i]);
+    }
+  }
 }
 
 void cli_print_imu_Rate() {
+  static uint32_t interrupt_cnt_last = 0;
   static uint32_t update_cnt_last = 0;
-  Serial.printf("imu%%:%d\t", (int)(100 * imu.runtime_tot_max / imu.getSamplePeriod()));
-  Serial.printf("period:%d\t", (int)imu.getSamplePeriod());
-  Serial.printf("dt:%d\t", (int)(imu.dt * 1000000.0));
-  Serial.printf("rt:%d\t", (int)imu.runtime_tot_max);
-  Serial.printf("rt_int:%d\t", (int)imu.runtime_int);
-  Serial.printf("rt_bus:%d\t", (int)imu.runtime_bus);
-  Serial.printf("rt_fus:%d\t", (int)(imu.runtime_tot_max - imu.runtime_bus - imu.runtime_int));
-  Serial.printf("overruns:%d\t", (int)(imu.overrun_cnt));
-  Serial.printf("cnt:%d\t", (int)imu.update_cnt);
-  Serial.printf("loops:%d\t", (int)(imu.update_cnt - update_cnt_last));
+  static uint32_t ts_last = 0;
+  uint32_t delta_int = imu.interrupt_cnt - interrupt_cnt_last;
+  interrupt_cnt_last = imu.interrupt_cnt;
+  uint32_t delta_upd = imu.update_cnt - update_cnt_last;
   update_cnt_last = imu.update_cnt;
+  uint32_t now = micros();
+  uint32_t dt = now - ts_last;
+  ts_last = now;
+  //Serial.printf("imu%%:%d\t", (int)(100 * (imu.stat_runtime_max - imu.stat_latency) / imu.getSamplePeriod()));
+  Serial.printf("samp_hz:%d\t", (int)(1000000/imu.getSamplePeriod()));
+  Serial.printf("intr_hz:%.0f\t", (float)delta_int/(dt*1e-6));
+  Serial.printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
+  int miss = (100 - (100 * delta_upd) / delta_int);
+  Serial.printf("miss%%:%d\t", (miss<0?0:miss));
+  //Serial.printf("stat_cnt:%d\t", (int)(imu.stat_cnt));
+  Serial.printf("latency_us:%d\t", (int)(imu.stat_latency/imu.stat_cnt));
+  Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime/imu.stat_cnt));
+  Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime)/imu.stat_cnt));
+  Serial.printf("rt_us:%d\t", (int)(imu.stat_runtime/imu.stat_cnt));
+  Serial.printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
+  Serial.printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
+  Serial.printf("upd_cnt:%d\t", (int)imu.update_cnt);
+  Serial.printf("miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
+  imu.statReset();
 }
 
 void cli_print_bat() {
@@ -127,29 +140,28 @@ void cli_print_gps() {
 }
 
 struct cli_print_s {
-  String cmd;
-  String info;
+  const char *cmd;
+  const char *info;
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 14
+#define CLI_PRINT_FLAG_COUNT 13
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
-struct cli_print_s cli_print_options[] = {
-  {"po", "Overview: pwm1, rcin_roll, gyroX, accX, magX, ahrs.roll, pid_roll, motor1, imu%", cli_print_overview},
-  {"ppwm", "Radio pwm (expected: 1000 to 2000)", cli_print_rcin_RadioPWM},
+static const struct cli_print_s cli_print_options[] = {
+  {"po",     "Overview", cli_print_overview},
+  {"ppwm",   "Radio pwm (expected: 1000 to 2000)", cli_print_rcin_RadioPWM},
   {"pradio", "Scaled radio (expected: -1 to 1)", cli_print_rcin_RadioScaled},
-  {"pimu", "IMU loop timing (expected: imu%% < 50)", cli_print_imu_Rate},
-  {"pgyro", "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_print_imu_GyroData},
-  {"pacc", "Filtered accelerometer (expected: -2 to 2; x,y 0 when level, z 1 when level)", cli_print_imu_AccData},
-  {"pmag", "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
-  {"proll", "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_print_ahrs_RollPitchYaw},
-  {"ppid", "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
-  {"pmot", "Motor output (expected: 0 to 1)", cli_print_out_MotorCommands},
-  {"pservo", "Servo output (expected: 0 to 1)", cli_print_out_ServoCommands},
-  {"pbat", "Battery voltage, current, Ah used and Wh used", cli_print_bat},
-  {"pbaro", "Barometer", cli_print_baro},
-  {"pgps", "GPS", cli_print_gps},
+  {"pimu",   "IMU loop timing (expected: imu%% < 50)", cli_print_imu_Rate},
+  {"pgyro",  "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_print_imu_GyroData},
+  {"pacc",   "Filtered accelerometer (expected: -2 to 2; x,y 0 when level, z 1 when level)", cli_print_imu_AccData},
+  {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
+  {"pahrs",  "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_print_ahrs_RollPitchYaw},
+  {"ppid",   "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
+  {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
+  {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
+  {"pbaro",  "Barometer", cli_print_baro},
+  {"pgps",   "GPS", cli_print_gps},
 };
 
 
@@ -190,7 +202,7 @@ public:
     "-- INFO & TOOLS --\n"
     "help or ? This info\n"
     "board     Board info and pinout\n"
-    "ps        Task list\n"    
+    "ps        Task list\n"
     "i2c       I2C scan\n"
     "reboot    Reboot flight controller\n"
     "-- PRINT --\n"
@@ -199,7 +211,9 @@ public:
     );
     for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
       Serial.print(cli_print_options[i].cmd);
-      for(int j=cli_print_options[i].cmd.length();j<9;j++) Serial.print(' ');
+      for(int j = strlen(cli_print_options[i].cmd); j < 9; j++) {
+        Serial.print(' ');
+      }
       Serial.print(' ');
       Serial.print(cli_print_options[i].info);
       Serial.println();
@@ -221,6 +235,7 @@ public:
     "-- CALIBRATE --\n"
     "calimu    Calibrate IMU error\n"
     "calmag    Calibrate magnetometer\n"
+    "calradio  Calibrate RC Radio\n"
     );
   }
 
@@ -255,7 +270,7 @@ public:
   void executeCmd(String cmd, String arg1 = "", String arg2 = "") {
     //process print commands
     for (int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
-      if (cmd == cli_print_options[i].cmd) {
+      if (strcmp(cmd.c_str(), cli_print_options[i].cmd) == 0) {
         cli_print_flag[i] = !cli_print_flag[i];
         return;
       }
@@ -297,11 +312,16 @@ public:
       cfg.write();
       Serial.println("cwrite completed");
     }else if (cmd == "cread") {
+      cli_print_all(false);
       cfg.read();
     }else if (cmd == "calimu") {
+      cli_print_all(false);
       calibrate_IMU();
     }else if (cmd == "calmag") {
       calibrate_Magnetometer();
+    }else if (cmd == "calradio") {
+      cli_print_all(false);
+      rcin.calibrate();
     }else if (cmd == "ps") {
       freertos_ps();
     }else if (cmd != "") {
@@ -446,12 +466,12 @@ public:
 public:
 
   void calibrate_gyro() {
-    Serial.println("Calibrating gyro, this takes a couple of seconds...");
+    Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
     calibrate_IMU2(true);
   }
 
   void calibrate_IMU() {
-    Serial.println("Calibrating IMU, this takes a couple of seconds...");
+    Serial.println("Calibrating IMU, don't move vehicle, this takes a couple of seconds...");
     calibrate_IMU2(false);
   }
 
@@ -485,9 +505,9 @@ public:
     azerr -= 1.0;
 
 
-    Serial.printf("set imu_cal_gx %+f #config was %+f\n", gxerr, cfg.imu_cal_gx);
-    Serial.printf("set imu_cal_gy %+f #config was %+f\n", gyerr, cfg.imu_cal_gy);
-    Serial.printf("set imu_cal_gz %+f #config was %+f\n", gzerr, cfg.imu_cal_gz);
+    Serial.printf("set IMU_CAL_GX %+f #config was %+f\n", gxerr, cfg.IMU_CAL_GX);
+    Serial.printf("set IMU_CAL_GY %+f #config was %+f\n", gyerr, cfg.IMU_CAL_GY);
+    Serial.printf("set IMU_CAL_GZ %+f #config was %+f\n", gzerr, cfg.IMU_CAL_GZ);
 
     bool apply_gyro = true;
     
@@ -496,9 +516,9 @@ public:
       float gtol = 10;
       apply_gyro = ( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol );
     }else{
-      Serial.printf("set imu_cal_ax %+f #config was %+f\n", axerr, cfg.imu_cal_ax);
-      Serial.printf("set imu_cal_ay %+f #config was %+f\n", ayerr, cfg.imu_cal_ay);
-      Serial.printf("set imu_cal_az %+f #config was %+f\n", azerr, cfg.imu_cal_az);
+      Serial.printf("set IMU_CAL_AX %+f #config was %+f\n", axerr, cfg.IMU_CAL_AX);
+      Serial.printf("set IMU_CAL_AY %+f #config was %+f\n", ayerr, cfg.IMU_CAL_AY);
+      Serial.printf("set IMU_CAL_AZ %+f #config was %+f\n", azerr, cfg.IMU_CAL_AZ);
     }
 /*
       //only apply reasonable acc errors
@@ -508,50 +528,21 @@ public:
 */
     
     if (apply_gyro) {
-      cfg.imu_cal_gx = gxerr;
-      cfg.imu_cal_gy = gyerr;
-      cfg.imu_cal_gz = gzerr;
+      cfg.IMU_CAL_GX = gxerr;
+      cfg.IMU_CAL_GY = gyerr;
+      cfg.IMU_CAL_GZ = gzerr;
     }else{
        Serial.println("=== Not applying gyro correction, out of tolerance ===");
     }
   
     if (!gyro_only) {
-      cfg.imu_cal_ax = axerr;
-      cfg.imu_cal_ay = ayerr;
-      cfg.imu_cal_az = azerr;
+      cfg.IMU_CAL_AX = axerr;
+      cfg.IMU_CAL_AY = ayerr;
+      cfg.IMU_CAL_AZ = azerr;
     }
     
     Serial.println("Use CLI 'cwrite' to write these values to flash");
   }
-
-/*
-  void calibrate_ESCs() { //TODO
-    //DESCRIPTION: Used in void setup() to allow standard ESC calibration procedure with the radio to take place.
-    //  Simulates the void loop(), but only for the purpose of providing throttle pass through to the motors, so that you can
-    //  power up with throttle at full, let ESCs begin arming sequence, and lower throttle to zero. This function should only be
-    //  uncommented when performing an ESC calibration.
-
-    uint32_t ts = micros();
-    while (true) {
-      while ( (micros() - ts) < (1000000U / loop_freq) ); //Keeps loop sample rate constant. (Waste time until sample time has passed.)
-      ts = micros();
-
-      led_SwitchON(true); //LED on to indicate we are not in main loop
-
-      rcin_GetCommands(); //Pulls current available radio commands
-      rcin_Failsafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
-      rcin_Normalize(); //Convert raw commands to normalized values based on saturated control limits
-      
-      //set all motors
-      for(int i=0;i<out_MOTOR_COUNT;i++) out_command[i] = rcin_thro;
-    
-      //out_KillSwitch(); //Don't update motor outputs to 0 if disarmed
-      out_SetCommands(); //Sends command pulses to each motor pin
-      
-      //printRadioData(); //Radio pwm values (expected: 1000 to 2000)
-    }
-  }
-*/
 
   void calibrate_Magnetometer() {
     float bias[3], scale[3];
@@ -565,21 +556,21 @@ public:
     Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
     if ( _calibrate_Magnetometer(bias, scale) ) {
       Serial.println("Calibration Successful!");
-      Serial.printf("set mag_cal_x  %+f #config %+f\n", bias[0], cfg.mag_cal_x);
-      Serial.printf("set mag_cal_y  %+f #config %+f\n", bias[1], cfg.mag_cal_y);
-      Serial.printf("set mag_cal_z  %+f #config %+f\n", bias[2], cfg.mag_cal_z);
-      Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
-      Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
-      Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
+      Serial.printf("set MAG_CAL_X  %+f #config %+f\n", bias[0], cfg.MAG_CAL_X);
+      Serial.printf("set MAG_CAL_Y  %+f #config %+f\n", bias[1], cfg.MAG_CAL_Y);
+      Serial.printf("set MAG_CAL_Z  %+f #config %+f\n", bias[2], cfg.MAG_CAL_Z);
+      Serial.printf("set MAG_CAL_SX %+f #config %+f\n", scale[0], cfg.MAG_CAL_SX);
+      Serial.printf("set MAG_CAL_SY %+f #config %+f\n", scale[1], cfg.MAG_CAL_SY);
+      Serial.printf("set MAG_CAL_SZ %+f #config %+f\n", scale[2], cfg.MAG_CAL_SZ);
       Serial.println("Note: use CLI 'cwrite' to write these values to flash");
       Serial.println(" ");
       Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-      cfg.mag_cal_x = bias[0];
-      cfg.mag_cal_y = bias[1];
-      cfg.mag_cal_z = bias[2];
-      cfg.mag_cal_sx = scale[0];
-      cfg.mag_cal_sy = scale[1];
-      cfg.mag_cal_sz = scale[2];
+      cfg.MAG_CAL_X = bias[0];
+      cfg.MAG_CAL_Y = bias[1];
+      cfg.MAG_CAL_Z = bias[2];
+      cfg.MAG_CAL_SX = scale[0];
+      cfg.MAG_CAL_SY = scale[1];
+      cfg.MAG_CAL_SZ = scale[2];
     }
     else {
       Serial.println("ERROR: No magnetometer");
@@ -717,7 +708,7 @@ private:
         }
       }
       if (cli_print_need_newline) Serial.println();
-      imu.runtime_tot_max = 0; //reset maximum runtime
+      imu.stat_runtime_max = 0; //reset maximum runtime
     }
   }
 

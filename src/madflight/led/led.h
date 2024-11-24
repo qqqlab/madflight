@@ -7,7 +7,7 @@
 /* INTERFACE
 class Led {
   public:
-    virtual void setup(int pin, uint8_t led_on_value) = 0;
+    virtual void setup() = 0;
     virtual void set(bool set_on) = 0;
     void on();
     void off();
@@ -52,12 +52,33 @@ void Led::enable() {
   off();
 }
 
+//=================================================================================================
+// None or undefined
+//=================================================================================================
+#ifndef HW_PIN_LED
 
+class LedNone : public Led {
+  public:
+    void setup() {}
+
+    void set(bool set_on) {}
+};
+
+LedNone led_instance;
+
+//=================================================================================================
+// Single LED
+//=================================================================================================
+#else
+  
+#ifndef HW_LED_ON
+  #define HW_LED_ON 0
+#endif
 class LedSingle : public Led {
   public:
-    void setup(int pin, uint8_t led_on_value) {
-      this->pin = pin;
-      this->led_on_value = led_on_value;
+    void setup() {
+      this->pin = HW_PIN_LED;
+      this->led_on_value = HW_LED_ON;
       if(pin<0) return;
       pinMode(pin, OUTPUT);
       enabled = true;
@@ -74,5 +95,8 @@ class LedSingle : public Led {
 };
 
 LedSingle led_instance;
+
+//=================================================================================================
+#endif
 
 Led &led = led_instance;
