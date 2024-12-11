@@ -17,7 +17,7 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 ========================================================================================================================*/
 
 //Available sensors
-//#define IMU_USE_NONE 0 //always need an IMU
+#define IMU_USE_NONE 0
 #define IMU_USE_SPI_BMI270 1
 #define IMU_USE_SPI_MPU9250 2
 #define IMU_USE_SPI_MPU6500 3
@@ -78,8 +78,13 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 //=====================================================================================================================
 // setup the imu_Sensor object
 //=====================================================================================================================
+#if !defined IMU_USE 
+  #define IMU_USE IMU_USE_NONE
 
-#if IMU_USE == IMU_USE_SPI_BMI270
+#elif IMU_USE == IMU_USE_NONE
+  //do nothing
+
+#elif IMU_USE == IMU_USE_SPI_BMI270
   #define IMU_TYPE "IMU_USE_SPI_BMI270"
   #define IMU_IS_I2C 0
   #define IMU_HAS_MAG 0
@@ -156,20 +161,31 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
 
-// None or undefined
-#elif IMU_USE == IMU_USE_NONE || !defined IMU_USE
-  #error "IMU_USE not defined"
-
 // Invalid value
 #else
   #error "invalid IMU_USE value"
 #endif
+
+
 
 //========================================================================================================================//
 // Imu Class Implementation
 //========================================================================================================================//
 
 #include "../interface.h" //Imu class declaration
+
+//global Imu class instance
+Imu imu;
+
+#if IMU_USE == IMU_USE_NONE
+  //dummy class define when no imu is present
+  int Imu::setup(uint32_t sampleRate) {return 0;}
+  bool Imu::waitNewSample() {return false;}
+  bool Imu::hasMag() {return false;}
+  bool Imu::usesI2C() {return false;}
+  void Imu::statReset() {}
+  void Imu::_interrupt_handler() {}
+#else //#if IMU_USE == IMU_USE_NONE
 
 void _imu_ll_interrupt_setup(); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
@@ -249,9 +265,6 @@ void Imu::_interrupt_handler() {
   stat_cnt++;
 }
 
-//global Imu class instance
-Imu imu;
-
 //========================================================================================================================//
 // _IMU_LL_ IMU Low Level Interrrupt Handler
 //========================================================================================================================//
@@ -325,3 +338,5 @@ void _imu_ll_interrupt_handler() {
     }
   }
 }
+
+#endif //#if IMU_USE == IMU_USE_NONE

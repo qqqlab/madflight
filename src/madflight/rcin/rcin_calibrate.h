@@ -31,8 +31,8 @@ private:
   stick_t arm; //arm switch
   stick_t flt; //flightmode switch
 
-  bool ignore[RCIN_NUM_CHANNELS]={}; //channels to ignore
-  int16_t pc[RCIN_NUM_CHANNELS] = {0}; //temp value
+  bool ignore[RCIN_NUM_CHANNELS] = {}; //channels to ignore
+  int16_t pc[RCIN_NUM_CHANNELS] = {}; //temp value
   int16_t arm_last; //temp value
 
 void prompt(const char *msg) {

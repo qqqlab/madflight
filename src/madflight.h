@@ -28,6 +28,34 @@ SOFTWARE.
 
 #pragma once
 
+//defaults for OUT
+#ifndef HW_OUT_COUNT
+  #define HW_OUT_COUNT 0
+  #define HW_PIN_OUT_LIST {}
+#endif
+
+//defaults for RCIN
+#ifndef RCIN_NUM_CHANNELS
+  #define RCIN_NUM_CHANNELS 0
+#endif
+
+//defaults for madflight_setup();
+#ifndef IMU_SAMPLE_RATE
+  #define IMU_SAMPLE_RATE 1000
+#endif
+#ifndef BARO_SAMPLE_RATE
+  #define BARO_SAMPLE_RATE 100
+#endif
+#ifndef IMU_GYR_LP_HZ
+  #define IMU_GYR_LP_HZ 70
+#endif
+#ifndef IMU_ACC_LP_HZ
+  #define IMU_ACC_LP_HZ 60
+#endif
+#ifndef IMU_MAG_LP_HZ
+  #define IMU_MAG_LP_HZ 1e10
+#endif
+
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
   #include <madflight/hw_ESP32/hw_ESP32.h>
@@ -149,6 +177,7 @@ SOFTWARE.
     hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
     cfg.begin(); //read config from EEPROM
     cli.print_i2cScan(); //print i2c scan
+
     rcin.setup(); //Initialize radio communication.
 
     //IMU: keep on trying until no error is returned (some sensors need a couple of tries...)

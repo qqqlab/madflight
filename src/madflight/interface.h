@@ -268,9 +268,9 @@ extern BlackBox &bb;
 class Out {
   public:
     bool armed = false;
-    float command[HW_OUT_COUNT] = {0}; //last commanded outputs (values: 0.0 to 1.0)
+    float command[HW_OUT_COUNT] = {}; //last commanded outputs (values: 0.0 to 1.0)
     PWM pwm[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
-    char type[HW_OUT_COUNT] = {'X'};
+    char type[HW_OUT_COUNT] = {};
 
     void setup();
     bool setupMotor(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);

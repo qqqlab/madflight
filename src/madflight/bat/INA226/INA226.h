@@ -102,69 +102,66 @@ typedef enum
 
 class INA226
 {
-    public:
+  public:
 
-	bool begin(HW_WIRETYPE *i2c, uint8_t address = INA226_ADDRESS);
-	bool configure(ina226_averages_t avg = INA226_AVERAGES_1, ina226_busConvTime_t busConvTime = INA226_BUS_CONV_TIME_1100US, ina226_shuntConvTime_t shuntConvTime = INA226_SHUNT_CONV_TIME_1100US, ina226_mode_t mode = INA226_MODE_SHUNT_BUS_CONT);
-	bool calibrate(float rShuntValue = 0.1, float iMaxExcepted = 2);
+    bool begin(HW_WIRETYPE *i2c, uint8_t address = INA226_ADDRESS);
+    bool configure(ina226_averages_t avg = INA226_AVERAGES_1, ina226_busConvTime_t busConvTime = INA226_BUS_CONV_TIME_1100US, ina226_shuntConvTime_t shuntConvTime = INA226_SHUNT_CONV_TIME_1100US, ina226_mode_t mode = INA226_MODE_SHUNT_BUS_CONT);
+    bool calibrate(float rShuntValue, float iMaxExpected = 0);
 
-	ina226_averages_t getAverages(void);
-	ina226_busConvTime_t getBusConversionTime(void);
-	ina226_shuntConvTime_t getShuntConversionTime(void);
-	ina226_mode_t getMode(void);
+    bool isConversionReady(void);
 
-  bool isConversionReady(void);
+    float readBusVoltage(void);
+    float readShuntCurrent(void);
+    float readBusPower(void);
+    float readShuntVoltage(void);
 
-	void enableShuntOverLimitAlert(void);
-	void enableShuntUnderLimitAlert(void);
-	void enableBusOvertLimitAlert(void);
-	void enableBusUnderLimitAlert(void);
-	void enableOverPowerLimitAlert(void);
-	void enableConversionReadyAlert(void);
+    ina226_averages_t getAverages(void);
+    ina226_busConvTime_t getBusConversionTime(void);
+    ina226_shuntConvTime_t getShuntConversionTime(void);
+    ina226_mode_t getMode(void);
 
-	void disableAlerts(void);
+    void enableShuntOverLimitAlert(void);
+    void enableShuntUnderLimitAlert(void);
+    void enableBusOvertLimitAlert(void);
+    void enableBusUnderLimitAlert(void);
+    void enableOverPowerLimitAlert(void);
+    void enableConversionReadyAlert(void);
 
-	void setBusVoltageLimit(float voltage);
-	void setShuntVoltageLimit(float voltage);
-	void setPowerLimit(float watts);
+    void disableAlerts(void);
 
-	void setAlertInvertedPolarity(bool inverted);
-	void setAlertLatch(bool latch);
+    void setBusVoltageLimit(float voltage);
+    void setShuntVoltageLimit(float voltage);
+    void setPowerLimit(float watts);
 
-	bool isMathOverflow(void);
-	bool isAlert(void);
+    void setAlertInvertedPolarity(bool inverted);
+    void setAlertLatch(bool latch);
 
-	float readShuntCurrent(void);
-	float readShuntVoltage(void);
-	float readBusPower(void);
-	float readBusVoltage(void);
-	int16_t readRawShuntCurrent(void);
+    bool isMathOverflow(void);
+    bool isAlert(void);
 
-	float getMaxPossibleCurrent(void);
-	float getMaxCurrent(void);
-	float getMaxShuntVoltage(void);
-	float getMaxPower(void);
+    int16_t readRawShuntCurrent(void);
+    int16_t readRawShuntVoltage(void);
 
-	uint16_t getMaskEnable(void);
+    float getMaxPossibleCurrent(void);
+    float getMaxCurrent(void);
+    float getMaxShuntVoltage(void);
+    float getMaxPower(void);
 
-    private:
+    uint16_t getMaskEnable(void);
 
-  HW_WIRETYPE *_i2c;
-	int8_t inaAddress;
-	float currentLSB, powerLSB;
-	float vShuntMax, vBusMax, rShunt;
+  private:
 
-	void setMaskEnable(uint16_t mask);
+    HW_WIRETYPE *_i2c;
+    int8_t inaAddress;
+    float currentLSB = 1, powerLSB = 25;
+    float vShuntMax = 0, vBusMax = 0, rShunt = 0;
+    float shuntLSB = 1;
 
-	void writeRegister16(uint8_t reg, uint16_t val);
-	int16_t readRegister16(uint8_t reg);
+    void setMaskEnable(uint16_t mask);
+
+    void writeRegister16(uint8_t reg, uint16_t val);
+    int16_t readRegister16(uint8_t reg);
 };
-
-
-
-
-
-
 
 
 
@@ -189,26 +186,26 @@ bool INA226::configure(ina226_averages_t avg, ina226_busConvTime_t busConvTime, 
     return true;
 }
 
+//NOTE: setting lower iMaxExpected than actual max scale does not improve resolution of the CURRENT register when averaging
+//for example if CAL = 10*2048, then CURRENT register will always be a multiple of 10
 bool INA226::calibrate(float rShuntValue, float iMaxExpected)
 {
-    uint16_t calibrationValue;
     rShunt = rShuntValue;
+    
+    if(iMaxExpected <= 0) iMaxExpected = vShuntMax / rShunt; //default to full range for rShunt
 
-    float minimumLSB;
+    shuntLSB = 2.5e-6 / rShunt; //I[A] = regShuntVoltage * shuntLSB
 
-    minimumLSB = iMaxExpected / 32767;
+    //calculate best fitting CAL value
+    float minimumLSB = iMaxExpected / 32768;
+    uint32_t calibrationValue = 0.00512 / (minimumLSB * rShunt) + 0.5;
+    if (calibrationValue < 1) calibrationValue = 1;
+    if (calibrationValue > 0xffff) calibrationValue = 0xffff;
+    writeRegister16(INA226_REG_CALIBRATION, (uint16_t)calibrationValue);
 
-    currentLSB = (uint32_t)(minimumLSB * 100000000);
-    currentLSB /= 100000000;
-    currentLSB /= 0.0001;
-    currentLSB = ceil(currentLSB);
-    currentLSB *= 0.0001;
-
+    //calculate currentLSB based on used CAL value
+    currentLSB = 0.00512 / (calibrationValue * rShunt);
     powerLSB = currentLSB * 25;
-
-    calibrationValue = (uint16_t)((0.00512) / (currentLSB * rShunt));
-
-    writeRegister16(INA226_REG_CALIBRATION, calibrationValue);
 
     return true;
 }
@@ -256,7 +253,7 @@ float INA226::readBusPower(void)
 }
 
 float INA226::readShuntCurrent(void)
-{
+{ 
     return (readRegister16(INA226_REG_CURRENT) * currentLSB);
 }
 
@@ -267,11 +264,12 @@ int16_t INA226::readRawShuntCurrent(void)
 
 float INA226::readShuntVoltage(void)
 {
-    float voltage;
+    return (readRawShuntVoltage() * 0.0000025);
+}
 
-    voltage = readRegister16(INA226_REG_SHUNTVOLTAGE);
-
-    return (voltage * 0.0000025);
+int16_t INA226::readRawShuntVoltage(void)
+{
+    return readRegister16(INA226_REG_SHUNTVOLTAGE);
 }
 
 float INA226::readBusVoltage(void)
