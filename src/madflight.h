@@ -34,11 +34,6 @@ SOFTWARE.
   #define HW_PIN_OUT_LIST {}
 #endif
 
-//defaults for RCIN
-#ifndef RCIN_NUM_CHANNELS
-  #define RCIN_NUM_CHANNELS 0
-#endif
-
 //defaults for madflight_setup();
 #ifndef IMU_SAMPLE_RATE
   #define IMU_SAMPLE_RATE 1000

@@ -29,7 +29,7 @@
 //#define MAG_I2C_ADR  0x77 // Set magnetometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- BATTERY MONITOR
-#define BAT_USE  BAT_USE_NONE // Select one: BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
+#define BAT_USE  BAT_USE_NONE // Select one: BAT_USE_INA226, BAT_USE_INA228, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
 #define BB_USE  BB_USE_NONE // Select one: BB_USE_SD, BB_USE_SDMMC, BB_USE_NONE
