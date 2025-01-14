@@ -21,7 +21,7 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2023-2024 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
@@ -120,8 +120,12 @@ void loop() {
 
 //update all I2C sensors, called from loop() with SPI IMU, or called from imu_loop() with I2C IMU
 void i2c_sensors_update() {
-  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated. 
-  if(baro.update()) bb.log_baro(); //log if pressure updated
+  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated.
+  alt.updateAccelUp(ahrs.getAccelUp(), ahrs.ts); //NOTE: do this here and not in imu_loop() because `alt` object is not thread safe. - Update altitude estimator with current earth-frame up acceleration measurement
+  if(baro.update()) {
+    alt.updateBaroAlt(baro.alt, baro.ts); //update altitude estimator with current altitude measurement
+    bb.log_baro(); //log if pressure updated
+  }
   mag.update();
 }
 

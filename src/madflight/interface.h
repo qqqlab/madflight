@@ -31,9 +31,9 @@ SOFTWARE.
 //=================================================================================================
 class Ahrs {
   public:
-    float gx = 0, gy = 0, gz = 0; //corrected and filtered imu gyro measurements in deg/sec
-    float ax = 0, ay = 0, az = 0; //corrected and filtered imu accel measurements in g
-    float mx = 0, my = 0, mz = 0; //corrected and filtered external magnetometer or internal imu mag measurements in uT
+    float gx = 0, gy = 0, gz = 0; //corrected and filtered imu gyro measurements in [deg/sec]
+    float ax = 0, ay = 0, az = 0; //corrected and filtered imu accel measurements in [g]
+    float mx = 0, my = 0, mz = 0; //corrected and filtered external magnetometer or internal imu mag measurements in [uT]
     float q[4] = {1,0,0,0};  //quaternion NED reference frame
     float roll = 0;          //roll in degrees: -180 to 180, roll right is positive
     float pitch = 0;         //pitch in degrees: -90 to 90, pitch up is positive
@@ -41,6 +41,7 @@ class Ahrs {
     float B_gyr = 1.0; //gyr filter constant
     float B_acc = 1.0; //acc filter constant
     float B_mag = 1.0; //mag filter constant
+    uint32_t ts = 0; //IMU sample timestamp
 
     static constexpr float rad_to_deg = 57.2957795132f;
     static constexpr float deg_to_rad = 0.0174532925199f;
@@ -49,7 +50,7 @@ class Ahrs {
     virtual void setInitalOrientation() {}
     void update(); //get imu+mag data, filter it, and call fusionUpdate() to update q
 
-    static float lowpass_to_beta(float f0, float fs); //compute beta coeffient for low pass filter
+    float getAccelUp(); //get acceleration in earth-frame up direction in [m/s^2]
 
   protected:
     virtual void fusionUpdate() = 0;
@@ -149,24 +150,21 @@ extern Imu imu;
 class Barometer {
   public:
     //Barometer sample data
-    uint32_t ts = 0;  // Sample timestamp in us
-    float dt = 0;     // Time since last sample in seconds
-    float press = 0;  // Pressure in Pascal
-    float altRaw = 0; // Approximate International Standard Atmosphere (ISA) Altitude in meter
-    float alt = 0;    // Filtered approximate International Standard Atmosphere (ISA) Altitude in meter
-    float vz = 0;     // Filtered vertical speed in m/s, down is negative
-    float temp = 0;   // Temperature in Celcius
+    uint32_t ts = 0;  // Sample timestamp in [us]
+    float dt = 0;     // Time since last sample in [seconds]
+    float press = 0;  // Pressure in [Pascal]
+    float alt = 0;    // Approximate International Standard Atmosphere (ISA) Altitude in [m]
+    float temp = 0;   // Temperature in [Celcius]
 
-    int setup(uint32_t sampleRate = 100, float filterAltHertz = 2.0, float filterVzHertz = 0.5); //default: 100 Hz sample rate
+    bool installed(); //returns true if a sensor is installed
+    int setup(uint32_t sampleRate = 100); //default: 100 Hz sample rate
     bool update(); //returns true if pressure was updated
-    uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
-    uint32_t getSamplePeriod() {return _samplePeriod;} //sensor sample period in us
+    uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in [Hz]
+    uint32_t getSamplePeriod() {return _samplePeriod;} //sensor sample period in [us]
 
   protected:
-    uint32_t _sampleRate = 0; //sensor sample rate in Hz
-    uint32_t _samplePeriod = 0; //sensor sample period in us
-    float B_alt = 1.0; //alt filter constant
-    float B_vz = 1.0; //vz filter constant
+    uint32_t _sampleRate = 0; //sensor sample rate in [Hz]
+    uint32_t _samplePeriod = 0; //sensor sample period in [us]
 };
 
 extern Barometer baro;
@@ -267,15 +265,14 @@ extern BlackBox &bb;
 
 class Out {
   public:
-    bool armed = false;
-    float command[HW_OUT_COUNT] = {}; //last commanded outputs (values: 0.0 to 1.0)
-    PWM pwm[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
-    char type[HW_OUT_COUNT] = {};
+    bool armed = false; //output is enabled when armed == true
 
     void setup();
     bool setupMotor(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     bool setupServo(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    void set(uint8_t i, float value); //set output
+    void set(uint8_t i, float value); //set output (might not be output value because of armed == false)
+    float get(uint8_t i); //get last set value (might not be output value because of armed == false)
+    char getType(uint8_t i); //type 'M' or 'S'
 
   private:
     bool _setupOutput(char typ, uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
@@ -295,3 +292,20 @@ class PID {
 PID PIDroll;
 PID PIDpitch;
 PID PIDyaw;
+
+
+//=================================================================================================
+// ALT - Altitude Estimator
+//=================================================================================================
+
+class AltEst {
+  public:
+    virtual void setup(float alt) = 0; //setup with default parameters and initial altitude in [m]
+    virtual void updateAccelUp(float a, uint32_t ts) = 0; //a: accel up in [m/s^2], ts: timestamp in [us]
+    virtual void updateBaroAlt(float alt, uint32_t ts) = 0; //alt: barometric altitude in [m], ts: timestamp in [us]
+    virtual float getH() = 0; //altitude estimate in [m]
+    virtual float getV() = 0; //vertical up speed (climb rate) estimate in [m/s]
+    virtual void print(); //print state info
+};
+
+extern AltEst &alt;

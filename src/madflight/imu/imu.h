@@ -200,7 +200,7 @@ int Imu::setup(uint32_t sampleRate) {
   _imu_ll_interrupt_enabled = false;
   int rv = imu_Sensor.begin(IMU_GYRO_DPS, IMU_ACCEL_G, sampleRate);
   _sampleRate = imu_Sensor.get_rate();
-  Serial.printf("IMU: " IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
+  Serial.printf("IMU:  " IMU_TYPE " sample_rate=%dHz rv=%d\n", (int)_sampleRate, (int)rv);
   onUpdate = NULL;
   _imu_ll_interrupt_busy = false;
   _imu_ll_interrupt_ts = 0;
@@ -294,9 +294,9 @@ void _imu_ll_interrupt_handler();
         int callcore = hw_get_core_num();
         int othercore = (callcore+1)%2;
         vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //Sets the core affinity mask for a task, i.e. the cores on which a task can run.
-        Serial.printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
+        Serial.printf("IMU:  IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
-        Serial.println("IMU: IMU_EXEC_FREERTOS");
+        Serial.println("IMU:  IMU_EXEC_FREERTOS");
       #endif
     }
     attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING); 
@@ -311,7 +311,7 @@ void _imu_ll_interrupt_handler();
 //-------------------------------------------------------------------------------------------------------------------------
 #elif IMU_EXEC == IMU_EXEC_IRQ
   void _imu_ll_interrupt_setup() {
-    Serial.println("IMU: IMU_EXEC_IRQ");
+    Serial.println("IMU:  IMU_EXEC_IRQ");
     attachInterrupt(digitalPinToInterrupt(HW_PIN_IMU_EXTI), _imu_ll_interrupt_handler, RISING);
   }
 

@@ -26,6 +26,20 @@ SOFTWARE.
 
 #include "../interface.h"
 
+static PWM pwm[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
+static float command[HW_OUT_COUNT] = {}; //last commanded outputs (values: 0.0 to 1.0)
+static char type[HW_OUT_COUNT] = {};
+
+char Out::getType(uint8_t i) {
+  if(i >= HW_OUT_COUNT) return 'X';
+  return type[i];
+}
+
+float Out::get(uint8_t i) {//get last set value (might not be output because of armed == false)
+  if(i >= HW_OUT_COUNT) return 0;
+  return command[i];
+}
+
 void Out::setup() {
 }
 

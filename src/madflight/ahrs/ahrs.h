@@ -10,41 +10,8 @@ Each BARO_USE_xxx section in this file defines a specific Barometer class
 #define AHRS_USE_MADGWICK 3
 #define AHRS_USE_VQF 4
 
-#include "../interface.h"
-
-/*class definition in interface.h
-
-class Ahrs {
-  public:
-    float gx = 0, gy = 0, gz = 0; //corrected and filtered imu gyro measurements in deg/sec
-    float ax = 0, ay = 0, az = 0; //corrected and filtered imu accel measurements in g
-    float mx = 0, my = 0, mz = 0; //corrected and filtered external magnetometer or internal imu mag measurements in uT
-    float q[4] = {1,0,0,0};  //quaternion NED reference frame
-    float roll = 0;          //roll in degrees - roll right is positive
-    float pitch = 0;         //pitch in degrees - pitch up is positive
-    float yaw = 0;           //yaw in degrees - yaw right is positive
-    float B_gyr = 1.0; //gyr filter constant
-    float B_acc = 1.0; //acc filter constant
-    float B_mag = 1.0; //mag filter constant
-
-    static constexpr float rad_to_deg = 57.2957795132f;
-    static constexpr float deg_to_rad = 0.0174532925199f;
-
-    virtual void setup(float gyrLpFreq, float accLpFreq, float magLpFreq) = 0;
-    virtual void setInitalOrientation() {}
-    void update(); //get imu+mag data, filter it, and call fusionUpdate() to update q
-
-    static float lowpass_to_beta(float f0, float fs); //compute beta coeffient for low pass filter
-
-  protected:
-    virtual void fusionUpdate() = 0;
-    void computeAngles();
-    void setFromMag(float *q);
-};
-
-extern Ahrs &ahrs;
-*/
-
+#include "../interface.h" //Ahrs class definition
+#include "../common/common.h" //lowpass_to_beta
 
 void Ahrs::update() {
   // get sensor data from imu and mag
@@ -95,6 +62,8 @@ void Ahrs::update() {
   
   //update euler angles
   computeAngles();
+  
+  ts = imu.ts;
 }
 
 void Ahrs::setFromMag(float *q) {
@@ -138,10 +107,9 @@ void Ahrs::computeAngles() {
   yaw = atan2(q[1]*q[2] + q[0]*q[3], 0.5f - q[2]*q[2] - q[3]*q[3]) * rad_to_deg; //degrees - yaw right is positive
 }
 
-
-//lowpass frequency to filter beta constant
-float Ahrs::lowpass_to_beta(float f0, float fs) {
-  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
+//get acceleration in earth-frame up direction in [m/s^2]
+float Ahrs::getAccelUp() {
+  return 9.80665 * ((2*q[1]*q[3] - 2*q[0]*q[2])*ax + (2*q[2]*q[3] + 2*q[0]*q[1])*ay + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*az - 1.0);
 }
 
 

@@ -1,4 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v1.3.0"
+#define MADFLIGHT_VERSION "madflight v1.3.1-DEV"
 
 /*==========================================================================================
 madflight - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
@@ -28,6 +28,22 @@ SOFTWARE.
 
 #pragma once
 
+//include hardware specific code & default board pinout
+#if defined ARDUINO_ARCH_ESP32
+  #include <madflight/hw_ESP32/hw_ESP32.h>
+#elif defined ARDUINO_ARCH_RP2040
+  #include <madflight/hw_RP2040/hw_RP2040.h>
+#elif defined ARDUINO_ARCH_STM32
+  #include <madflight/hw_STM32/hw_STM32.h>
+#else 
+  #error "Unknown hardware architecture, expected ESP32 / RP2040 / STM32"
+#endif
+
+//default for ALT (Altitude Estimation)
+#ifndef ALT_USE
+  #define ALT_USE ALT_USE_BARO
+#endif
+
 //defaults for OUT
 #ifndef HW_OUT_COUNT
   #define HW_OUT_COUNT 0
@@ -51,17 +67,6 @@ SOFTWARE.
   #define IMU_MAG_LP_HZ 1e10
 #endif
 
-//include hardware specific code & default board pinout
-#if defined ARDUINO_ARCH_ESP32
-  #include <madflight/hw_ESP32/hw_ESP32.h>
-#elif defined ARDUINO_ARCH_RP2040
-  #include <madflight/hw_RP2040/hw_RP2040.h>
-#elif defined ARDUINO_ARCH_STM32
-  #include <madflight/hw_STM32/hw_STM32.h>
-#else 
-  #error "Unknown hardware architecture, expected ESP32 / RP2040 / STM32"
-#endif
-
 
 //for testing individual modules use: #define MF_TEST  MF_TEST_LED | MF_TEST_RCIN
 #define MF_TEST_BASE 0x0000
@@ -77,6 +82,7 @@ SOFTWARE.
 #define MF_TEST_BB   0x0200
 #define MF_TEST_CLI  0x0400
 #define MF_TEST_OUT  0x0800
+#define MF_TEST_ALT  0x1000
 
 //include all modules. Before including madflight.h define the all module options, for example: #define IMU_USE IMU_USE_SPI_MPU6500
 //load config first, so that cfg.xxx can be used by other modules
@@ -116,6 +122,9 @@ SOFTWARE.
 #if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_OUT)
   #include "madflight/out/out.h" 
 #endif
+#if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_ALT)
+  #include "madflight/alt/alt.h" 
+#endif
 #if !defined(MF_TEST) || ((MF_TEST) & MF_TEST_CLI)
   #include "madflight/cli/cli.h" 
 #endif
@@ -128,8 +137,6 @@ SOFTWARE.
   #ifndef MF_SETUP_DELAY_S 
     #define MF_SETUP_DELAY_S 6
   #endif
-
-
 
   //===============================================================================================
   // HELPERS
@@ -187,6 +194,7 @@ SOFTWARE.
     bat.setup(); //Battery Monitor
     bb.setup(); //Black Box
     gps_setup(); //GPS
+    alt.setup(baro.alt); //Altitude Estimator
 
     ahrs.setup(IMU_GYR_LP_HZ, IMU_ACC_LP_HZ, IMU_MAG_LP_HZ); //setup low pass filters for Mahony/Madgwick filters
     ahrs.setInitalOrientation(); //do this before IMU update handler is started

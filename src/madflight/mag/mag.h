@@ -68,7 +68,7 @@ class MagnetometerQMC5883L: public Magnetometer {
     bool installed() { return true;}
     int setup() {
       mag_QMC5883L.begin();
-      Serial.printf("MAG_USE_QMC5883L detect=%d\n",mag_QMC5883L.detect());
+      Serial.printf("MAG:  MAG_USE_QMC5883L detect=%d\n",mag_QMC5883L.detect());
       return 0;
     }
   private:

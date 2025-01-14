@@ -257,9 +257,9 @@ public:
     //check header & crc
     if(cfg2._header0 == 'm' && cfg2._header1 == 'a' && cfg2._header2 == 'd' && cfg2._header3 == 'f' && cfg2.crc() == cfg2.crcCalc()) {
       memcpy(this, &cfg2, sizeof(Config)); //copy sizeof(Config) not actual number of bytes read, this sets missing parameters to default values
-      Serial.printf("CFG: Config read. len=%d crc=%04X (matched)\n", (int)cfg2.len(), (int)cfg2.crc());
+      Serial.printf("CFG:  Config read. len=%d crc=%04X (matched)\n", (int)cfg2.len(), (int)cfg2.crc());
     }else{
-      Serial.printf("CFG: EEPROM Config invalid, using defaults. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
+      Serial.printf("CFG:  EEPROM Config invalid, using defaults. len=%u crc=%04X crc_expected=%04X\n", (int)cfg2.len(), (int)cfg2.crc(), (int)cfg2.crcCalc());
     }
   }
 
