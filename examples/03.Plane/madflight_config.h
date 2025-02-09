@@ -3,7 +3,7 @@
 //========================================================================================================================//
 
 //--- RC RECEIVER
-#define RCIN_USE  RCIN_USE_CRSF // Select one: RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
+#define RCIN_USE  RCIN_USE_CRSF // Select one: RCIN_USE_MAVLINK, RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
 #define RCIN_NUM_CHANNELS 8 // Number of channels
 #define RCIN_STICK_DEADBAND 0 // Deadband for centering sticksD: pwm center-deadband to pwm center+deadband will be interpreted as central stick. Set to 15 for PPM or 0 for jitter-free serial protocol receivers.
 

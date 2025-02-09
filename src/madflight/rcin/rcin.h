@@ -47,6 +47,7 @@ SOFTWARE.
 #define RCIN_USE_PPM   4
 #define RCIN_USE_PWM   5
 #define RCIN_USE_DEBUG 6
+#define RCIN_USE_MAVLINK 7
 
 #include "../interface.h" //RCIN interface definition
 #include "../cfg/cfg.h"
@@ -529,6 +530,18 @@ class RcinPWM : public Rcin {
 };
 
 RcinPWM rcin_instance;
+
+
+//=================================================================================================
+//Mavlink Receiver 
+//=================================================================================================
+#elif RCIN_USE == RCIN_USE_MAVLINK
+
+#include "mavlink/mavlink.h"
+
+RcinMavlink rcin_instance;
+
+
 
 //=================================================================================================
 // Invalid value
