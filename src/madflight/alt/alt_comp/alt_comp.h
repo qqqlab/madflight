@@ -25,16 +25,20 @@ SOFTWARE.
 ===========================================================================================*/
 #pragma once
 
+#include "../alt_interface.h" //AltEst
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+
+
 
 class AltEst_Comp: public AltEst {
 public:
   void setup(float alt) {\
-    setup2(baro.alt, 0.4, 0.03, 0.1, 12); //baroAltitude[m], sigmaBaro[m], sigmaAccel[m/s2], accelThreshold[m/s2], ZUPT_SIZE[n]);
+    setup2(alt, 0.4, 0.03, 0.1, 12); //baroAltitude[m], sigmaBaro[m], sigmaAccel[m/s2], accelThreshold[m/s2], ZUPT_SIZE[n]);
     ts = 0;
 
-    Serial.printf("ALT:  ALT_USE_COMP gain=%f,%f\n", gain0, gain1);
+    //Serial.printf("ALT:  ALT_USE_COMP gain=%f,%f\n", gain0, gain1);
   }
 
   //a: accel up in [m/s^2], ts: timestamp in [us]
@@ -59,10 +63,11 @@ public:
   float getH() {return h;} //altitude estimate in [m]
   float getV() {return v;} //vertical up speed (climb rate) estimate in [m/s]
 
-  void print() {
-    Serial.printf("alt.h:%.2f\t", h);
-    Serial.printf("alt.v:%+.2f\t", v);
-    Serial.printf("alt.a:%+.2f\t", a);
+  void toString(char *s) {
+    int n = 0;
+    n += sprintf(s+n, "alt.h:%.2f\t", h);
+    n += sprintf(s+n, "alt.v:%+.2f\t", v);
+    n += sprintf(s+n, "alt.a:%+.2f\t", a);
   }
 
   void setup2(float baroAltitude, float sigmaAccel, float sigmaBaro, float accelThreshold, int ZUPT_SIZE)
@@ -88,7 +93,7 @@ public:
     pastAltitude = baroAltitude;
     
     // zero-velocity update if more than ZUPT_SIZE small acc were received
-    if(abs(a) >= accelThreshold) {
+    if(fabs(a) >= accelThreshold) {
       ZUPTIdx = 0;
     }else if(ZUPTIdx < ZUPT_SIZE) {
       ZUPTIdx++;

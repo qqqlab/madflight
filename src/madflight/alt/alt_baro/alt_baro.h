@@ -26,7 +26,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "../../interface.h" //baro.getSampleRate()
+#include "../alt_interface.h" //AltEst
 #include "../../common/common.h" //lowpass_to_beta()
 
 class AltEst_Baro : public AltEst {
@@ -61,9 +61,10 @@ public:
   float getH() {return h;} //altitude estimate in [m]
   float getV() {return v;} //vertical up speed (climb rate) estimate in [m/s]
 
-  void print() {
-    Serial.printf("alt.h:%.2f\t", h);
-    Serial.printf("alt.v:%+.2f\t", v);
+  void toString(char *s) {
+    int n = 0;
+    n += sprintf(s+n, "alt.h:%.2f\t", h);
+    n += sprintf(s+n, "alt.v:%+.2f\t", v);
   }
   
   float h = 0;    // Filtered approximate International Standard Atmosphere (ISA) Altitude in [m]

@@ -298,14 +298,6 @@ PID PIDyaw;
 // ALT - Altitude Estimator
 //=================================================================================================
 
-class AltEst {
-  public:
-    virtual void setup(float alt) = 0; //setup with default parameters and initial altitude in [m]
-    virtual void updateAccelUp(float a, uint32_t ts) = 0; //a: accel up in [m/s^2], ts: timestamp in [us]
-    virtual void updateBaroAlt(float alt, uint32_t ts) = 0; //alt: barometric altitude in [m], ts: timestamp in [us]
-    virtual float getH() = 0; //altitude estimate in [m]
-    virtual float getV() = 0; //vertical up speed (climb rate) estimate in [m/s]
-    virtual void print(); //print state info
-};
+#include "alt/alt_interface.h"
 
 extern AltEst &alt;

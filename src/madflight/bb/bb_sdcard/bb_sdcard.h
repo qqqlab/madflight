@@ -799,14 +799,12 @@ class BlackBox_SD : public BlackBox {
       bl.flt("Alt", baro.alt, 1, "m");  //float Alt: calculated altitude [m]
                                         //float AltAMSL: altitude AMSL
       bl.flt("Press", baro.press, 1, "Pa");      //float Press: measured atmospheric pressure [Pa]
-                                        //int16_t Temp: measured atmospheric temperature
-      bl.flt("CRt", baro.vz, 1, "m/s"); //float CRt: derived climb rate from primary barometer
+      bl.i16("Temp", baro.temp, 1, "degC"); //int16_t Temp: measured atmospheric temperature [C]
+                                        //float CRt: derived climb rate from primary barometer
                                         //uint32_t SMS: time last sample was taken
                                         //float Offset: raw adjustment of barometer altitude, zeroed on calibration, possibly set by GCS
                                         //float GndTemp: temperature on ground, specified by parameter or measured while on ground
                                         //uint8_t Health: true if barometer is considered healthy
-      //non-standard
-      bl.flt("AltRaw", baro.altRaw, 1, "m");
     } 
 
     void log_bat() override {
@@ -868,9 +866,9 @@ class BlackBox_SD : public BlackBox {
     void log_ahrs() override {
       BinLog bl("AHRS"); 
       bl.TimeUS();
-      bl.i16("ax",ahrs.ax*100, 1e-2, "G"); //G
-      bl.i16("ay",ahrs.ay*100, 1e-2, "G"); //G
-      bl.i16("az",ahrs.az*100, 1e-2, "G"); //G
+      bl.i16("ax",ahrs.ax*1000, 1e-3, "G"); //G
+      bl.i16("ay",ahrs.ay*1000, 1e-3, "G"); //G
+      bl.i16("az",ahrs.az*1000, 1e-3, "G"); //G
       bl.i16("gx",ahrs.gx*10, 1e-1, "deg/s"); //dps
       bl.i16("gy",ahrs.gy*10, 1e-1, "deg/s"); //dps
       bl.i16("gz",ahrs.gz*10, 1e-1, "deg/s"); //dps
@@ -901,9 +899,9 @@ class BlackBox_SD : public BlackBox {
       BinLog bl("IMU");
       bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
       bl.TimeUS(imu.ts);
-      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*100, 1e-2, "G"); //G
-      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*100, 1e-2, "G"); //G
-      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*100, 1e-2, "G"); //G
+      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*1000, 1e-3, "G"); //G
+      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*1000, 1e-3, "G"); //G
+      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*1000, 1e-3, "G"); //G
       bl.i16("gx",(imu.gx - cfg.IMU_CAL_GX)*10, 1e-1, "deg/s"); //dps
       bl.i16("gy",(imu.gy - cfg.IMU_CAL_GY)*10, 1e-1, "deg/s"); //dps
       bl.i16("gz",(imu.gz - cfg.IMU_CAL_GZ)*10, 1e-1, "deg/s"); //dps

@@ -53,7 +53,7 @@ public:
   void updateBaroAlt(float alt, uint32_t ts) {} 
   float getH() {return 0;}
   float getV() {return 0;}
-  void print() {}
+  void toString(char *s) {s[0] = 0;}
 };
 
 AltEst_None alt_instance;

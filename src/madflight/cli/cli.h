@@ -3,7 +3,7 @@ cli.h - madflight Command Line Interface
 
 MIT License
 
-Copyright (c) 2024 https://madflight.com
+Copyright (c) 2024-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,19 @@ SOFTWARE.
 #include "../interface.h"
 #include "stat.h"
 #include "FreeRTOS_ps.h"
+
+//cli command extension, return true if command was processed
+extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((weak));
+
+/* example cli command extension
+bool cli_execute(String cmd, String arg1, String arg2) {
+  if(cmd == "mycommand") {
+    Serial.println("ASDFASDFASDF");
+    return true;
+  }
+  return false;
+}
+*/
 
 void cli_print_overview() {
   Serial.printf("rcin.pwm%d:%d\t", 1, rcin.pwm[0]);
@@ -141,7 +154,9 @@ void cli_print_gps() {
 }
 
 static void cli_print_alt() {
-  alt.print();
+  char s[100];
+  alt.toString(s);
+  Serial.print(s);
   Serial.printf("baro.alt:%.2f\t", baro.alt);
   Serial.printf("ahrs.aup:%.2f\t", ahrs.getAccelUp());
 }
@@ -283,6 +298,11 @@ public:
         cli_print_flag[i] = !cli_print_flag[i];
         return;
       }
+    }
+
+    //call user defined commands, skip futher processing if true was returned
+    if(cli_execute) {
+      if(cli_execute(cmd, arg1, arg2)) return;
     }
 
     if (cmd=="help" || cmd=="?") {

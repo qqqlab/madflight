@@ -1,9 +1,9 @@
 /*==========================================================================================
-alt_kalman2.h - madflight altitude estimator interface
+alt_interface.h - This file defines the interfaces for the altitude estimator
 
 MIT License
 
-Copyright (c) 2025 https://madflight.com
+Copyright (c) 2024 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,50 +23,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
+
 #pragma once
 
-#include "altitude_kf.h"
+//=================================================================================================
+// ALT - Altitude Estimator
+//=================================================================================================
 
-class AltEst_Kalman2 : public AltEst {
-public:
-  void setup(float alt) {\
-    //default parameters
-    float altCov = 0.2;  //meadured stdev BME280 = 0.4 [m]
-    float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G]
-
-    Serial.printf("ALT:  ALT_USE_KALMAN2  altCov=%f accCov=%f\n", altCov, accCov);
-
-    filter.setup(altCov, accCov);
-    filter.h = alt;
-    filter.v = 0;
-
-    tsa = 0;
-  }
-
-  //a: accel up in [m/s^2], ts: timestamp in [us]
-  void updateAccelUp(float a, uint32_t ts) {
-    if(tsa!=0) {
-      float dt = 1e-6 * (ts - tsa);
-      filter.propagate(a, dt);
-    }
-    tsa = ts;
-  };
-  
-  //altitude: barometric altitude in [m], ts: timestamp in [us]
-  void updateBaroAlt(float alt, uint32_t ts) {
-    filter.update(alt);
-  }
-  
-  float getH() {return filter.h;} //altitude estimate in [m]
-  float getV() {return filter.v;} //vertical up speed (climb rate) estimate in [m/s]
-
-  void toString(char *s) {
-    int n = 0;
-    n += sprintf(s+n, "alt.h:%.2f\t", filter.h);
-    n += sprintf(s+n, "alt.v:%+.2f\t", filter.v);
-  }
-
-protected:
-  Altitude_KF filter;
-  uint32_t tsa = 0;
+class AltEst {
+  public:
+    virtual void setup(float alt) = 0; //setup with default parameters and initial altitude in [m]
+    virtual void updateAccelUp(float a, uint32_t ts) = 0; //a: accel up in [m/s^2], ts: timestamp in [us]
+    virtual void updateBaroAlt(float alt, uint32_t ts) = 0; //alt: barometric altitude in [m], ts: timestamp in [us]
+    virtual float getH() = 0; //altitude estimate in [m]
+    virtual float getV() = 0; //vertical up speed (climb rate) estimate in [m/s]
+    virtual void toString(char *s); //print state info to s (max 100 chars)
 };

@@ -62,10 +62,11 @@ public:
   float getH() {return filter.h;} //altitude estimate in [m]
   float getV() {return filter.v;} //vertical up speed (climb rate) estimate in [m/s]
 
-  void print() {
-    Serial.printf("alt.h:%.2f\t", filter.h);
-    Serial.printf("alt.v:%+.2f\t", filter.v);
-    Serial.printf("alt.abias:%+.2f\t", filter.bias);
+  void toString(char *s) {
+    int n = 0;
+    n += sprintf(s+n, "alt.h:%.2f\t", filter.h);
+    n += sprintf(s+n, "alt.v:%+.2f\t", filter.v);
+    n += sprintf(s+n, "alt.abias:%+.2f\t", filter.bias);
   }
 
 protected:
