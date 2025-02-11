@@ -302,3 +302,12 @@ PID PIDyaw;
 #include "alt/alt_interface.h"
 
 extern AltEst &alt;
+
+
+//=================================================================================================
+// GPS
+//=================================================================================================
+
+#include "gps/GPS-uBlox/qqqlab_GPS_UBLOX.h"
+
+extern AP_GPS_UBLOX::GPS_State &gps;

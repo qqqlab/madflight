@@ -40,6 +40,7 @@ SOFTWARE.
 #include "mavlink_c_library_v2/ardupilotmega/mavlink.h"
 //-------------------------------------------------------------------------------------------
 
+#include "../../interface.h"
 
 class RcinMavlink : public Rcin {
   public:
@@ -58,11 +59,12 @@ class RcinMavlink : public Rcin {
     bool telem_attitude();
     bool telem_param_list();
     bool telem_global_position_int();
+    bool telem_gps_raw_int();
+    bool telem_battery_status();
+    
 /*
 TODO
 MAVLINK_MSG_ID_HEARTBEAT (fightmode & armed )
-MAVLINK_MSG_ID_BATTERY_STATUS
-MAVLINK_MSG_ID_GPS_RAW_INT
 MAVLINK_MSG_ID_VFR_HUD (climb, airspeed, groundspeed, heading)
 MAVLINK_MSG_ID_HOME_POSITION
 MAVLINK_MSG_ID_ALTITUDE // send the terrain message to Yaapu Telemetry Script
@@ -88,6 +90,11 @@ parameter read/write
     static telem_sched_t telem_sched[]; 
     uint8_t telem_sched_idx;
 };
+
+#ifndef INT16_MAX
+  #define INT16_MAX 32767
+#endif
+
 
 
 void RcinMavlink::_setup() {
@@ -169,10 +176,12 @@ bool RcinMavlink::_update() {
 
 //messages to send with period in ms (0 is off)
 RcinMavlink::telem_sched_t RcinMavlink::telem_sched[] = {
-  {&RcinMavlink::telem_param_list,            0}, //telem_param_list needs to be telem_sched[0]
-  {&RcinMavlink::telem_heartbeat,          1000},
-  {&RcinMavlink::telem_attitude,            250},
-  {&RcinMavlink::telem_global_position_int, 500},
+  {&RcinMavlink::telem_param_list,             0}, //telem_param_list needs to be telem_sched[0]
+  {&RcinMavlink::telem_heartbeat,           1000},
+  {&RcinMavlink::telem_attitude,             250},
+  {&RcinMavlink::telem_global_position_int, 1000},
+  {&RcinMavlink::telem_gps_raw_int,         1000},
+  {&RcinMavlink::telem_battery_status,      2000},
 };
 
 
@@ -226,28 +235,69 @@ bool RcinMavlink::telem_attitude() {
 }
 
 bool RcinMavlink::telem_global_position_int() { //33
-return true;
-/*
   mavlink_message_t msg;
-  mavlink_global_position_int_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
+  mavlink_msg_global_position_int_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
     , millis() //time_boot_ms	uint32_t	ms	Timestamp (time since system boot).
     , gps.lat  //lat	int32_t	degE7	Latitude, expressed
     , gps.lon  //lon	int32_t	degE7	Longitude, expressed
     , gps.alt  //alt	int32_t mm	Altitude (MSL). Note that virtually all GPS modules provide both WGS84 and MSL.
     , gps.alt  //relative_alt	int32_t	mm	Altitude above home
-    , gps.sog/10 * cos(gps.cog/1000) //vx	int16_t	cm/s	Ground X Speed (Latitude, positive north)
-    , gps.sog/10 * sin(gps.cog/1000) //vy	int16_t	cm/s	Ground Y Speed (Longitude, positive east)
-    , gps.veld/10 //vz	int16_t	cm/s	Ground Z Speed (Altitude, positive down)
-    , gps.cog/10 //hdg	uint16_t	cdeg	Vehicle heading (yaw angle), 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+    , gps.veln/10 //vx	int16_t	cm/s	Ground X Speed (Latitude, positive north)
+    , gps.vele/10 //vy	int16_t	cm/s	Ground Y Speed (Longitude, positive east)
+    , (gps.have_veld ? gps.veld/10 : 0) //vz	int16_t	cm/s	Ground Z Speed (Altitude, positive down)
+    , UINT16_MAX //hdg	uint16_t	cdeg	Vehicle heading (yaw angle), 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
   );
   return telem_send(&msg);
-  */
 }
 
+bool RcinMavlink::telem_gps_raw_int() {
+  mavlink_message_t msg;
+  mavlink_msg_gps_raw_int_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
+    , millis() //uint64_t time_usec; /*< [us] Timestamp (UNIX Epoch time or time since system boot). The receiving end can infer timestamp format (since 1.1.1970 or since system boot) by checking for the magnitude of the number.*/
+    , gps.lat  //int32_t lat; /*< [degE7] Latitude (WGS84, EGM96 ellipsoid)*/
+    , gps.lon  //int32_t lon; /*< [degE7] Longitude (WGS84, EGM96 ellipsoid)*/
+    , gps.alt  //int32_t alt; /*< [mm] Altitude (MSL). Positive for up. Note that virtually all GPS modules provide the MSL altitude in addition to the WGS84 altitude.*/
+    , gps.hdop  //uint16_t eph; /*<  GPS HDOP horizontal dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
+    , gps.vdop  //uint16_t epv; /*<  GPS VDOP vertical dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
+    , gps.sog/10 //uint16_t vel; /*< [cm/s] GPS ground speed. If unknown, set to: UINT16_MAX*/
+    , gps.cog/10 //uint16_t cog; /*< [cdeg] Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX*/
+    , gps.fix  //uint8_t fix_type; /*<  GPS fix type.*/
+    , gps.sat  //uint8_t satellites_visible; /*<  Number of satellites visible. If unknown, set to UINT8_MAX*/
+    , gps.alt  //int32_t alt_ellipsoid; /*< [mm] Altitude (above WGS84, EGM96 ellipsoid). Positive for up.*/
+    , gps.hacc  //uint32_t h_acc; /*< [mm] Position uncertainty.*/
+    , gps.vacc  //uint32_t v_acc; /*< [mm] Altitude uncertainty.*/
+    , (gps.have_vel_acc ? gps.vel_acc : 0) //uint32_t vel_acc; /*< [mm/s] Speed uncertainty.*/
+    , 0 // uint32_t hdg_acc; /*< [degE5] Heading / track uncertainty*/
+    , 0 // uint16_t yaw; /*< [cdeg] Yaw in earth frame from north. Use 0 if this GPS does not provide yaw. Use UINT16_MAX if this GPS is configured to provide yaw and is currently unable to provide it. Use 36000 for north.*/
+  );
+  return telem_send(&msg);
+}
 
-
-
-
+bool RcinMavlink::telem_battery_status() {
+  mavlink_message_t msg;
+  uint16_t voltages[10] = {};
+  uint16_t voltages_ext[4] = {};
+  voltages[0] =  bat.v*1000;
+  mavlink_msg_battery_status_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
+    , 0 //uint8_t id; /*<  Battery ID*/  
+    , 0 //uint8_t battery_function; /*<  Function of the battery*/
+    , 0 //uint8_t type; /*<  Type (chemistry) of the battery*/
+    , INT16_MAX //int16_t temperature; /*< [cdegC] Temperature of the battery. INT16_MAX for unknown temperature.*/
+    , voltages //uint16_t voltages[10]; /*< [mV] Battery voltage of cells 1 to 10 (see voltages_ext for cells 11-14). Cells in this field above the valid cell count for this battery should have the UINT16_MAX value. If individual cell voltages are unknown or not measured for this battery, then the overall battery voltage should be filled in cell 0, with all others set to UINT16_MAX. If the voltage of the battery is greater than (UINT16_MAX - 1), then cell 0 should be set to (UINT16_MAX - 1), and cell 1 to the remaining voltage. This can be extended to multiple cells if the total voltage is greater than 2 * (UINT16_MAX - 1).*/
+    , bat.i*100  //int16_t current_battery; /*< [cA] Battery current, -1: autopilot does not measure the current*/
+    , bat.mah //int32_t current_consumed; /*< [mAh] Consumed charge, -1: autopilot does not provide consumption estimate*/
+    , bat.wh*36 //int32_t energy_consumed; /*< [hJ] Consumed energy, -1: autopilot does not provide energy consumption estimate*/
+    , -1 //int8_t battery_remaining; /*< [%] Remaining battery energy. Values: [0-100], -1: autopilot does not estimate the remaining battery.*/
+    , 0 //int32_t time_remaining; /*< [s] Remaining battery time, 0: autopilot does not provide remaining battery time estimate*/
+    , 0 //uint8_t charge_state; /*<  State for extent of discharge, provided by autopilot for warning or external reactions*/
+    , voltages_ext //uint16_t voltages_ext[4]; /*< [mV] Battery voltages for cells 11 to 14. Cells above the valid cell count for this battery should have a value of 0, where zero indicates not supported (note, this is different than for the voltages field and allows empty byte truncation). If the measured value is 0 then 1 should be sent instead.*/
+    , 0 //uint8_t mode; /*<  Battery mode. Default (0) is that battery mode reporting is not supported or battery is in normal-use mode.*/
+    , 0 //uint32_t fault_bitmask; /*<  Fault/health indications. These should be set when charge_state is MAV_BATTERY_CHARGE_STATE_FAILED or MAV_BATTERY_CHARGE_STATE_UNHEALTHY (if not, fault reporting is not supported).*/
+  );
+  return telem_send(&msg);
+}
+  
+  
 //start sending param value list
 void RcinMavlink::telem_param_value_enable() {
   telem_param_list_index = 0;

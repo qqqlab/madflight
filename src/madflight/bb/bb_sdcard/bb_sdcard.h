@@ -266,14 +266,14 @@ private:
     FMT_msglen += datalen;
     if (FMT_msglen >= MAX_MSG_LEN) {
       error = true;
-      Serial.printf("BB: ERROR data too long for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR data too long for msg %s\n", FMT.name);
       return;
     }
     
     //datatype
     if (FMT_fmt >= 16) {
       error = true;
-      Serial.printf("BB: ERROR too many fields for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR too many fields for msg %s\n", FMT.name);
       return;
     }
     FMT.format[FMT_fmt] = fmt;
@@ -303,7 +303,7 @@ private:
     int lbl_len = strlen(label);
     if (FMT_lbl + 1 + lbl_len > 64) {
       FMT.format[0]=0;
-      Serial.printf("BB: ERROR labels too long for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR labels too long for msg %s\n", FMT.name);
       return;
     }
     if (FMT_lbl) FMT.labels[FMT_lbl++] = ',';
@@ -497,7 +497,7 @@ public:
   static void setup() {
     queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue);
     if(xTaskCreate(bb_task, "BB", FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
-      Serial.println("BB: Task creation failed");
+      Serial.println("BB:   Task creation failed");
     }
   }
 

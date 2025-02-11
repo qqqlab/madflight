@@ -30,7 +30,7 @@ SOFTWARE.
   #include "SD_MMC.h"
   
   #define _BB_SDFS SD_MMC
-  #define _BB_SETUP_STR "BB: BB_USE_SDMMC"
+  #define _BB_SETUP_STR "BB:   BB_USE_SDMMC"
 
 #else
 
@@ -38,7 +38,7 @@ SOFTWARE.
   #include "SD.h"
   
   #define _BB_SDFS SD
-  #define _BB_SETUP_STR "BB: BB_USE_SD"  
+  #define _BB_SETUP_STR "BB:   BB_USE_SD"  
   extern SPIClass *bb_spi;
 
 #endif
@@ -70,14 +70,14 @@ public:
 
         sd_logOpen(BB_LOG_DIR_NAME);
         if(file) {
-          Serial.printf("BB: start OK - attempt=%d file=%s\n", attempt, filename.c_str());
+          Serial.printf("BB:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
           return true;
         }
       }
 
       setup_done = false; //force setup to re-run
     }
-    Serial.println("BB: start FAILED");
+    Serial.println("BB:   start FAILED");
     return false;
   }
 
@@ -135,13 +135,13 @@ public:
     
     buf = (uint8_t*)malloc(512);
     if(!buf) {
-        Serial.println("BB: bench - malloc failed");
+        Serial.println("BB:   bench - malloc failed");
         return;
     }
     
     file = _BB_SDFS.open(path, FILE_WRITE);
     if(!file){
-        Serial.println("BB: bench - Failed to open file for writing");
+        Serial.println("BB:   bench - Failed to open file for writing");
         free(buf);
         return;
     }
@@ -156,12 +156,12 @@ public:
     }
     end = millis() - start;
     flen = 2048 * 512;
-    Serial.printf("BB: %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    Serial.printf("BB:   %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
     
     file = _BB_SDFS.open(path);
     if(!file){
-        Serial.println("BB: bench - Failed to open file for reading");
+        Serial.println("BB:   bench - Failed to open file for reading");
         free(buf);
         return;
     }        
@@ -177,7 +177,7 @@ public:
         len -= toRead;
     }
     end = millis() - start;
-    Serial.printf("BB: %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    Serial.printf("BB:   %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
 
     free(buf);
@@ -217,20 +217,20 @@ private:
     #if BB_USE == BB_USE_SDMMC
       _BB_SDFS.setPins(HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA);
       if (!_BB_SDFS.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
-        Serial.println("BB_USE_SDMMC Card Mount Failed");
+        Serial.println("BB:   BB_USE_SDMMC Card Mount Failed");
         return setup_done;
       }
     #else
       bb_spi->begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI, HW_PIN_BB_CS);
       if (!_BB_SDFS.begin(HW_PIN_BB_CS, *bb_spi)) {
-        Serial.println("BB_USE_SD Card Mount Failed");
+        Serial.println("BB:   BB_USE_SD Card Mount Failed");
         return setup_done;
       }
     #endif
 
     uint8_t cardType = _BB_SDFS.cardType();
     if(cardType == CARD_NONE){
-      Serial.println("BB: No SD card attached");
+      Serial.println("BB:   No SD card attached");
       return setup_done;
     }
 
@@ -284,17 +284,17 @@ private:
     File root = _BB_SDFS.open(dirname);
     if(!root){
        if(!_BB_SDFS.mkdir(dirname)){
-          Serial.println("BB: mkdir /log failed");
+          Serial.println("BB:   mkdir /log failed");
           return;
       }
       root = _BB_SDFS.open(dirname);
       if(!root) {
-          Serial.println("BB: mkdir /log failed");
+          Serial.println("BB:   mkdir /log failed");
           return;
       }
     }
     if(!root.isDirectory()){
-        Serial.println("BB: /log is not a directory");
+        Serial.println("BB:   /log is not a directory");
         return;
     }
 

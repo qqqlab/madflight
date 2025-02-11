@@ -42,7 +42,7 @@ private:
 public:
   //setup the file system
   void setup() override {
-    Serial.println("BB: BB_USE_SD");
+    Serial.println("BB:   BB_USE_SD");
     sd_setup();
   }
 
@@ -57,15 +57,15 @@ public:
 
         sd_logOpen(BB_LOG_DIR_NAME);
         if(file) {
-          Serial.printf("BB: start OK - attempt=%d file=%s\n", attempt, filename.c_str());
+          Serial.printf("BB:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
           return true;
         }
       }
 
-      Serial.println("BB: start retry");
+      Serial.println("BB:   start retry");
       setup_done = false; //force setup to re-run
     }
-    Serial.println("BB: start FAILED");
+    Serial.println("BB:   start FAILED");
     return false;
   }
 
@@ -100,7 +100,7 @@ public:
       int len = file.size();
       file.close();
       file = {};
-      Serial.printf("BB: stop file=%s len=%d\n", filename.c_str(), len);
+      Serial.printf("BB:   stop file=%s len=%d\n", filename.c_str(), len);
     }
   }
 
@@ -131,7 +131,7 @@ public:
       
       buf = (uint8_t*)malloc(512);
       if(!buf) {
-          Serial.println("BB: bench - malloc failed");
+          Serial.println("BB:   bench - malloc failed");
           return;
       }
 
@@ -141,7 +141,7 @@ public:
 
       file = SD.open(path, FILE_WRITE);
       if(!file){
-          Serial.println("BB: bench - Failed to open file for writing");
+          Serial.println("BB:   bench - Failed to open file for writing");
           free(buf);
           return;
       }
@@ -156,12 +156,12 @@ public:
       }
       end = millis() - start;
       flen = 2048 * 512;
-      Serial.printf("BB: %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+      Serial.printf("BB:   %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
       file.close();
       
       file = SD.open(path);
       if(!file){
-          Serial.println("BB: bench - Failed to open file for reading");
+          Serial.println("BB:   bench - Failed to open file for reading");
           free(buf);
           return;
       }        
@@ -177,7 +177,7 @@ public:
           len -= toRead;
       }
       end = millis() - start;
-      Serial.printf("BB: %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+      Serial.printf("BB:   %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
       file.close();
 
       free(buf);
@@ -283,7 +283,7 @@ private:
 */
 
     if (!SD.begin(HW_PIN_BB_CS, *bb_spi)) {
-      Serial.println("BB: Card Mount Failed");
+      Serial.println("BB:   Card Mount Failed");
       setup_done = false;
       return setup_done;
     }
@@ -338,17 +338,17 @@ private:
       File root = SD.open(dirname);
       if(!root){
          if(!SD.mkdir(dirname)){
-            Serial.println("BB: mkdir /log failed");
+            Serial.println("BB:   mkdir /log failed");
             return;
         }
         root = SD.open(dirname);
         if(!root) {
-            Serial.println("BB: mkdir /log failed");
+            Serial.println("BB:  mkdir /log failed");
             return;
         }
       }
       if(!root.isDirectory()){
-          Serial.println("BB: /log is not a directory");
+          Serial.println("BB:   /log is not a directory");
           return;
       }
 

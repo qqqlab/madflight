@@ -146,7 +146,8 @@ static void cli_print_baro() {
 
 void cli_print_gps() {
   Serial.printf("gps.time:%d\t", (int)gps.time);
-  Serial.printf("date:%d\t", (int)gps.date);
+  Serial.printf("fix:%d\t", (int)gps.fix);
+  //Serial.printf("date:%d\t", (int)gps.date);
   Serial.printf("sat:%d\t", (int)gps.sat);
   Serial.printf("lat:%d\t", (int)gps.lat);
   Serial.printf("lon:%d\t", (int)gps.lon);
@@ -478,17 +479,17 @@ public:
   }
 
   void print_i2cScan() {
-    Serial.printf("I2C: Scanning ...\n");
+    Serial.printf("I2C:  Scanning ...\n");
     byte count = 0;
     //i2c->begin();
     for (byte i = 8; i < 120; i++) {
       i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
       if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
-        Serial.printf("I2C: Found address: 0x%02X (%d)\n",i,i);
+        Serial.printf("I2C:  Found address: 0x%02X (%d)\n",i,i);
         count++;
       }
     }
-    Serial.printf("I2C: Found %d device(s)\n", count);
+    Serial.printf("I2C:  Found %d device(s)\n", count);
   }
 
 //========================================================================================================================//
