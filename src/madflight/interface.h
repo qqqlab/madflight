@@ -70,6 +70,7 @@ class Rcin_interface {
     virtual bool update() = 0; //returns true if channel pwm data was updated
     virtual bool connected() = 0;
     virtual void calibrate() = 0; //interactive calibration
+    virtual bool telem_statustext(uint8_t severity, char *text) {return true;}
 
     uint16_t *pwm; //pwm channel data. values: 988-2012
     float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)

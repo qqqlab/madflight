@@ -3,7 +3,7 @@ rcin.h - madflight RC radio receiver
 
 MIT License
 
-Copyright (c) 2023-2024 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -537,10 +537,9 @@ RcinPWM rcin_instance;
 //=================================================================================================
 #elif RCIN_USE == RCIN_USE_MAVLINK
 
-#include "mavlink/mavlink.h"
+#include "mavlink/rcin_mavlink.h"
 
 RcinMavlink rcin_instance;
-
 
 
 //=================================================================================================
