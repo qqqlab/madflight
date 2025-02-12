@@ -219,21 +219,41 @@ public:
     }
   }
 
+  //CLI set a parameter value, returns index
+  int set(String namestr, String val) {
+    int idx = getIndex(namestr);
+    if(idx >= 0) {
+      float *fvalues = ((float*)&(this->IMU_CAL_AX));
+      fvalues[idx] = val.toFloat();
+      printValue(idx);
+    }else{
+      Serial.printf("ERROR %s not found\n", namestr.c_str());
+    }
+    return idx;
+  }
 
-  //CLI set a parameter value
-  void set(String namestr, String val) {
+  //quietly set a parameter value, returns index
+  int set(String namestr, float val) {
+    int idx = getIndex(namestr);
+    if(idx>=0) {
+      float *fvalues = ((float*)&(this->IMU_CAL_AX));
+      fvalues[idx] = val;
+    }
+    return idx;
+  }
+
+  int getIndex(String namestr) {
     namestr.toUpperCase();
     const char *name = namestr.c_str();
-    float *fvalues = ((float*)&(this->IMU_CAL_AX));
     for(uint16_t i=0;i<valueCount();i++) {
       if(strcmp(_cfg_names[i], name) == 0) {
-        fvalues[i] = val.toFloat();
-        printValue(i);
-        return;
+        return i;
       }
     }
-    Serial.printf("ERROR %s not found\n", name);
+    return -1;
   }
+  
+  
 
   //load defaults
   void clear() {

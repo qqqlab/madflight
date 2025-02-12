@@ -49,7 +49,10 @@ class RcinMavlink : public Rcin {
     bool telem_statustext(uint8_t severity, char *text);
     uint16_t pwm_instance[18];
 
-  //TELEM
+  private:
+    bool receive();
+    
+    //TELEM
     SemaphoreHandle_t tx_mux; //UART TX mutex
     void telem_update();
     bool telem_send(mavlink_message_t *msg, uint16_t timeout_ms = 0);
@@ -106,8 +109,13 @@ void RcinMavlink::_setup() {
 
 //process received mavlink data
 bool RcinMavlink::_update() {
+  bool rv = receive();
   telem_update();
+  return rv;
+}
 
+//receive mavlink data
+bool RcinMavlink::receive() {
   int packetSize = rcin_Serial->available();
   if (!packetSize) return false;
 
@@ -122,6 +130,7 @@ bool RcinMavlink::_update() {
           //Serial.println("Received HEARTBEAT");
           break;
         }
+
         case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE: { //70
           mavlink_rc_channels_override_t m;
           mavlink_msg_rc_channels_override_decode(&msg, &m);
@@ -146,20 +155,53 @@ bool RcinMavlink::_update() {
           pwm_instance[17] = m.chan18_raw;
           return true;
         }
+
         case MAVLINK_MSG_ID_RADIO_STATUS: { //109
           //mavlink_radio_status_t m;
           //mavlink_msg_radio_status_decode(&msg, &m);
           //Serial.printf("Received RADIO_STATUS: rssi:%d\n",(int)m.rssi);
           break; 
         }
+
         case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: { //66
+          //TODO
           break;
         }
+
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: { //21
+          //Serial.println("Received PARAM_REQUEST_LIST");
           telem_param_value_enable();
-          break; }
+          break; 
+        }
+
+        case MAVLINK_MSG_ID_PARAM_REQUEST_READ: { //20
+          mavlink_param_request_read_t m;
+          mavlink_msg_param_request_read_decode(&msg, &m);
+          if(m.param_index>=0) {
+            telem_param_value(m.param_index);
+          }else{
+            char name[17];
+            memcpy(name, m.param_id, 16);
+            name[16] = 0;
+            int param_index = cfg.getIndex(String(name));
+            if(param_index >= 0) telem_param_value(param_index);
+          }
+          break;
+        }
+
+        case MAVLINK_MSG_ID_PARAM_SET: { //23
+          mavlink_param_set_t m;
+          mavlink_msg_param_set_decode(&msg, &m);
+          char name[17];
+          memcpy(name, m.param_id, 16);
+          name[16] = 0;
+          int param_index = cfg.set(String(name), m.param_value);
+          if(param_index >= 0) telem_param_value(param_index);
+          break;
+        }
+
         default: {
-          //Serial.print("Received message with ID %d\n",msg.msgid);
+          //Serial.printf("MAV: %d\n",msg.msgid);
           break; 
         }
       }
@@ -167,6 +209,7 @@ bool RcinMavlink::_update() {
   }
   return false;
 }
+
 
 
 //==================================================================================================
@@ -301,12 +344,12 @@ bool RcinMavlink::telem_battery_status() {
 //start sending param value list
 void RcinMavlink::telem_param_value_enable() {
   telem_param_list_index = 0;
-  telem_sched[0].interval_ms = 10; //enable scheduler for param_value
+  telem_sched[0].interval_ms = 25; //enable scheduler for param_value - ELRS 333Hz Full data link is 1600 bytes/s, one PARAM_VALUE is 39 bytes -> 25 ms/PARAM_VALUE
 }
 
 bool RcinMavlink::telem_param_value(uint16_t param_index) {
   uint16_t param_count = cfg.valueCount();
-  if(param_index < param_count) return true; //return true (i.e. command executed), even if nothing was send...
+  if(param_index >= param_count) return true; //return true (i.e. command executed), even if nothing was send...
   
   String param_id;
   float param_value = 0;
