@@ -24,6 +24,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+
+/*
+TODO
+MAVLINK_MSG_ID_VFR_HUD (climb, airspeed, groundspeed, heading)
+MAVLINK_MSG_ID_HOME_POSITION
+MAVLINK_MSG_ID_ALTITUDE // send the terrain message to Yaapu Telemetry Script
+MAVLINK_MSG_ID_HIGH_LATENCY2 // send the waypoint message to Yaapu Telemetry Script
+MAVLINK_MSG_ID_REQUEST_DATA_STREAM
+
+SERIAL_CONTROL (126)  //Qgroundcontrol mavlink console
+
+*/
+
+
 //-------------------------------------------------------------------------------------------
 // include mavlink library
 //-------------------------------------------------------------------------------------------
@@ -65,16 +79,7 @@ class RcinMavlink : public Rcin {
     bool telem_gps_raw_int();
     bool telem_battery_status();
     
-/*
-TODO
-MAVLINK_MSG_ID_HEARTBEAT (fightmode & armed )
-MAVLINK_MSG_ID_VFR_HUD (climb, airspeed, groundspeed, heading)
-MAVLINK_MSG_ID_HOME_POSITION
-MAVLINK_MSG_ID_ALTITUDE // send the terrain message to Yaapu Telemetry Script
-MAVLINK_MSG_ID_HIGH_LATENCY2 // send the waypoint message to Yaapu Telemetry Script
-MAVLINK_MSG_ID_REQUEST_DATA_STREAM
-parameter read/write
-*/
+
 
     //parameter micro service
     void telem_param_value_enable();
@@ -156,18 +161,6 @@ bool RcinMavlink::receive() {
           return true;
         }
 
-        case MAVLINK_MSG_ID_RADIO_STATUS: { //109
-          //mavlink_radio_status_t m;
-          //mavlink_msg_radio_status_decode(&msg, &m);
-          //Serial.printf("Received RADIO_STATUS: rssi:%d\n",(int)m.rssi);
-          break; 
-        }
-
-        case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: { //66
-          //TODO
-          break;
-        }
-
         case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: { //21
           //Serial.println("Received PARAM_REQUEST_LIST");
           telem_param_value_enable();
@@ -197,6 +190,18 @@ bool RcinMavlink::receive() {
           name[16] = 0;
           int param_index = cfg.set(String(name), m.param_value);
           if(param_index >= 0) telem_param_value(param_index);
+          break;
+        }
+
+        case MAVLINK_MSG_ID_RADIO_STATUS: { //109
+          //mavlink_radio_status_t m;
+          //mavlink_msg_radio_status_decode(&msg, &m);
+          //Serial.printf("Received RADIO_STATUS: rssi:%d\n",(int)m.rssi);
+          break; 
+        }
+
+        case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: { //66
+          //TODO
           break;
         }
 
@@ -252,15 +257,14 @@ bool RcinMavlink::telem_send(mavlink_message_t *msg, uint16_t timeout_ms) {
 bool RcinMavlink::telem_heartbeat() {
   mavlink_message_t msg;
   mavlink_msg_heartbeat_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
-    , MAV_TYPE_QUADROTOR
-    , MAV_AUTOPILOT_GENERIC
-    , MAV_MODE_FLAG_MANUAL_INPUT_ENABLED
-    , 0
-    , MAV_STATE_STANDBY
+    , veh.mav_type // uint8_t type; /*<  Vehicle or component type. For a flight controller component the vehicle type (quadrotor, helicopter, etc.). For other components the component type (e.g. camera, gimbal, etc.). This should be used in preference to component id for identifying the component type.*/
+    , MAV_AUTOPILOT_ARDUPILOTMEGA // uint8_t autopilot; /*<  Autopilot type / class. Use MAV_AUTOPILOT_INVALID for components that are not flight controllers.*/
+    , MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | (out.armed ? MAV_MODE_FLAG_SAFETY_ARMED : 0) // uint8_t base_mode; /*<  System mode bitmap.*/
+    , veh.flightmode_ap_id() // uint32_t custom_mode; /*<  A bitfield for use for autopilot-specific flags*/
+    , MAV_STATE_STANDBY // uint8_t system_status; /*<  System status flag.*/
   );
   return telem_send(&msg);
 }
-
 
 bool RcinMavlink::telem_attitude() {
   mavlink_message_t msg;
@@ -296,22 +300,22 @@ bool RcinMavlink::telem_global_position_int() { //33
 bool RcinMavlink::telem_gps_raw_int() {
   mavlink_message_t msg;
   mavlink_msg_gps_raw_int_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
-    , millis() //uint64_t time_usec; /*< [us] Timestamp (UNIX Epoch time or time since system boot). The receiving end can infer timestamp format (since 1.1.1970 or since system boot) by checking for the magnitude of the number.*/
-    , gps.lat  //int32_t lat; /*< [degE7] Latitude (WGS84, EGM96 ellipsoid)*/
-    , gps.lon  //int32_t lon; /*< [degE7] Longitude (WGS84, EGM96 ellipsoid)*/
-    , gps.alt  //int32_t alt; /*< [mm] Altitude (MSL). Positive for up. Note that virtually all GPS modules provide the MSL altitude in addition to the WGS84 altitude.*/
-    , gps.hdop  //uint16_t eph; /*<  GPS HDOP horizontal dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
-    , gps.vdop  //uint16_t epv; /*<  GPS VDOP vertical dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
-    , gps.sog/10 //uint16_t vel; /*< [cm/s] GPS ground speed. If unknown, set to: UINT16_MAX*/
-    , gps.cog/10 //uint16_t cog; /*< [cdeg] Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX*/
-    , gps.fix  //uint8_t fix_type; /*<  GPS fix type.*/
-    , gps.sat  //uint8_t satellites_visible; /*<  Number of satellites visible. If unknown, set to UINT8_MAX*/
-    , gps.alt  //int32_t alt_ellipsoid; /*< [mm] Altitude (above WGS84, EGM96 ellipsoid). Positive for up.*/
-    , gps.hacc  //uint32_t h_acc; /*< [mm] Position uncertainty.*/
-    , gps.vacc  //uint32_t v_acc; /*< [mm] Altitude uncertainty.*/
-    , (gps.have_vel_acc ? gps.vel_acc : 0) //uint32_t vel_acc; /*< [mm/s] Speed uncertainty.*/
-    , 0 // uint32_t hdg_acc; /*< [degE5] Heading / track uncertainty*/
-    , 0 // uint16_t yaw; /*< [cdeg] Yaw in earth frame from north. Use 0 if this GPS does not provide yaw. Use UINT16_MAX if this GPS is configured to provide yaw and is currently unable to provide it. Use 36000 for north.*/
+    , millis()   // uint64_t time_usec; /*< [us] Timestamp (UNIX Epoch time or time since system boot). The receiving end can infer timestamp format (since 1.1.1970 or since system boot) by checking for the magnitude of the number.*/
+    , gps.fix    // uint8_t fix_type; /*<  GPS fix type.*/
+    , gps.lat    // int32_t lat; /*< [degE7] Latitude (WGS84, EGM96 ellipsoid)*/
+    , gps.lon    // int32_t lon; /*< [degE7] Longitude (WGS84, EGM96 ellipsoid)*/
+    , gps.alt    // int32_t alt; /*< [mm] Altitude (MSL). Positive for up. Note that virtually all GPS modules provide the MSL altitude in addition to the WGS84 altitude.*/
+    , gps.hdop   // uint16_t eph; /*<  GPS HDOP horizontal dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
+    , gps.vdop   // uint16_t epv; /*<  GPS VDOP vertical dilution of position (unitless * 100). If unknown, set to: UINT16_MAX*/
+    , gps.sog/10 // uint16_t vel; /*< [cm/s] GPS ground speed. If unknown, set to: UINT16_MAX*/
+    , gps.cog/10 // uint16_t cog; /*< [cdeg] Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX*/
+    , gps.sat    // uint8_t satellites_visible; /*<  Number of satellites visible. If unknown, set to UINT8_MAX*/
+    , gps.alt    // int32_t alt_ellipsoid; /*< [mm] Altitude (above WGS84, EGM96 ellipsoid). Positive for up.*/
+    , gps.hacc   // uint32_t h_acc; /*< [mm] Position uncertainty.*/
+    , gps.vacc   // uint32_t v_acc; /*< [mm] Altitude uncertainty.*/
+    , (gps.have_vel_acc ? gps.vel_acc : 0) // uint32_t vel_acc; /*< [mm/s] Speed uncertainty.*/
+    , 0          // uint32_t hdg_acc; /*< [degE5] Heading / track uncertainty*/
+    , 0          // uint16_t yaw; /*< [cdeg] Yaw in earth frame from north. Use 0 if this GPS does not provide yaw. Use UINT16_MAX if this GPS is configured to provide yaw and is currently unable to provide it. Use 36000 for north.*/
   );
   return telem_send(&msg);
 }

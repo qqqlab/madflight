@@ -24,6 +24,13 @@ MIT license
 Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
 
+//vehicle config
+#define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
+#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_STABILIZE, AP_COPTER_FLIGHTMODE_ACRO} //mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
+enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
+flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
@@ -33,12 +40,6 @@ Copyright (c) 2023-2025 https://madflight.com
 
 //IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
 const float armed_min_throttle = 0.20; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
-
-//Flight modes
-enum flightmode_enum {RATE, ANGLE}; //the available flightmodes
-const char* flightmode_str[] = {"RATE","ANGLE"}; //define flightmode strings for telemetry
-flightmode_enum flightmode_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
-flightmode_enum flightmode = RATE; //current flight mode
 
 //Controller parameters (take note of defaults before modifying!): 
 const float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
@@ -101,7 +102,7 @@ void loop() {
   if(millis() - telem_ts > 100) {
     telem_ts = millis();
     telem_cnt++;
-    String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + flightmode_str[flightmode];
+    String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
     rcin_telemetry_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
     rcin_telemetry_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
     if(telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
@@ -143,10 +144,10 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcin.update();
-  flightmode = flightmode_map[rcin.flightmode]; //map rcin.flightmode (0 to 5) to vehicle flightmode
+  veh.flightmode = rcin_to_flightmode_map[rcin.flightmode]; //map rcin.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
-  switch(flightmode) {
+  switch(veh.flightmode) {
     case ANGLE: 
       control_Angle(rcin.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;
