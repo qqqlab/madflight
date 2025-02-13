@@ -21,8 +21,8 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #include "imu_interface.h" //Imu class declaration
 
 //Available sensors
-#define IMU_USE_NONE 0
-#define IMU_USE_SPI_BMI270 1
+#define IMU_USE_NONE        0
+#define IMU_USE_SPI_BMI270  1
 #define IMU_USE_SPI_MPU9250 2
 #define IMU_USE_SPI_MPU6500 3
 #define IMU_USE_SPI_MPU6000 4
@@ -73,12 +73,6 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #else
   #define IMU_ROTATE()
 #endif
-
-//depreciated
-#ifdef HW_USE_FREERTOS
-  #error "HW_USE_FREERTOS is depreciated, use IMU_EXEC_XXX"
-#endif
-
 
 #ifndef IMU_USE 
   #define IMU_USE IMU_USE_NONE

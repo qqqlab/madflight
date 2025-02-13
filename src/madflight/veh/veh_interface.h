@@ -125,26 +125,10 @@ class Vehicle {
     uint8_t flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
     const char* flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
-    void setFlightmode(uint8_t flightmode) {
-      if(_flightmode != flightmode) {
-        _flightmode = flightmode;
-        //TODO: log flightmode change
-      }
-    }
-
-    uint8_t getFlightmode() {
-      return _flightmode;
-    }
-
-    uint8_t flightmode_ap_id() {
-      if(_flightmode<6) return flightmode_ap_ids[_flightmode];
-      return 0xff;
-    }
-
-    const char* flightmode_name() {
-      if(_flightmode<6) return flightmode_names[_flightmode];
-      return flightmode_name_unknown;
-    }
+    void setFlightmode(uint8_t flightmode);
+    uint8_t getFlightmode();
+    uint8_t flightmode_ap_id();
+    const char* flightmode_name();
 
   private:
     uint8_t _flightmode = 0; //current flight mode index
