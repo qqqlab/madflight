@@ -40,16 +40,16 @@ SOFTWARE.
   #define RCIN_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle in microseconds
 #endif
 
-#define RCIN_USE_NONE  0
-#define RCIN_USE_CRSF  1
-#define RCIN_USE_SBUS  2
-#define RCIN_USE_DSM   3
-#define RCIN_USE_PPM   4
-#define RCIN_USE_PWM   5
-#define RCIN_USE_DEBUG 6
+#define RCIN_USE_NONE    0
+#define RCIN_USE_CRSF    1
+#define RCIN_USE_SBUS    2
+#define RCIN_USE_DSM     3
+#define RCIN_USE_PPM     4
+#define RCIN_USE_PWM     5
+#define RCIN_USE_DEBUG   6
 #define RCIN_USE_MAVLINK 7
 
-#include "../interface.h" //RCIN interface definition
+#include "rcin_interface.h" //RCIN interface definition
 #include "../cfg/cfg.h"
 #include "rcin_calibrate.h"
 

@@ -24,7 +24,7 @@ MIT license
 Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
 
-//vehicle config
+//Vehicle specific madflight configuration
 #define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
 #define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_STABILIZE, AP_COPTER_FLIGHTMODE_ACRO} //mapping of fightmode index to ArduPilot code for logging and mavlink
 #define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
@@ -96,19 +96,6 @@ void loop() {
   
   if(gps_loop()) {bb.log_gps(); bb.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
 
-  //send telemetry
-  static uint32_t telem_ts = 0;
-  static uint32_t telem_cnt = 0;
-  if(millis() - telem_ts > 100) {
-    telem_ts = millis();
-    telem_cnt++;
-    String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
-    rcin_telemetry_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
-    rcin_telemetry_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
-    if(telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
-    if(telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
-  }
-
   //logging
   static uint32_t log_ts = 0;
   if(millis() - log_ts > 100) {
@@ -144,10 +131,10 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcin.update();
-  veh.flightmode = rcin_to_flightmode_map[rcin.flightmode]; //map rcin.flightmode (0 to 5) to vehicle flightmode
+  veh.setFlightmode( rcin_to_flightmode_map[rcin.flightmode] ); //map rcin.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
-  switch(veh.flightmode) {
+  switch( veh.getFlightmode() ) {
     case ANGLE: 
       control_Angle(rcin.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;

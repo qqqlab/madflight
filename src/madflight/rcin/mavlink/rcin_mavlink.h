@@ -37,6 +37,24 @@ SERIAL_CONTROL (126)  //Qgroundcontrol mavlink console
 
 */
 
+#pragma once
+
+//include all module interfaces
+#include "../../ahrs/ahrs_interface.h"
+#include "../../alt/alt_interface.h"
+#include "../../baro/baro_interface.h"
+#include "../../bat/bat_interface.h"
+#include "../../bb/bb_interface.h"
+#include "../../cfg/cfg_interface.h"
+//#include "../../cli/cli_interface.h"
+#include "../../gps/gps_interface.h"
+#include "../../imu/imu_interface.h"
+#include "../../led/led_interface.h"
+#include "../../mag/mag_interface.h"
+#include "../../out/out_interface.h"
+#include "../../pid/pid_interface.h"
+#include "../../rcin/rcin_interface.h"
+#include "../../veh/veh_interface.h"
 
 //-------------------------------------------------------------------------------------------
 // include mavlink library
@@ -54,7 +72,7 @@ SERIAL_CONTROL (126)  //Qgroundcontrol mavlink console
 #include "mavlink_c_library_v2/ardupilotmega/mavlink.h"
 //-------------------------------------------------------------------------------------------
 
-#include "../../interface.h"
+#include "../../cfg/cfg_interface.h"
 
 class RcinMavlink : public Rcin {
   public:
@@ -114,7 +132,7 @@ void RcinMavlink::_setup() {
 
 //process received mavlink data
 bool RcinMavlink::_update() {
-  bool rv = receive();
+  bool rv = receive(); //do receive first, so that it has a greater chance to have enough txbuf space to send a reply if needed
   telem_update();
   return rv;
 }

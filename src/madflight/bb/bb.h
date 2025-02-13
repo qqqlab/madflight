@@ -24,22 +24,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-#define BB_USE_NONE 1
-//bb_sdcard.h
-#define BB_USE_SD 2 //SDCARD with 1-bit SPI interface
-#define BB_USE_SDMMC 3 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BB_USE_SDDEBUG 4 //print log to Serial
+#pragma once
 
+#define BB_USE_NONE    0
+#define BB_USE_SD      1 //SDCARD with 1-bit SPI interface
+#define BB_USE_SDMMC   2 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
+#define BB_USE_SDDEBUG 3 //print log to Serial
 
-#include "../interface.h" //defines class BlackBox
+#include "bb_interface.h" //defines class BlackBox
+
+#ifndef BB_USE
+  #define BB_USE BB_USE_NONE
+#endif
 
 //=====================================================================================================================
 // No Logging
 //=====================================================================================================================
-#if !defined BB_USE || BB_USE == BB_USE_NONE
+#if BB_USE == BB_USE_NONE
 
-BlackBox bb_instance;
-BlackBox &bb = bb_instance;
+#include "bb_none/bb_none.h"
 
 //=====================================================================================================================
 // Logging to SDCARD (SPI or MMC interface)

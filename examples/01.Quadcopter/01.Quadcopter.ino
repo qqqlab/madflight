@@ -29,7 +29,7 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2023-2024 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight

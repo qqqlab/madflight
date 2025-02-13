@@ -24,7 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-#include "../interface.h"
+#pragma once
+
+#include "out_interface.h"
 
 static PWM pwm[HW_OUT_COUNT]; //ESC and Servo outputs (values: 0.0 to 1.0)
 static float command[HW_OUT_COUNT] = {}; //last commanded outputs (values: 0.0 to 1.0)

@@ -96,7 +96,7 @@ int autobaud(int pin, int timeout, int minpulses) {
   int baud = 0;
   uint32_t tstart = millis();
   autobaud_begin(pin);
-  while((uint32_t)millis() - tstart < timeout) {
+  while((uint32_t)millis() - tstart < (uint32_t)timeout) {
     baud = autobaud_get_baud(minpulses);
     if(baud != 0) break;
   }

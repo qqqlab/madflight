@@ -27,6 +27,7 @@ SOFTWARE.
 #pragma once
 
 #include "../alt_interface.h" //AltEst
+#include "../../baro/baro_interface.h"
 #include "../../common/common.h" //lowpass_to_beta()
 
 class AltEst_Baro : public AltEst {

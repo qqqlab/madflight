@@ -24,11 +24,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#pragma once
+
+//include all modules
+#include "../../ahrs/ahrs_interface.h"
+#include "../../alt/alt_interface.h"
+#include "../../baro/baro_interface.h"
+#include "../../bat/bat_interface.h"
+#include "../../bb/bb_interface.h"
+#include "../../cfg/cfg_interface.h"
+//#include "../../cli/cli_interface.h"
+#include "../../gps/gps_interface.h"
+#include "../../imu/imu_interface.h"
+#include "../../led/led_interface.h"
+#include "../../mag/mag_interface.h"
+#include "../../out/out_interface.h"
+#include "../../pid/pid_interface.h"
+#include "../../rcin/rcin_interface.h"
+#include "../../veh/veh_interface.h"
+
 /* moved to bb/bb.h
-#define BB_USE_NONE 1
-#define BB_USE_SD 2 //SDCARD with 1-bit SPI interface
-#define BB_USE_SDMMC 3 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BB_USE_SDDEBUG 4 //print log to Serial
+#define BB_USE_NONE 0
+#define BB_USE_SD 1 //SDCARD with 1-bit SPI interface
+#define BB_USE_SDMMC 2 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
+#define BB_USE_SDDEBUG 3 //print log to Serial
 */
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)

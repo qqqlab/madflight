@@ -4,14 +4,14 @@ Each BARO_USE_xxx section in this file defines a specific Barometer class
 
 #pragma once
 
-#define BARO_USE_NONE 1
-#define BARO_USE_BMP280 2
-#define BARO_USE_BMP388 3
-#define BARO_USE_BMP390 4
-#define BARO_USE_MS5611 5
+#define BARO_USE_NONE 0
+#define BARO_USE_BMP280 1
+#define BARO_USE_BMP388 2
+#define BARO_USE_BMP390 3
+#define BARO_USE_MS5611 4
 
 
-#include "../interface.h"
+#include "baro_interface.h"
 #include <math.h>
 
 class BarometerSensor {
@@ -25,10 +25,14 @@ public:
   #define BARO_I2C_ADR 0
 #endif
 
+#ifndef BARO_USE
+  #define BARO_USE BARO_USE_NONE
+#endif
+
 //=================================================================================================
 // None or undefined
 //=================================================================================================
-#if BARO_USE == BARO_USE_NONE || !defined BARO_USE
+#if BARO_USE == BARO_USE_NONE
 class BarometerNone: public BarometerSensor {
 public:
   int setup(uint32_t sampleRate) {
@@ -52,7 +56,7 @@ BarometerNone baro_sensor;
 //=================================================================================================
 #elif BARO_USE == BARO_USE_BMP280 
 
-#include "BMP280.h"
+#include "BMP280/BMP280.h"
 
 Adafruit_BMP280 baro_BMP280(i2c);
 
@@ -152,7 +156,7 @@ BarometerBMP390 baro_sensor;
 //=================================================================================================
 #elif BARO_USE == BARO_USE_MS5611
 
-#include "MS5611.h"
+#include "MS5611/MS5611.h"
 
 class BarometerMS5611: public BarometerSensor {
 private: 

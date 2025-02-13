@@ -33,7 +33,7 @@ public:
 
 
 /*
-0x08 Battery sensor
+0x08 Battery sensor - message length = 13
 Payload:
 uint16_t    Voltage ( 0.1 V )
 uint16_t    Current ( 0.1 A )
@@ -53,7 +53,7 @@ static int telemetry_battery(uint8_t *buf, float voltage_V, float current_A, int
 }
 
 /*
-0x02 GPS
+0x02 GPS - message length = 23
 Payload:
 int32_t     Latitude ( degree / 10`000`000 )
 int32_t     Longitude (degree / 10`000`000 )
@@ -89,7 +89,7 @@ static int16_t degrees2Radians10000(float angle_deg)
 }
 
 /*
-0x1E Attitude
+0x1E Attitude - message length = 10
 Payload:
 int16_t     Pitch angle ( rad / 10000 )
 int16_t     Roll angle ( rad / 10000 )

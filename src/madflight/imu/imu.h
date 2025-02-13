@@ -16,6 +16,10 @@ These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kH
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 ========================================================================================================================*/
 
+#pragma once
+
+#include "imu_interface.h" //Imu class declaration
+
 //Available sensors
 #define IMU_USE_NONE 0
 #define IMU_USE_SPI_BMI270 1
@@ -75,13 +79,15 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #error "HW_USE_FREERTOS is depreciated, use IMU_EXEC_XXX"
 #endif
 
+
+#ifndef IMU_USE 
+  #define IMU_USE IMU_USE_NONE
+#endif
+
 //=====================================================================================================================
 // setup the imu_Sensor object
 //=====================================================================================================================
-#if !defined IMU_USE 
-  #define IMU_USE IMU_USE_NONE
-
-#elif IMU_USE == IMU_USE_NONE
+#if IMU_USE == IMU_USE_NONE
   //do nothing
 
 #elif IMU_USE == IMU_USE_SPI_BMI270
@@ -172,7 +178,7 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 // Imu Class Implementation
 //========================================================================================================================//
 
-#include "../interface.h" //Imu class declaration
+
 
 //global Imu class instance
 Imu imu;

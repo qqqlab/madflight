@@ -1,3 +1,5 @@
+#pragma once
+
 #include "GPS-uBlox/qqqlab_GPS_UBLOX.h"
 #include "GPS-uBlox/qqqlab_AutoBaud.h"
 

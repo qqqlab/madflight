@@ -1,8 +1,6 @@
 /*=================================================================================================
 Each BARO_USE_xxx section in this file defines a specific Barometer class
 =================================================================================================*/
-//needs modules: imu, mag, and cfg
-
 #pragma once
 
 #define AHRS_USE_MAHONY 1 //default when AHRS_USE is not defined
@@ -10,7 +8,10 @@ Each BARO_USE_xxx section in this file defines a specific Barometer class
 #define AHRS_USE_MADGWICK 3
 #define AHRS_USE_VQF 4
 
-#include "../interface.h" //Ahrs class definition
+#include "ahrs_interface.h" //Ahrs class definition
+#include "../mag/mag_interface.h"
+#include "../imu/imu_interface.h"
+#include "../cfg/cfg_interface.h"
 #include "../common/common.h" //lowpass_to_beta
 
 void Ahrs::update() {

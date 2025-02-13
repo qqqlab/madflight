@@ -39,3 +39,5 @@ class AltEst {
     virtual float getV() = 0; //vertical up speed (climb rate) estimate in [m/s]
     virtual void toString(char *s); //print state info to s (max 100 chars)
 };
+
+extern AltEst &alt;

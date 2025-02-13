@@ -53,6 +53,13 @@ C8 0C 14 33 00 64 0D 00 04 01 00 00 00 96 --> 0x0c:len 12 bytes (frame len is 14
 
 #pragma once
 
+//includes for telemetry 
+#include "crsf_telemetry.h"
+#include "../../ahrs/ahrs_interface.h"
+#include "../../bat/bat_interface.h"
+#include "../../gps/gps_interface.h"
+#include "../../out/out_interface.h"
+
 #define CRSF_BAUD 420000
 #define CRSF_FRAME_SIZE_MAX 64 //max number of bytes of a frame
 #define CRSF_FRAME_LEN_MAX (CRSF_FRAME_SIZE_MAX-2) //max value of the <length> field
@@ -82,6 +89,8 @@ public:
     }
 
     bool update(uint8_t c) {
+        telem_update();
+
         bool received_channels = false;
         if (buf_i == 0) { //device address
             if (c == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
@@ -112,6 +121,55 @@ public:
     }
 
 private:
+    //-------------------------------------------------------------------------------
+    //telemetry
+    //-------------------------------------------------------------------------------
+    uint32_t telem_ts = 0;
+    uint32_t telem_cnt = 0;
+
+    void telem_update() {
+      if(millis() - telem_ts > 100) {
+        telem_ts = millis();
+        telem_cnt++;
+        String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
+        telem_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
+        telem_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
+        if(telem_cnt % 10 == 0) telem_battery(bat.v, bat.i, bat.mah, 100);
+        if(telem_cnt % 10 == 5) telem_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
+      }
+    }
+
+    void telem_gps(int32_t lat, int32_t lon, uint16_t sog_kmh, uint16_t cog_deg, uint16_t alt_m, uint8_t sats) {
+        uint8_t buf[65];
+        int len = CRSF_Telemetry::telemetry_gps(buf, lat, lon, sog_kmh, cog_deg, alt_m, sats);
+        if((int)rcin_Serial->availableForWrite() >= len) rcin_Serial->write(buf, len);
+    }
+
+    void telem_flight_mode(const char *flight_mode) {
+        uint8_t buf[65];
+        int len = CRSF_Telemetry::telemetry_flight_mode(buf, flight_mode);
+        if((int)rcin_Serial->availableForWrite() >= len) rcin_Serial->write(buf, len);
+        //Serial.printf("\nFM(len=%d) ",len);
+        //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
+    }
+
+    void telem_attitude(float pitch, float roll, float yaw) {
+        uint8_t buf[65];
+        int len = CRSF_Telemetry::telemetry_attitude(buf, pitch, roll, yaw);
+        if((int)rcin_Serial->availableForWrite() >= len) rcin_Serial->write(buf, len);
+        //Serial.printf("\natt(len=%d) ",len);
+        //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
+    }
+
+    void telem_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining) {
+        uint8_t buf[65];
+        int len = CRSF_Telemetry::telemetry_battery(buf, voltage_V, current_A, fuel_mAh, remaining);
+        if((int)rcin_Serial->availableForWrite() >= len) rcin_Serial->write(buf, len);
+    }
+
+    //-------------------------------------------------------------------------------
+
+
     uint8_t buf[CRSF_FRAME_SIZE_MAX];
     uint8_t buf_i;
     uint8_t buf_len;

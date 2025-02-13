@@ -4,34 +4,21 @@ Each BAT_USE_xxx section in this file defines a specific Battery class
 
 #pragma once
 
-#define BAT_USE_NONE 1
-#define BAT_USE_ADC 2
-#define BAT_USE_INA226 3
-#define BAT_USE_INA228 4
+#define BAT_USE_NONE 0
+#define BAT_USE_ADC 1
+#define BAT_USE_INA226 2
+#define BAT_USE_INA228 3
 
-#include "../interface.h"
+#include "bat_interface.h"
 
-/* INTERFACE
-class Battery {
-  public:
-      float i = 0; //Battery current (A)
-      float v = 0; //battery voltage (V)
-      float w = 0; //battery power (W)
-      float mah = 0; //battery usage (Ah)
-      float wh = 0; //battery usage (Wh)
-      uint32_t interval_us = 10000; //update interval in us
-
-  virtual void setup() = 0;
-  virtual bool update() = 0; //returns true if battery was updated
-};
-
-extern Battery &bat;
-*/
+#ifndef BAT_USE
+  #define BAT_USE BAT_USE_NONE
+#endif
 
 //=================================================================================================
 // None or undefined
 //=================================================================================================
-#if BAT_USE == BAT_USE_NONE || !defined BAT_USE
+#if BAT_USE == BAT_USE_NONE
 
 class BatteryNone: public Battery {
   public:
@@ -46,7 +33,7 @@ BatteryNone bat_instance;
 //=================================================================================================
 #elif BAT_USE == BAT_USE_ADC
 
-#include "BatteryADC.h"
+#include "BatteryADC/BatteryADC.h"
 
 BatteryADC bat_instance;
 

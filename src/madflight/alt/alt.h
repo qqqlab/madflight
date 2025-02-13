@@ -31,18 +31,22 @@ Each ALT_USE_xxx section in this file defines a specific altimeter estimator cla
 
 #pragma once
 
-#define ALT_USE_NONE    1
-#define ALT_USE_KALMAN2 2 // Kalman filter estimates h and v from barometer and acceleration
-#define ALT_USE_KALMAN3 3 // Kalman filter estimates h, v, and abias from barometer and acceleration
-#define ALT_USE_BARO    4 // Filtered barometer
-#define ALT_USE_COMP    5 // Complementary filter
+#define ALT_USE_NONE    0
+#define ALT_USE_KALMAN2 1 // Kalman filter estimates h and v from barometer and acceleration
+#define ALT_USE_KALMAN3 2 // Kalman filter estimates h, v, and abias from barometer and acceleration
+#define ALT_USE_BARO    3 // Filtered barometer
+#define ALT_USE_COMP    4 // Complementary filter
 
-#include "../interface.h" //declares AltEst - Altimeter Estimator class
+#include "alt_interface.h" //declares AltEst - Altimeter Estimator base class
+
+#ifndef ALT_USE
+  #define ALT_USE ALT_USE_NONE
+#endif
 
 //=================================================================================================
 // None or undefined
 //=================================================================================================
-#if ALT_USE == ALT_USE_NONE || !defined ALT_USE
+#if ALT_USE == ALT_USE_NONE
 
 class AltEst_None : public AltEst {
 public:

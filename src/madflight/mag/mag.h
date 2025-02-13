@@ -8,14 +8,16 @@ Body frame is NED: x-axis North(front), y-axis East(right), z-axis Down
 Unit of Measure is uT (micro Tesla)
 =================================================================================================*/
 
-#define MAG_USE_NONE 1
-#define MAG_USE_QMC5883L 2
+#pragma once
+
+#define MAG_USE_NONE 0
+#define MAG_USE_QMC5883L 1
 
 #ifndef MAG_I2C_ADR
   #define MAG_I2C_ADR 0
 #endif
 
-#include "../interface.h"
+#include "mag_interface.h"
 
 /* INTERFACE
 class Magnetometer {
@@ -40,6 +42,10 @@ bool Magnetometer::update() {
   return true;
 }
 
+#ifndef MAG_USE
+  #define MAG_USE MAG_USE_NONE
+#endif
+
 
 //=================================================================================================
 // None or undefined
@@ -60,7 +66,7 @@ MagnetometerNone mag_instance;
 //=================================================================================================
 #elif MAG_USE == MAG_USE_QMC5883L
 
-#include "QMC5883L.h"
+#include "QMC5883L/QMC5883L.h"
 QMC5883L<HW_WIRETYPE> mag_QMC5883L(i2c);
 
 class MagnetometerQMC5883L: public Magnetometer {
