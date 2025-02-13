@@ -255,6 +255,7 @@ bool RcinMavlink::telem_send(mavlink_message_t *msg, uint16_t timeout_ms) {
 
 
 bool RcinMavlink::telem_heartbeat() {
+  //Note: ArduPilot also sets bits MAV_MODE_FLAG_STABILIZE_ENABLED and/or MAV_MODE_FLAG_GUIDED_ENABLED (for RTL) depending on flightmode. Not done here, but works fine with yaapu/MP/QGC.
   mavlink_message_t msg;
   mavlink_msg_heartbeat_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg
     , veh.mav_type // uint8_t type; /*<  Vehicle or component type. For a flight controller component the vehicle type (quadrotor, helicopter, etc.). For other components the component type (e.g. camera, gimbal, etc.). This should be used in preference to component id for identifying the component type.*/
