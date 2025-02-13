@@ -29,7 +29,7 @@ The source code and [website](https://madflight.com/) have extensive documentati
 - GPS Module (Serial)
 - Barometer (I2C BMP390, BMP388, BMP280, MS5611)
 - Magnetometer (I2C QMC5883L)
-- Current/Voltage Sensor (ADC or I2C INA226)
+- Current/Voltage Sensor (ADC or I2C INA226, INA228)
 - [Optical Flow Sensor](https://github.com/qqqlab/ESP32-Optical-Flow) (I2C)
 
 ## Getting Started
@@ -72,6 +72,7 @@ By default **madflight** has these safety features enabled:
 - It mainly uses plain Arduino functionality: Serial, Wire, and SPI. One custom hardware dependent library is used for PWM. Therefor, it can fairly easily ported to other 32 bit microcontrollers that support the Arduino framework. Also porting to other build environments like PlatformIO or CMake should not be a huge effort.
 - The following modules are used:
     - `ahrs` Attitude Heading Reference System, estimates roll, yaw, pitch
+    - `alt` Altitude Estimator
     - `baro` Barometer sensor
     - `bat` Battery monitor
     - `bb` Black Box data logger
@@ -83,10 +84,11 @@ By default **madflight** has these safety features enabled:
     - `led` LED driver
     - `mag` Magnetometer sensor (external)
     - `out` Output to motors and servos
+    - `pid` PID controller
     - `rcin` RC INput, retrieves RC receiver data
+    - `veh` Vehicle information
 - Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
-- For a quick overview of the objects, see header `src/madflight/interfaces.h` which defines the module interfaces.
-- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`. In the `extras` directory your find test programs for the modules, e.g. `extras/TestMadflight/imu.ino`.
+- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`, and the interface declaration `src/madflight/imu/imu_interface.h`
 - The module files are usually header only, that is, the header also includes the implemention.
 
 ## Disclaimer
