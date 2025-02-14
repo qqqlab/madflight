@@ -20,7 +20,7 @@ The source code and [website](https://madflight.com/) have extensive documentati
     - [ESP32-S3/ESP32](https://madflight.com/Board-ESP32/) (e.g. Espressiv ESP32/ESP32-S3 DevKitC)
     - [STM32](https://madflight.com/Board-STM32/) (e.g. Black Pill or a commercial flight controller)
 - [SPI IMU sensor](https://madflight.com/Sensor-Boards/) (BMI270, MPU9250, MPU6500, or MPU6000), if not available then use an I2C IMU sensor (MPU6050 or MPU9150) 
-- RC Receiver: ELRS, CRSF, SBUS, DMSX, or PPM
+- RC Receiver: MAVLink, ELRS, CRSF, SBUS, DMSX, or PPM
 - BEC or DC-DC converter to power your board from a battery
 - ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
 
