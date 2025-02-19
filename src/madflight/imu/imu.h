@@ -28,6 +28,8 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_USE_I2C_MPU6050 8
 #define IMU_USE_I2C_MPU6000 9
 
+#define IMU_USE_SPI_ICM45686 20
+
 //Available aligns
 #define IMU_ALIGN_CW0 1
 #define IMU_ALIGN_CW90 2
@@ -99,6 +101,15 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #include "MPUxxxx/MPUxxxx.h"
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX imu_Sensor(MPUXXXX::MPU9250, &mpu_iface);
+
+#elif IMU_USE == IMU_USE_SPI_ICM45686
+  #define IMU_TYPE "IMU_USE_SPI_ICM45686"
+  #define IMU_IS_I2C 0
+  // FIXME: impl mag for https://store.kouno.xyz/products/icm-45686-ist8306-module which is connected **to IMU** as slave
+  #define IMU_HAS_MAG 0
+  #include "ICM4xxxx/MF_ICM45686.h"
+  Invensensev3_InterfaceSPI icm_iface(spi, HW_PIN_IMU_CS);
+  MF_ICM45686 imu_Sensor( (uint8_t) HW_PIN_IMU_EXTI, &icm_iface);
 
 #elif IMU_USE == IMU_USE_SPI_MPU6500
   #define IMU_TYPE "IMU_USE_SPI_MPU6500"
