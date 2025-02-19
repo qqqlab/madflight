@@ -1,6 +1,6 @@
 #ifndef MF_ICM45686_H
 #define MF_ICM45686_H
-#include "../../interface.h"
+#include "../imu_interface.h"
 #include "ICM45686.h"
 
 
