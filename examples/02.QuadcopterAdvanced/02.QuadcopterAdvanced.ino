@@ -21,8 +21,15 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2023-2024 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
+
+//Vehicle specific madflight configuration
+#define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
+#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_STABILIZE, AP_COPTER_FLIGHTMODE_ACRO} //mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
+enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
+flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
@@ -33,12 +40,6 @@ Copyright (c) 2023-2024 https://madflight.com
 
 //IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
 const float armed_min_throttle = 0.20; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
-
-//Flight modes
-enum flightmode_enum {RATE, ANGLE}; //the available flightmodes
-const char* flightmode_str[] = {"RATE","ANGLE"}; //define flightmode strings for telemetry
-flightmode_enum flightmode_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
-flightmode_enum flightmode = RATE; //current flight mode
 
 //Controller parameters (take note of defaults before modifying!): 
 const float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
@@ -95,19 +96,6 @@ void loop() {
   
   if(gps_loop()) {bb.log_gps(); bb.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
 
-  //send telemetry
-  static uint32_t telem_ts = 0;
-  static uint32_t telem_cnt = 0;
-  if(millis() - telem_ts > 100) {
-    telem_ts = millis();
-    telem_cnt++;
-    String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + flightmode_str[flightmode];
-    rcin_telemetry_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
-    rcin_telemetry_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
-    if(telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
-    if(telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
-  }
-
   //logging
   static uint32_t log_ts = 0;
   if(millis() - log_ts > 100) {
@@ -120,8 +108,12 @@ void loop() {
 
 //update all I2C sensors, called from loop() with SPI IMU, or called from imu_loop() with I2C IMU
 void i2c_sensors_update() {
-  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated. 
-  if(baro.update()) bb.log_baro(); //log if pressure updated
+  if(bat.update()) bb.log_bat(); //update battery, and log if battery was updated.
+  alt.updateAccelUp(ahrs.getAccelUp(), ahrs.ts); //NOTE: do this here and not in imu_loop() because `alt` object is not thread safe. - Update altitude estimator with current earth-frame up acceleration measurement
+  if(baro.update()) {
+    alt.updateBaroAlt(baro.alt, baro.ts); //update altitude estimator with current altitude measurement
+    bb.log_baro(); //log if pressure updated
+  }
   mag.update();
 }
 
@@ -139,10 +131,10 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcin.update();
-  flightmode = flightmode_map[rcin.flightmode]; //map rcin.flightmode (0 to 5) to vehicle flightmode
+  veh.setFlightmode( rcin_to_flightmode_map[rcin.flightmode] ); //map rcin.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
-  switch(flightmode) {
+  switch( veh.getFlightmode() ) {
     case ANGLE: 
       control_Angle(rcin.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;

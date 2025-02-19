@@ -3,7 +3,7 @@
 //========================================================================================================================//
 
 //--- RC RECEIVER
-#define RCIN_USE  RCIN_USE_CRSF // Select one: RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
+#define RCIN_USE  RCIN_USE_CRSF // Select one: RCIN_USE_MAVLINK, RCIN_USE_CRSF, RCIN_USE_SBUS, RCIN_USE_DSM, RCIN_USE_PPM, RCIN_USE_PWM
 #define RCIN_NUM_CHANNELS 8 // Number of channels
 #define RCIN_STICK_DEADBAND 0 // Deadband for centering sticksD: pwm center-deadband to pwm center+deadband will be interpreted as central stick. Set to 15 for PPM or 0 for jitter-free serial protocol receivers.
 
@@ -29,7 +29,7 @@
 //#define MAG_I2C_ADR  0x77 // Set magnetometer I2C address, leave commented for default address. If unknown, use CLI 'i2c'
 
 //--- BATTERY MONITOR
-#define BAT_USE  BAT_USE_NONE // Select one: BAT_USE_INA226, BAT_USE_ADC, BAT_USE_NONE
+#define BAT_USE  BAT_USE_NONE // Select one: BAT_USE_INA226, BAT_USE_INA228, BAT_USE_ADC, BAT_USE_NONE
 
 //--- BLACKBOX LOGGER
 #define BB_USE  BB_USE_NONE // Select one: BB_USE_SD, BB_USE_SDMMC, BB_USE_NONE

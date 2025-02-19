@@ -106,9 +106,9 @@ void freertos_ps()
 
   Serial.printf("\n");
   Serial.print("TID Name          CPU% Free S PR NI");
-  #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )        
+  #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
     Serial.print(" Core");
-#endif      
+  #endif
   Serial.println();
 
   for( uint32_t i = 0; i < tanew.uxArraySize; i++ )
@@ -123,16 +123,16 @@ void freertos_ps()
       }
     }
 
-    Serial.printf("%3lu %-12s %4.1f%% %4lu %c %2lu %2lu",
-      t.xTaskNumber,
+    Serial.printf("%3d %-12s %4.1f%% %4d %c %2d %2d",
+      (int)t.xTaskNumber,
       t.pcTaskName,
       (float)runtime / totalRunTime * 100,
-      t.usStackHighWaterMark,
+      (int)t.usStackHighWaterMark,
       freertos_taskStatusChar(t.eCurrentState),
-      t.uxBasePriority,
-      t.uxCurrentPriority
+      (int)t.uxBasePriority,
+      (int)t.uxCurrentPriority
     );
-    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )        
+    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
       Serial.printf(" %2lX",
         t.uxCoreAffinityMask & ((1<<configNUMBER_OF_CORES)-1)
       );

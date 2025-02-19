@@ -1,3 +1,52 @@
+#pragma once
+
+#include "GPS-uBlox/qqqlab_GPS_UBLOX.h"
+#include "GPS-uBlox/qqqlab_AutoBaud.h"
+
+class GPS_UBLOX : public AP_GPS_UBLOX {
+public:
+  //interface
+  void I_setBaud(int baud)                      override {gps_Serial.begin(baud);}
+  inline int I_availableForWrite()              override {return gps_Serial.availableForWrite();}
+  inline int I_available()                      override {return gps_Serial.available();}
+  inline int I_read(uint8_t* data, size_t len)  override {return gps_Serial.read(data, len);}
+  inline int I_write(uint8_t* data, size_t len) override {return gps_Serial.write(data, len);}
+  inline uint32_t I_millis()                    override {return ::millis();}
+  void I_print(const char *str)                 override {Serial.print("GPS:  "); Serial.print(str);}
+} gps_ublox;
+
+AP_GPS_UBLOX::GPS_State &gps = gps_ublox.state;
+
+void gps_setup() {
+  Serial.println("GPS:  GPS_USE_UBLOX");
+
+  //initial GPS baud rate to try
+  int baud = 230400;
+
+  //optional auto-baud to speed up gps connection
+  //baud = autobaud(HW_PIN_GPS_RX);
+  //Serial.printf("Initial GPS baud rate:%d\n", baud);
+
+  //start GPS Serial
+  gps_Serial.begin(baud);
+
+  //start GPS
+  gps_ublox.rate_ms = 100;   //optional - gps update rate in milliseconds (default 100)
+  gps_ublox.save_config = 2, //optional - save config  0:Do not save config, 1:Save config, 2:Save only when needed (default 2)
+  gps_ublox.gnss_mode = 0;   //optonial - GNSS system(s) to use  Bitmask: 1:GPS, 2:SBAS, 4:Galileo, 8:Beidou, 16:IMES, 32:QZSS, 64:GLONASS (default 0=leave as configured)
+}
+
+void gps_debug() {}
+
+bool gps_loop() {
+  //update GPS (call at least 10 times per second)
+  return gps_ublox.update();
+}
+
+
+//TODO - Enable NMEA
+
+/*
 #ifndef GPS_BAUD
   #define GPS_BAUD 115200
 #endif
@@ -40,3 +89,4 @@ bool gps_loop() {
   }
   return updated;
 }
+*/

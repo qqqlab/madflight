@@ -3,7 +3,7 @@ rcin.h - madflight RC radio receiver
 
 MIT License
 
-Copyright (c) 2023-2024 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,33 +26,32 @@ SOFTWARE.
 
 #pragma once
 
-#include "../interface.h" //RCIN interface definition
-#include "../cfg/cfg.h"
-#include "rcin_calibrate.h"
-
+//set defaults
 #ifndef RCIN_NUM_CHANNELS
-  #define RCIN_NUM_CHANNELS 8 //number of receiver channels (minimal 6)
+  #define RCIN_NUM_CHANNELS 8 //number of receiver channels
 #endif
-
 #ifndef RCIN_TIMEOUT
   #define RCIN_TIMEOUT 3000 // lost connection timeout in milliseconds
 #endif
-
 #ifndef RCIN_STICK_DEADBAND
-  #define RCIN_STICK_DEADBAND 0 //pwm deadband around stick center
+  #define RCIN_STICK_DEADBAND 0 //pwm deadband around stick center in microseconds
 #endif
-
 #ifndef RCIN_THROTTLE_DEADBAND
-  #define RCIN_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle
+  #define RCIN_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle in microseconds
 #endif
 
-#define RCIN_USE_NONE  0
-#define RCIN_USE_CRSF  1
-#define RCIN_USE_SBUS  2
-#define RCIN_USE_DSM   3
-#define RCIN_USE_PPM   4
-#define RCIN_USE_PWM   5
-#define RCIN_USE_DEBUG 6
+#define RCIN_USE_NONE    0
+#define RCIN_USE_CRSF    1
+#define RCIN_USE_SBUS    2
+#define RCIN_USE_DSM     3
+#define RCIN_USE_PPM     4
+#define RCIN_USE_PWM     5
+#define RCIN_USE_DEBUG   6
+#define RCIN_USE_MAVLINK 7
+
+#include "rcin_interface.h" //RCIN interface definition
+#include "../cfg/cfg.h"
+#include "rcin_calibrate.h"
 
 //Rcin implements public interface, and is base for specific rcin radio classes
 class Rcin : public Rcin_interface {
@@ -531,6 +530,17 @@ class RcinPWM : public Rcin {
 };
 
 RcinPWM rcin_instance;
+
+
+//=================================================================================================
+//Mavlink Receiver 
+//=================================================================================================
+#elif RCIN_USE == RCIN_USE_MAVLINK
+
+#include "mavlink/rcin_mavlink.h"
+
+RcinMavlink rcin_instance;
+
 
 //=================================================================================================
 // Invalid value

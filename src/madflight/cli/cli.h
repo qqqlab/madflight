@@ -3,7 +3,7 @@ cli.h - madflight Command Line Interface
 
 MIT License
 
-Copyright (c) 2024 https://madflight.com
+Copyright (c) 2024-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,38 @@ SOFTWARE.
 
 #pragma once
 
+//include all module interfaces
+#include "../ahrs/ahrs_interface.h"
+#include "../alt/alt_interface.h"
+#include "../baro/baro_interface.h"
+#include "../bat/bat_interface.h"
+#include "../bb/bb_interface.h"
+#include "../cfg/cfg_interface.h"
+//#include "../cli/cli_interface.h"
+#include "../gps/gps_interface.h"
+#include "../imu/imu_interface.h"
+#include "../led/led_interface.h"
+#include "../mag/mag_interface.h"
+#include "../out/out_interface.h"
+#include "../pid/pid_interface.h"
+#include "../rcin/rcin_interface.h"
+#include "../veh/veh_interface.h"
+
+#include "stat.h"
 #include "FreeRTOS_ps.h"
+
+//cli command extension, return true if command was processed
+extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((weak));
+
+/* example cli command extension
+bool cli_execute(String cmd, String arg1, String arg2) {
+  if(cmd == "mycommand") {
+    Serial.println("ASDFASDFASDF");
+    return true;
+  }
+  return false;
+}
+*/
 
 void cli_print_overview() {
   Serial.printf("rcin.pwm%d:%d\t", 1, rcin.pwm[0]);
@@ -36,7 +67,7 @@ void cli_print_overview() {
   Serial.printf("ahrs.mx:%+.2f\t", ahrs.mx);
   Serial.printf("ahrs.roll:%+.1f\t", ahrs.roll);
   Serial.printf("PID.roll:%+.3f\t", PIDroll.PID);
-  Serial.printf("out.%c%d%%:%1.0f\t", out.type[0], 0, 100*out.command[0]);
+  Serial.printf("out.%c%d%%:%1.0f\t", out.getType(0), 0, 100*out.get(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
@@ -81,8 +112,8 @@ void cli_print_control_PIDoutput() {
 void cli_print_out_Command() {
   Serial.printf("out.armed:%d\t", out.armed);
   for(int i=0;i<HW_OUT_COUNT;i++) {
-    if(out.type[i]!='X') {
-      Serial.printf("%c%d%%:%1.0f\t", out.type[i], i, 100*out.command[i]);
+    if(out.getType(i) != 'X') {
+      Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
     }
   }
 }
@@ -123,20 +154,28 @@ void cli_print_bat() {
   Serial.printf("bat.wh:%+.2f\t",bat.wh); 
 }
 
-void cli_print_baro() {
+static void cli_print_baro() {
   Serial.printf("baro.alt:%.2f\t", baro.alt);
-  Serial.printf("vz:%.1f\t", baro.vz);
   Serial.printf("press:%.1f\t", baro.press);
   Serial.printf("temp:%.2f\t", baro.temp);
 }
 
 void cli_print_gps() {
   Serial.printf("gps.time:%d\t", (int)gps.time);
-  Serial.printf("date:%d\t", (int)gps.date);
+  Serial.printf("fix:%d\t", (int)gps.fix);
+  //Serial.printf("date:%d\t", (int)gps.date);
   Serial.printf("sat:%d\t", (int)gps.sat);
   Serial.printf("lat:%d\t", (int)gps.lat);
   Serial.printf("lon:%d\t", (int)gps.lon);
   Serial.printf("alt:%.3f\t", (float)gps.alt/1000.0);
+}
+
+static void cli_print_alt() {
+  char s[100];
+  alt.toString(s);
+  Serial.print(s);
+  Serial.printf("baro.alt:%.2f\t", baro.alt);
+  Serial.printf("ahrs.aup:%.2f\t", ahrs.getAccelUp());
 }
 
 struct cli_print_s {
@@ -145,7 +184,7 @@ struct cli_print_s {
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 13
+#define CLI_PRINT_FLAG_COUNT 14
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 static const struct cli_print_s cli_print_options[] = {
@@ -161,6 +200,7 @@ static const struct cli_print_s cli_print_options[] = {
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
   {"pbaro",  "Barometer", cli_print_baro},
+  {"palt",   "Altitude estimator", cli_print_alt},
   {"pgps",   "GPS", cli_print_gps},
 };
 
@@ -233,6 +273,7 @@ public:
     "cwrite    Write config to flash\n"
     "cread     Read config to flash\n"
     "-- CALIBRATE --\n"
+    "calinfo   Sensor info\n"
     "calimu    Calibrate IMU error\n"
     "calmag    Calibrate magnetometer\n"
     "calradio  Calibrate RC Radio\n"
@@ -276,6 +317,11 @@ public:
       }
     }
 
+    //call user defined commands, skip futher processing if true was returned
+    if(cli_execute) {
+      if(cli_execute(cmd, arg1, arg2)) return;
+    }
+
     if (cmd=="help" || cmd=="?") {
       help();
     }else if (cmd == "board") {
@@ -314,6 +360,9 @@ public:
     }else if (cmd == "cread") {
       cli_print_all(false);
       cfg.read();
+    }else if (cmd == "calinfo") {
+      cli_print_all(false);
+      calibrate_info(arg1.toInt());
     }else if (cmd == "calimu") {
       cli_print_all(false);
       calibrate_IMU();
@@ -446,17 +495,17 @@ public:
   }
 
   void print_i2cScan() {
-    Serial.printf("I2C: Scanning ...\n");
+    Serial.printf("I2C:  Scanning ...\n");
     byte count = 0;
     //i2c->begin();
     for (byte i = 8; i < 120; i++) {
       i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
       if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
-        Serial.printf("I2C: Found address: 0x%02X (%d)\n",i,i);
+        Serial.printf("I2C:  Found address: 0x%02X (%d)\n",i,i);
         count++;
       }
     }
-    Serial.printf("I2C: Found %d device(s)\n", count);
+    Serial.printf("I2C:  Found %d device(s)\n", count);
   }
 
 //========================================================================================================================//
@@ -680,6 +729,60 @@ private:
     return true;
   }
 
+
+  void calibrate_info(int seconds = 0) {
+    if(seconds<=0) seconds = 3;
+    Serial.printf("Gathering sensor statistics, please wait %d seconds ...\n", seconds);
+
+    Stat ax,ay,az,gx,gy,gz;
+    Stat sp,sa,st;
+    Stat mx,my,mz;
+    uint32_t last_cnt = imu.update_cnt;
+    uint32_t ts = millis();
+
+    while((uint32_t)millis() - ts < (uint32_t)1000*seconds) {
+      if(last_cnt != imu.update_cnt) {
+        ax.append(imu.ax);
+        ay.append(imu.ay);
+        az.append(imu.az);
+        gx.append(imu.gx);
+        gy.append(imu.gy);
+        gz.append(imu.gz);
+        last_cnt = imu.update_cnt;
+      }
+      if(baro.installed() && baro.update()) {
+        sp.append(baro.press);
+        sa.append(baro.alt);
+        st.append(baro.temp);
+      }
+      if(mag.installed() && mag.update()) {
+        mx.append(mag.x);
+        my.append(mag.y);
+        mz.append(mag.z);
+      }
+    } 
+
+    Serial.println("=== Gyro ===");
+    gx.print("gx[deg/s]     ");
+    gy.print("gy[deg/s]     ");
+    gz.print("gz[deg/s]     ");
+    Serial.println("=== Accelerometer ===");
+    ax.print("ax[g]         ");
+    ay.print("ay[g]         ");
+    az.print("az[g]         ");
+    if(baro.installed()) {
+      Serial.println("=== Barometer ===");
+      sa.print("Altitude[m]   ");
+      sp.print("Pressure[Pa]  ");
+      st.print("Temperature[C]");
+    }
+    if(mag.installed()) {
+      Serial.println("=== Magnetometer (external) ===");
+      mx.print("mx[uT]        ");
+      my.print("my[uT]        ");
+      mz.print("mz[uT]        ");
+    }
+  }
 
 //========================================================================================================================//
 //                                                PRINT FUNCTIONS                                                         //

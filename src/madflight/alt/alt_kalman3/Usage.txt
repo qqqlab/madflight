@@ -1,0 +1,43 @@
+Assumes MEAS MS5611 barometeric pressure sensor, Maxim MAX21100 gyro+accel, Madgwick AHRS algorithm
+
+// Z_VARIANCE and ZACCEL_VARIANCE can be configured to shape the response of the filter to your specific application and personal
+// preferences
+
+// Z_VARIANCE is the measured sensor altitude cm noise variance, with sensor at rest, normal sampling rate, and 1-2 seconds max samples
+// I personally use a somewhat smaller value than the measured variance as I favour a faster response to step inputs and am willing to
+// tolerate a bit of jitter with the unit at rest.
+#define Z_VARIANCE		    300.0f 
+
+// The filter models acceleration as an external environmental disturbance to the system, ZACCEL_VARIANCE is the estimated
+// variance of the perturbations. For a paragliding application, this would be the expected acceleration variance due to thermal
+// activity, how sharp the thermal edges are, etc.  This is NOT the accelerometer sensor noise variance. Increase this value and the
+// filter will respond faster to acceleration inputs.
+#define ZACCEL_VARIANCE	    200.0f
+
+// The accelerometer bias (offset between true acceleration and measured value) is not likely to change rapidly, so a low value
+// of ZACCELBIAS_VARIANCE will enforce that. But too low a value, and the filter will take longer on reset to settle to the estimated
+// value. For an audio variometer, the symptom would be the variometer beeping for several seconds after reset, with the unit at rest.
+#define ZACCELBIAS_VARIANCE 1.0f
+
+
+initialization 
+    ...
+    ms5611.AveragedSample(4); // pressure sensor based estimate of altitude in cm for initializing the kalman filter. 
+    // Use initial velocity = 0. Unit would have to be at rest anyway for gyroscope bias calibration.
+    kalman.Configure(Z_VARIANCE, ZACCEL_VARIANCE, ZACCELBIAS_VARIANCE, ms5611.zCmAvg_,0.0f,0.0f);
+    ...
+
+loop 
+    ...
+     ms5611.SampleStateMachine();
+     max21100.GetAccelValues(ax,ay,az,&fax, &fay, &faz);
+     float fa = sqrt(fax*fax + fay*fay + faz*faz); 
+     // Use only gyroscope readings in orientation estimation, if accel magnitude is very different from 1G
+     int bUseAccel = ((fa > 0.6f) && (fa < 1.4f)) ? 1 : 0; 
+     imu_MadgwickQuaternionUpdate(bUseAccel,elapsedTimeSecs,fax,fay,faz,fgx*PI_DIV_180,fgy*PI_DIV_180,fgz*PI_DIV_180,fmx,fmy,fmz);
+     float accel = 980.0f*imu_GravityCompensatedAccel(fax,fay,faz,quat);
+     kalman.Update((float)ms5611.zCmSample_, accel, elapsedTimeSecs, &zTrack, &vTrack);
+     ...
+
+
+

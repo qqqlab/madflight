@@ -55,6 +55,11 @@ public:
   uint32_t len() {
     return (head >= tail ? head - tail : bufsize + head - tail); 
   }
+  
+  //number of bytes free in buffer
+  uint32_t available() {
+    return bufsize - 1 - len();
+  }
 
   //increase a buffer position - used in IRQ so store in RAM
   uint32_t __not_in_flash_func(inc)( uint32_t v) {
@@ -203,8 +208,12 @@ public:
     uart_hw->ifls = 0b000000; // rxfifo[5:3], txfifo[2:0] - set rx to 4 bytes (keep rx responsive), tx to 4 bytes
   }
 
-  uint32_t available() { 
+  uint32_t available() {
     return rbuf->len();
+  }
+
+  uint32_t availableForWrite() {
+    return tbuf->available();
   }
 
   int read() {
@@ -228,6 +237,15 @@ public:
     irq_set_pending(uart_irq_id);
 
     return push_len;
+  }
+
+  size_t read(uint8_t *buf, size_t len) {
+    size_t n = available();
+    if(n > len) n = len;
+    for(size_t i=0;i<n;i++) {
+      rbuf->pop(&buf[i]);
+    }
+    return n;
   }
 
 };

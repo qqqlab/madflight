@@ -4,12 +4,15 @@ Each BARO_USE_xxx section in this file defines a specific Barometer class
 
 #pragma once
 
-#define BARO_USE_NONE 1
-#define BARO_USE_BMP280 2
-#define BARO_USE_BMP388 3
-#define BARO_USE_BMP390 4
-#define BARO_USE_MS5611 5
+#define BARO_USE_NONE 0
+#define BARO_USE_BMP280 1
+#define BARO_USE_BMP388 2
+#define BARO_USE_BMP390 3
+#define BARO_USE_MS5611 4
 
+
+#include "baro_interface.h"
+#include <math.h>
 
 class BarometerSensor {
 public:
@@ -22,10 +25,14 @@ public:
   #define BARO_I2C_ADR 0
 #endif
 
+#ifndef BARO_USE
+  #define BARO_USE BARO_USE_NONE
+#endif
+
 //=================================================================================================
 // None or undefined
 //=================================================================================================
-#if BARO_USE == BARO_USE_NONE || !defined BARO_USE
+#if BARO_USE == BARO_USE_NONE
 class BarometerNone: public BarometerSensor {
 public:
   int setup(uint32_t sampleRate) {
@@ -49,7 +56,7 @@ BarometerNone baro_sensor;
 //=================================================================================================
 #elif BARO_USE == BARO_USE_BMP280 
 
-#include "BMP280.h"
+#include "BMP280/BMP280.h"
 
 Adafruit_BMP280 baro_BMP280(i2c);
 
@@ -60,7 +67,7 @@ public:
     (void) sampleRate;
     unsigned status;
     status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
-    Serial.printf("BARO: BARO_USE_BMP280   BARO_I2C_ADR: 0x%02X  SensorID: 0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
+    Serial.printf("BARO: BARO_USE_BMP280 BARO_I2C_ADR=0x%02X SensorID=0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
 
     if (!status) {
       Serial.println(F("Could not find a valid BMP280 sensor, check wiring or try a different address!"));
@@ -105,7 +112,7 @@ class BarometerBMP390: public BarometerSensor {
 
 public:
   int setup(uint32_t sampleRate) {
-    Serial.printf("BARO: BARO_USE_BMP390/BARO_USE_BMP388  BARO_I2C_ADR: 0x%02X\n", BARO_I2C_ADR);
+    Serial.printf("BARO: BARO_USE_BMP390/BARO_USE_BMP388 BARO_I2C_ADR=0x%02X\n", BARO_I2C_ADR);
     if (!bmp.Begin()) {
       Serial.println("BARO: BARO_USE_BMP390/BARO_USE_BMP388 sensor not found");
       return 1;
@@ -149,7 +156,7 @@ BarometerBMP390 baro_sensor;
 //=================================================================================================
 #elif BARO_USE == BARO_USE_MS5611
 
-#include "MS5611.h"
+#include "MS5611/MS5611.h"
 
 class BarometerMS5611: public BarometerSensor {
 private: 
@@ -172,7 +179,7 @@ public:
       Serial.println("BARO: BARO_USE_MS5611 failed, retry...\n");
       delay(500);
     }
-    Serial.printf("BARO: BARO_USE_MS5611  BARO_I2C_ADR 0x%02X  refresh rate: %d Hz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
+    Serial.printf("BARO: BARO_USE_MS5611 BARO_I2C_ADR=0x%02X  refresh_rate=%dHz\n", BARO_I2C_ADR, (int)1000000/ms5611.getDelayUs());
     return 0;
   }
 
@@ -195,27 +202,29 @@ BarometerMS5611 baro_sensor;
 // Barometer Class Implementation
 //========================================================================================================================//
 
-#include "../interface.h"
 
-int Barometer::setup(uint32_t sampleRate, float filterAltHertz, float filterVzHertz) {
+bool Barometer::installed() {
+  #if BARO_USE == BARO_USE_NONE || !defined BARO_USE
+    return false;
+  #else
+    return true;
+  #endif
+}
+
+int Barometer::setup(uint32_t sampleRate) {
   _sampleRate = sampleRate;
   _samplePeriod = 1000000 / sampleRate;
-  B_alt = constrain(1 - exp(-2 * PI * filterAltHertz / sampleRate), 0.0f, 1.0f);
-  B_vz = constrain(1 - exp(-2 * PI * filterVzHertz / sampleRate), 0.0f, 1.0f);
   dt = 0;
   ts = micros();
   int rv = baro_sensor.setup(sampleRate);
   if(rv != 0) {
     press = 0;
-    temp = 0;
+    temp = 15;
     alt = 0;
-    altRaw = 0;
-    vz = 0;
   }else{
     update(); //get first reading
-    alt = altRaw; //jumpstart filtered altitude
   }
-  Serial.printf("BARO: sample_rate=%dHz filt_alt=%.1fHz filt_vz=%.1fHz rv=%d \n", (int)sampleRate, filterAltHertz, filterVzHertz, rv);
+  Serial.printf("BARO: sample_rate=%dHz rv=%d\n", (int)sampleRate, rv);
   return rv;
 }
 
@@ -224,11 +233,11 @@ bool Barometer::update() {
     uint32_t tsnew = micros();
     dt = (tsnew - ts) / 1000000.0;
     baro_sensor.update(&press, &temp);
-    altRaw = (101325.0 - press) / 12.0;
-    float altnew = alt + B_alt * (altRaw - alt); //Low-pass filtered altitude
-    float vznew = (altnew - alt) / dt;
-    vz += B_vz * (vznew - vz); //Low-pass filtered velocity
-    alt = altnew;
+    float P = press;
+    //float T = temp;
+    //alt = 153.84348f * (1 - pow(P/101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
+    alt = 44330.0f * (1 - pow(P/101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
+    //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
     ts = tsnew;
     return true;
   }

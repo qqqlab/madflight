@@ -24,11 +24,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#pragma once
+
+//include all modules
+#include "../../ahrs/ahrs_interface.h"
+#include "../../alt/alt_interface.h"
+#include "../../baro/baro_interface.h"
+#include "../../bat/bat_interface.h"
+#include "../../bb/bb_interface.h"
+#include "../../cfg/cfg_interface.h"
+//#include "../../cli/cli_interface.h"
+#include "../../gps/gps_interface.h"
+#include "../../imu/imu_interface.h"
+#include "../../led/led_interface.h"
+#include "../../mag/mag_interface.h"
+#include "../../out/out_interface.h"
+#include "../../pid/pid_interface.h"
+#include "../../rcin/rcin_interface.h"
+#include "../../veh/veh_interface.h"
+
 /* moved to bb/bb.h
-#define BB_USE_NONE 1
-#define BB_USE_SD 2 //SDCARD with 1-bit SPI interface
-#define BB_USE_SDMMC 3 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BB_USE_SDDEBUG 4 //print log to Serial
+#define BB_USE_NONE 0
+#define BB_USE_SD 1 //SDCARD with 1-bit SPI interface
+#define BB_USE_SDMMC 2 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
+#define BB_USE_SDDEBUG 3 //print log to Serial
 */
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
@@ -266,14 +285,14 @@ private:
     FMT_msglen += datalen;
     if (FMT_msglen >= MAX_MSG_LEN) {
       error = true;
-      Serial.printf("BB: ERROR data too long for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR data too long for msg %s\n", FMT.name);
       return;
     }
     
     //datatype
     if (FMT_fmt >= 16) {
       error = true;
-      Serial.printf("BB: ERROR too many fields for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR too many fields for msg %s\n", FMT.name);
       return;
     }
     FMT.format[FMT_fmt] = fmt;
@@ -303,7 +322,7 @@ private:
     int lbl_len = strlen(label);
     if (FMT_lbl + 1 + lbl_len > 64) {
       FMT.format[0]=0;
-      Serial.printf("BB: ERROR labels too long for msg %s\n", FMT.name);
+      Serial.printf("BB:   ERROR labels too long for msg %s\n", FMT.name);
       return;
     }
     if (FMT_lbl) FMT.labels[FMT_lbl++] = ',';
@@ -497,7 +516,7 @@ public:
   static void setup() {
     queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue);
     if(xTaskCreate(bb_task, "BB", FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
-      Serial.println("BB: Task creation failed");
+      Serial.println("BB:   Task creation failed");
     }
   }
 
@@ -799,14 +818,12 @@ class BlackBox_SD : public BlackBox {
       bl.flt("Alt", baro.alt, 1, "m");  //float Alt: calculated altitude [m]
                                         //float AltAMSL: altitude AMSL
       bl.flt("Press", baro.press, 1, "Pa");      //float Press: measured atmospheric pressure [Pa]
-                                        //int16_t Temp: measured atmospheric temperature
-      bl.flt("CRt", baro.vz, 1, "m/s"); //float CRt: derived climb rate from primary barometer
+      bl.i16("Temp", baro.temp, 1, "degC"); //int16_t Temp: measured atmospheric temperature [C]
+                                        //float CRt: derived climb rate from primary barometer
                                         //uint32_t SMS: time last sample was taken
                                         //float Offset: raw adjustment of barometer altitude, zeroed on calibration, possibly set by GCS
                                         //float GndTemp: temperature on ground, specified by parameter or measured while on ground
                                         //uint8_t Health: true if barometer is considered healthy
-      //non-standard
-      bl.flt("AltRaw", baro.altRaw, 1, "m");
     } 
 
     void log_bat() override {
@@ -868,9 +885,9 @@ class BlackBox_SD : public BlackBox {
     void log_ahrs() override {
       BinLog bl("AHRS"); 
       bl.TimeUS();
-      bl.i16("ax",ahrs.ax*100, 1e-2, "G"); //G
-      bl.i16("ay",ahrs.ay*100, 1e-2, "G"); //G
-      bl.i16("az",ahrs.az*100, 1e-2, "G"); //G
+      bl.i16("ax",ahrs.ax*1000, 1e-3, "G"); //G
+      bl.i16("ay",ahrs.ay*1000, 1e-3, "G"); //G
+      bl.i16("az",ahrs.az*1000, 1e-3, "G"); //G
       bl.i16("gx",ahrs.gx*10, 1e-1, "deg/s"); //dps
       bl.i16("gy",ahrs.gy*10, 1e-1, "deg/s"); //dps
       bl.i16("gz",ahrs.gz*10, 1e-1, "deg/s"); //dps
@@ -901,9 +918,9 @@ class BlackBox_SD : public BlackBox {
       BinLog bl("IMU");
       bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
       bl.TimeUS(imu.ts);
-      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*100, 1e-2, "G"); //G
-      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*100, 1e-2, "G"); //G
-      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*100, 1e-2, "G"); //G
+      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*1000, 1e-3, "G"); //G
+      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*1000, 1e-3, "G"); //G
+      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*1000, 1e-3, "G"); //G
       bl.i16("gx",(imu.gx - cfg.IMU_CAL_GX)*10, 1e-1, "deg/s"); //dps
       bl.i16("gy",(imu.gy - cfg.IMU_CAL_GY)*10, 1e-1, "deg/s"); //dps
       bl.i16("gz",(imu.gz - cfg.IMU_CAL_GZ)*10, 1e-1, "deg/s"); //dps

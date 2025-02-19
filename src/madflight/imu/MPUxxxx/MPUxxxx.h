@@ -210,7 +210,7 @@ class MPUXXXX {
     //Get sensor data in NED frame
     //x=North (forward), y=East (right), z=Down 
     //acc: gravitation force is positive in axis direction
-    //gyro: direction of positive rotation by right hand rule, i.e. positive is: yaw right, roll right, pitch up
+    //gyro: direction of positive rotation by right hand rule, i.e. positive is: roll right, pitch up, yaw right
     void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz)
     {
       read6();

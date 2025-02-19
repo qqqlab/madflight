@@ -63,8 +63,15 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2024 https://madflight.com
+Copyright (c) 2024-2025 https://madflight.com
 ##########################################################################################################################*/
+
+//Vehicle specific madflight configuration
+#define VEH_TYPE VEH_TYPE_PLANE //set the vehicle type for logging and mavlink
+#define VEH_FLIGHTMODE_AP_IDS {AP_PLANE_FLIGHTMODE_MANUAL, AP_PLANE_FLIGHTMODE_STABILIZE, AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A} //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_NAMES {"MANUAL", "ROLL", "FBWA"} //fightmode names for telemetry
+enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
+flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
@@ -89,12 +96,6 @@ const int out_MOTOR_COUNT = 1;
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
-
-//flight modes
-enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
-const char* flightmode_str[] = {"MANUAL", "ROLL", "FBWA"}; //flight mode names used for telemetry
-flightmode_enum flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
-flightmode_enum flightmode = MANUAL; //current flight mode
 
 //Controller parameters (take note of defaults before modifying!): 
 float i_limit        = 25;        //PID Integrator saturation level, mostly for safety
@@ -146,19 +147,6 @@ void loop() {
 
   if(gps_loop()) {bb.log_gps(); bb.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
 
-  //send telemetry
-  static uint32_t telem_ts = 0;
-  static uint32_t telem_cnt = 0;
-  if(millis() - telem_ts > 100) {
-    telem_ts = millis();
-    telem_cnt++;
-    String fm_str = String(out.armed ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + flightmode_str[flightmode];
-    rcin_telemetry_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
-    rcin_telemetry_attitude(ahrs.pitch, ahrs.roll, ahrs.yaw);  
-    if(telem_cnt % 10 == 0) rcin_telemetry_battery(bat.v, bat.i, bat.mah, 100);
-    if(telem_cnt % 10 == 5) rcin_telemetry_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
-  }
-
   //logging
   static uint32_t log_ts = 0;
   if(millis() - log_ts > 100) {
@@ -190,10 +178,10 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcin.update();
-  flightmode = flightmode_map[rcin.flightmode]; //map rcin.flightmode (0 to 5) to vehicle flightmode
+  veh.setFlightmode( rcin_to_flightmode_map[rcin.flightmode] ); //map rcin.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
-  switch(flightmode) {
+  switch( veh.getFlightmode() ) {
     case ROLL:
       control_ROLL(rcin.throttle == 0); //Stabilize on roll angle setpoints
       break;    
