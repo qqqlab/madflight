@@ -14,6 +14,15 @@ MPU-6XXX and MPU-9XXX sensor family
 ===================================
 These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kHz, and mag 100 Hz. The driver 
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
+
+===================================
+ICM-4xxxx sensors
+===================================
+Currently only ICM45686 is supported.
+This is a 6 axis sensor, with maximum sample rates of 6.4khz.
+Limitations: 
+- The underlying driver lib supports only one sensor instance
+- only via SPI + interupt; I2C can be added using the same driver lib
 ========================================================================================================================*/
 
 #pragma once
@@ -51,9 +60,11 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 
 //default settings
 #ifndef IMU_GYRO_DPS
+  // ICM45686 supports 4000dps as well
   #define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
 #endif
 #ifndef IMU_ACCEL_G
+  // ICM45686 supports 32g as well
   #define IMU_ACCEL_G 16 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
 #endif
 
