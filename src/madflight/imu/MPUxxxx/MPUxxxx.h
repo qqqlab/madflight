@@ -104,7 +104,7 @@ class MPUXXXX {
       if(_type == MPU9150 && wai != 0x68) {
         Serial.printf("WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68\n",wai);
       }  
-      if(_type == MPU9250 && wai != 0x71) {
+      if(_type == MPU9250 && wai != 0x71 && wai != 0x73) {
         if(wai == 0x70) {
             Serial.printf("WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500\n",wai);
         }else{
@@ -141,7 +141,7 @@ class MPUXXXX {
     // MPU6050 should return 0x68
     // MPU6500 should return 0x70
     // MPU9150 should return 0x68
-    // MPU9250 should return 0x71
+    // MPU9250 should return 0x71 or 0x73 , see https://github.com/kriswiner/MPU9250/issues/47
     unsigned int whoami()
     {
         _iface->setFreqSlow();
