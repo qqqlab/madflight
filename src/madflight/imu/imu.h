@@ -14,6 +14,15 @@ MPU-6XXX and MPU-9XXX sensor family
 ===================================
 These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kHz, and mag 100 Hz. The driver 
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
+
+===================================
+ICM-4xxxx sensors
+===================================
+Currently only ICM45686 is supported.
+This is a 6 axis sensor, with maximum sample rates of 6.4khz, max gyro range 4000dps, max accelerometer range 32G
+Limitations: 
+- The underlying driver lib supports only one sensor instance
+- only via SPI + interupt; I2C can be added using the same driver lib
 ========================================================================================================================*/
 
 #pragma once
@@ -26,11 +35,13 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
 #define IMU_USE_SPI_MPU9250 2
 #define IMU_USE_SPI_MPU6500 3
 #define IMU_USE_SPI_MPU6000 4
-#define IMU_USE_I2C_MPU9250 5
-#define IMU_USE_I2C_MPU9150 6
-#define IMU_USE_I2C_MPU6500 7
-#define IMU_USE_I2C_MPU6050 8
-#define IMU_USE_I2C_MPU6000 9
+#define IMU_USE_SPI_ICM45686 5
+
+#define IMU_USE_I2C_MPU9250 101
+#define IMU_USE_I2C_MPU9150 102
+#define IMU_USE_I2C_MPU6500 103
+#define IMU_USE_I2C_MPU6050 104
+#define IMU_USE_I2C_MPU6000 105
 
 //Available aligns
 #define IMU_ALIGN_CW0 1
@@ -52,7 +63,7 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
 #endif
 #ifndef IMU_ACCEL_G
-  #define IMU_ACCEL_G 16 //Full scale gyro accelerometer in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
+  #define IMU_ACCEL_G 16 //Full scale accelerometer range in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
 #endif
 
 //handle rotation for different mounting positions
@@ -117,6 +128,15 @@ configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pa
   #include "MPUxxxx/MPUxxxx.h"
   MPU_InterfaceSPI mpu_iface(spi, HW_PIN_IMU_CS);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
+
+#elif IMU_USE == IMU_USE_SPI_ICM45686
+  #define IMU_TYPE "IMU_USE_SPI_ICM45686"
+  #define IMU_IS_I2C 0
+  // FIXME: impl mag for https://store.kouno.xyz/products/icm-45686-ist8306-module which is connected **to IMU** as slave
+  #define IMU_HAS_MAG 0
+  #include "ICM4xxxx/MF_ICM45686.h"
+  Invensensev3_InterfaceSPI icm_iface(spi, HW_PIN_IMU_CS);
+  MF_ICM45686 imu_Sensor( (uint8_t) HW_PIN_IMU_EXTI, &icm_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU9250
   #define IMU_TYPE "IMU_USE_I2C_MPU9250"
