@@ -1,7 +1,28 @@
+//#pragma once
 #ifndef MF_ICM45686_H
 #define MF_ICM45686_H
 #include "../imu_interface.h"
-#include "ICM45686.h"
+
+// prevent naming conflicts, e.g. static spi
+namespace motionarduino {
+    #include "./ICM45686/ICM45686.h"
+    // Force linking
+    #include "./ICM45686/ICM45686.cpp"
+    #include "./ICM45686/imu/inv_imu_driver.c"
+    #include "./ICM45686/imu/inv_imu_driver_advanced.c"
+    #include "./ICM45686/imu/inv_imu_transport.c"
+
+    // below, not needed it seems:
+    //#include "./ICM45686/imu/inv_imu_edmp.c"
+    //#include "./ICM45686/imu/inv_imu_i2cm.c"
+    // #include "./ICM45686/imu/inv_imu_driver_aux1.c"
+    // #include "./ICM45686/imu/inv_imu_edmp_compass.c"
+    // #include "./ICM45686/imu/inv_imu_edmp_wearable.c"
+    // #include "./ICM45686/imu/inv_imu_i2cm.c"
+    // #include "./ICM45686/imu/inv_imu_selftest.c"
+    // #include "./ICM45686/imu/inv_imu_transport.c"
+}
+
 
 
 class Invensensev3_Interface {
@@ -56,7 +77,7 @@ class Invensensev3_InterfaceSPI : public Invensensev3_Interface {
 class MF_ICM45686 {
 
 private:
-    ICM456xx _wrapped_imu;
+    motionarduino::ICM456xx _wrapped_imu;
 
     //raw measurements in NED frame
     int16_t rawa[3]; //accelerometer
@@ -227,7 +248,7 @@ public:
     // P.S. Orientation of axes seem same as for MPU-xxxx, and is converted in getMotion6NED() function
     void read6() {        
         #ifdef MF_ICM45686_USE_IMU_FIFO
-        inv_imu_fifo_data_t imu_data;
+        motionarduino::inv_imu_fifo_data_t imu_data;
         // FIXME: this might yield multiple samples if fifo_watermark_threshold>1 and there's imu_data.byte_16.timestamp !!!
         // FIXME there's also values represented as int20_t , if extra precission is needed...
         _wrapped_imu.getDataFromFifo(imu_data);
@@ -241,7 +262,7 @@ public:
         // Temperature in Degrees Centigrade = (TEMP_DATA / 128) + 25
         rawt = imu_data.byte_16.temp_data;
         #else
-        inv_imu_sensor_data_t imu_data;
+        motionarduino::inv_imu_sensor_data_t imu_data;
         _wrapped_imu.getDataFromRegisters(imu_data);
 
         rawa[0] = imu_data.accel_data[0];
