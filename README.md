@@ -1,15 +1,15 @@
 <img src="extras/img/logo/madflight_logo_2000x538.png" width="100%" />
 
-**madflight** is a toolbox to build high performance flight controllers with Aduino IDE or PlatformIO for ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32. A functional DIY flight controller can be build for under $10 from readily available [development boards](https://madflight.com/Controller-Boards/) and [sensor breakout boards](https://madflight.com/Sensor-Boards/).
+<p align="center">&star;&nbsp;&star;&nbsp;&star;&nbsp;</p>
+<p align="center">If you like <i>madflight</i>, please give it a &star; star</p>
+<p align="center">or fork it and contribute!</p>
+<p align="center">&star;&nbsp;&star;&nbsp;&star;&nbsp;</p>
 
-Flight tested example programs for quadcopter and airplane are included. The example programs are only a couple hundred lines long, but contain the full flight controller logic. The nitty-gritty low-level sensor and input/output management is done by the madflight library.
+_madflight_ is a toolbox to build high performance flight controllers with Aduino IDE or PlatformIO for ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32. A functional DIY flight controller can be build for under $10 from readily available [development boards](https://madflight.com/Controller-Boards/) and [sensor breakout boards](https://madflight.com/Sensor-Boards/).
+
+Flight tested example programs for quadcopter and airplane are included. The example programs are only a couple hundred lines long, but contain the full flight controller logic. The nitty-gritty low-level sensor and input/output management is done by the _madflight_ library.
 
 The source code and [website](https://madflight.com/) have extensive documentation explaning what the settings and functions do.
-
----
-<p align="center">If you like <b>madflight</b>, give it a &star; star, or fork it and contribute!</p>
-
----
 
 <img src="extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="38%" /> <img src="extras/img/madflight drone.jpeg" title="madflight drone" width="30%" /> <img src="extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="29%" />
 
