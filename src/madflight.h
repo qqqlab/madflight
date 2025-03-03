@@ -32,8 +32,10 @@ SOFTWARE.
 #pragma once
 
 #include "madflight/common/MF_Serial.h"
+#include "madflight/common/MF_I2C.h"
 MF_Serial *rcin_Serial = nullptr;
 MF_Serial *gps_Serial = nullptr;
+MF_I2C *mf_i2c = nullptr;
 
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
@@ -135,9 +137,15 @@ void madflight_setup() {
   cli.print_boardInfo(); //print board info and pinout
 
   //hardware specific setup for busses: serial, spi and i2c (see hw_xxx.h)
-  hw_setup(); 
-  if(!rcin_Serial) rcin_Serial = new MF_SerialNone(); //prevent nullptr
-  if(!gps_Serial) gps_Seriall = new MF_SerialNone(); //prevent nullptr
+  hw_setup();
+
+  //wrapped i2c
+  mf_i2c = new MF_I2CPtrWrapper<decltype(i2c)>( i2c ); //TODO - remove i2c
+
+  //prevent nullpointers
+  if(!rcin_Serial) rcin_Serial = new MF_SerialNone();
+  if(!gps_Serial) gps_Serial = new MF_SerialNone();
+  if(!mf_i2c) mf_i2c = new MF_I2CNone();
 
   cfg.begin(); //read config from EEPROM
   cli.print_i2cScan(); //print i2c scan
@@ -170,7 +178,7 @@ void madflight_setup() {
     //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
     cli.calibrate_gyro();
   #endif
-  
+
   cli.welcome();
 
   led.enable(); //Set LED off to signal end of mf.startup, and enable blinking by imu_loop()

@@ -58,7 +58,7 @@ BarometerNone baro_sensor;
 
 #include "BMP280/BMP280.h"
 
-Adafruit_BMP280 baro_BMP280(i2c);
+Adafruit_BMP280 baro_BMP280;
 
 class BarometerBMP280: public BarometerSensor {
 
@@ -66,7 +66,7 @@ public:
   int setup(uint32_t sampleRate) {
     (void) sampleRate;
     unsigned status;
-    status = baro_BMP280.begin(BARO_I2C_ADR, BMP280_CHIPID);
+    status = baro_BMP280.begin(mf_i2c, BARO_I2C_ADR, BMP280_CHIPID);
     Serial.printf("BARO: BARO_USE_BMP280 BARO_I2C_ADR=0x%02X SensorID=0x%02X\n", BARO_I2C_ADR, baro_BMP280.sensorID());
 
     if (!status) {

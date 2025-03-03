@@ -26,6 +26,9 @@ SOFTWARE.
 
 #include <Arduino.h>
 //#include <Wire.h>
+
+#include "../../common/MF_I2C.h"
+
 #ifndef I2C_BUFFER_LENGTH
     #define I2C_BUFFER_LENGTH 128  // Default size, if none is set using Wire::setBuffersize(size_t)
 #endif
@@ -34,7 +37,7 @@ SOFTWARE.
 ///< The class which defines how we will talk to this device over I2C
 class Adafruit_I2CDevice {
 public:
-  Adafruit_I2CDevice(uint8_t addr, TwoWire *theWire);
+  Adafruit_I2CDevice(uint8_t addr, MF_I2C *theWire);
   uint8_t address(void);
   bool begin(bool addr_detect = true);
   void end(void);
@@ -54,7 +57,7 @@ public:
 
 private:
   uint8_t _addr;
-  TwoWire *_wire;
+  MF_I2C *_wire;
   bool _begun;
   size_t _maxBufferSize;
   bool _read(uint8_t *buffer, size_t len, bool stop);
@@ -70,7 +73,7 @@ private:
  *    @param  addr The 7-bit I2C address for the device
  *    @param  theWire The I2C bus to use, defaults to &Wire
  */
-Adafruit_I2CDevice::Adafruit_I2CDevice(uint8_t addr, TwoWire *theWire) {
+Adafruit_I2CDevice::Adafruit_I2CDevice(uint8_t addr, MF_I2C *theWire) {
   _addr = addr;
   _wire = theWire;
   _begun = false;

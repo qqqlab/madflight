@@ -499,8 +499,8 @@ public:
     byte count = 0;
     //i2c->begin();
     for (byte i = 8; i < 120; i++) {
-      i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
-      if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
+      mf_i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
+      if (mf_i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
         Serial.printf("I2C:  Found address: 0x%02X (%d)\n",i,i);
         count++;
       }

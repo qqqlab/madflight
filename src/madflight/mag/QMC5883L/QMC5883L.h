@@ -1,7 +1,6 @@
 #pragma once
 
-//#include "Arduino.h"
-
+#include "../../common/MF_I2C.h"
 
 /*
 
@@ -31,15 +30,8 @@ OVER SAMPLE RATIO (OSR)
 #define QMC5883L_uT_per_LSB ((float)8.333333333e-3f) //2G range
 //#define QMC5883L_uT_per_LSB ((float)3.333333333e-2f) //8G range
 
-template<typename WireType>
 class QMC5883L{
-	
   public:
-    QMC5883L(WireType* i2c, uint8_t adr = 0) {
-        _i2c = i2c;
-        setAdr(adr);
-    }
-    
     void setAdr(uint8_t adr = 0) {
         if(adr) {
             _adr = adr;
@@ -52,7 +44,9 @@ class QMC5883L{
         return ( _readReg(0x0D) == 0xFF );
     }
 
-    void begin(){
+    void begin(MF_I2C* i2c, uint8_t adr = 0){
+        _i2c = i2c;
+        setAdr(adr);
         _writeReg(0x0B,0x01);
         setMode(0x01,0x08,0x00,0X00); //Continuous, 100Hz, 2G, 512x OSR
     }
@@ -84,7 +78,7 @@ class QMC5883L{
     }
 
   private:
-    WireType *_i2c;
+    MF_I2C *_i2c;
     uint8_t _adr;
     
     void _writeReg(uint8_t reg, uint8_t val){

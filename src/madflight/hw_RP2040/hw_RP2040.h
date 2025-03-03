@@ -51,6 +51,7 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include <SPI.h>                       //SPI communication
 #include "madflight/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
 #include "madflight/hw_RP2040/RP2040_SerialIRQ.h"  //Replacement high performance serial driver
+//TODO #include "madflight/hw_RP2040/RP2040_SerialDMA.h"  //Replacement high performance serial driver
 #include "../common/MF_Serial.h"
 
 //-------------------------------------
@@ -66,6 +67,11 @@ SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS
 //prototype
 void hw_eeprom_begin();
 
+uint8_t rcin_txbuf[256];
+uint8_t rcin_rxbuf[256];
+uint8_t gps_txbuf[256];
+uint8_t gps_rxbuf[256];
+
 void hw_setup() {
   //print hw info
   Serial.print("HW_RP2040 ");
@@ -79,19 +85,26 @@ void hw_setup() {
   //rcin_Serial
   #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
     //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *rcin_ser = new SerialIRQ(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 256, 256);
+    auto *rcin_ser = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf));
+    //auto *rcin_ser = new SerialIRQ(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 256, 256); //TODO
+    //auto *rcin_ser = new SerialDMA(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 256, 256); //TODO
     //auto *rcin_ser = new SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *rcin_ser = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
+    //auto *rcin_ser = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
     rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
   #endif
 
   //gps_Serial
   #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
     //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *gps_ser = new SerialIRQ(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX, 256, 256);
-    //auto *rcin_ser = new SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *rcin_ser = new SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
+    auto *gps_ser = new SerialIRQ(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf));
+    //auto *gps_ser = new SerialIRQ(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX, 256, 256); //TODO
+    //auto *gps_ser = new SerialDMA(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX, 256, 256); //TODO
+    //auto *gps_ser = new SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *gps_ser = new SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
     gps_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
+
+
+    gps_Serial->available();
   #endif
 
   //I2C

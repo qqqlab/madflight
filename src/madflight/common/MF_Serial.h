@@ -2,36 +2,42 @@
 
 // Serial Interface
 class MF_Serial {
-public:
-  virtual void begin(int baud) = 0;
-  virtual int available() = 0;
-  virtual int availableForWrite() = 0;
-  virtual int read(uint8_t *buf, int len) = 0;
-  virtual int write(uint8_t *buf, int len) = 0;
+  public:
+    virtual void begin(int baud) = 0;
+    virtual int available() = 0;
+    virtual int availableForWrite() = 0;
+    virtual int read(uint8_t *buf, int len) = 0;
+    virtual int write(uint8_t *buf, int len) = 0;
+
+    int read() {
+      uint8_t data;
+      if(read(&data, 1)==0) return -1;
+      return data;
+    }
 };
 
 // Wrapper around an arduino HardwareSerial-like pointer
 template<class T>
 class MF_SerialPtrWrapper : public MF_Serial {
-public:
-  MF_SerialPtrWrapper(T serial) { _serial = serial; }
-  virtual void begin(int baud)             override { _serial->begin(baud); }
-  virtual int available()                  override { return _serial->available(); }
-  virtual int availableForWrite()          override { return _serial->availableForWrite(); }
-  virtual int read(uint8_t *buf, int len)  override { return _serial->readBytes(buf, len); }
-  virtual int write(uint8_t *buf, int len) override { return _serial->write(buf, len); }
-protected:
-  T _serial;
+  protected:
+    T _serial;
+  public:
+    MF_SerialPtrWrapper(T serial) { _serial = serial; }
+    void begin(int baud)             override { _serial->begin(baud); }
+    int available()                  override { return _serial->available(); }
+    int availableForWrite()          override { return _serial->availableForWrite(); }
+    int read(uint8_t *buf, int len)  override { return _serial->readBytes(buf, len); }
+    int write(uint8_t *buf, int len) override { return _serial->write(buf, len); }
 };
 
 // Dummy interface
 class MF_SerialNone : public MF_Serial {
-public:
-  virtual void begin(int baud)             override { (void)baud; }
-  virtual int available()                  override { return 0; }
-  virtual int availableForWrite()          override { return 0; }
-  virtual int read(uint8_t *buf, int len)  override { (void)buf; (void)len; return 0; }
-  virtual int write(uint8_t *buf, int len) override { (void)buf; (void)len; return 0; }
+  public:
+    void begin(int baud)             override { (void)baud; }
+    int available()                  override { return 0; }
+    int availableForWrite()          override { return 0; }
+    int read(uint8_t *buf, int len)  override { (void)buf; (void)len; return 0; }
+    int write(uint8_t *buf, int len) override { (void)buf; (void)len; return 0; }
 };
 
 /*--------------------------------------------------------------------------------------

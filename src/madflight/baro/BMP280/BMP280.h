@@ -1,6 +1,10 @@
 /*
 modified Adafruit driver:
 
+add MF_I2C to begin()
+add no arg constructor
+replace TwoWire with MF_I2C
+
 append .cpp file to .h
 remove #include <Adafruit_xxx.h> from cpp
 rename #include <Adafruit_I2CDevice.h> -> #include "I2CDevice.h" to prevent loading from installed libraries 
@@ -11,6 +15,8 @@ remove #include <Wire.h>
 
 Now this header can now be included in the main .ino which defines a custom TwoWire implementation
 */
+
+#include "../../common/MF_I2C.h"
 
 
 /*!
@@ -163,12 +169,13 @@ public:
     STANDBY_MS_4000 = 0x07
   };
 
-  Adafruit_BMP280(TwoWire *theWire);
+  Adafruit_BMP280() {}
+  //Adafruit_BMP280(TwoWire *theWire);
   Adafruit_BMP280(int8_t cspin, SPIClass *theSPI = &SPI);
   Adafruit_BMP280(int8_t cspin, int8_t mosipin, int8_t misopin, int8_t sckpin);
   ~Adafruit_BMP280(void);
 
-  bool begin(uint8_t addr, uint8_t chipid = BMP280_CHIPID);
+  bool begin(MF_I2C* i2c, uint8_t addr, uint8_t chipid = BMP280_CHIPID);
   void reset(void);
   uint8_t getStatus(void);
   uint8_t sensorID(void);
@@ -187,7 +194,7 @@ public:
                    standby_duration duration = STANDBY_MS_1);
 
 private:
-  TwoWire *_wire;                     /**< Wire object */
+  MF_I2C *_wire;                     /**< Wire object */
   Adafruit_I2CDevice *i2c_dev = NULL; ///< Pointer to I2C bus interface
   Adafruit_SPIDevice *spi_dev = NULL; ///< Pointer to SPI bus interface
 
@@ -268,9 +275,9 @@ private:
  * @param  *theWire
  *         optional wire
  */
-Adafruit_BMP280::Adafruit_BMP280(TwoWire *theWire) {
-  _wire = theWire;
-}
+//Adafruit_BMP280::Adafruit_BMP280(TwoWire *theWire) {
+//  _wire = theWire;
+//}
 
 /*!
  * @brief  BMP280 constructor using hardware SPI
@@ -313,8 +320,9 @@ Adafruit_BMP280::~Adafruit_BMP280(void) {
  *         The expected chip ID (used to validate connection).
  *  @return True if the init was successful, otherwise false.
  */
-bool Adafruit_BMP280::begin(uint8_t addr, uint8_t chipid) {
+bool Adafruit_BMP280::begin(MF_I2C *i2c, uint8_t addr, uint8_t chipid) {
   if (spi_dev == NULL) {
+    _wire = i2c;
     // I2C mode
     if (i2c_dev)
       delete i2c_dev;

@@ -41,12 +41,12 @@ SOFTWARE.
 #endif
 
 #define RCIN_USE_NONE    0
-#define RCIN_USE_CRSF    1
-#define RCIN_USE_SBUS    2
-#define RCIN_USE_DSM     3
-#define RCIN_USE_PPM     4
-#define RCIN_USE_PWM     5
-#define RCIN_USE_DEBUG   6
+#define RCIN_USE_DEBUG   1
+#define RCIN_USE_CRSF    2
+#define RCIN_USE_SBUS    3
+#define RCIN_USE_DSM     4
+#define RCIN_USE_PPM     5
+#define RCIN_USE_PWM     6
 #define RCIN_USE_MAVLINK 7
 
 #include "rcin_interface.h" //RCIN interface definition
@@ -188,7 +188,7 @@ void Rcin::calibrate() {
 //=================================================================================================
 #if RCIN_USE == RCIN_USE_NONE || !defined RCIN_USE
 
-class RcinDebug : public Rcin {
+class RcinNone : public Rcin {
   public:
     void _setup() override {
       Serial.printf("RCIN_USE_NONE\n");
@@ -196,6 +196,30 @@ class RcinDebug : public Rcin {
     };
   private:
     bool _update() override { //returns true if channel pwm data was updated
+      for(int i=0;i<RCIN_NUM_CHANNELS;i++) pwm[i]=1500;
+      return true;
+    }
+  private:
+    uint16_t pwm_instance[RCIN_NUM_CHANNELS];
+};
+
+RcinNone rcin_instance;
+
+//=================================================================================================
+// Debug - print received serial data
+//=================================================================================================
+#elif RCIN_USE == RCIN_USE_DEBUG
+
+class RcinDebug : public Rcin {
+  public:
+    void _setup() override {
+      Serial.printf("RCIN_USE_DEBUG\n");
+      pwm = pwm_instance;
+    };
+  private:
+    bool _update() override { //returns true if channel pwm data was updated
+      int avail = rcin_Serial->available();
+      for(int i=0;i<avail;i++) Serial.printf("%02X ",rcin_Serial->read());
       for(int i=0;i<RCIN_NUM_CHANNELS;i++) pwm[i]=1500;
       return true;
     }

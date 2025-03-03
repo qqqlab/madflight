@@ -67,13 +67,13 @@ MagnetometerNone mag_instance;
 #elif MAG_USE == MAG_USE_QMC5883L
 
 #include "QMC5883L/QMC5883L.h"
-QMC5883L<HW_WIRETYPE> mag_QMC5883L(i2c);
+QMC5883L mag_QMC5883L;
 
 class MagnetometerQMC5883L: public Magnetometer {
   public:
     bool installed() { return true;}
     int setup() {
-      mag_QMC5883L.begin();
+      mag_QMC5883L.begin(mf_i2c);
       Serial.printf("MAG:  MAG_USE_QMC5883L detect=%d\n",mag_QMC5883L.detect());
       return 0;
     }

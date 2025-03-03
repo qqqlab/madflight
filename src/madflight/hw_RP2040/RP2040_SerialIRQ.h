@@ -29,8 +29,6 @@ SOFTWARE.
 // https://github.com/raspberrypi/pico-sdk/blob/master/src/rp2_common/hardware_uart/uart.c
 
 
-#include <stdlib.h>
-
 // Ring buffer class for SerialIRQ
 class SerialRingBuf {
 
@@ -158,15 +156,7 @@ private:
 public:
   uint32_t baud_actual;
 
-  //dynamic buffers
-  SerialIRQ(uart_inst_t *uart, int txpin, int rxpin, uint32_t txbufsize, uint32_t rxbufsize) {
-    uint8_t *txbuffer = (uint8_t *)malloc(txbufsize);
-    uint8_t *rxbuffer = (uint8_t *)malloc(rxbufsize);
-    SerialIRQ(uart, txpin, rxpin, txbufsize, rxbufsize, txbuffer, rxbuffer);
-  }
-
-  //static buffers
-  SerialIRQ(uart_inst_t *uart, int txpin, int rxpin, uint32_t txbufsize, uint32_t rxbufsize, uint8_t *txbuffer, uint8_t *rxbuffer) {
+  SerialIRQ(uart_inst_t *uart, int txpin, uint8_t *txbuffer, uint32_t txbufsize, int rxpin, uint8_t *rxbuffer, uint32_t rxbufsize) {
     if(uart == uart0) {
       uart_idx = 0;
       uart_inst = uart0;
@@ -236,10 +226,7 @@ public:
     return write(&c, 1);
   }
 
-  //write all or nothing
   size_t write(uint8_t *buf, size_t len) {
-    if(availableForWrite() < len) return 0;
-    
     //push into tx ring buffer
     size_t push_len = 0;
     for(size_t i=0;i<len;i++) {
@@ -252,7 +239,7 @@ public:
     return push_len;
   }
 
-  size_t readBytes(uint8_t *buf, size_t len) {
+  size_t read(uint8_t *buf, size_t len) {
     size_t n = available();
     if(n > len) n = len;
     for(size_t i=0;i<n;i++) {
@@ -261,7 +248,7 @@ public:
     return n;
   }
 
-  size_t read(uint8_t *buf, size_t len) {
-    return readBytes(buf, len);
+  size_t readBytes(uint8_t *buf, size_t len) {
+    return read(buf, len);
   }
 };
