@@ -28,7 +28,6 @@ This file defines:
 #else
   #define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE //use FreeRTOS on second core (Note: RP2040 IMU_EXEC_IRQ blocks the system)
   #define IMU_FREERTOS_TASK_PRIORITY 7 //IMU Interrupt task priority, higher number is higher priority. Max priority on RP2040 is 7
-  #define HW_RP2040_USE_FREERTOS //enable FreeRTOS
 #endif
 
 //======================================================================================================================//
@@ -42,11 +41,6 @@ This file defines:
 //                    hw_setup()
 //======================================================================================================================//
 
-//overclocking, supposedly works up to 270 MHz on RP2040.
-//#ifndef HW_RP2040_SYS_CLK_KHZ
-//  #define HW_RP2040_SYS_CLK_KHZ 200000
-//#endif
-
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 //-------------------------------------
@@ -57,34 +51,11 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include <SPI.h>                       //SPI communication
 #include "madflight/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
 #include "madflight/hw_RP2040/RP2040_SerialIRQ.h"  //Replacement high performance serial driver
+#include "../common/MF_Serial.h"
 
 //-------------------------------------
 //Bus Setup
 //-------------------------------------
-
-#if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
-  // GPS Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
-  uint8_t gps_txbuf[256];
-  uint8_t gps_rxbuf[256];
-  SerialIRQ gps_Serial(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
-  //SerialUART gps_Serial = SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
-  //SerialPIO gps_Serial = SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
-#else
-  //DUMMY
-  SerialUART gps_Serial = SerialUART(uart1, -1, -1);
-#endif
-
-#if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
-  // RC Input Serial - uncomment one: SerialUART, SerialIRQ or SerialPIO and use uart0 or uart1
-  uint8_t rcin_txbuf[256];
-  uint8_t rcin_rxbuf[1024];
-  SerialIRQ *rcin_Serial = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf)); //SerialIRQ uses buffered tx and rx in addition to the 32 byte uart hardware fifo
-  //SerialUART rcin_Serial = SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
-  //SerialPIO *rcin_Serial = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
-#else
-  //DUMMY
-  SerialUART *rcin_Serial = new SerialUART(uart0, -1, -1);
-#endif
 
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
@@ -95,18 +66,33 @@ SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS
 //prototype
 void hw_eeprom_begin();
 
-void hw_setup() 
-{ 
+void hw_setup() {
   //print hw info
   Serial.print("HW_RP2040 ");
-  #ifdef HW_RP2040_USE_FREERTOS
-    Serial.print("HW_RP2040_USE_FREERTOS ");
-  #endif
+  //overclocking, supposedly works up to 270 MHz on RP2040
   #ifdef HW_RP2040_SYS_CLK_KHZ
     set_sys_clock_khz(HW_RP2040_SYS_CLK_KHZ, true);
-    Serial.printf(" HW_RP2040_SYS_CLK_KHZ %d",HW_RP2040_SYS_CLK_KHZ);
+    Serial.printf(" HW_RP2040_SYS_CLK_KHZ %d", HW_RP2040_SYS_CLK_KHZ);
   #endif
   Serial.println();
+
+  //rcin_Serial
+  #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
+    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
+    auto *rcin_ser = new SerialIRQ(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 256, 256);
+    //auto *rcin_ser = new SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *rcin_ser = new SerialPIO(HW_PIN_RCIN_TX, HW_PIN_RCIN_RX, 32); //PIO uarts, any pin allowed (not tested)
+    rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
+  #endif
+
+  //gps_Serial
+  #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
+    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
+    auto *gps_ser = new SerialIRQ(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX, 256, 256);
+    //auto *rcin_ser = new SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *rcin_ser = new SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested)
+    gps_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
+  #endif
 
   //I2C
   i2c->setSDA(HW_PIN_I2C_SDA);

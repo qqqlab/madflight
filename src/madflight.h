@@ -1,4 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v1.3.2"
+#define MADFLIGHT_VERSION "madflight v1.3.3-DEV"
 
 /*==========================================================================================
 madflight - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
@@ -31,13 +31,17 @@ SOFTWARE.
 
 #pragma once
 
+#include "madflight/common/MF_Serial.h"
+MF_Serial *rcin_Serial = nullptr;
+MF_Serial *gps_Serial = nullptr;
+
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
-  #include <madflight/hw_ESP32/hw_ESP32.h>
+  #include "madflight/hw_ESP32/hw_ESP32.h"
 #elif defined ARDUINO_ARCH_RP2040
-  #include <madflight/hw_RP2040/hw_RP2040.h>
+  #include "madflight/hw_RP2040/hw_RP2040.h"
 #elif defined ARDUINO_ARCH_STM32
-  #include <madflight/hw_STM32/hw_STM32.h>
+  #include "madflight/hw_STM32/hw_STM32.h"
 #else 
   #error "Unknown hardware architecture, expected ESP32 / RP2040 / STM32"
 #endif
@@ -129,7 +133,12 @@ void madflight_setup() {
   Serial.printf("Arduino library: " HW_ARDUINO_STR "\n");
 
   cli.print_boardInfo(); //print board info and pinout
-  hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
+
+  //hardware specific setup for busses: serial, spi and i2c (see hw_xxx.h)
+  hw_setup(); 
+  if(!rcin_Serial) rcin_Serial = new MF_SerialNone(); //prevent nullptr
+  if(!gps_Serial) gps_Seriall = new MF_SerialNone(); //prevent nullptr
+
   cfg.begin(); //read config from EEPROM
   cli.print_i2cScan(); //print i2c scan
 

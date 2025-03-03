@@ -6,11 +6,11 @@
 class GPS_UBLOX : public AP_GPS_UBLOX {
 public:
   //interface
-  void I_setBaud(int baud)                      override {gps_Serial.begin(baud);}
-  inline int I_availableForWrite()              override {return gps_Serial.availableForWrite();}
-  inline int I_available()                      override {return gps_Serial.available();}
-  inline int I_read(uint8_t* data, size_t len)  override {return gps_Serial.read(data, len);}
-  inline int I_write(uint8_t* data, size_t len) override {return gps_Serial.write(data, len);}
+  void I_setBaud(int baud)                      override {gps_Serial->begin(baud);}
+  inline int I_availableForWrite()              override {return gps_Serial->availableForWrite();}
+  inline int I_available()                      override {return gps_Serial->available();}
+  inline int I_read(uint8_t* data, size_t len)  override {return gps_Serial->read(data, len);}
+  inline int I_write(uint8_t* data, size_t len) override {return gps_Serial->write(data, len);}
   inline uint32_t I_millis()                    override {return ::millis();}
   void I_print(const char *str)                 override {Serial.print("GPS:  "); Serial.print(str);}
 } gps_ublox;
@@ -28,7 +28,7 @@ void gps_setup() {
   //Serial.printf("Initial GPS baud rate:%d\n", baud);
 
   //start GPS Serial
-  gps_Serial.begin(baud);
+  gps_Serial->begin(baud);
 
   //start GPS
   gps_ublox.rate_ms = 100;   //optional - gps update rate in milliseconds (default 100)

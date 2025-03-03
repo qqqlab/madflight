@@ -41,7 +41,9 @@ This file defines:
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
-#define IMU_EXEC IMU_EXEC_IRQ //STM FreeRTOS not supported (yet), so use IMU as interrupt
+#ifndef IMU_EXEC
+  #define IMU_EXEC IMU_EXEC_IRQ //Use IMU as interrupt by default
+#endif
 
 //======================================================================================================================//
 //                    FREERTOS
@@ -60,17 +62,6 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include "madflight/hw_STM32/STM32_PWM.h" //Servo and oneshot
 
 //Bus Setup
-#if defined(HW_PIN_RCIN_RX) && defined(HW_PIN_RCIN_TX)
-  HardwareSerial *rcin_Serial = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
-#else
-  HardwareSerial *rcin_Serial = new HardwareSerial(-1, -1); //DUMMY
-#endif
-
-#if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
-  HardwareSerial gps_Serial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
-#else
-  HardwareSerial gps_Serial(-1, -1); //DUMMY
-#endif
 
 typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
 HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
@@ -85,17 +76,39 @@ void hw_eeprom_begin();
 void hw_setup() 
 { 
   Serial.println("USE_HW_STM32");
-  
-  //Serial RX Inverters
-  #ifdef HW_PIN_RCIN_INVERTER
-    pinMode(HW_PIN_RCIN_INVERTER, OUTPUT);
-    digitalWrite(HW_PIN_RCIN_INVERTER, LOW); //not inverted
+
+  //NOTE: default serial buffer size is 64, and is defined in HardwareSerial.h
+  //SERIAL_RX_BUFFER_SIZE and SERIAL_TX_BUFFER_SIZE
+  //can't set that here :-(
+  //need to use compiler -D arguments or modify HardwareSerial.h ...
+  #if SERIAL_RX_BUFFER_SIZE<256 || SERIAL_TX_BUFFER_SIZE<256
+    #warning "RCIN/GPS might need larger buffers. Set SERIAL_RX_BUFFER_SIZE 256 and SERIAL_TX_BUFFER_SIZE 256 in HardwareSerial.h"
   #endif
-  #ifdef HW_PIN_GPS_INVERTER  
-    pinMode(HW_PIN_GPS_INVERTER, OUTPUT);
-    digitalWrite(HW_PIN_GPS_INVERTER, LOW); //not inverted
+
+  //rcin_Serial
+  #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
+    auto *rcin_ser = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+    //rcin_ser->setTxBufferSize(256);
+    //rcin_ser->setRxBufferSize(256);
+    rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
+    #ifdef HW_PIN_RCIN_INVERTER
+      pinMode(HW_PIN_RCIN_INVERTER, OUTPUT);
+      digitalWrite(HW_PIN_RCIN_INVERTER, LOW); //not inverted
+    #endif    
   #endif
-  
+
+  //gps_Serial
+  #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
+    auto *gps_ser = new HardwareSerial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+    //gps_ser->setTxBufferSize(256);
+    //gps_ser->setRxBufferSize(256);
+    rcin_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
+    #ifdef HW_PIN_GPS_INVERTER  
+      pinMode(HW_PIN_GPS_INVERTER, OUTPUT);
+      digitalWrite(HW_PIN_GPS_INVERTER, LOW); //not inverted
+    #endif
+  #endif
+
   //I2C
   #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
     i2c->setSDA(HW_PIN_I2C_SDA);

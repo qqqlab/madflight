@@ -75,15 +75,15 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #endif
 #include <SPI.h>                         //SPI communication
 #include "madflight/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
+#include "../common/MF_Serial.h"
 
 //-------------------------------------
 //Bus Setup
 //-------------------------------------
+
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define VSPI FSPI
 #endif  
-HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
-HardwareSerial &gps_Serial = Serial2; //Serial1 or Serial2 (Serial is used for debugging)
 SPIClass spi1 = SPIClass(HSPI); // VSPI or HSPI(default) - used for IMU
 SPIClass spi2 = SPIClass(VSPI);  // VSPI(default) or HSPI - used for BB and other functions
 
@@ -107,12 +107,22 @@ void hw_setup()
 {
   Serial.println(HW_BOARD_NAME);
 
-  #if defined(HW_PIN_RCIN_RX) && defined(HW_PIN_RCIN_TX)
-    rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+  //rcin_Serial
+  #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
+    auto *rcin_ser = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
+    rcin_ser->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
+    rcin_ser->setTxBufferSize(256);
+    rcin_ser->setRxBufferSize(256);
+    rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
   #endif
-  
-  #if defined(HW_PIN_GPS_RX) && defined(HW_PIN_GPS_TX)
-    gps_Serial.setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+
+  //gps_Serial
+  #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
+    auto *gps_ser = &Serial2; //&Serial1 or &Serial2 (&Serial is used for debugging)
+    gps_ser->setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
+    gps_ser->setTxBufferSize(256);
+    gps_ser->setRxBufferSize(256);
+    rcin_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
   #endif
 
   #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)

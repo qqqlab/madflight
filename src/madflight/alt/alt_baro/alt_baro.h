@@ -46,7 +46,7 @@ public:
     ts = 0;
   }
 
-  void updateAccelUp(float a, uint32_t ts) {}; //a: accel up in [m/s^2], ts: timestamp in [us]
+  void updateAccelUp(float a, uint32_t ts) { (void)a; (void)ts; }; //a: accel up in [m/s^2], ts: timestamp in [us]
   
   void updateBaroAlt(float alt, uint32_t ts) { //altitude: barometric altitude in [m], ts: timestamp in [us]
     if(this->ts != 0) {

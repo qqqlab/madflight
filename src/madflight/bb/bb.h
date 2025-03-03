@@ -37,6 +37,31 @@ SOFTWARE.
   #define BB_USE BB_USE_NONE
 #endif
 
+//check BB_USE setting is supported and has required pins defined
+#if BB_USE == BB_USE_SD
+  #if !defined ARDUINO_ARCH_RP2040 && !defined ARDUINO_ARCH_ESP32
+    #warning BB_USE_SD not available for this processor
+    #undef BB_USE
+    #define BB_USE BB_USE_NONE
+  #endif
+  #if !defined HW_PIN_SPI2_SCLK || !defined HW_PIN_SPI2_MISO || !defined HW_PIN_SPI2_MOSI || !defined HW_PIN_BB_CS
+    #warning BB_USE_SD needs HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI, HW_PIN_BB_CS defined
+    #undef BB_USE
+    #define BB_USE BB_USE_NONE
+  #endif
+#elif BB_USE == BB_USE_SDMMC
+  #if !defined ARDUINO_ARCH_ESP32
+    #warning BB_USE_SDMMC not available for this processor
+    #undef BB_USE
+    #define BB_USE BB_USE_NONE
+  #endif
+  #if !defined HW_PIN_SDMMC_CLK || !defined HW_PIN_SDMMC_CMD || !defined HW_PIN_SDMMC_DATA
+    #warning BB_USE_SDMMC needs HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA defined
+    #undef BB_USE
+    #define BB_USE BB_USE_NONE
+  #endif
+#endif
+
 //=====================================================================================================================
 // No Logging
 //=====================================================================================================================
