@@ -3,27 +3,7 @@
 #define MF_ICM45686_H
 #include "../imu_interface.h"
 
-// prevent naming conflicts, e.g. static spi
-namespace motionarduino {
-    #include "./ICM45686/ICM45686.h"
-    // Force linking
-    #include "./ICM45686/ICM45686.cpp"
-    #include "./ICM45686/imu/inv_imu_driver.c"
-    #include "./ICM45686/imu/inv_imu_driver_advanced.c"
-    #include "./ICM45686/imu/inv_imu_transport.c"
-
-    // below, not needed it seems:
-    //#include "./ICM45686/imu/inv_imu_edmp.c"
-    //#include "./ICM45686/imu/inv_imu_i2cm.c"
-    // #include "./ICM45686/imu/inv_imu_driver_aux1.c"
-    // #include "./ICM45686/imu/inv_imu_edmp_compass.c"
-    // #include "./ICM45686/imu/inv_imu_edmp_wearable.c"
-    // #include "./ICM45686/imu/inv_imu_i2cm.c"
-    // #include "./ICM45686/imu/inv_imu_selftest.c"
-    // #include "./ICM45686/imu/inv_imu_transport.c"
-}
-
-
+#include "./ICM45686/ICM45686.h"
 
 class Invensensev3_Interface {
     public:
@@ -54,37 +34,31 @@ class Invensensev3_InterfaceSPI : public Invensensev3_Interface {
     SPIClass * _spi;
     int _freq;  
 
-
     Invensensev3_InterfaceSPI(SPIClass *spi, uint8_t cs) {
         _spi = spi; 
         _spi_cs = cs;
         freqSlow = INV3_SPI_FREQ_SLOW;
         freqFast = INV3_SPI_FREQ_FAST;
         setFreq(freqSlow);
-      }
+    }
   
-      void setFreq(int freq) {
+    void setFreq(int freq) {
         _freq = freq;
-      }
-  
-      
-  };
-  
+    }
+};
 
 // it is much slower without FIFO!!!
 #define MF_ICM45686_USE_IMU_FIFO 1
 
 class MF_ICM45686 {
-
 private:
-    motionarduino::ICM456xx _wrapped_imu;
+    ICM456xx _wrapped_imu;
 
     //raw measurements in NED frame
     int16_t rawa[3]; //accelerometer
     int16_t rawg[3]; //gyroscope
     int16_t rawm[3]; //magnetometer
     int16_t rawt; //temperature
-
 
     int _rate_hz = 100;
     int _interrupt_pin = 0;
@@ -93,12 +67,9 @@ private:
     float gyro_multiplier = 1.0;
 
     // Note: this is needed because original ICM-45686 driver interface .enableFifoInterrupt() requires to pass a interrupt handler function
-    static void fake_interrupt_handler() {
-    }
-
+    static void fake_interrupt_handler() {}
 
     uint8_t fifo_watermark_threshold = 1; // Watermark threshold value
-
 
     int _enableDataReadyInterrupt() {
         // route UI data ready interrupt to INT1
@@ -150,17 +121,12 @@ private:
         else if (range == 16) ret = 16;
         return ret;
     }
-    
 
 public:
     MF_ICM45686(uint8_t intPin, Invensensev3_InterfaceSPI *iface)
-        : _wrapped_imu(
-            *((arduino::SPIClass *)(iface->_spi)), 
-            iface->_spi_cs,
-            iface->_freq) {
+        : _wrapped_imu( *(iface->_spi), iface->_spi_cs, iface->_freq) {
                 _interrupt_pin = intPin;
     }
-
 
     // Converting raw values to physical values
     // Madflight:
@@ -246,37 +212,35 @@ public:
 
     // FIXME: implement magnetometer support?
     // P.S. Orientation of axes seem same as for MPU-xxxx, and is converted in getMotion6NED() function
-    void read6() {        
+    void read6() {
         #ifdef MF_ICM45686_USE_IMU_FIFO
-        motionarduino::inv_imu_fifo_data_t imu_data;
-        // FIXME: this might yield multiple samples if fifo_watermark_threshold>1 and there's imu_data.byte_16.timestamp !!!
-        // FIXME there's also values represented as int20_t , if extra precission is needed...
-        _wrapped_imu.getDataFromFifo(imu_data);
-        rawa[0] = imu_data.byte_16.accel_data[0];
-        rawa[1] = imu_data.byte_16.accel_data[1];
-        rawa[2] = imu_data.byte_16.accel_data[2];
+            inv_imu_fifo_data_t imu_data;
+            // FIXME: this might yield multiple samples if fifo_watermark_threshold>1 and there's imu_data.byte_16.timestamp !!!
+            // FIXME there's also values represented as int20_t , if extra precission is needed...
+            _wrapped_imu.getDataFromFifo(imu_data);
+            rawa[0] = imu_data.byte_16.accel_data[0];
+            rawa[1] = imu_data.byte_16.accel_data[1];
+            rawa[2] = imu_data.byte_16.accel_data[2];
 
-        rawg[0] = imu_data.byte_16.gyro_data[0];
-        rawg[1] = imu_data.byte_16.gyro_data[1];
-        rawg[2] = imu_data.byte_16.gyro_data[2];
-        // Temperature in Degrees Centigrade = (TEMP_DATA / 128) + 25
-        rawt = imu_data.byte_16.temp_data;
+            rawg[0] = imu_data.byte_16.gyro_data[0];
+            rawg[1] = imu_data.byte_16.gyro_data[1];
+            rawg[2] = imu_data.byte_16.gyro_data[2];
+            // Temperature in Degrees Centigrade = (TEMP_DATA / 128) + 25
+            rawt = imu_data.byte_16.temp_data;
         #else
-        motionarduino::inv_imu_sensor_data_t imu_data;
-        _wrapped_imu.getDataFromRegisters(imu_data);
+            inv_imu_sensor_data_t imu_data;
+            _wrapped_imu.getDataFromRegisters(imu_data);
 
-        rawa[0] = imu_data.accel_data[0];
-        rawa[1] = imu_data.accel_data[1];
-        rawa[2] = imu_data.accel_data[2];
+            rawa[0] = imu_data.accel_data[0];
+            rawa[1] = imu_data.accel_data[1];
+            rawa[2] = imu_data.accel_data[2];
 
-        rawg[0] = imu_data.gyro_data[0];
-        rawg[1] = imu_data.gyro_data[1];
-        rawg[2] = imu_data.gyro_data[2];
-        rawt = imu_data.temp_data;
+            rawg[0] = imu_data.gyro_data[0];
+            rawg[1] = imu_data.gyro_data[1];
+            rawg[2] = imu_data.gyro_data[2];
+            rawt = imu_data.temp_data;
         #endif
     }
-
-
 };
 
 #endif // MF_ICM45686_H

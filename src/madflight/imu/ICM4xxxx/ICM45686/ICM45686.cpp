@@ -102,9 +102,6 @@ ICM456xx::ICM456xx(SPIClass &spi_ref,uint8_t cs_id) {
 
 /* starts communication with the ICM456xx */
 int ICM456xx::begin() {
-  int rc = 0;
-  uint8_t who_am_i;
-
   if (i2c != NULL) {
     i2c->begin();
     i2c->setClock(clk_freq);
@@ -188,7 +185,6 @@ int ICM456xx::setup_irq(uint8_t intpin, ICM456xx_irq_handler handler)
 
 int ICM456xx::enableFifoInterrupt(uint8_t intpin, ICM456xx_irq_handler handler, uint8_t fifo_watermark) {
   int rc = 0;
-  inv_imu_int_state_t it_conf;
   const inv_imu_fifo_config_t fifo_config = {
     .gyro_en=true,
     .accel_en=true,
@@ -481,7 +477,7 @@ int ICM456xx::startWakeOnMotion(uint8_t intpin, ICM456xx_irq_handler handler)
   inv_imu_set_config_int(&icm_driver,INV_IMU_INT1, &config_int);
 
   /* All othher APEX disabled */
-  for(int i; i < ICM456XX_APEX_NB; i++)
+  for(int i = 0; i < ICM456XX_APEX_NB; i++)
   {
     apex_enable[i] = false;
   }
@@ -500,7 +496,6 @@ int ICM456xx::startWakeOnMotion(uint8_t intpin, ICM456xx_irq_handler handler)
 int ICM456xx::startTap(uint8_t intpin, ICM456xx_irq_handler handler)
 {
   int rc = 0;
-  inv_imu_edmp_apex_parameters_t apex_parameters;
 
   apex_enable[ICM456XX_APEX_TAP] = true;
   
@@ -513,7 +508,6 @@ int ICM456xx::startTap(uint8_t intpin, ICM456xx_irq_handler handler)
 int ICM456xx::startRaiseToWake(uint8_t intpin, ICM456xx_irq_handler handler)
 {
   int rc = 0;
-  inv_imu_edmp_apex_parameters_t apex_parameters;
 
   apex_enable[ICM456XX_APEX_R2W] = true;
 

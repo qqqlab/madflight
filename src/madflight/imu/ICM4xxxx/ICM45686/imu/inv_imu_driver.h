@@ -57,7 +57,8 @@ typedef struct {
 	 *         (only required when using advanced feature set).
 	 *  @note  In case advanced module is not used, this field can be removed.
 	 */
-	uint64_t adv_var[6];
+	//uint64_t adv_var[6]; //warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+  uint8_t adv_var[48];
 
 } inv_imu_device_t;
 
