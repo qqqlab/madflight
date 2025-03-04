@@ -2,8 +2,16 @@ on: [push, pull_request]
 jobs:
   compile-sketches:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fqbn:
+          - esp32:esp32:esp32
+          - rp2040:rp2040:pico
+  
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/compile-sketches@v1
         with:
-          fqbn: esp32:esp32:esp32
+          fqbn: ${{m atrix.fqbn }}
+          
