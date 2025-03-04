@@ -1,6 +1,6 @@
 # changes for madflight
 
-- replace TwoWire with HW_WIRETYPE (and move INA228.cpp into INA228.h to make it a "template")
+- replace TwoWire with MF_I2C (and move INA228.cpp into INA228.h to make it a "template")
 - add calibrate()
 - add isConversionReady()
 - move i2c init from constructor to begin()

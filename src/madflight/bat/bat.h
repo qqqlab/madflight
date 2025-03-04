@@ -55,7 +55,7 @@ class BatteryINA226: public Battery {
   void setup() {
     float Rshunt = cfg.BAT_CAL_I; //ohm
 
-    bat_ina226.begin(i2c, BAT_I2C_ADR);
+    bat_ina226.begin(mf_i2c, BAT_I2C_ADR);
 
     // Configure INA226 -> sample time = 2 * 128 * 140us = 36ms => 28Hz
     bat_ina226.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_140US, INA226_SHUNT_CONV_TIME_140US, INA226_MODE_SHUNT_BUS_CONT);
@@ -99,7 +99,7 @@ class BatteryINA228: public Battery {
     float Rshunt = cfg.BAT_CAL_I; //ohm
 
     // Configure INA226 -> sample time = 512 * 2 * 50us = 51.2ms => 20Hz
-    bat_ina228.begin(i2c, BAT_I2C_ADR);
+    bat_ina228.begin(mf_i2c, BAT_I2C_ADR);
     bat_ina228.setADCRange(false); //  false => 164 mV, true => 41 mV
     bat_ina228.setBusVoltageConversionTime(INA228_50_us);
     bat_ina228.setShuntVoltageConversionTime(INA228_50_us);

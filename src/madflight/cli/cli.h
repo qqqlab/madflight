@@ -497,7 +497,7 @@ public:
   void print_i2cScan() {
     Serial.printf("I2C:  Scanning ...\n");
     byte count = 0;
-    //i2c->begin();
+    //mf_i2c->begin();
     for (byte i = 8; i < 120; i++) {
       mf_i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
       if (mf_i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 

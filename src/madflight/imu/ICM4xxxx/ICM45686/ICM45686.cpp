@@ -14,7 +14,9 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
- 
+
+#include "../../../common/MF_I2C.h"
+
 #include "Arduino.h"
 #include "ICM45686.h"
 #if defined(ICM45686S) || defined(ICM45605S)
@@ -32,7 +34,7 @@ static void sensor_event_cb(inv_imu_sensor_event_t *event);
 // As they are declared as static, they will be overriden each time a new ICM456xx object is created
 // i2c
 uint8_t i2c_address = 0;
-static TwoWire *i2c = NULL;
+static MF_I2C *i2c = NULL;
 #define I2C_DEFAULT_CLOCK 400000
 #define I2C_MAX_CLOCK 1000000
 #define ICM456xx_I2C_ADDRESS 0x68
@@ -63,7 +65,7 @@ static int gaf_status = 0;
 static inv_imu_device_t *icm_driver_ptr = NULL;
 
 // ICM456xx constructor for I2c interface
-ICM456xx::ICM456xx(TwoWire &i2c_ref,bool lsb, uint32_t freq) {
+ICM456xx::ICM456xx(MF_I2C &i2c_ref,bool lsb, uint32_t freq) {
   i2c = &i2c_ref; 
   i2c_address = ICM456xx_I2C_ADDRESS | (lsb ? 0x1 : 0);
   if ((freq <= I2C_MAX_CLOCK) && (freq >= 100000))
@@ -75,7 +77,7 @@ ICM456xx::ICM456xx(TwoWire &i2c_ref,bool lsb, uint32_t freq) {
 }
 
 // ICM456xx constructor for I2c interface, default frequency
-ICM456xx::ICM456xx(TwoWire &i2c_ref,bool lsb) {
+ICM456xx::ICM456xx(MF_I2C &i2c_ref,bool lsb) {
   i2c = &i2c_ref; 
   i2c_address = ICM456xx_I2C_ADDRESS | (lsb ? 0x1 : 0);
   clk_freq = I2C_DEFAULT_CLOCK;

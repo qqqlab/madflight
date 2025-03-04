@@ -26,6 +26,9 @@
 #ifndef BMP3_SRC_BMP3_H_  // NOLINT
 #define BMP3_SRC_BMP3_H_
 
+#include "../../common/MF_I2C.h"
+
+
 #if defined(ARDUINO)
 #include <Arduino.h>
 #include "Wire.h"
@@ -64,9 +67,9 @@ class Bmp3 {
     FILTER_COEF_128 = BMP3_IIR_FILTER_COEFF_127,
   };
   Bmp3() {}
-  Bmp3(TwoWire *i2c, const I2cAddr addr);
+  Bmp3(MF_I2C *i2c, const I2cAddr addr);
   Bmp3(SPIClass *spi, const uint8_t cs);
-  void Config(TwoWire *i2c, const I2cAddr addr);
+  void Config(MF_I2C *i2c, const I2cAddr addr);
   void Config(SPIClass *spi, const uint8_t cs);
   bool Begin();
   bool ConfigOsMode(const OsMode mode);
@@ -97,7 +100,7 @@ class Bmp3 {
   /* Description of I2C and SPI interfaces */
   struct I2cIntf {
     uint8_t addr;
-    TwoWire *i2c;
+    MF_I2C *i2c;
   } i2c_intf_;
   struct SpiIntf {
     uint8_t cs;

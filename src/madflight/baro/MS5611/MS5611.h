@@ -28,7 +28,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "Arduino.h"
+#include "../../common/MF_I2C.h"
 
 #define MS5611_ADDRESS                (0x77)
 
@@ -54,7 +54,7 @@ public:
     MS5611() {
         compensation = true;
     }
-    bool begin(ms5611_osr_t osr = MS5611_HIGH_RES);
+    bool begin(MF_I2C *i2c, ms5611_osr_t osr = MS5611_HIGH_RES);
     uint32_t readRawTemperature();
     uint32_t readRawPressure();
     float readTemperature();
@@ -65,15 +65,15 @@ public:
     ms5611_osr_t getOversampling();
 
     void startTemperature() {
-        i2c->beginTransmission(MS5611_ADDRESS);
-        i2c->write(MS5611_CMD_CONV_D2 + uosr);
-        i2c->endTransmission();
+        _i2c->beginTransmission(MS5611_ADDRESS);
+        _i2c->write(MS5611_CMD_CONV_D2 + uosr);
+        _i2c->endTransmission();
     }
 
     void startPressure() {
-        i2c->beginTransmission(MS5611_ADDRESS);
-        i2c->write(MS5611_CMD_CONV_D1 + uosr);
-        i2c->endTransmission();
+        _i2c->beginTransmission(MS5611_ADDRESS);
+        _i2c->write(MS5611_CMD_CONV_D1 + uosr);
+        _i2c->endTransmission();
     }
 
     int getDelayUs() {
@@ -109,6 +109,7 @@ public:
     }
 
 private:
+    MF_I2C *_i2c;
     uint16_t fc[6];
 
     uint8_t uosr;
@@ -133,9 +134,10 @@ private:
 
 #include <math.h>
 
-bool MS5611::begin(ms5611_osr_t osr)
+bool MS5611::begin(MF_I2C *i2c, ms5611_osr_t osr)
 {
-    i2c->begin();
+    _i2c = i2c;
+    _i2c->begin();
     reset();
     setOversampling(osr);
     delay(100);
@@ -194,9 +196,9 @@ ms5611_osr_t MS5611::getOversampling()
 
 void MS5611::reset(void)
 {
-    i2c->beginTransmission(MS5611_ADDRESS);
-    i2c->write(MS5611_CMD_RESET);
-    i2c->endTransmission();
+    _i2c->beginTransmission(MS5611_ADDRESS);
+    _i2c->write(MS5611_CMD_RESET);
+    _i2c->endTransmission();
 }
 
 void MS5611::readPROM()
@@ -281,12 +283,12 @@ double MS5611::getSeaLevel(double pressure, double altitude)
 uint16_t MS5611::readRegister16(uint8_t reg)
 {
     uint16_t value;
-    i2c->beginTransmission(MS5611_ADDRESS);
-    i2c->write(reg);
-    i2c->endTransmission();
-    i2c->requestFrom(MS5611_ADDRESS, 2);
-    uint8_t vha = i2c->read();
-    uint8_t vla = i2c->read();
+    _i2c->beginTransmission(MS5611_ADDRESS);
+    _i2c->write(reg);
+    _i2c->endTransmission();
+    _i2c->requestFrom(MS5611_ADDRESS, 2);
+    uint8_t vha = _i2c->read();
+    uint8_t vla = _i2c->read();
     value = vha << 8 | vla;
     return value;
 }
@@ -295,13 +297,13 @@ uint16_t MS5611::readRegister16(uint8_t reg)
 uint32_t MS5611::readRegister24(uint8_t reg)
 {
     uint32_t value;
-    i2c->beginTransmission(MS5611_ADDRESS);
-    i2c->write(reg);
-    i2c->endTransmission();
-    i2c->requestFrom(MS5611_ADDRESS, 3);
-    uint8_t vxa = i2c->read();
-    uint8_t vha = i2c->read();
-    uint8_t vla = i2c->read();
+    _i2c->beginTransmission(MS5611_ADDRESS);
+    _i2c->write(reg);
+    _i2c->endTransmission();
+    _i2c->requestFrom(MS5611_ADDRESS, 3);
+    uint8_t vxa = _i2c->read();
+    uint8_t vha = _i2c->read();
+    uint8_t vla = _i2c->read();
     value = ((int32_t)vxa << 16) | ((int32_t)vha << 8) | vla;
     return value;
 }

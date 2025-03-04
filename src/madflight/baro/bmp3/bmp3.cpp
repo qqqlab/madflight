@@ -36,7 +36,7 @@
 
 namespace bfs {
 
-Bmp3::Bmp3(TwoWire *i2c, const I2cAddr addr) {
+Bmp3::Bmp3(MF_I2C *i2c, const I2cAddr addr) {
   i2c_intf_.i2c = i2c;
   i2c_intf_.addr = static_cast<uint8_t>(addr);
   dev_.intf_ptr = &i2c_intf_;
@@ -56,7 +56,7 @@ Bmp3::Bmp3(SPIClass *spi, const uint8_t cs) {
   dev_.delay_us = Delay_us;
 }
 
-void Bmp3::Config(TwoWire *i2c, const I2cAddr addr) {
+void Bmp3::Config(MF_I2C *i2c, const I2cAddr addr) {
   i2c_intf_.i2c = i2c;
   i2c_intf_.addr = static_cast<uint8_t>(addr);
   dev_.intf_ptr = &i2c_intf_;

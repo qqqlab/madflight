@@ -2,10 +2,11 @@
 This file contains all necessary functions and code for ESP32 hardware platforms
 
 This file defines:
-  *rcin_Serial -> Serial port for RCIN
+  HW_PIN_xxx -> The pin assignments
+  *rcin_Serial -> Serial port for RCIN as MF_Serial object
+  *gps_Serial -> Serial port for GPS as MF_Serial object
+  *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  *i2c -> I2C port
-  HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
@@ -87,15 +88,6 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 SPIClass spi1 = SPIClass(HSPI); // VSPI or HSPI(default) - used for IMU
 SPIClass spi2 = SPIClass(VSPI);  // VSPI(default) or HSPI - used for BB and other functions
 
-#ifdef USE_ESP32_SOFTWIRE
-  typedef SoftWire HW_WIRETYPE; //typedef to force IMU to use SoftWire
-  typedef SoftWire TwoWire; //typedef to force BARO to use SoftWire
-  HW_WIRETYPE *i2c = new HW_WIRETYPE();  //create a ESP32_SoftWire instance
-#else
-  typedef TwoWire HW_WIRETYPE; //typedef HW_WIRETYPE with the class to use for I2C
-  HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
-#endif
-
 SPIClass *spi = &spi1;
 SPIClass *bb_spi = &spi2;
 
@@ -107,7 +99,7 @@ void hw_setup()
 {
   Serial.println(HW_BOARD_NAME);
 
-  //rcin_Serial
+  //rcin_Serial - global serial port for RCIN
   #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
     auto *rcin_ser = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
     rcin_ser->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
@@ -116,7 +108,7 @@ void hw_setup()
     rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
   #endif
 
-  //gps_Serial
+  //gps_Serial - global serial port for GPS
   #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
     auto *gps_ser = &Serial2; //&Serial1 or &Serial2 (&Serial is used for debugging)
     gps_ser->setPins(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
@@ -125,10 +117,17 @@ void hw_setup()
     rcin_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
   #endif
 
+  //mf_i2c - global I2C interface
   #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
-    i2c->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
+    #ifdef USE_ESP32_SOFTWIRE
+      SoftWire *i2c_ptr = new SoftWire();  //create a ESP32_SoftWire instance
+    #else
+      TwoWire *i2c_ptr = &Wire; //&Wire or &Wire1
+    #endif
+    i2c_ptr->begin(HW_PIN_I2C_SDA, HW_PIN_I2C_SCL, 1000000);
+    mf_i2c = new MF_I2CPtrWrapper<decltype(i2c_ptr)>( i2c_ptr );
   #endif
-  
+
   #if defined(HW_PIN_SPI_SCLK) && defined(HW_PIN_SPI_MISO) && defined(HW_PIN_SPI_MOSI)
     spi1.begin(HW_PIN_SPI_SCLK, HW_PIN_SPI_MISO, HW_PIN_SPI_MOSI);
   #endif

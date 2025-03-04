@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 class MF_I2C {
   public:
     virtual void begin() = 0;
@@ -7,9 +9,9 @@ class MF_I2C {
     virtual void setClock(uint32_t freq) = 0;
     virtual void beginTransmission(uint8_t address) = 0;
     virtual uint8_t endTransmission(bool stopBit) = 0;
-    virtual size_t requestFrom(uint8_t address, size_t len, bool stopBit) = 0;
-    virtual size_t read(uint8_t *buf, size_t len) = 0;
-    virtual size_t write(const uint8_t *buf, size_t len) = 0;
+    virtual uint32_t requestFrom(uint8_t address, uint32_t len, bool stopBit) = 0;
+    virtual uint32_t read(uint8_t *buf, uint32_t len) = 0;
+    virtual uint32_t write(const uint8_t *buf, uint32_t len) = 0;
 
     uint8_t read() {
       uint8_t data;
@@ -17,21 +19,25 @@ class MF_I2C {
       return data;
     }
 
-    void write(uint8_t data) {
-      write(&data, 1);
+    uint32_t readBytes(uint8_t *buf, uint32_t len) {
+      return read(buf, len);
+    }
+
+    uint32_t write(uint8_t data) {
+      return write(&data, 1);
     }
 
     uint8_t endTransmission(void) {
       return endTransmission(true);
     }
     
-    size_t requestFrom(uint8_t address, size_t len) {
+    uint32_t requestFrom(uint8_t address, uint32_t len) {
       return requestFrom(address, len, true);
     }
 
 
     //non "standard" extension 
-    size_t transceive(uint8_t address, uint8_t* wbuf, size_t wlen, uint8_t* rbuf, size_t rlen) {
+    uint32_t transceive(uint8_t address, uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {
       beginTransmission(address);
       write(wbuf, wlen);
       endTransmission(false);
@@ -57,10 +63,10 @@ class MF_I2CPtrWrapper : public MF_I2C {
     void setClock(uint32_t freq)            override { _i2c->setClock(freq); }
     void beginTransmission(uint8_t address) override { _i2c->beginTransmission(address); }
     uint8_t endTransmission(bool stopBit)   override { return _i2c->endTransmission(stopBit); }
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit) 
+    uint32_t requestFrom(uint8_t address, uint32_t len, bool stopBit) 
                                             override { return _i2c->requestFrom(address, len, stopBit); }
-    size_t read(uint8_t *buf, size_t len)   override { return _i2c->readBytes(buf, len); }
-    size_t write(const uint8_t *buf, size_t len)  override { return _i2c->write(buf, len); }
+    uint32_t read(uint8_t *buf, uint32_t len)   override { return _i2c->readBytes(buf, len); }
+    uint32_t write(const uint8_t *buf, uint32_t len)  override { return _i2c->write(buf, len); }
 };
 
 class MF_I2CNone : public MF_I2C {
@@ -70,10 +76,10 @@ class MF_I2CNone : public MF_I2C {
     void setClock(uint32_t freq)            override { }
     void beginTransmission(uint8_t address) override { }
     uint8_t endTransmission(bool stopBit)   override { (void)stopBit; return 0; }
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit) 
+    uint32_t requestFrom(uint8_t address, uint32_t len, bool stopBit) 
                                             override { (void)address; (void)len; (void)stopBit; return 0; }
-    size_t read(uint8_t *buf, size_t len)   override { (void)buf; (void)len; return 0; }
-    size_t write(const uint8_t *buf, size_t len)  override { (void)buf; (void)len; return 0; }
+    uint32_t read(uint8_t *buf, uint32_t len)   override { (void)buf; (void)len; return 0; }
+    uint32_t write(const uint8_t *buf, uint32_t len)  override { (void)buf; (void)len; return 0; }
 };
 
 

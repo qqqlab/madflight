@@ -33,9 +33,10 @@ SOFTWARE.
 
 #include "madflight/common/MF_Serial.h"
 #include "madflight/common/MF_I2C.h"
-MF_Serial *rcin_Serial = nullptr;
-MF_Serial *gps_Serial = nullptr;
-MF_I2C *mf_i2c = nullptr;
+
+MF_Serial *rcin_Serial = nullptr; //serial bus for RCIN
+MF_Serial *gps_Serial = nullptr;  //serial bus for GPS
+MF_I2C *mf_i2c = nullptr;         //I2C (Wire) bus for sensors
 
 //include hardware specific code & default board pinout
 #if defined ARDUINO_ARCH_ESP32
@@ -138,9 +139,6 @@ void madflight_setup() {
 
   //hardware specific setup for busses: serial, spi and i2c (see hw_xxx.h)
   hw_setup();
-
-  //wrapped i2c
-  mf_i2c = new MF_I2CPtrWrapper<decltype(i2c)>( i2c ); //TODO - remove i2c
 
   //prevent nullpointers
   if(!rcin_Serial) rcin_Serial = new MF_SerialNone();

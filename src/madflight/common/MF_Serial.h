@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // Serial Interface
 class MF_Serial {
   public:

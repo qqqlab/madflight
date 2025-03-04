@@ -13,12 +13,9 @@
 //
 //  Read the datasheet for the details
 
-
-
-
+#include "../../common/MF_I2C.h"
 
 #define INA228_LIB_VERSION          (F("0.1.4"))
-
 
 #define INA228_ADDRESS              (0x40) //default address
 
@@ -43,7 +40,6 @@ enum ina228_mode_enum {
   INA228_MODE_CONT_TEMP_BUS_SHUNT = 0x0F
 };
 
-
 //  for setAverage() and getAverage()
 enum ina228_average_enum {
     INA228_1_SAMPLE     = 0,
@@ -56,7 +52,6 @@ enum ina228_average_enum {
     INA228_1024_SAMPLES = 7
 };
 
-
 //  for Bus, shunt and temperature conversion timing.
 enum ina228_timing_enum {
     INA228_50_us   = 0,
@@ -68,7 +63,6 @@ enum ina228_timing_enum {
     INA228_2074_us = 6,
     INA228_4120_us = 7
 };
-
 
 //  for diagnose/alert() bit fields.
 //  TODO bit masks?
@@ -95,10 +89,9 @@ enum ina228_diag_enum {
 class INA228
 {
 public:
-  bool     begin(HW_WIRETYPE *wire, uint8_t address = INA228_ADDRESS);
+  bool     begin(MF_I2C *wire, uint8_t address = INA228_ADDRESS);
   bool     isConnected();
   uint8_t  getAddress();
-
 
   bool isConversionReady();
 
@@ -149,7 +142,6 @@ public:
   double   getCoulomb()         { return getCharge(); };
   double   getMilliCoulomb()    { return getCharge()       * 1e3; };
   double   getMicroCoulomb()    { return getCharge()       * 1e6; };
-
 
   //
   //  CONFIG REGISTER 0
@@ -203,7 +195,6 @@ public:
   bool     setShuntTemperatureCoefficent(uint16_t ppm = 0);
   uint16_t getShuntTemperatureCoefficent();
 
-
   //
   //  DIAGNOSE ALERT REGISTER 11  (0x0B)
   //  read datasheet for details, section 7.6.1.12, page 26++.
@@ -215,7 +206,6 @@ public:
   void     setDiagnoseAlertBit(uint8_t bit);
   void     clearDiagnoseAlertBit(uint8_t bit);
   uint16_t getDiagnoseAlertBit(uint8_t bit);
-
 
   //
   //  THRESHOLD AND LIMIT REGISTERS 12-17
@@ -236,7 +226,6 @@ public:
   void     setPowerOverLimitTH(uint16_t threshold);
   uint16_t getPowerOverLimitTH();
 
-
   //
   //  MANUFACTURER and ID REGISTER 3E and 3F
   //
@@ -244,7 +233,6 @@ public:
   uint16_t getManufacturer();  //  0x5449
   uint16_t getDieID();         //  0x0228
   uint16_t getRevision();      //  0x0001
-
 
 private:
   //  max 4 bytes
@@ -258,16 +246,12 @@ private:
   float    _maxCurrent = 0;
 
   uint8_t   _address = 0;
-  HW_WIRETYPE * _wire;
+  MF_I2C * _wire;
   
   bool _ADCRange = false;
 };
 
-
 //  -- END OF FILE --
-
-
-
 
 
 //modified for madflight - see CHANGELOG.md
@@ -283,7 +267,6 @@ private:
 
 //
 //  Read the datasheet for the details
-
 
 #include "INA228.h"
 
@@ -309,7 +292,6 @@ private:
 #define INA228_MANUFACTURER         0x3E    //  16   R-
 #define INA228_DEVICE_ID            0x3F    //  16   R-
 
-
 //  CONFIG MASKS (register 0)
 #define INA228_CFG_RST              0x8000
 #define INA228_CFG_RSTACC           0x4000
@@ -317,7 +299,6 @@ private:
 #define INA228_CFG_TEMPCOMP         0x0020
 #define INA228_CFG_ADCRANGE         0x0010
 #define INA228_CFG_RESERVED         0x000F
-
 
 //  ADC MASKS (register 1)
 #define INA228_ADC_MODE             0xF000
@@ -330,13 +311,11 @@ private:
 #define INA228_ALATCH               0x8000
 #define INA228_CNVRF                0x0002
 
-
 ////////////////////////////////////////////////////////
 //
 //  CONSTRUCTOR
 //
-
-bool INA228::begin(HW_WIRETYPE *wire, uint8_t address)
+bool INA228::begin(MF_I2C *wire, uint8_t address)
 {
   _address     = address;
   _wire        = wire;

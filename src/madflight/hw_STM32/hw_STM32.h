@@ -8,10 +8,10 @@ This file contains all necessary functions and code for STM32 hardware platforms
 
 This file defines:
   HW_PIN_xxx -> The pin assignments
-  *rcin_Serial -> Serial port for RCIN
+  *rcin_Serial -> Serial port for RCIN as MF_Serial object
+  *gps_Serial -> Serial port for GPS as MF_Serial object
+  *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  *i2c -> I2C port
-  HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
@@ -62,12 +62,7 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include "madflight/hw_STM32/STM32_PWM.h" //Servo and oneshot
 
 //Bus Setup
-
-typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
-HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
-
 SPIClass *spi = &SPI;
-
 //TODO: SPIClass *bb_spi;
 
 //prototype
@@ -85,7 +80,7 @@ void hw_setup()
     #warning "RCIN/GPS might need larger buffers. Set SERIAL_RX_BUFFER_SIZE 256 and SERIAL_TX_BUFFER_SIZE 256 in HardwareSerial.h"
   #endif
 
-  //rcin_Serial
+  //rcin_Serial - global serial port for RCIN
   #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
     auto *rcin_ser = new HardwareSerial(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
     //rcin_ser->setTxBufferSize(256);
@@ -97,7 +92,7 @@ void hw_setup()
     #endif    
   #endif
 
-  //gps_Serial
+  //gps_Serial - global serial port for GPS
   #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
     auto *gps_ser = new HardwareSerial(HW_PIN_GPS_RX, HW_PIN_GPS_TX);
     //gps_ser->setTxBufferSize(256);
@@ -109,12 +104,14 @@ void hw_setup()
     #endif
   #endif
 
-  //I2C
+  //mf_i2c - global I2C interface
   #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
-    i2c->setSDA(HW_PIN_I2C_SDA);
-    i2c->setSCL(HW_PIN_I2C_SCL);
-    i2c->setClock(1000000);
-    i2c->begin();
+    auto *i2c_ptr = &Wire; //&Wire or &Wire1 - type is TwoWire
+    i2c_ptr->setSDA(HW_PIN_I2C_SDA);
+    i2c_ptr->setSCL(HW_PIN_I2C_SCL);
+    i2c_ptr->setClock(1000000);
+    i2c_ptr->begin();
+    mf_i2c = new MF_I2CPtrWrapper<decltype(i2c_ptr)>( i2c_ptr );
   #endif
 
   //SPI

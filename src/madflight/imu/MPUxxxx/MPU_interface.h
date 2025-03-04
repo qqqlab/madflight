@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../../common/MF_I2C.h"
+
 #include "Arduino.h"
 #include <SPI.h>
 
@@ -97,10 +99,9 @@ private:
 // I2C
 //================================================================
 
-template <typename WireType>
 class MPU_InterfaceI2C : public MPU_Interface{
   public:
-    MPU_InterfaceI2C(WireType *i2c, uint8_t i2c_adr) {
+    MPU_InterfaceI2C(MF_I2C *i2c, uint8_t i2c_adr) {
       _i2c = i2c;
       _i2c_adr = i2c_adr;
       freqSlow = MPU_I2C_FREQ_SLOW;
@@ -136,7 +137,7 @@ class MPU_InterfaceI2C : public MPU_Interface{
     }
 
 private:
-    WireType *_i2c;
+    MF_I2C *_i2c;
     uint8_t _i2c_adr;
     unsigned int _WriteReg_I2C(uint8_t reg, uint8_t data);
     void _ReadRegs_I2C(uint8_t reg, uint8_t *buf, uint8_t n);

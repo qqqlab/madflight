@@ -106,13 +106,14 @@ BarometerBMP280 baro_sensor;
 
 #include "bmp3/bmp3.h"
 
-bfs::Bmp3 bmp(&Wire, (bfs::Bmp3::I2cAddr)BARO_I2C_ADR);
+bfs::Bmp3 bmp;
 
 class BarometerBMP390: public BarometerSensor {
 
 public:
   int setup(uint32_t sampleRate) {
     Serial.printf("BARO: BARO_USE_BMP390/BARO_USE_BMP388 BARO_I2C_ADR=0x%02X\n", BARO_I2C_ADR);
+    bmp.Config(mf_i2c, (bfs::Bmp3::I2cAddr)BARO_I2C_ADR);
     if (!bmp.Begin()) {
       Serial.println("BARO: BARO_USE_BMP390/BARO_USE_BMP388 sensor not found");
       return 1;
@@ -174,7 +175,7 @@ public:
     // Standard: MS5611_STANDARD
     // Low power: MS5611_LOW_POWER
     // Ultra low power: MS5611_ULTRA_LOW_POWER
-    while(!ms5611.begin(MS5611_ULTRA_HIGH_RES))
+    while(!ms5611.begin(mf_i2c, MS5611_ULTRA_HIGH_RES))
     {
       Serial.println("BARO: BARO_USE_MS5611 failed, retry...\n");
       delay(500);

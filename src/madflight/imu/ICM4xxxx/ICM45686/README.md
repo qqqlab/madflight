@@ -53,7 +53,7 @@ figure.
 
 ## Create ICM456xx instance
 
-**ICM456xx(TwoWire &i2c,bool lsb)**
+**ICM456xx(MF_I2C &i2c,bool lsb)**
 
 Create an instance of the ICM456xx that will be accessed using the specified I2C. The LSB of the I2C address can be set to 0 or 1.  
 I2C default clock is 400kHz.
@@ -62,7 +62,7 @@ I2C default clock is 400kHz.
 ICM456xx IMU(Wire,0);
 ```
 
-**ICM456xx(TwoWire &i2c,bool lsb, uint32_t freq)**
+**ICM456xx(MF_I2C &i2c,bool lsb, uint32_t freq)**
 
 Same as above, specifying the I2C clock frequency (must be between 100kHz and 1MHz)
 

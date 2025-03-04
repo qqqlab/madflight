@@ -3,10 +3,10 @@ This file contains all necessary functions and code for RP2040 hardware platform
 
 This file defines:
   HW_PIN_xxx -> The pin assignments
-  *rcin_Serial -> Serial port for RCIN
+  *rcin_Serial -> Serial port for RCIN as MF_Serial object
+  *gps_Serial -> Serial port for GPS as MF_Serial object
+  *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  *i2c -> I2C port
-  HW_WIRETYPE -> the class to use for I2C
   hw_Setup() -> function to init the hardware
   HW_xxx and hw_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
@@ -58,9 +58,6 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 //Bus Setup
 //-------------------------------------
 
-typedef TwoWire HW_WIRETYPE; //define the class to use for I2C
-HW_WIRETYPE *i2c = &Wire; //&Wire or &Wire1
-
 SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, HW_PIN_SPI_SCLK, HW_PIN_SPI_MOSI); //spi0 or spi1
 SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1
 
@@ -82,7 +79,7 @@ void hw_setup() {
   #endif
   Serial.println();
 
-  //rcin_Serial
+  //rcin_Serial - global serial port for RCIN
   #if defined(HW_PIN_RCIN_TX) && defined(HW_PIN_RCIN_RX)
     //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
     auto *rcin_ser = new SerialIRQ(uart0, HW_PIN_RCIN_TX, rcin_txbuf, sizeof(rcin_txbuf), HW_PIN_RCIN_RX, rcin_rxbuf, sizeof(rcin_rxbuf));
@@ -93,7 +90,7 @@ void hw_setup() {
     rcin_Serial = new MF_SerialPtrWrapper<decltype(rcin_ser)>( rcin_ser );
   #endif
 
-  //gps_Serial
+  //gps_Serial - global serial port for GPS
   #if defined(HW_PIN_GPS_TX) && defined(HW_PIN_GPS_RX)
     //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
     auto *gps_ser = new SerialIRQ(uart1, HW_PIN_GPS_TX, gps_txbuf, sizeof(gps_txbuf), HW_PIN_GPS_RX, gps_rxbuf, sizeof(gps_rxbuf));
@@ -102,17 +99,18 @@ void hw_setup() {
     //auto *gps_ser = new SerialUART(uart1, HW_PIN_GPS_TX, HW_PIN_GPS_RX); //SerialUART default Arduino impementation (had some problems with this)
     //auto *gps_ser = new SerialPIO(HW_PIN_GPS_TX, HW_PIN_GPS_RX, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
     gps_Serial = new MF_SerialPtrWrapper<decltype(gps_ser)>( gps_ser );
-
-
-    gps_Serial->available();
   #endif
 
-  //I2C
-  i2c->setSDA(HW_PIN_I2C_SDA);
-  i2c->setSCL(HW_PIN_I2C_SCL);
-  i2c->setClock(1000000);
-  i2c->begin();
-
+  //mf_i2c - global I2C interface
+  #if defined(HW_PIN_I2C_SDA) && defined(HW_PIN_I2C_SCL)
+    auto *i2c_ptr = &Wire; //&Wire or &Wire1 - type is TwoWire
+    i2c_ptr->setSDA(HW_PIN_I2C_SDA);
+    i2c_ptr->setSCL(HW_PIN_I2C_SCL);
+    i2c_ptr->setClock(1000000);
+    i2c_ptr->begin();
+    mf_i2c = new MF_I2CPtrWrapper<decltype(i2c_ptr)>( i2c_ptr );
+  #endif
+  
   //SPI
   spi->begin();
   bb_spi->begin();

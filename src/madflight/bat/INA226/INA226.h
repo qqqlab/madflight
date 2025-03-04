@@ -1,4 +1,4 @@
-//2034-01-19 modified for madflight: combine cpp+h, add HW_WIRETYPE, add isConversionReady()
+//2034-01-19 modified for madflight: combine cpp+h, add MF_I2C, add isConversionReady()
 //source: https://github.com/jarzebski/Arduino-INA226
 
 /*
@@ -28,6 +28,8 @@ SOFTWARE.
 */
 
 #pragma once
+
+#include "../../common/MF_I2C.h"
 
 #define INA226_ADDRESS              (0x40)
 
@@ -104,7 +106,7 @@ class INA226
 {
   public:
 
-    bool begin(HW_WIRETYPE *i2c, uint8_t address = INA226_ADDRESS);
+    bool begin(MF_I2C *i2c, uint8_t address = INA226_ADDRESS);
     bool configure(ina226_averages_t avg = INA226_AVERAGES_1, ina226_busConvTime_t busConvTime = INA226_BUS_CONV_TIME_1100US, ina226_shuntConvTime_t shuntConvTime = INA226_SHUNT_CONV_TIME_1100US, ina226_mode_t mode = INA226_MODE_SHUNT_BUS_CONT);
     bool calibrate(float rShuntValue, float iMaxExpected = 0);
 
@@ -151,7 +153,7 @@ class INA226
 
   private:
 
-    HW_WIRETYPE *_i2c;
+    MF_I2C *_i2c;
     int8_t inaAddress;
     float currentLSB = 1, powerLSB = 25;
     float vShuntMax = 0, vBusMax = 0, rShunt = 0;
@@ -165,7 +167,7 @@ class INA226
 
 
 
-bool INA226::begin(HW_WIRETYPE *i2c, uint8_t address)
+bool INA226::begin(MF_I2C *i2c, uint8_t address)
 {
     _i2c = i2c;
     inaAddress = address;

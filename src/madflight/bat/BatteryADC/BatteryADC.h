@@ -11,7 +11,7 @@ cfg.BAT_CAL_I //BatteryADC current conversion factor, set this to 1 and enable p
 
 #pragma once
 
-#include "../interface.h"
+#include "../bat_interface.h"
 
 class BatteryADC: public Battery {
     public:

@@ -144,7 +144,7 @@ Limitations:
   #define IMU_HAS_MAG 1
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPU_InterfaceI2C mpu_iface(mf_i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU9250, &mpu_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU9150
@@ -153,7 +153,7 @@ Limitations:
   #define IMU_HAS_MAG 1
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPU_InterfaceI2C mpu_iface(mf_i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU9150, &mpu_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU6500
@@ -162,7 +162,7 @@ Limitations:
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPU_InterfaceI2C mpu_iface(mf_i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6500, &mpu_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU6050
@@ -171,14 +171,14 @@ Limitations:
   #define IMU_HAS_MAG 0
   #include "MPUxxxx/MPU_interface.h"
   #include "MPUxxxx/MPUxxxx.h"
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPU_InterfaceI2C mpu_iface(mf_i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6050, &mpu_iface);
 
 #elif IMU_USE == IMU_USE_I2C_MPU6000
   #define IMU_TYPE "IMU_USE_I2C_MPU6000"
   #define IMU_IS_I2C 1
   #define IMU_HAS_MAG 0
-  MPU_InterfaceI2C<HW_WIRETYPE> mpu_iface(i2c, IMU_I2C_ADR);
+  MPU_InterfaceI2C mpu_iface(mf_i2c, IMU_I2C_ADR);
   MPUXXXX imu_Sensor(MPUXXXX::MPU6000, &mpu_iface);
 
 // Invalid value

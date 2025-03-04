@@ -47,8 +47,8 @@ typedef void (*ICM456xx_irq_handler)(void);
 
 class ICM456xx {
   public:
-    ICM456xx(TwoWire &i2c,bool address_lsb, uint32_t freq);
-    ICM456xx(TwoWire &i2c,bool address_lsb);
+    ICM456xx(MF_I2C &i2c,bool address_lsb, uint32_t freq);
+    ICM456xx(MF_I2C &i2c,bool address_lsb);
     ICM456xx(SPIClass &spi,uint8_t chip_select_id, uint32_t freq);
     ICM456xx(SPIClass &spi,uint8_t chip_select_id);
     int begin();
