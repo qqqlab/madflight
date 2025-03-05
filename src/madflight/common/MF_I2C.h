@@ -73,8 +73,8 @@ class MF_I2CNone : public MF_I2C {
   public:
     void begin()                            override { }
     void end()                              override { }
-    void setClock(uint32_t freq)            override { }
-    void beginTransmission(uint8_t address) override { }
+    void setClock(uint32_t freq)            override { (void)freq; }
+    void beginTransmission(uint8_t address) override { (void)address; }
     uint8_t endTransmission(bool stopBit)   override { (void)stopBit; return 0; }
     uint32_t requestFrom(uint8_t address, uint32_t len, bool stopBit) 
                                             override { (void)address; (void)len; (void)stopBit; return 0; }
