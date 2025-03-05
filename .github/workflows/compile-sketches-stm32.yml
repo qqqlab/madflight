@@ -9,7 +9,7 @@ jobs:
           platforms: |
             - name: STMicroelectronics:stm32
               source-url: https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json
-          fqbn: STMicroelectronics:stm32:GENERIC_F405RGTX
+          fqbn: STMicroelectronics:stm32:Generic F405RGTx
 
 
 
