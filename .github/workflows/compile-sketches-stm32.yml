@@ -7,9 +7,9 @@ jobs:
       - uses: arduino/compile-sketches@v1
         with:
           platforms: |
-            - name: stm32:stm32
+            - name: STMicroelectronics:stm32
               source-url: https://github.com/stm32duino/BoardManagerFiles/raw/main/package_stmicroelectronics_index.json
-          fqbn: stm32:stm32:GENERIC_F405RGTX
+          fqbn: STMicroelectronics:stm32:GENERIC_F405RGTX
 
 
 
