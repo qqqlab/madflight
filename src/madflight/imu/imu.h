@@ -132,7 +132,6 @@ Limitations:
 #elif IMU_USE == IMU_USE_SPI_ICM45686
   #define IMU_TYPE "IMU_USE_SPI_ICM45686"
   #define IMU_IS_I2C 0
-  // FIXME: impl mag for https://store.kouno.xyz/products/icm-45686-ist8306-module which is connected **to IMU** as slave
   #define IMU_HAS_MAG 0
   #include "ICM4xxxx/MF_ICM45686.h"
   Invensensev3_InterfaceSPI icm_iface(spi, HW_PIN_IMU_CS);

@@ -27,8 +27,8 @@ OVER SAMPLE RATIO (OSR)
     64              0xC0 
 */
 
-#define QMC5883L_uT_per_LSB ((float)8.333333333e-3f) //2G range
-//#define QMC5883L_uT_per_LSB ((float)3.333333333e-2f) //8G range
+#define QMC5883L_uT_per_LSB ((float)8.333333333e-3f) //2 Gauss range
+//#define QMC5883L_uT_per_LSB ((float)3.333333333e-2f) //8 Gauss range
 
 class QMC5883L{
   public:
