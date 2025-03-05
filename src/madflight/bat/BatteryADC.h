@@ -11,19 +11,17 @@ cfg.BAT_CAL_I //BatteryADC current conversion factor, set this to 1 and enable p
 
 #pragma once
 
-#include "../bat_interface.h"
+#include "bat_interface.h"
+#include "../cfg/cfg_interface.h"
 
 class BatteryADC: public Battery {
     public:
-        //float i;// = 0; //Battery current (A)
-        //float v;// = 0; //battery voltage (V)
-        //float mah;// = 0; //battery usage (Ah)
-        //float wh;// = 0; //battery usage (Wh)
         float factor_v;// = 8.04/13951; //voltage conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Volt / bat_v ADC reading
         float factor_i;// = 1.0/847; //current conversion factor, set this to 1 and enable print_bat(), then enter here: Actual Amperes / bat_i ADC reading
         uint32_t interval_us = 10000; //update interval in us
 
-    void setup() {
+    void begin(MF_I2C *i2c, int8_t i2c_adr) override {
+       (void)i2c; (void)i2c_adr; //does not use i2c
         i = 0;
         v = 0;
         mah = 0;
@@ -38,7 +36,7 @@ class BatteryADC: public Battery {
     }
 
     //returns true if battery was updated
-    bool update() {
+    bool update() override {
         static uint32_t ts = micros();
         uint32_t now = micros();
         if(now - ts >= interval_us) {
