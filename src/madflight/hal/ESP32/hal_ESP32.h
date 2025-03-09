@@ -30,9 +30,9 @@ This file defines:
 //======================================================================================================================//
 #ifndef HW_BOARD_NAME
   #ifdef CONFIG_IDF_TARGET_ESP32S3
-    #include "../../madflight_board_default_ESP32-S3.h"
+    #include <madflight_board_default_ESP32-S3.h>
   #else
-    #include "../../madflight_board_default_ESP32.h"
+    #include <madflight_board_default_ESP32.h>
   #endif
 #endif
 
@@ -70,7 +70,7 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 //Include Libraries
 //-------------------------------------
 #ifdef USE_ESP32_SOFTWIRE
-  #include "madflight/HW_ESP32/ESP32_SoftWire.h"
+  #include "ESP32_SoftWire.h"
 #else
   #include <Wire.h>
 #endif
