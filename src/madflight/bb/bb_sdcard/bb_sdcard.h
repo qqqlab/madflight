@@ -918,23 +918,23 @@ class BlackBox_SD : public BlackBox {
       BinLog bl("IMU");
       bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
       bl.TimeUS(imu.ts);
-      bl.i16("ax",(imu.ax - cfg.IMU_CAL_AX)*1000, 1e-3, "G"); //G
-      bl.i16("ay",(imu.ay - cfg.IMU_CAL_AY)*1000, 1e-3, "G"); //G
-      bl.i16("az",(imu.az - cfg.IMU_CAL_AZ)*1000, 1e-3, "G"); //G
-      bl.i16("gx",(imu.gx - cfg.IMU_CAL_GX)*10, 1e-1, "deg/s"); //dps
-      bl.i16("gy",(imu.gy - cfg.IMU_CAL_GY)*10, 1e-1, "deg/s"); //dps
-      bl.i16("gz",(imu.gz - cfg.IMU_CAL_GZ)*10, 1e-1, "deg/s"); //dps
+      bl.i16("ax",(imu.ax - cfg.imu_cal_ax)*1000, 1e-3, "G"); //G
+      bl.i16("ay",(imu.ay - cfg.imu_cal_ay)*1000, 1e-3, "G"); //G
+      bl.i16("az",(imu.az - cfg.imu_cal_az)*1000, 1e-3, "G"); //G
+      bl.i16("gx",(imu.gx - cfg.imu_cal_gx)*10, 1e-1, "deg/s"); //dps
+      bl.i16("gy",(imu.gy - cfg.imu_cal_gy)*10, 1e-1, "deg/s"); //dps
+      bl.i16("gz",(imu.gz - cfg.imu_cal_gz)*10, 1e-1, "deg/s"); //dps
       #if MAG_USE != MAG_USE_NONE
         //get from magnetometer
-        bl.i16("mx",((mag.x - cfg.MAG_CAL_X) * cfg.MAG_CAL_SX)*100, 1e-2, "uT"); //uT
-        bl.i16("my",((mag.y - cfg.MAG_CAL_Y) * cfg.MAG_CAL_SY)*100, 1e-2, "uT"); //uT
-        bl.i16("mz",((mag.z - cfg.MAG_CAL_Z) * cfg.MAG_CAL_SZ)*100, 1e-2, "uT"); //uT
+        bl.i16("mx",((mag.x - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
+        bl.i16("my",((mag.y - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
+        bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
       #else
         //get from imu
         if(imu.hasMag()) {
-          bl.i16("mx",((imu.mx - cfg.MAG_CAL_X) * cfg.MAG_CAL_SX)*100, 1e-2, "uT"); //uT
-          bl.i16("my",((imu.my - cfg.MAG_CAL_Y) * cfg.MAG_CAL_SY)*100, 1e-2, "uT"); //uT
-          bl.i16("mz",((imu.mz - cfg.MAG_CAL_Z) * cfg.MAG_CAL_SZ)*100, 1e-2, "uT"); //uT
+          bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
+          bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
+          bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
         }
       #endif
       bl.i16("roll",ahrs.roll*100, 1e-2, "deg"); //deg -180 to 180

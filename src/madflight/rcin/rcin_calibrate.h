@@ -191,33 +191,33 @@ void _calibrate() {
   Serial.printf("==> FLIGHTMODE: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
 
   //set config
-  cfg.RCIN_THR_CH    = thr.ch+1;
-  cfg.RCIN_THR_PULL  = thr.left_pull;
-  cfg.RCIN_THR_MID   = thr.mid;
-  cfg.RCIN_THR_PUSH  = thr.right_push;
+  cfg.rcin_thr_ch    = thr.ch + 1;
+  cfg.rcin_thr_pull  = thr.left_pull;
+  cfg.rcin_thr_mid   = thr.mid;
+  cfg.rcin_thr_push  = thr.right_push;
 
-  cfg.RCIN_ROL_CH    = rol.ch+1;
-  cfg.RCIN_ROL_LEFT  = rol.left_pull;
-  cfg.RCIN_ROL_MID   = rol.mid;
-  cfg.RCIN_ROL_RIGHT = rol.right_push;
+  cfg.rcin_rol_ch    = rol.ch + 1;
+  cfg.rcin_rol_left  = rol.left_pull;
+  cfg.rcin_rol_mid   = rol.mid;
+  cfg.rcin_rol_right = rol.right_push;
 
-  cfg.RCIN_PIT_CH    = pit.ch+1;
-  cfg.RCIN_PIT_PULL  = pit.left_pull;
-  cfg.RCIN_PIT_MID   = pit.mid;
-  cfg.RCIN_PIT_PUSH  = pit.right_push;
+  cfg.rcin_pit_ch    = pit.ch + 1;
+  cfg.rcin_pit_pull  = pit.left_pull;
+  cfg.rcin_pit_mid   = pit.mid;
+  cfg.rcin_pit_push  = pit.right_push;
 
-  cfg.RCIN_YAW_CH    = yaw.ch+1;
-  cfg.RCIN_YAW_LEFT  = yaw.left_pull;
-  cfg.RCIN_YAW_MID   = yaw.mid;
-  cfg.RCIN_YAW_RIGHT = yaw.right_push;
+  cfg.rcin_yaw_ch    = yaw.ch + 1;
+  cfg.rcin_yaw_left  = yaw.left_pull;
+  cfg.rcin_yaw_mid   = yaw.mid;
+  cfg.rcin_yaw_right = yaw.right_push;
 
-  cfg.RCIN_ARM_CH    = arm.ch+1;
-  cfg.RCIN_ARM_MIN   = arm.min;
-  cfg.RCIN_ARM_MAX   = arm.max;
+  cfg.rcin_arm_ch    = arm.ch + 1;
+  cfg.rcin_arm_min   = arm.min;
+  cfg.rcin_arm_max   = arm.max;
 
-  cfg.RCIN_FLT_CH    = flt.ch+1;
-  cfg.RCIN_FLT_MIN   = flt.min;
-  cfg.RCIN_FLT_MAX   = flt.max;
+  cfg.rcin_flt_ch    = flt.ch + 1;
+  cfg.rcin_flt_min   = flt.min;
+  cfg.rcin_flt_max   = flt.max;
 
   rcin.setup(); //restart rcin to reload config
 

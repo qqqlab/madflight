@@ -206,3 +206,17 @@ void hw_enable_irq() {
 uint32_t hw_get_core_num() {
   return 0;
 }
+
+int hw_get_pin_number(String s) {
+  //integers
+  if(s.toInt() != 0) return s.toInt();
+  if(s == "0") return 0;
+  //pin names like PB3, PC13
+  if(s.length() < 3) return -1;
+  if(s[0] != 'P') return -1;
+  if(port<'A' || port > 'H') return -1;
+  int port = s[1] - 'A';
+  int pin = s.substring(s,2).toInt();
+  if(pin<0 || pin>15) return -1;
+  return port*16 + pin;
+}

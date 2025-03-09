@@ -31,6 +31,9 @@ SOFTWARE.
 
 #pragma once
 
+//madflight init
+extern const char* madflight_init_commands __attribute__((weak));
+
 #include "madflight/common/MF_Serial.h"
 #include "madflight/common/MF_I2C.h"
 
@@ -137,6 +140,12 @@ void madflight_setup() {
 
   cli.print_boardInfo(); //print board info and pinout
 
+  cfg.begin(); //read config from EEPROM
+  if(madflight_init_commands) {
+    Serial.println(madflight_init_commands);
+    cli.cmd_execute_batch(madflight_init_commands);
+  }
+
   //hardware specific setup for busses: serial, spi and i2c (see hw_xxx.h)
   hw_setup();
 
@@ -145,7 +154,6 @@ void madflight_setup() {
   if(!gps_Serial) gps_Serial = new MF_SerialNone();
   if(!mf_i2c) mf_i2c = new MF_I2CNone();
 
-  cfg.begin(); //read config from EEPROM
   cli.print_i2cScan(); //print i2c scan
 
   rcin.setup(); //Initialize radio communication.

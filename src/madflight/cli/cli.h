@@ -46,6 +46,7 @@ SOFTWARE.
 #include "stat.h"
 #include "FreeRTOS_ps.h"
 
+
 //cli command extension, return true if command was processed
 extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((weak));
 
@@ -214,27 +215,20 @@ public:
 
   //returns true if a command was processed (even an invalid one)
   bool loop() {
-    static char prev_c = 0;
+    //process chars from Serial
     bool rv = false;
     while(Serial.available()) {
-      char c = Serial.read();
-      if ( (c=='\r' && prev_c!='\n') || (c=='\n' && prev_c!='\n') ) { //accept \n, \r, \r\n, \n\r as end of command
-        processCmd();
-        rv = true;
-      }else{
-        cmdline += c;
-      }
-      prev_c = c;
+      if(cmd_process_char(Serial.read())) rv = true;
     }
-    
+
     //handle output for pxxx commands
     cli_print_loop();
-    
+
     return rv;
   }
 
   void welcome() {
-    Serial.println("CLI: Command Line Interface Started - Type help for help");
+    Serial.println("CLI:  Command Line Interface Started - Type help for help");
   }
 
   void help() {
@@ -280,9 +274,49 @@ public:
     );
   }
 
+
+//========================================================================================================================//
+//                                          COMMAND PROCESSING                                                            //
+//========================================================================================================================//
+
 private:
 
   String cmdline = "";
+  char prev_c = 0;
+
+public:
+  void cmd_execute_batch(const char *batch) {
+    cmd_clear();
+    int pos = 0;
+    int c;
+    while( (c = batch[pos]) ) {
+      cmd_process_char(c);
+      pos++;
+    }
+    if(c != '\n' && c != '\r') cmd_process_char('\n'); //send terminating return
+    cmd_clear();
+  }
+
+  void cmd_clear() {
+    cmdline = "";
+    prev_c = 0;;
+  }
+
+private:
+  //returns true if a command was processed (even an invalid one)
+  bool cmd_process_char(char c) {
+    bool rv = false;
+    if ( (c=='\r' && prev_c=='\n') || (c=='\n' && prev_c=='\r') ) {
+      //ignore \r\n, \n\r
+    }else if ( (c=='\r' || c=='\n') ) {
+      processCmd();
+      rv = true;
+    }else{
+      cmdline += c;
+    }
+    prev_c = c;
+    return rv;
+  }
 
   String getCmdPart(uint32_t &pos) {
     String part = "";
@@ -295,6 +329,10 @@ private:
   }
 
   void processCmd() {
+    //remove comment
+    int comment_pos = cmdline.indexOf('#');
+    if(comment_pos >= 0) cmdline = cmdline.substring(0,comment_pos);
+    //execute cmd
     uint32_t pos = 0;
     String cmd = getCmdPart(pos);
     String arg1 = getCmdPart(pos);
@@ -554,9 +592,9 @@ public:
     azerr -= 1.0;
 
 
-    Serial.printf("set IMU_CAL_GX %+f #config was %+f\n", gxerr, cfg.IMU_CAL_GX);
-    Serial.printf("set IMU_CAL_GY %+f #config was %+f\n", gyerr, cfg.IMU_CAL_GY);
-    Serial.printf("set IMU_CAL_GZ %+f #config was %+f\n", gzerr, cfg.IMU_CAL_GZ);
+    Serial.printf("set imu_cal_gx %+f #config was %+f\n", gxerr, cfg.imu_cal_gx);
+    Serial.printf("set imu_cal_gy %+f #config was %+f\n", gyerr, cfg.imu_cal_gy);
+    Serial.printf("set imu_cal_gz %+f #config was %+f\n", gzerr, cfg.imu_cal_gz);
 
     bool apply_gyro = true;
     
@@ -565,9 +603,9 @@ public:
       float gtol = 10;
       apply_gyro = ( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol );
     }else{
-      Serial.printf("set IMU_CAL_AX %+f #config was %+f\n", axerr, cfg.IMU_CAL_AX);
-      Serial.printf("set IMU_CAL_AY %+f #config was %+f\n", ayerr, cfg.IMU_CAL_AY);
-      Serial.printf("set IMU_CAL_AZ %+f #config was %+f\n", azerr, cfg.IMU_CAL_AZ);
+      Serial.printf("set imu_cal_ax %+f #config was %+f\n", axerr, cfg.imu_cal_ax);
+      Serial.printf("set imu_cal_ay %+f #config was %+f\n", ayerr, cfg.imu_cal_ay);
+      Serial.printf("set imu_cal_az %+f #config was %+f\n", azerr, cfg.imu_cal_az);
     }
 /*
       //only apply reasonable acc errors
@@ -577,17 +615,17 @@ public:
 */
     
     if (apply_gyro) {
-      cfg.IMU_CAL_GX = gxerr;
-      cfg.IMU_CAL_GY = gyerr;
-      cfg.IMU_CAL_GZ = gzerr;
+      cfg.imu_cal_gx = gxerr;
+      cfg.imu_cal_gy = gyerr;
+      cfg.imu_cal_gz = gzerr;
     }else{
        Serial.println("=== Not applying gyro correction, out of tolerance ===");
     }
   
     if (!gyro_only) {
-      cfg.IMU_CAL_AX = axerr;
-      cfg.IMU_CAL_AY = ayerr;
-      cfg.IMU_CAL_AZ = azerr;
+      cfg.imu_cal_ax = axerr;
+      cfg.imu_cal_ay = ayerr;
+      cfg.imu_cal_az = azerr;
     }
     
     Serial.println("Use CLI 'cwrite' to write these values to flash");
@@ -605,21 +643,21 @@ public:
     Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
     if ( _calibrate_Magnetometer(bias, scale) ) {
       Serial.println("Calibration Successful!");
-      Serial.printf("set MAG_CAL_X  %+f #config %+f\n", bias[0], cfg.MAG_CAL_X);
-      Serial.printf("set MAG_CAL_Y  %+f #config %+f\n", bias[1], cfg.MAG_CAL_Y);
-      Serial.printf("set MAG_CAL_Z  %+f #config %+f\n", bias[2], cfg.MAG_CAL_Z);
-      Serial.printf("set MAG_CAL_SX %+f #config %+f\n", scale[0], cfg.MAG_CAL_SX);
-      Serial.printf("set MAG_CAL_SY %+f #config %+f\n", scale[1], cfg.MAG_CAL_SY);
-      Serial.printf("set MAG_CAL_SZ %+f #config %+f\n", scale[2], cfg.MAG_CAL_SZ);
+      Serial.printf("set mag_cal_x  %+f #config %+f\n", bias[0], cfg.mag_cal_x);
+      Serial.printf("set mag_cal_y  %+f #config %+f\n", bias[1], cfg.mag_cal_y);
+      Serial.printf("set mag_cal_z  %+f #config %+f\n", bias[2], cfg.mag_cal_z);
+      Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
+      Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
+      Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
       Serial.println("Note: use CLI 'cwrite' to write these values to flash");
       Serial.println(" ");
       Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-      cfg.MAG_CAL_X = bias[0];
-      cfg.MAG_CAL_Y = bias[1];
-      cfg.MAG_CAL_Z = bias[2];
-      cfg.MAG_CAL_SX = scale[0];
-      cfg.MAG_CAL_SY = scale[1];
-      cfg.MAG_CAL_SZ = scale[2];
+      cfg.mag_cal_x = bias[0];
+      cfg.mag_cal_y = bias[1];
+      cfg.mag_cal_z = bias[2];
+      cfg.mag_cal_sx = scale[0];
+      cfg.mag_cal_sy = scale[1];
+      cfg.mag_cal_sz = scale[2];
     }
     else {
       Serial.println("ERROR: No magnetometer");

@@ -165,3 +165,7 @@ void hw_reboot() {
 inline uint32_t hw_get_core_num() {
   return get_core_num();
 }
+
+int hw_get_pin_number(String val) {
+  return val.toInt();
+}

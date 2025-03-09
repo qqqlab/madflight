@@ -209,3 +209,7 @@ void hw_reboot() {
 uint32_t hw_get_core_num() {
   return xPortGetCoreID();
 }
+
+int hw_get_pin_number(String val) {
+  return val.toInt();
+}

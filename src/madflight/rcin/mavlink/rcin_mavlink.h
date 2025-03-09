@@ -377,6 +377,7 @@ bool RcinMavlink::telem_param_value(uint16_t param_index) {
   String param_id;
   float param_value = 0;
   cfg.getNameAndValue(param_index, &param_id, &param_value);
+  param_id.toUpperCase();
 
   mavlink_message_t msg;
   mavlink_msg_param_value_pack(1, MAV_COMP_ID_AUTOPILOT1, &msg

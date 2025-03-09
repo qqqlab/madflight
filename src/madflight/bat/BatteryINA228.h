@@ -12,7 +12,7 @@ public:
   void begin(MF_I2C *i2c, int8_t i2c_adr) override {
     if(i2c_adr == 0) i2c_adr = 0x40; //default address
 
-    float Rshunt = cfg.BAT_CAL_I; //ohm
+    float Rshunt = cfg.bat_cal_i; //ohm
 
     // Configure INA226 -> sample time = 512 * 2 * 50us = 51.2ms => 20Hz
     bat_ina228.begin(i2c, i2c_adr);

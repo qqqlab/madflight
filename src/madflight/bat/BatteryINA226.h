@@ -16,7 +16,7 @@ public:
     // Configure INA226 -> sample time = 2 * 128 * 140us = 36ms => 28Hz
     bat_ina226.configure(INA226_AVERAGES_128, INA226_BUS_CONV_TIME_140US, INA226_SHUNT_CONV_TIME_140US, INA226_MODE_SHUNT_BUS_CONT);
 
-    float Rshunt = cfg.BAT_CAL_I; //ohm
+    float Rshunt = cfg.bat_cal_i; //ohm
     bat_ina226.calibrate(Rshunt);
   }
 

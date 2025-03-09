@@ -106,22 +106,22 @@ void Rcin::setup() {
   arm = false;
 
   //setup stick/switch parameters from config values
-  Serial.printf("RCIN: setup channels thr=%d rol=%d pit=%d yaw=%d arm=%d flt=%d\n", (int)cfg.RCIN_THR_CH, (int)cfg.RCIN_ROL_CH, (int)cfg.RCIN_PIT_CH, (int)cfg.RCIN_YAW_CH, (int)cfg.RCIN_ARM_CH, (int)cfg.RCIN_FLT_CH);
-  _setupStick(THR, cfg.RCIN_THR_CH, cfg.RCIN_THR_PULL, cfg.RCIN_THR_MID, cfg.RCIN_THR_PUSH);
-  _setupStick(ROL, cfg.RCIN_ROL_CH, cfg.RCIN_ROL_LEFT, cfg.RCIN_ROL_MID, cfg.RCIN_ROL_RIGHT);
-  _setupStick(PIT, cfg.RCIN_PIT_CH, cfg.RCIN_PIT_PULL, cfg.RCIN_PIT_MID, cfg.RCIN_PIT_PUSH);
-  _setupStick(YAW, cfg.RCIN_YAW_CH, cfg.RCIN_YAW_LEFT, cfg.RCIN_YAW_MID, cfg.RCIN_YAW_RIGHT);
-  st[ARM].ch  = cfg.RCIN_ARM_CH-1;
-  st[ARM].min = cfg.RCIN_ARM_MIN;
+  Serial.printf("RCIN: setup channels thr=%d rol=%d pit=%d yaw=%d arm=%d flt=%d\n", (int)cfg.rcin_thr_ch, (int)cfg.rcin_rol_ch, (int)cfg.rcin_pit_ch, (int)cfg.rcin_yaw_ch, (int)cfg.rcin_arm_ch, (int)cfg.rcin_flt_ch);
+  _setupStick(THR, cfg.rcin_thr_ch, cfg.rcin_thr_pull, cfg.rcin_thr_mid, cfg.rcin_thr_push);
+  _setupStick(ROL, cfg.rcin_rol_ch, cfg.rcin_rol_left, cfg.rcin_rol_mid, cfg.rcin_rol_right);
+  _setupStick(PIT, cfg.rcin_pit_ch, cfg.rcin_pit_pull, cfg.rcin_pit_mid, cfg.rcin_pit_push);
+  _setupStick(YAW, cfg.rcin_yaw_ch, cfg.rcin_yaw_left, cfg.rcin_yaw_mid, cfg.rcin_yaw_right);
+  st[ARM].ch  = cfg.rcin_arm_ch - 1;
+  st[ARM].min = cfg.rcin_arm_min;
   st[ARM].mid = 0; //NOT USED
-  st[ARM].max = cfg.RCIN_ARM_MAX;
+  st[ARM].max = cfg.rcin_arm_max;
   st[ARM].inv = 0; //NOT USED
-  st[FLT].ch  = cfg.RCIN_FLT_CH-1;
-  st[FLT].min = cfg.RCIN_FLT_MIN;
+  st[FLT].ch  = cfg.rcin_flt_ch - 1;
+  st[FLT].min = cfg.rcin_flt_min;
   st[FLT].mid = 0; //NOT USED
   st[FLT].max = 0; //NOT USED
   st[FLT].inv = 0; //NOT USED
-  st_flt_spacing = (cfg.RCIN_FLT_MAX - cfg.RCIN_FLT_MIN) / 5;
+  st_flt_spacing = (cfg.rcin_flt_max - cfg.rcin_flt_min) / 5;
 
   //check st parameters
   for(int i=0;i<6;i++) {

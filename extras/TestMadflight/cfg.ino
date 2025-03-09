@@ -92,9 +92,9 @@ void setup() {
 
 void loop() {
   cfg.begin();
-  Serial.printf("crc=%d crcCalc=%d len=%d v=%f i=%f  press a key to increase i by 1.1\n", cfg.crc(), cfg.crcCalc(), cfg.len(), cfg.BAT_CAL_V, cfg.BAT_CAL_I);
+  Serial.printf("crc=%d crcCalc=%d len=%d v=%f i=%f  press a key to increase i by 1.1\n", cfg.crc(), cfg.crcCalc(), cfg.len(), cfg.bat_cal_v, cfg.bat_cal_i);
   if(Serial.available()) {
-    cfg.BAT_CAL_I += 1.1;
+    cfg.bat_cal_i += 1.1;
     cfg.write();
 
     while(Serial.available()) Serial.read();
