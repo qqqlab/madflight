@@ -831,6 +831,8 @@ void AP_GPS_UBLOX::log_rxm_raw(const struct ubx_rxm_raw &raw)
         };
         AP::logger().WriteBlock(&pkt, sizeof(pkt));
     }
+#else
+  (void)raw;
 #endif
 }
 
@@ -873,6 +875,8 @@ void AP_GPS_UBLOX::log_rxm_rawx(const struct ubx_rxm_rawx &raw)
         };
         AP::logger().WriteBlock(&pkt, sizeof(pkt));
     }
+#else
+  (void)raw;
 #endif
 }
 #endif // UBLOX_RXM_RAW_LOGGING
@@ -2043,6 +2047,7 @@ void AP_GPS_UBLOX::Write_AP_Logger_Log_Startup_messages() const
 void AP_GPS_UBLOX::_check_new_itow(uint32_t itow)
 {
     //TODO check_new_itow(itow, _payload_length + sizeof(ubx_header) + 2);
+    (void)itow;
 }
 
 // support for retrieving RTCMv3 data from a moving baseline base
@@ -2053,6 +2058,9 @@ bool AP_GPS_UBLOX::get_RTCMV3(const uint8_t *&bytes, uint16_t &len)
         len = rtcm3_parser->get_len(bytes);
         return len > 0;
     }
+#else
+  (void)bytes;
+  (void)len;
 #endif
     return false;
 }

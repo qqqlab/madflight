@@ -215,9 +215,9 @@ int hal_get_pin_number(String s) {
   //pin names like PB3, PC13
   if(s.length() < 3) return -1;
   if(s[0] != 'P') return -1;
-  if(port<'A' || port > 'H') return -1;
+  if(s[1]<'A' || s[1] > 'H') return -1;
   int port = s[1] - 'A';
-  int pin = s.substring(s,2).toInt();
+  int pin = s.substring(2).toInt();
   if(pin<0 || pin>15) return -1;
-  return port*16 + pin;
+  return port * 16 + pin;
 }
