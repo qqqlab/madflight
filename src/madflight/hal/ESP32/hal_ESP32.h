@@ -7,8 +7,8 @@ This file defines:
   *gps_Serial -> Serial port for GPS as MF_Serial object
   *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  hw_Setup() -> function to init the hardware
-  HW_xxx and hw_xxx -> all other hardware platform specific stuff
+  hal_setup() -> function to init the hardware
+  HAL_xxx and hal_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
 //Arduino-ESP32 version string
@@ -48,7 +48,7 @@ This file defines:
 #define FREERTOS_DEFAULT_STACK_SIZE 2048 //stack size on ESP32 is in bytes, not in 32bit words
 
 //======================================================================================================================//
-//  hw_setup()
+//  hal_setup()
 //======================================================================================================================//
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
@@ -75,8 +75,8 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
   #include <Wire.h>
 #endif
 #include <SPI.h>                         //SPI communication
-#include "madflight/hw_ESP32/ESP32_PWM.h"      //Servo and onshot
-#include "../common/MF_Serial.h"
+#include "ESP32_PWM.h"      //Servo and onshot
+#include "../../common/MF_Serial.h"
 
 //-------------------------------------
 //Bus Setup
@@ -92,10 +92,10 @@ SPIClass *spi = &spi1;
 SPIClass *bb_spi = &spi2;
 
 //prototypes
-void hw_eeprom_begin();
+void hal_eeprom_begin();
 void startLoop1Task();
 
-void hw_setup()
+void hal_setup()
 {
   Serial.println(HW_BOARD_NAME);
 
@@ -136,7 +136,7 @@ void hw_setup()
     spi2.begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI);
   #endif
 
-  hw_eeprom_begin();
+  hal_eeprom_begin();
 
   startLoop1Task();
 }
@@ -181,19 +181,19 @@ void startLoop1Task() {
 //======================================================================================================================//
 #include <EEPROM.h>
 
-void hw_eeprom_begin() {
+void hal_eeprom_begin() {
   EEPROM.begin(4096);
 }
 
-uint8_t hw_eeprom_read(uint32_t adr) {
+uint8_t hal_eeprom_read(uint32_t adr) {
   return EEPROM.read(adr);
 }
 
-void hw_eeprom_write(uint32_t adr, uint8_t val) {
+void hal_eeprom_write(uint32_t adr, uint8_t val) {
   EEPROM.write(adr, val);
 }
 
-void hw_eeprom_commit() {
+void hal_eeprom_commit() {
   EEPROM.commit();
 }
 
@@ -202,14 +202,14 @@ void hw_eeprom_commit() {
 //  MISC
 //======================================================================================================================//
 
-void hw_reboot() {
+void hal_reboot() {
   ESP.restart();
 }
 
-uint32_t hw_get_core_num() {
+uint32_t hal_get_core_num() {
   return xPortGetCoreID();
 }
 
-int hw_get_pin_number(String val) {
+int hal_get_pin_number(String val) {
   return val.toInt();
 }

@@ -13,7 +13,7 @@ void setup() {
   Serial.begin(115200);
   while(!Serial);
 
-  hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
+  hal_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
  
   int rv = baro.setup(100);
   if(rv) {

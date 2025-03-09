@@ -22,7 +22,7 @@ void setup() {
   while(!Serial);
 
   //cli.print_boardInfo(); //print board info and pinout
-  hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
+  hal_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
 
   rcin.setup(); //Initialize radio communication. Set correct USE_RCIN_xxx user specified defines above. Note: rcin_Setup() function is defined in rcin.h, but normally no changes needed there.
 

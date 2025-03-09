@@ -12,8 +12,8 @@ This file defines:
   *gps_Serial -> Serial port for GPS as MF_Serial object
   *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  hw_Setup() -> function to init the hardware
-  HW_xxx and hw_xxx -> all other hardware platform specific stuff
+  hal_setup() -> function to init the hardware
+  HAL_xxx and hal_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
 #define df2xstr(s)              #s
@@ -52,23 +52,24 @@ This file defines:
 #define FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
 
 //======================================================================================================================//
-//                    hw_setup()
+//                    hal_setup()
 //======================================================================================================================//
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 
 //Include Libraries
 #include <Wire.h> //I2C communication
 #include <SPI.h> //SPI communication
-#include "madflight/hw_STM32/STM32_PWM.h" //Servo and oneshot
+#include "STM32_PWM.h" //Servo and oneshot
+#include "../../common/MF_Serial.h"
 
 //Bus Setup
 SPIClass *spi = &SPI;
 //TODO: SPIClass *bb_spi;
 
 //prototype
-void hw_eeprom_begin();
+void hal_eeprom_begin();
 
-void hw_setup() 
+void hal_setup() 
 { 
   Serial.println("USE_HW_STM32");
 
@@ -123,7 +124,7 @@ void hw_setup()
     spi->begin();
   #endif
 
-  hw_eeprom_begin();
+  hal_eeprom_begin();
 }
 
 //======================================================================================================================//
@@ -135,23 +136,23 @@ void hw_setup()
   //----------------------------------------------------------------------------------------------------------
   #include <EEPROM.h>
 
-  void hw_eeprom_begin() {
+  void hal_eeprom_begin() {
     Serial.println("EEPROM: using Unbuffered IO");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {
+  uint8_t hal_eeprom_read(uint32_t adr) {
     uint8_t val = EEPROM.read(adr);
     //Serial.printf("EEPROM.read(%d) = 0x%02X\n", adr, val);
     return val;
   }
 
-  void hw_eeprom_write(uint32_t adr, uint8_t val) {
+  void hal_eeprom_write(uint32_t adr, uint8_t val) {
     EEPROM.update(adr, val); //update only writes when changed
     //Serial.printf("EEPROM.write(%d, 0x%02X)\n", adr, val);
   }
 
-  void hw_eeprom_commit() {
+  void hal_eeprom_commit() {
     //EEPROM.commit();  //STM does not use commit(), write() also executes commit()
   }
 #else
@@ -160,7 +161,7 @@ void hw_setup()
   //----------------------------------------------------------------------------------------------------------
   #include <EEPROM.h>
 
-  void hw_eeprom_begin() {
+  void hal_eeprom_begin() {
     (void)(EEPROM); //keep compiler happy
     Serial.println("EEPROM: using Buffered IO");
     //Serial.println("START reading from flash");Serial.flush();
@@ -168,18 +169,18 @@ void hw_setup()
     //Serial.println("DONE reading");Serial.flush();
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {
+  uint8_t hal_eeprom_read(uint32_t adr) {
     uint8_t val = eeprom_buffered_read_byte(adr); //read from buffer
-    //Serial.printf("hw_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
+    //Serial.printf("hal_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
     return val;
   }
 
-  void hw_eeprom_write(uint32_t adr, uint8_t val) {
-    //Serial.printf("hw_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
+  void hal_eeprom_write(uint32_t adr, uint8_t val) {
+    //Serial.printf("hal_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
     eeprom_buffered_write_byte(adr, val); //write to buffer
   }
 
-  void hw_eeprom_commit() {
+  void hal_eeprom_commit() {
     //Serial.println("START writing to flash");Serial.flush();
     eeprom_buffer_flush(); //Copy the data from the buffer to the flash
     eeprom_buffer_flush(); //TODO: calling flush twice seems to do the trick???
@@ -190,24 +191,24 @@ void hw_setup()
 //======================================================================================================================//
 //  MISC
 //======================================================================================================================//
-void hw_reboot() {
+void hal_reboot() {
   NVIC_SystemReset();
 }
 /*
-void hw_disable_irq() {
+void hal_disable_irq() {
   __disable_irq();
 }
 
-void hw_enable_irq() {
+void hal_enable_irq() {
   __enable_irq();
 }
 */
 
-uint32_t hw_get_core_num() {
+uint32_t hal_get_core_num() {
   return 0;
 }
 
-int hw_get_pin_number(String s) {
+int hal_get_pin_number(String s) {
   //integers
   if(s.toInt() != 0) return s.toInt();
   if(s == "0") return 0;

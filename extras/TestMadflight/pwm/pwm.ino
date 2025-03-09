@@ -51,7 +51,7 @@
 void setup() {
   Serial.begin(115100);
 
-  hw_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
+  hal_setup(); //hardware specific setup for spi and Wire (see hw_xxx.h)
 
   for(int i=0;i<HW_OUT_COUNT;i++) {
     //out[i].begin(HW_PIN_OUT[i], 50, 1000, 2000); //Standard servo at 50Hz

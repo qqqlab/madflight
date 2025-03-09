@@ -267,7 +267,7 @@ public:
   }
 
   void begin() {
-    hw_eeprom_begin();
+    hal_eeprom_begin();
     read();
   }
 
@@ -327,7 +327,7 @@ public:
           fvalues[i] = val.toInt();
           break;
         case 'p': //pinnumber/pinname
-          fvalues[i] = hw_get_pin_number(val);
+          fvalues[i] = hal_get_pin_number(val);
           break;
         default:
           //assume 'f'
@@ -377,7 +377,7 @@ public:
     uint16_t n = sizeof(Config);
     //Serial.printf("eeprom_read[%d]:", n);
     for(uint16_t i=0; i<n; i++) {
-      buf[i] = hw_eeprom_read(i);
+      buf[i] = hal_eeprom_read(i);
       //Serial.printf("%02X ",buf[i]);
     }
     //Serial.println();
@@ -401,10 +401,10 @@ public:
     uint16_t n = sizeof(Config);
     Serial.printf("eeprom_write[%d]:", n);
     for(int i=0; i<n; i++) {
-      hw_eeprom_write(i, buf[i]);
+      hal_eeprom_write(i, buf[i]);
       Serial.printf("%02X ",buf[i]);
     }
-    hw_eeprom_commit();
+    hal_eeprom_commit();
     Serial.println();
   }
 

@@ -367,7 +367,7 @@ public:
     }else if (cmd == "i2c") {
       print_i2cScan();
     }else if (cmd == "reboot") {
-      hw_reboot();
+      hal_reboot();
     }else if (cmd == "poff") {
       cli_print_all(false);
     }else if (cmd == "pall") {

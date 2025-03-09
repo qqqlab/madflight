@@ -8,23 +8,23 @@
   //----------------------------------------------------------------------------------------------------------
   #include <EEPROM.h>
 
-  void hw_eeprom_begin() {
+  void hal_eeprom_begin() {
     Serial.println("EEPROM: Unbuffered IO");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {   
+  uint8_t hal_eeprom_read(uint32_t adr) {   
     uint8_t val = EEPROM.read(adr);
     //Serial.printf("EEPROM.read(%d) = 0x%02X\n", adr, val);
     return val;
   }
 
-  void hw_eeprom_write(uint32_t adr, uint8_t val) {   
+  void hal_eeprom_write(uint32_t adr, uint8_t val) {   
     EEPROM.update(adr, val); //update only writes when changed
     //Serial.printf("EEPROM.write(%d, 0x%02X)\n", adr, val);
   }
 
-  void hw_eeprom_commit() {
+  void hal_eeprom_commit() {
     //EEPROM.commit();  //STM does not use commit(), write() also executes commit()
   }
 #else
@@ -33,7 +33,7 @@
   //----------------------------------------------------------------------------------------------------------
   #include <EEPROM.h>
 
-  void hw_eeprom_begin() {
+  void hal_eeprom_begin() {
     (void)(EEPROM); //keep compiler happy
     Serial.println("EEPROM: Buffered IO");
     //Serial.println("START reading from flash");Serial.flush();
@@ -41,18 +41,18 @@
     //Serial.println("DONE reading");Serial.flush();
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {
+  uint8_t hal_eeprom_read(uint32_t adr) {
     uint8_t val = eeprom_buffered_read_byte(adr); //read from buffer
-    //Serial.printf("hw_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
+    //Serial.printf("hal_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
     return val;
   }
 
-  void hw_eeprom_write(uint32_t adr, uint8_t val) {
-    //Serial.printf("hw_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
+  void hal_eeprom_write(uint32_t adr, uint8_t val) {
+    //Serial.printf("hal_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
     eeprom_buffered_write_byte(adr, val); //write to buffer
   }
 
-  void hw_eeprom_commit() {
+  void hal_eeprom_commit() {
     //Serial.println("START writing to flash");Serial.flush();
     eeprom_buffer_flush(); //Copy the data from the buffer to the flash
     //Serial.println("DONE writing");Serial.flush();
@@ -64,19 +64,19 @@
   //NON STM32
   #include <EEPROM.h>
 
-  void hw_eeprom_begin() {
+  void hal_eeprom_begin() {
     EEPROM.begin(2048);
   }
 
-  uint8_t hw_eeprom_read(uint32_t adr) {
+  uint8_t hal_eeprom_read(uint32_t adr) {
     return EEPROM.read(adr);
   }
 
-  void hw_eeprom_write(uint32_t adr, uint8_t val) {
+  void hal_eeprom_write(uint32_t adr, uint8_t val) {
     EEPROM.write(adr, val);
   }
 
-  void hw_eeprom_commit() {
+  void hal_eeprom_commit() {
     EEPROM.commit();
   }
 #endif

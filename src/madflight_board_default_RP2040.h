@@ -4,7 +4,7 @@
 #define HW_BOARD_NAME "DEFAULT RP2350/RP2040 BOARD"
 #define HW_MCU "RP2350/RP2040" //RP2350/RP2040 - not all pin combinations are allowed, see datasheet
 
-//NOTE: edit hw_RP2040.h to change uart/spi/i2c ports
+//NOTE: edit hal_RP2040.h to change uart/spi/i2c ports
 
 //LED:
 #define HW_PIN_LED               25 //internal on Raspberry Pi Pico

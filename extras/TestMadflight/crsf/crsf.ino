@@ -18,7 +18,7 @@ CRSF crsf;
     const int HW_PIN_RCIN_RX  = 35;
     const int HW_PIN_RCIN_TX  = 32;
     HardwareSerial *rcin_Serial = &Serial1; //&Serial1 or &Serial2 (&Serial is used for debugging)
-    void hw_setup()
+    void hal_setup()
     {
       rcin_Serial->setPins(HW_PIN_RCIN_RX, HW_PIN_RCIN_TX);
     }
@@ -26,7 +26,7 @@ CRSF crsf;
     const int HW_PIN_RCIN_RX  = 1; //uart0: 1(default), 5, 13, 17   uart1: 5, 9(default)
     const int HW_PIN_RCIN_TX  = 0; //uart0: 0(default), 4, 12, 16   uart1: 4, 8(default)
     SerialUART *rcin_Serial = new SerialUART(uart0, HW_PIN_RCIN_TX, HW_PIN_RCIN_RX); //uart0 or uart1
-    void hw_setup() 
+    void hal_setup() 
     { 
     }
 #else 
@@ -156,7 +156,7 @@ void setup() {
     while(!Serial);
     Serial.println("CRSF DEMO");
    
-    hw_setup();
+    hal_setup();
     rcin_Serial->setFIFOSize(256);
     rcin_Serial->begin(CRSF_BAUD);
 

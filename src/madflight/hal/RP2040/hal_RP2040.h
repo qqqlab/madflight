@@ -7,8 +7,8 @@ This file defines:
   *gps_Serial -> Serial port for GPS as MF_Serial object
   *mf_i2c -> I2C port as MF_I2C object
   *spi -> SPI port
-  hw_Setup() -> function to init the hardware
-  HW_xxx and hw_xxx -> all other hardware platform specific stuff
+  hal_setup() -> function to init the hardware
+  HAL_xxx and hal_xxx -> all other hardware platform specific stuff
 ########################################################################################################################*/
 
 #define HW_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR 
@@ -38,7 +38,7 @@ This file defines:
 #define FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
 
 //======================================================================================================================//
-//                    hw_setup()
+//                    hal_setup()
 //======================================================================================================================//
 
 const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
@@ -49,10 +49,9 @@ const int HW_PIN_OUT[] = HW_PIN_OUT_LIST;
 #include <pico/stdlib.h>               //set_sys_clock_khz()
 #include <Wire.h>                      //I2C communication
 #include <SPI.h>                       //SPI communication
-#include "madflight/hw_RP2040/RP2040_PWM.h"  //Servo and onshot
-#include "madflight/hw_RP2040/RP2040_SerialIRQ.h"  //Replacement high performance serial driver
-//TODO #include "madflight/hw_RP2040/RP2040_SerialDMA.h"  //Replacement high performance serial driver
-#include "../common/MF_Serial.h"
+#include "RP2040_PWM.h"  //Servo and onshot
+#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver
+#include "../../common/MF_Serial.h"
 
 //-------------------------------------
 //Bus Setup
@@ -62,14 +61,14 @@ SPIClassRP2040 *spi = new SPIClassRP2040(spi0, HW_PIN_SPI_MISO, HW_PIN_IMU_CS, H
 SPIClassRP2040 *bb_spi = new SPIClassRP2040(spi1, HW_PIN_SPI2_MISO, HW_PIN_BB_CS, HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MOSI); //spi0 or spi1
 
 //prototype
-void hw_eeprom_begin();
+void hal_eeprom_begin();
 
 uint8_t rcin_txbuf[256];
 uint8_t rcin_rxbuf[256];
 uint8_t gps_txbuf[256];
 uint8_t gps_rxbuf[256];
 
-void hw_setup() {
+void hal_setup() {
   //print hw info
   Serial.print("HW_RP2040 ");
   //overclocking, supposedly works up to 270 MHz on RP2040
@@ -115,7 +114,7 @@ void hw_setup() {
   spi->begin();
   bb_spi->begin();
 
-  hw_eeprom_begin();
+  hal_eeprom_begin();
 
   //IMU
   pinMode(HW_PIN_IMU_EXTI, INPUT); //needed for RP2350, should not hurt for RP2040
@@ -126,19 +125,19 @@ void hw_setup() {
 //======================================================================================================================//
 #include <EEPROM.h>
 
-void hw_eeprom_begin() {
+void hal_eeprom_begin() {
   EEPROM.begin(4096);
 }
 
-uint8_t hw_eeprom_read(uint32_t adr) {
+uint8_t hal_eeprom_read(uint32_t adr) {
   return EEPROM.read(adr);
 }
 
-void hw_eeprom_write(uint32_t adr, uint8_t val) {
+void hal_eeprom_write(uint32_t adr, uint8_t val) {
   EEPROM.write(adr, val);
 }
 
-void hw_eeprom_commit() {
+void hal_eeprom_commit() {
   EEPROM.commit();
 }
 
@@ -147,7 +146,7 @@ void hw_eeprom_commit() {
 //  MISC
 //======================================================================================================================//
 
-void hw_reboot() {
+void hal_reboot() {
 
   //does not always work with FreeRTOS running
   watchdog_enable(10, false); //uint32_t delay_ms, bool pause_on_debug
@@ -162,10 +161,10 @@ void hw_reboot() {
   //AIRCR_Register = 0x5FA0004;
 }
 
-inline uint32_t hw_get_core_num() {
+inline uint32_t hal_get_core_num() {
   return get_core_num();
 }
 
-int hw_get_pin_number(String val) {
+int hal_get_pin_number(String val) {
   return val.toInt();
 }

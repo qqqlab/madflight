@@ -53,7 +53,7 @@ void setup() {
   Serial.begin(115200);
   while(!Serial);
   Serial.println("CRSF DEMO");
-  hw_setup();
+  hal_setup();
   imu.setup(1000);
   imu.onUpdate = imu_loop;
   rcin.setup();

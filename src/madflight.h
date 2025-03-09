@@ -41,16 +41,7 @@ MF_Serial *rcin_Serial = nullptr; //serial bus for RCIN
 MF_Serial *gps_Serial = nullptr;  //serial bus for GPS
 MF_I2C *mf_i2c = nullptr;         //I2C (Wire) bus for sensors
 
-//include hardware specific code & default board pinout
-#if defined ARDUINO_ARCH_ESP32
-  #include "madflight/hw_ESP32/hw_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "madflight/hw_RP2040/hw_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "madflight/hw_STM32/hw_STM32.h"
-#else 
-  #error "Unknown hardware architecture, expected ESP32 / RP2040 / STM32"
-#endif
+#include "madflight/hal/hal.h"
 
 //default for ALT (Altitude Estimation)
 #ifndef ALT_USE
@@ -146,8 +137,8 @@ void madflight_setup() {
     cli.cmd_execute_batch(madflight_init_commands);
   }
 
-  //hardware specific setup for busses: serial, spi and i2c (see hw_xxx.h)
-  hw_setup();
+  //hardware abstraction layer setup: serial, spi, i2c (see hal.h)
+  hal_setup();
 
   //prevent nullpointers
   if(!rcin_Serial) rcin_Serial = new MF_SerialNone();

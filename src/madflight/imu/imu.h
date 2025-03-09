@@ -310,7 +310,7 @@ void _imu_ll_interrupt_handler();
       //xTaskCreatePinnedToCore(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //ESP32 only
       xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
-        int callcore = hw_get_core_num();
+        int callcore = hal_get_core_num();
         int othercore = (callcore+1)%2;
         vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //Sets the core affinity mask for a task, i.e. the cores on which a task can run.
         Serial.printf("IMU:  IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
