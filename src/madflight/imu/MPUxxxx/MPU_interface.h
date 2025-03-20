@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../../common/MF_I2C.h"
+#include "../../hal/MF_I2C.h"
 
 #include "Arduino.h"
 #include <SPI.h>

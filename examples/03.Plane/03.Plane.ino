@@ -1,3 +1,5 @@
+#error "TODO: This file need to be converted to madflight version 2" 
+
 /*#########################################################################################################################
 
 WARNING: This program is experimental - it was only flight-tested in a couple of flights

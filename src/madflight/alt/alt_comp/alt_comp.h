@@ -25,7 +25,7 @@ SOFTWARE.
 ===========================================================================================*/
 #pragma once
 
-#include "../alt_interface.h" //AltEst
+#include "../alt.h" //AltEst
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +38,7 @@ public:
     setup2(alt, 0.4, 0.03, 0.1, 12); //baroAltitude[m], sigmaBaro[m], sigmaAccel[m/s2], accelThreshold[m/s2], ZUPT_SIZE[n]);
     ts = 0;
 
-    //Serial.printf("ALT:  ALT_USE_COMP gain=%f,%f\n", gain0, gain1);
+    //Serial.printf("ALT: COMP gain=%f,%f\n", gain0, gain1);
   }
 
   //a: accel up in [m/s^2], ts: timestamp in [us]
@@ -48,7 +48,7 @@ public:
   };
   
   //altitude: barometric altitude in [m], ts: timestamp in [us]
-  void updateBaroAlt(float alt, uint32_t ts) {
+  void updateBarAlt(float alt, uint32_t ts) {
     if(this->ts != 0) {
       float dt = 1e-6 * (ts - this->ts);
       a = alt_a/alt_acnt;
@@ -70,7 +70,7 @@ public:
     n += sprintf(s+n, "alt.a:%+.2f\t", a);
   }
 
-  void setup2(float baroAltitude, float sigmaAccel, float sigmaBaro, float accelThreshold, int ZUPT_SIZE)
+  void setup2(float barAltitude, float sigmaAccel, float sigmaBaro, float accelThreshold, int ZUPT_SIZE)
   {
     // Compute the filter gain
     gain0 = sqrt(2 * sigmaAccel / sigmaBaro);
@@ -80,17 +80,17 @@ public:
     // initialize zero-velocity update
     this->ZUPT_SIZE = ZUPT_SIZE;
     ZUPTIdx = 0;
-    pastAltitude = baroAltitude;
-    h = baroAltitude;
+    pastAltitude = barAltitude;
+    h = barAltitude;
     v = 0;
   }
 
-  void estimate(float baroAltitude, float a, float dt)
+  void estimate(float barAltitude, float a, float dt)
   {
     // Apply complementary filter
     h += (v + (gain0 + gain1*dt/2) * (baroAltitude - pastAltitude)) * dt + a*dt*dt/2;
-    v += (gain1 * (baroAltitude - pastAltitude) + a) * dt;
-    pastAltitude = baroAltitude;
+    v += (gain1 * (barAltitude - pastAltitude) + a) * dt;
+    pastAltitude = barAltitude;
     
     // zero-velocity update if more than ZUPT_SIZE small acc were received
     if(fabs(a) >= accelThreshold) {

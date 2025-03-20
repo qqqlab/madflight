@@ -35,7 +35,7 @@ public:
     float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G]
     float biasCov = 1;
 
-    Serial.printf("ALT:  ALT_USE_KALMAN3  altCov=%f accCov=%f biasCov=%f\n", altCov, accCov, biasCov);
+    Serial.printf("ALT: KALMAN3  altCov=%f accCov=%f biasCov=%f\n", altCov, accCov, biasCov);
 
     filter.setup(altCov, accCov, biasCov);
     filter.h = alt;
@@ -55,7 +55,7 @@ public:
   };
   
   //altitude: barometric altitude in [m], ts: timestamp in [us]
-  void updateBaroAlt(float alt, uint32_t ts) {
+  void updateBarAlt(float alt, uint32_t ts) {
     filter.update(alt);
   }
   

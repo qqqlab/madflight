@@ -4,7 +4,7 @@
 //  AUTHOR: Rob Tillaart
 // VERSION: 0.1.4
 //    DATE: 2024-05-09
-// PURPOSE: Arduino library for INA228 voltage, current and power sensor.
+// PURPOSE: Arduino library for INA228 voltage, current and power gizmo.
 //     URL: https://github.com/RobTillaart/INA228
 //          https://www.adafruit.com/product/5832           ( 10 A version)
 //          https://www.mateksys.com/?portfolio=i2c-ina-bm  (200 A version))

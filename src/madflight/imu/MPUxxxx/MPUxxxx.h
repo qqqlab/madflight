@@ -8,7 +8,7 @@
 #include "AK8963.h"
 #include "AK8975.h"
 
-class MPUXXXX {
+class MPUXXXX : public ImuGizmo {
 
   public:
 
@@ -212,7 +212,7 @@ class MPUXXXX {
     //x=North (forward), y=East (right), z=Down 
     //acc: gravitation force is positive in axis direction
     //gyro: direction of positive rotation by right hand rule, i.e. positive is: roll right, pitch up, yaw right
-    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz)
+    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override
     {
       read6();
       *ax = rawa[0] * acc_multiplier;
@@ -249,7 +249,7 @@ class MPUXXXX {
     //x=North (forward), y=East (right), z=Down 
     //acc: gravitation force is positive in axis direction (sensor reports negative)
     //gyro: direction of positive rotation by right hand rule, i.e. positive is: yaw right, roll right, pitch up
-    void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz)
+    void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) override
     {
       read9();
       *ax = rawa[0] * acc_multiplier;

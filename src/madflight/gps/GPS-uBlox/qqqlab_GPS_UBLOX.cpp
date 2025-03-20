@@ -81,7 +81,6 @@ void *memmem(const void *haystack, size_t haystacklen, const void *needle, size_
 }
 
 #define UBLOX_SPEED_CHANGE 0
-#define UBLOX_FAKE_3DLOCK 0
 #ifndef CONFIGURE_PPS_PIN
   #define CONFIGURE_PPS_PIN 0
 #endif
@@ -1413,25 +1412,18 @@ AP_GPS_UBLOX::_parse_gps(void)
         }
         _check_new_itow(_buffer.posllh.itow);
         _last_pos_time  = _buffer.posllh.itow;
-        state.lon    = _buffer.posllh.longitude;
-        state.lat    = _buffer.posllh.latitude;
-        state.have_undulation = true;
-        state.undulation = (_buffer.posllh.altitude_msl - _buffer.posllh.altitude_ellipsoid); //mm
-        state.alt = _buffer.posllh.altitude_msl;
+        state->lon    = _buffer.posllh.longitude;
+        state->lat    = _buffer.posllh.latitude;
+        state->have_undulation = true;
+        state->undulation = (_buffer.posllh.altitude_msl - _buffer.posllh.altitude_ellipsoid); //mm
+        state->alt = _buffer.posllh.altitude_msl;
 
-        state.fix = next_fix;
+        state->fix = next_fix;
         _new_position = true;
-        state.hacc = _buffer.posllh.hacc; //mm
-        state.vacc = _buffer.posllh.vacc; //mm
-        state.have_hacc = true;
-        state.have_vacc = true;
-#if UBLOX_FAKE_3DLOCK
-        state.lon = 1491652300L;
-        state.lat = -353632610L;
-        state.alt = 584000;
-        state.vacc = 0;
-        state.hacc = 0;
-#endif
+        state->hacc = _buffer.posllh.hacc; //mm
+        state->vacc = _buffer.posllh.vacc; //mm
+        state->have_hacc = true;
+        state->have_vacc = true;
         break;
     case MSG_STATUS:
         Debug("MSG_STATUS fix_status=%u fix_type=%u",
@@ -1452,27 +1444,19 @@ AP_GPS_UBLOX::_parse_gps(void)
                 next_fix = GPS_OK_FIX_2D;
             }else{
                 next_fix = NO_FIX;
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
             }
         }else{
             next_fix = NO_FIX;
-            state.fix = NO_FIX;
+            state->fix = NO_FIX;
         }
-#if UBLOX_FAKE_3DLOCK
-        state.fix = GPS_OK_FIX_3D;
-        next_fix = state.fix;
-#endif
         break;
     case MSG_DOP:
         Debug("MSG_DOP");
         noReceivedHdop = false;
         _check_new_itow(_buffer.dop.itow);
-        state.hdop        = _buffer.dop.hDOP;
-        state.vdop        = _buffer.dop.vDOP;
-#if UBLOX_FAKE_3DLOCK
-        state.hdop = 130;
-        state.hdop = 170;
-#endif
+        state->hdop        = _buffer.dop.hDOP;
+        state->vdop        = _buffer.dop.vDOP;
         break;
     case MSG_SOL:
         Debug("MSG_SOL fix_status=%u fix_type=%u",
@@ -1480,7 +1464,7 @@ AP_GPS_UBLOX::_parse_gps(void)
               _buffer.solution.fix_type);
         _check_new_itow(_buffer.solution.itow);
         if (havePvtMsg) {
-            state.time_week = _buffer.solution.week;
+            state->time_week = _buffer.solution.week;
             break;
         }
         if (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) {
@@ -1493,20 +1477,20 @@ AP_GPS_UBLOX::_parse_gps(void)
                 next_fix = GPS_OK_FIX_2D;
             }else{
                 next_fix = NO_FIX;
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
             }
         }else{
             next_fix = NO_FIX;
-            state.fix = NO_FIX;
+            state->fix = NO_FIX;
         }
         if(noReceivedHdop) {
-            state.hdop = _buffer.solution.position_DOP;
+            state->hdop = _buffer.solution.position_DOP;
         }
-        state.sat    = _buffer.solution.satellites;
+        state->sat    = _buffer.solution.satellites;
         if (next_fix >= GPS_OK_FIX_2D) {
-            state.last_gps_time_ms = I_millis();
-            state.time    = _buffer.solution.itow;
-            state.time_week       = _buffer.solution.week;
+            state->last_gps_time_ms = I_millis();
+            state->time    = _buffer.solution.itow;
+            state->time_week       = _buffer.solution.week;
         }
         break;
     case MSG_PVT:
@@ -1516,94 +1500,79 @@ AP_GPS_UBLOX::_parse_gps(void)
         _check_new_itow(_buffer.pvt.itow);
         _last_pvt_itow = _buffer.pvt.itow;
         _last_pos_time        = _buffer.pvt.itow;
-        state.lon    = _buffer.pvt.lon;
-        state.lat    = _buffer.pvt.lat;
-        state.have_undulation = true;
-        state.undulation = (_buffer.pvt.h_msl - _buffer.pvt.h_ellipsoid); //mm
-        state.alt =  _buffer.pvt.h_msl; //mm
+        state->lon    = _buffer.pvt.lon;
+        state->lat    = _buffer.pvt.lat;
+        state->have_undulation = true;
+        state->undulation = (_buffer.pvt.h_msl - _buffer.pvt.h_ellipsoid); //mm
+        state->alt =  _buffer.pvt.h_msl; //mm
         switch (_buffer.pvt.fix_type)
         {
             case 0:
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
                 break;
             case 1:
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
                 break;
             case 2:
-                state.fix = GPS_OK_FIX_2D;
+                state->fix = GPS_OK_FIX_2D;
                 break;
             case 3:
-                state.fix = GPS_OK_FIX_3D;
+                state->fix = GPS_OK_FIX_3D;
                 if (_buffer.pvt.flags & 0b00000010)  // diffsoln
-                    state.fix = GPS_OK_FIX_3D_DGPS;
+                    state->fix = GPS_OK_FIX_3D_DGPS;
                 if (_buffer.pvt.flags & 0b01000000)  // carrsoln - float
-                    state.fix = GPS_OK_FIX_3D_RTK_FLOAT;
+                    state->fix = GPS_OK_FIX_3D_RTK_FLOAT;
                 if (_buffer.pvt.flags & 0b10000000)  // carrsoln - fixed
-                    state.fix = GPS_OK_FIX_3D_RTK_FIXED;
+                    state->fix = GPS_OK_FIX_3D_RTK_FIXED;
                 break;
             case 4:
                 interface_printf( "Unexpected state %d\n", _buffer.pvt.flags);
-                state.fix = GPS_OK_FIX_3D;
+                state->fix = GPS_OK_FIX_3D;
                 break;
             case 5:
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
                 break;
             default:
-                state.fix = NO_FIX;
+                state->fix = NO_FIX;
                 break;
         }
-        next_fix = state.fix;
+        next_fix = state->fix;
         _new_position = true;
-        state.hacc = _buffer.pvt.h_acc; //mm
-        state.vacc = _buffer.pvt.v_acc; //mm
-        state.have_hacc = true;
-        state.have_vacc = true;
+        state->hacc = _buffer.pvt.h_acc; //mm
+        state->vacc = _buffer.pvt.v_acc; //mm
+        state->have_hacc = true;
+        state->have_vacc = true;
         // SVs
-        state.sat    = _buffer.pvt.num_sv;
+        state->sat    = _buffer.pvt.num_sv;
         // velocity     
         _last_vel_time         = _buffer.pvt.itow;
-        state.sog     = _buffer.pvt.gspeed;          // mm/s
-        state.cog    = _buffer.pvt.head_mot;       // Heading 2D in deg / 100000
-        state.have_veld = true;
-        state.veln = _buffer.pvt.velN; //mm
-        state.vele = _buffer.pvt.velE; //mm
-        state.vele = _buffer.pvt.velD; //mm
-        state.have_vel_acc = true;
-        state.vel_acc = _buffer.pvt.s_acc; //mm/s
+        state->sog     = _buffer.pvt.gspeed;          // mm/s
+        state->cog    = _buffer.pvt.head_mot;       // Heading 2D in deg / 100000
+        state->have_veld = true;
+        state->veln = _buffer.pvt.velN; //mm
+        state->vele = _buffer.pvt.velE; //mm
+        state->vele = _buffer.pvt.velD; //mm
+        state->have_vel_acc = true;
+        state->vel_acc = _buffer.pvt.s_acc; //mm/s
         _new_speed = true;
         // dop
         if(noReceivedHdop) {
-            state.hdop        = _buffer.pvt.p_dop;
-            state.vdop        = _buffer.pvt.p_dop;
+            state->hdop        = _buffer.pvt.p_dop;
+            state->vdop        = _buffer.pvt.p_dop;
         }
 
         if (_buffer.pvt.fix_type >= 2) {
-            state.last_gps_time_ms = I_millis();
+            state->last_gps_time_ms = I_millis();
         }
         
         // time
-        state.time    = _buffer.pvt.itow;
-#if UBLOX_FAKE_3DLOCK
-        state.lon = 1491652300L;
-        state.lat = -353632610L;
-        state.alt = 584000;
-        state.vacc = 0;
-        state.hacc = 0;
-        state.fix = GPS_OK_FIX_3D;
-        state.sat = 10;
-        state.time_week = 1721;
-        state.time = I_millis() + 3*60*60*1000 + 37000;
-        state.last_gps_time_ms = I_millis();
-        state.hdop = 130;
-        state.vel_acc = 0;
-        next_fix = state.fix;
-#endif
+        state->time    = _buffer.pvt.itow;
         break;
     case MSG_TIMEGPS:
         Debug("MSG_TIMEGPS");
         _check_new_itow(_buffer.timegps.itow);
         if (_buffer.timegps.valid & UBX_TIMEGPS_VALID_WEEK_MASK) {
-            state.time_week = _buffer.timegps.week;
+            state->time_week = _buffer.timegps.week;
         }
         break;
     case MSG_VELNED:
@@ -1614,17 +1583,14 @@ AP_GPS_UBLOX::_parse_gps(void)
         }
         _check_new_itow(_buffer.velned.itow);
         _last_vel_time         = _buffer.velned.itow;
-        state.sog     = _buffer.velned.speed_2d * 10;  // 10mm/s
-        state.cog    = _buffer.velned.heading_2d;       // Heading 2D in deg / 100000
-        state.have_veld = true;
-        state.veln = _buffer.velned.ned_north * 10; //10mm
-        state.vele = _buffer.velned.ned_east * 10; //10mm
-        state.veld = _buffer.velned.ned_down * 10; //10mm
-        state.have_vel_acc = true;
-        state.vel_acc = _buffer.velned.vel_acc * 10;  //10mm/s
-#if UBLOX_FAKE_3DLOCK
-        state.vel_acc = 0;
-#endif
+        state->sog     = _buffer.velned.speed_2d * 10;  // 10mm/s
+        state->cog    = _buffer.velned.heading_2d;       // Heading 2D in deg / 100000
+        state->have_veld = true;
+        state->veln = _buffer.velned.ned_north * 10; //10mm
+        state->vele = _buffer.velned.ned_east * 10; //10mm
+        state->veld = _buffer.velned.ned_down * 10; //10mm
+        state->have_vel_acc = true;
+        state->vel_acc = _buffer.velned.vel_acc * 10;  //10mm/s
         _new_speed = true;
         break;
     case MSG_NAV_SVINFO:
@@ -1935,7 +1901,7 @@ reset:
             if (PREAMBLE2 != data) {
               state.step = 0;
               goto reset;
-            }              
+            }
             state.step++;
             break;
         case 2:
@@ -2289,12 +2255,12 @@ void AP_GPS_UBLOX::update2() {
         if (tnow - timing.last_message_time_ms > GPS_TIMEOUT_MS) {
             interface_printf("LOST CONNECTION\n");
             memset((void *)&state, 0, sizeof(state));
-            state.hdop = GPS_UNKNOWN_DOP;
-            state.vdop = GPS_UNKNOWN_DOP;
+            state->hdop = GPS_UNKNOWN_DOP;
+            state->vdop = GPS_UNKNOWN_DOP;
             // timing.last_message_time_ms = tnow;
             timing.delta_time_ms = GPS_TIMEOUT_MS;
 
-            state.fix = NO_GPS;
+            state->fix = NO_GPS;
             config_stage = 0; //restart config
             // log this data as a "flag" that the GPS is no longer
             // valid (see PR#8144)
@@ -2304,7 +2270,7 @@ void AP_GPS_UBLOX::update2() {
         // delta will only be correct after parsing two messages
         timing.delta_time_ms = tnow - timing.last_message_time_ms;
         timing.last_message_time_ms = tnow;
-        if (state.fix >= GPS_OK_FIX_2D) {
+        if (state->fix >= GPS_OK_FIX_2D) {
             timing.last_fix_time_ms = tnow;
         }
 

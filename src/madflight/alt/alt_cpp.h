@@ -1,0 +1,89 @@
+/*=================================================================================================
+Each ALT_USE_xxx section in this file defines a specific altimeter estimator class
+=================================================================================================*/
+
+#ifndef MF_ALLOW_INCLUDE_CCP_H
+  #error "Only include this file from madflight.h"
+#endif
+
+#define ALT_USE_NONE    0
+#define ALT_USE_KALMAN2 1 // Kalman filter estimates h and v from barometer and acceleration
+#define ALT_USE_KALMAN3 2 // Kalman filter estimates h, v, and abias from barometer and acceleration
+#define ALT_USE_BAR     3 // Filtered barometer
+#define ALT_USE_COMP    4 // Complementary filter
+
+#include "alt.h" //declares AltEst - Altimeter Estimator base class
+
+//default for ALT (Altitude Estimation)
+#ifndef ALT_USE
+  #define ALT_USE ALT_USE_BARO
+#endif
+
+//=================================================================================================
+// None or undefined
+//=================================================================================================
+#if ALT_USE == ALT_USE_NONE
+
+class AltEst_None : public AltEst {
+public:
+  void setup(float alt) {
+    (void)alt;
+    Serial.printf("ALT: NONE\n");
+  }
+  void updateAccelUp(float a, uint32_t ts) {(void)a;(void)ts;};
+  void updateBarAlt(float alt, uint32_t ts) {(void)alt;(void)ts;} 
+  float getH() {return 0;}
+  float getV() {return 0;}
+  void toString(char *s) {if(s) s[0] = 0;}
+};
+
+AltEst_None alt_instance;
+
+//=================================================================================================
+// ALT_USE_KALMAN2 - Simple Kalman filter estimates h and vup from barometer and acceleration
+//=================================================================================================
+#elif ALT_USE == ALT_USE_KALMAN2
+
+#include "alt_kalman2/alt_kalman2.h"
+
+AltEst_Kalman2 alt_instance;
+
+
+//=================================================================================================
+// ALT_USE_KALMAN3 - Kalman filter estimates h, vup, and abias from barometer and acceleration
+//=================================================================================================
+#elif ALT_USE == ALT_USE_KALMAN3
+
+#include "alt_kalman3/alt_kalman3.h"
+
+AltEst_Kalman3 alt_instance;
+
+
+//=================================================================================================
+// ALT_USE_BAR - Filtered barometer only
+//=================================================================================================
+#elif ALT_USE == ALT_USE_BAR
+
+#include "alt_bar/alt_bar.h"
+
+AltEst_Bar alt_instance;
+
+
+//=================================================================================================
+// ALT_USE_COMP - Complementary filter altitude and accelation
+//=================================================================================================
+#elif ALT_USE == ALT_USE_COMP
+
+#include "alt_comp/alt_comp.h"
+
+AltEst_Comp alt_instance;
+
+
+//=================================================================================================
+// ERROR OTHER VALUE 
+//=================================================================================================
+#else
+  #error "Invalid #define ALT_USE value"
+#endif
+
+AltEst &alt = alt_instance;

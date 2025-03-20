@@ -35,7 +35,7 @@ We are ready now to instantiate the estimator where needed. This can be done by:
 // Altitude estimator
 AltitudeEstimator altitude = AltitudeEstimator(0.0005, 	// sigma Accel
                                                0.0005, 	// sigma Gyro
-                                               0.018,   // sigma Baro
+                                               0.018,   // sigma Bar
                                                0.5, 	// ca
                                                0.1);	// accelThreshold
 ```
@@ -45,7 +45,7 @@ Note that here we are specifying the value of the parameters that will be used t
 Once we have our estimator the only thing we have to do to estimate the current vertical position, velocity and acceleration is to call its `estimate` method. Since one of the aims of this library is to be hardware-independent, this method expects to receive the latest acceleremoter, gyrometer and barometer readings as well as the timestamp they were obtained as parameters. Jump to the **Available methods** section if you wish to know more about these parameters and their expected values.
 
 ```cpp
-altitude.estimate(accelData, gyroData, baroHeight, timestamp);
+altitude.estimate(accelData, gyroData, barHeight, timestamp);
 ```
 
 The call to the previous method will not return anything. Instead, it will perform the estimation and store the results. To access the results of the latest estimation you just have to call the following methods:
@@ -72,7 +72,7 @@ Calling this method will update the estimations and store the results internally
 Method signature:
 
 ```cpp
-void estimate(float accel[3], float gyro[3], float baroHeight, uint32_t timestamp)
+void estimate(float accel[3], float gyro[3], float barHeight, uint32_t timestamp)
 ```
 
 Parameters:
@@ -81,7 +81,7 @@ Parameters:
 
 * `float gyro[3]`: length 3 array of floats with gyrometer readings in rad/s. The order in which the estimator expects the readings is `gx`, `gy` and `gz`.
 
-* `float baroHeight`: vertical height in meters as estimated from the barometer signal. The conversion from pressure to height can be easily achieved with a small helper function. [This](https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf) is the formula I used in the provided example to achieve so (see lines 29-33). Since the algorithm requires the altitude estimated from the baro and not the pressure reading itself I prefer to let the user choose freely how he wants to map pressure to altitude.
+* `float barHeight`: vertical height in meters as estimated from the barometer signal. The conversion from pressure to height can be easily achieved with a small helper function. [This](https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf) is the formula I used in the provided example to achieve so (see lines 29-33). Since the algorithm requires the altitude estimated from the baro and not the pressure reading itself I prefer to let the user choose freely how he wants to map pressure to altitude.
 
 * `uint32_t timestamp`: The timestamp at which the readings were obtained. Currently the library expects it to be in microseconds.
 
@@ -126,14 +126,14 @@ There are a few parameters that can be tuned to try to achieve higher accuracy. 
 
 1. `sigmaAccel`: standard deviation of the accelerometer
 2. `sigmaGyro`: standard deviation of the gyroscope
-3. `sigmaBaro`: standard deviation of the barometer
+3. `sigmaBar`: standard deviation of the barometer
 4. `ca`:  constant value for the markov chain acceleration model: a(k) = ca * a(k-1) + e
 5. `accelThreshold`: vertical acceleration threshold. If 12 consecutive vertical acceleration values are below the threshold the vertical velocity will be set to 0.
 
 The value of this parameters must be specified when calling the constructor of `AltitudeEstimator`. The order is the one listed above. Below one can see the signature of the constructor:
 
 ```cpp
-AltitudeEstimator(float sigmaAccel, float sigmaGyro, float sigmaBaro, float ca, float accelThreshold)
+AltitudeEstimator(float sigmaAccel, float sigmaGyro, float sigmaBar, float ca, float accelThreshold)
 ```
 
 ## Results

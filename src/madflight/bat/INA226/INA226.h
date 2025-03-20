@@ -29,7 +29,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "../../common/MF_I2C.h"
+#include "../../hal/MF_I2C.h"
 
 #define INA226_ADDRESS              (0x40)
 

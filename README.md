@@ -13,6 +13,12 @@ The source code and [website](https://madflight.com/) have extensive documentati
 
 <img src="extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="38%" /> <img src="extras/img/madflight drone.jpeg" title="madflight drone" width="30%" /> <img src="extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="29%" />
 
+## Version 2.0.0-DEV
+
+If you clone/download this repository you get version 2.0.0-DEV, which is BLEEDING EDGE - not flight tested at all, might not even compile, and will completely change in the next hour... 
+
+Use [release version 1.3.3](https://github.com/qqqlab/madflight/releases) if you want something that actually has logged flight hours.
+
 ## Required Hardware
 
 - [Development board](https://madflight.com/Controller-Boards/): 
@@ -44,10 +50,10 @@ The source code and [website](https://madflight.com/) have extensive documentati
 3. Open *Examples for custom libraries->madflight->Quadcopter.ino* in the Arduino IDE.
 4. Edit the HARDWARE section in madflight_config.h to enable the connected peripherals.
 5. If you're not using the default pinout then setup your board pinout in the CUSTOM PINS section.
-6. Compile Quadcopter.ino and upload it to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type `help` to see the available CLI commands.
+6. Compile Quadcopter.ino and upload it to your board. Connect the Serial Monitor at 115200 baud and check the startup messages. Type `help` to see the available CLI commands.
 7. Type `calradio` and follow the prompts to setup your RC radio receiver.
 8. IMPORTANT: Use CLI `calimu` and `calmag` to calibate the sensors.
-9. Use CLI commands `pimu`, `pahrs`, `pradio`, `pmot`, etc. and check that IMU sensor, AHRS and RC Receiver are working correctly. 
+9. Use CLI commands `pimu`, `pahr`, `prcl`, `pmot`, etc. and check that IMU sensor, AHRS and RC Receiver are working correctly. 
 10. Connect motors (no props) and battery and check that motors are spinning correctly.
 11. Mount props, go to an wide open space, and FLY!
 
@@ -88,7 +94,7 @@ By default **madflight** has these safety features enabled:
     - `rcin` RC INput, retrieves RC receiver data
     - `veh` Vehicle information
 - Most modules are interfaced through a global object, for example the `imu` object has property `imu.gx` which is the current gyro x-axis rate in degrees per second for the selected IMU chip.
-- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`, and the interface declaration `src/madflight/imu/imu_interface.h`
+- The module implementations are in subdirectories of the `src/madflight` directory. Here you find the module header file, e.g. `src/madflight/imu/imu.h`, and the interface declaration `src/madflight/imu/imu.h`
 - The module files are usually header only, that is, the header also includes the implemention.
 
 ## Disclaimer

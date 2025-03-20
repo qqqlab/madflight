@@ -1,7 +1,10 @@
 #pragma once
 
-#include "pid_interface.h"
+class PID {
+  public:
+    float PID = 0; //PID output value
+};
 
-PID PIDroll;
-PID PIDpitch;
-PID PIDyaw;
+extern PID PIDroll;
+extern PID PIDpitch;
+extern PID PIDyaw;

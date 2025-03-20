@@ -30,18 +30,10 @@ Ported from Ardupilot AP_GPS_UBLOX.h & .cpp (version 4.5.7 2025-02-02)
 //  UBlox Lea6H protocol: http://www.u-blox.com/images/downloads/Product_Docs/u-blox6_ReceiverDescriptionProtocolSpec_%28GPS.G6-SW-10018%29.pdf
 #pragma once
 
+#include "../gps.h" //for GpsState
 
 #include <stddef.h>
 #include <inttypes.h>
-
-//Instance functions/vars
-class AP_GPS_Interface {
-
-};
-
-
-
-
 
 #define GPS_UNKNOWN_DOP UINT16_MAX // set unknown DOP's to maximum value, which is also correct for MAVLink
 
@@ -172,6 +164,8 @@ protected:
     void interface_printf(const char *fmt, ...);
 
   public:
+  
+  /* moved to gps.h
     /// GPS fix codes.  These are kept aligned with MAVLink by
     /// static_assert in AP_GPS.cpp
     enum GPS_Status {
@@ -183,7 +177,7 @@ protected:
         GPS_OK_FIX_3D_RTK_FLOAT = 5, ///< Receiving valid messages and 3D RTK Float
         GPS_OK_FIX_3D_RTK_FIXED = 6, ///< Receiving valid messages and 3D RTK Fixed
     };
-
+*/
     // GPS navigation engine settings. Not all GPS receivers support
     // this
     enum GPS_Engine_Setting {
@@ -222,6 +216,9 @@ protected:
       The GPS_State structure is filled in by the backend driver as it
       parses each message from the GPS.
      */
+     
+     /* now GpsState in gps.h
+     
     struct PACKED GPS_State {
         // all the following fields must all be filled by the backend driver
         GPS_Status fix;                  ///< driver fix status
@@ -250,6 +247,8 @@ protected:
         bool have_vacc;        ///< does GPS give vertical position accuracy? Set to true only once available.
         bool have_undulation;               ///< do we have a value for the undulation
     };
+    
+    */
 
     // configuration parameters
     enum SBAS_Mode _sbas_mode;
@@ -278,7 +277,7 @@ protected:
 
     GPS_timing timing;
 
-    GPS_State state;
+    GpsState *state;
 
     AP_GPS_UBLOX();
 

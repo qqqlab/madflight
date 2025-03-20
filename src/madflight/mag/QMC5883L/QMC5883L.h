@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../common/MF_I2C.h"
+#include "../../hal/MF_I2C.h"
 
 /*
 
@@ -63,7 +63,7 @@ class QMC5883L{
         _i2c->beginTransmission(_adr);
         _i2c->write(0x00);
         _i2c->endTransmission(false);
-        _i2c->requestFrom(_adr, (uint8_t)0x06);
+        _i2c->requestFrom(_adr, (uint8_t)6);
         *mx = (int16_t)(_i2c->read() | _i2c->read() << 8);
         *my = (int16_t)(_i2c->read() | _i2c->read() << 8);
         *mz = (int16_t)(_i2c->read() | _i2c->read() << 8);

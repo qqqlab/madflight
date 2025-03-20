@@ -11,7 +11,7 @@
 
 # INA228
 
-Arduino library for the INA228 power sensor.
+Arduino library for the INA228 power gizmo.
 
 
 ## Description
@@ -21,14 +21,14 @@ Arduino library for the INA228 power sensor.
 This library controls the INA228, a device that measures voltage,
 current, power, temperature and more.
 
-The INA228 sensor differs from the better known INA226.
+The INA228 gizmo differs from the better known INA226.
 Most important difference is that the INA228 has a 20 bit ADC.
 This should result in higher precision however this is expected to only
 be visible with stable loads and low noise.
 
 Another important difference is that the INA228 works up to 85 Volts,
 which is more than twice the 36 volt of the INA226.
-The INA228 has a build in temperature sensor (±1°C) to be used for
+The INA228 has a build in temperature gizmo (±1°C) to be used for
 monitoring and temperature compensation.
 
 Finally the INA228 has an **energy** and **charge** register.
@@ -76,7 +76,7 @@ Both are verified to work but not the full range. (See #10)
 
 ### Calibrating
 
-Note the power and the current are not meaningful without calibrating the sensor.
+Note the power and the current are not meaningful without calibrating the gizmo.
 Also the values are not meaningful if there is no shunt connected.
 
 
@@ -154,7 +154,7 @@ _Tested_
 
 ### Address
 
-The sensor can have 16 different I2C addresses,
+The gizmo can have 16 different I2C addresses,
 which depends on how the A0 and A1 address lines
 are connected to the SCL, SDA, GND and VCC pins.
 
@@ -308,7 +308,7 @@ The accuracy of **getCharge()** is 1.0% full scale (maximum).
 
 Read datasheet for details, section 7.6.1.1, page 22
 
-- **void reset()** Resets the device, be aware that you need to calibrate the sensor
+- **void reset()** Resets the device, be aware that you need to calibrate the gizmo
 (shunt register) again ==> call **setMaxCurrentShunt()** and more.
 - **bool setAccumulation(uint8_t value)** value: 0 == normal operation,  
 1 = clear Energy and Charge registers.
@@ -392,7 +392,7 @@ Read datasheet for details, section 7.6.1.2, page 22++
 
 To elaborate, read datasheet for details.
 
-Note: **setMaxCurrentShunt()** must be called to calibrate your sensor.
+Note: **setMaxCurrentShunt()** must be called to calibrate your gizmo.
 Otherwise several functions will return zero or incorrect data.
 
 - **int setMaxCurrentShunt(float maxCurrent, float shunt)** The maxCurrent 
@@ -474,8 +474,8 @@ might be changed / extended in the future.
 
 ### Manufacturer and ID
 
-- **bool getManufacturer()** Returns 0x5449, can be used to check right sensor.
-- **uint16_t getDieID()** Returns 0x228, can be used to check right sensor.
+- **bool getManufacturer()** Returns 0x5449, can be used to check right gizmo.
+- **uint16_t getDieID()** Returns 0x228, can be used to check right gizmo.
 - **uint16_t getRevision()** Returns revision, probably 0x01.
 
 

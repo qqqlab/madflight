@@ -1,92 +1,72 @@
 #pragma once
 
-#include "GPS-uBlox/qqqlab_GPS_UBLOX.h"
-#include "GPS-uBlox/qqqlab_AutoBaud.h"
+#include "../hal/MF_Serial.h"
+#include "../cfg/cfg.h"
 
-class GPS_UBLOX : public AP_GPS_UBLOX {
-public:
-  //interface
-  void I_setBaud(int baud)                      override {gps_Serial->begin(baud);}
-  inline int I_availableForWrite()              override {return gps_Serial->availableForWrite();}
-  inline int I_available()                      override {return gps_Serial->available();}
-  inline int I_read(uint8_t* data, size_t len)  override {return gps_Serial->read(data, len);}
-  inline int I_write(uint8_t* data, size_t len) override {return gps_Serial->write(data, len);}
-  inline uint32_t I_millis()                    override {return ::millis();}
-  void I_print(const char *str)                 override {Serial.print("GPS:  "); Serial.print(str);}
-} gps_ublox;
+/// GPS fix codes.  These are kept aligned with MAVLink
+enum GPS_Status {
+    NO_GPS = 0,                  ///< No GPS connected/detected
+    NO_FIX = 1,                  ///< Receiving valid GPS messages but no lock
+    GPS_OK_FIX_2D = 2,           ///< Receiving valid messages and 2D lock
+    GPS_OK_FIX_3D = 3,           ///< Receiving valid messages and 3D lock
+    GPS_OK_FIX_3D_DGPS = 4,      ///< Receiving valid messages and 3D lock with differential improvements
+    GPS_OK_FIX_3D_RTK_FLOAT = 5, ///< Receiving valid messages and 3D RTK Float
+    GPS_OK_FIX_3D_RTK_FIXED = 6, ///< Receiving valid messages and 3D RTK Fixed
+};
 
-AP_GPS_UBLOX::GPS_State &gps = gps_ublox.state;
+struct GpsState {
+  public:
+    // all the following fields must all be filled by the backend driver
+    GPS_Status fix = NO_GPS;        // driver fix status
+    uint8_t sat = 0;                //  Number of visible satellites
+    uint16_t time_week = 0;         // GPS week number 
+    uint32_t time = 0;              // GPS time (milliseconds from start of GPS week)
+    int32_t lat = 0;                // last fix location in 1E-7 degrees
+    int32_t lon = 0;                // last fix location in 1E-7 degrees
+    int32_t alt = 0;                // last fix altitude msl in mm 
+    int32_t sog = 0;                // ground speed in mm/s
+    int32_t cog = 0;                // ground course in 1E-5 degrees
+    uint32_t gps_yaw_time_ms = 0;   // timestamp of last GPS yaw reading
+    uint16_t hdop = 9999;           // horizontal dilution of precision, scaled by a factor of 100 (155 means the HDOP value is 1.55)
+    uint16_t vdop = 9999;           // vertical dilution of precision, scaled by a factor of 100 (155 means the VDOP value is 1.55)
+    int32_t veln = 0;               // 3D velocity in mm/s, in NED format
+    int32_t vele = 0;               // 3D velocity in mm/s, in NED format
+    int32_t veld = 0;               // 3D velocity in mm/s, in NED format
+    int32_t vel_acc = 999999;       // 3D velocity RMS accuracy estimate in mm/s
+    int32_t hacc = 999999;          // horizontal RMS accuracy estimate in mm
+    int32_t vacc = 999999;          // vertical RMS accuracy estimate in mm
+    int32_t undulation = 0;         // height that WGS84 is above AMSL at the current location in mm
+    uint32_t last_gps_time_ms = 0;  // the system time we got the last GPS timestamp, milliseconds
+    bool have_veld = false;         // does GPS give vertical velocity? Set to true only once available.
+    bool have_vel_acc = false;      // does GPS give speed accuracy? Set to true only once available.
+    bool have_hacc = false;         // does GPS give horizontal position accuracy? Set to true only once available.
+    bool have_vacc = false;         // does GPS give vertical position accuracy? Set to true only once available.
+    bool have_undulation = false;   // do we have a value for the undulation
+};
 
-void gps_setup() {
-  Serial.println("GPS:  GPS_USE_UBLOX");
+struct GpsConfig {
+  public:
+    Cfg::gps_gizmo_enum gizmo = Cfg::gps_gizmo_enum::mf_NONE; //the gizmo to use
+    MF_Serial *ser_bus = nullptr; //Serial bus
+    int baud = 0; //baud rate. 0=autobaud
+};
 
-  //initial GPS baud rate to try
-  int baud = 230400;
+class GpsGizmo {
+  public:
+    virtual ~GpsGizmo() {}
+    virtual bool update() = 0; //returns true if new sample was taken
+};
 
-  //optional auto-baud to speed up gps connection
-  //baud = autobaud(HW_PIN_GPS_RX);
-  //Serial.printf("Initial GPS baud rate:%d\n", baud);
+class Gps : public GpsState {
+  public:
+    GpsConfig config;
 
-  //start GPS Serial
-  gps_Serial->begin(baud);
+    GpsGizmo *gizmo = nullptr;
 
-  //start GPS
-  gps_ublox.rate_ms = 100;   //optional - gps update rate in milliseconds (default 100)
-  gps_ublox.save_config = 2, //optional - save config  0:Do not save config, 1:Save config, 2:Save only when needed (default 2)
-  gps_ublox.gnss_mode = 0;   //optonial - GNSS system(s) to use  Bitmask: 1:GPS, 2:SBAS, 4:Galileo, 8:Beidou, 16:IMES, 32:QZSS, 64:GLONASS (default 0=leave as configured)
-}
+    int setup();      // Use config to setup gizmo, returns 0 on success, or error code
+    bool update();    // Returns true if state was updated
+    bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+};
 
-void gps_debug() {}
-
-bool gps_loop() {
-  //update GPS (call at least 10 times per second)
-  return gps_ublox.update();
-}
-
-
-//TODO - Enable NMEA
-
-/*
-#ifndef GPS_BAUD
-  #define GPS_BAUD 115200
-#endif
-
-#include "gps_nmea_pubx_parser.h"
-
-char gps_buffer[255]; //PUBX messages can be longer than gps standard 85 char
-GPS gps(gps_buffer, sizeof(gps_buffer));
-
-void gps_setup() {
-  gps_Serial.begin(GPS_BAUD); //start gps serial
-}
-
-void gps_debug() {
-  gps_Serial.begin(GPS_BAUD);
-  uint32_t gps_ts = 0;
-  while(1) {
-    if(millis() - gps_ts > 1000) {
-      gps_ts = millis();
-      Serial.println("Waiting for GPS data...");
-    }    
-    while(gps_Serial.available()) {
-      gps_ts = millis();
-      char c = gps_Serial.read();
-      Serial.print(c);
-      if (gps.process(c)) {
-        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", (int)gps.time, (int)gps.fix, (int)gps.lat, (int)gps.lon, (int)gps.alt, (int)gps.sep, (int)gps.sog, (int)gps.cog, (int)gps.sat, (int)gps.hacc, (int)gps.vacc, (int)gps.veld);
-      }
-    }
-  }
-}
-
-//returns true if position was updated
-bool gps_loop() {
-  bool updated = false;
-  while(gps_Serial.available()) {
-    if(gps.process((char)gps_Serial.read())) {
-      updated=true;
-    }
-  }
-  return updated;
-}
-*/
+//Global module instance
+extern Gps gps;
