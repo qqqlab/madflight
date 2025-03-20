@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MF_I2C.h"
-#include "MF_serial.h"
+#include "MF_Serial.h"
 #include <SPI.h> //TODO remove this
 
 #if defined ARDUINO_ARCH_ESP32

@@ -1,4 +1,9 @@
-#error "TODO: This file need to be converted to madflight version 2" 
+#warning "TODO: This file need to be converted to madflight version 2" 
+
+void setup() {}
+void loop() {}
+
+#if 0
 
 /*#########################################################################################################################
 
@@ -450,3 +455,5 @@ void out_Mixer() {
   //0.0 is zero throttle if connecting to ESC for conventional PWM, 1.0 is max throttle
   //0.5 is centered servo, 0.0 and 1.0 are servo at their extreme positions as set with SERVO_MIN and SERVO_MAX
 }
+
+#endif
