@@ -40,27 +40,27 @@ imu_align      CW90     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, 
 imu_i2c_adr    0        // use 0 for default i2c address
 
 // RCL - Remote Controller Link
-rcl_gizmo      SBUS     // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM, PWM
+rcl_gizmo      CRSF     // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM, PWM
 rcl_num_ch     8        // number of channels
 rcl_deadband   0        // center stick deadband
 
 // BAR - Barometer
-bar_gizmo      BMP280   // options: NONE, BMP390, BMP388, BMP280, MS5611
+bar_gizmo      NONE   // options: NONE, BMP390, BMP388, BMP280, MS5611
 bar_i2c_adr    0
 
 // MAG - Magnetometer
-mag_gizmo      QMC5883  // options: NONE, QMC5883, MS5611
+mag_gizmo      NONE  // options: NONE, QMC5883, MS5611
 mag_i2c_adr    0
 
 // BAT - Battery Monitor
-bat_gizmo      INA226   // options: NONE, ADC, INA226, INA228
+bat_gizmo      NONE   // options: NONE, ADC, INA226, INA228
 bat_i2c_adr    0
 
-// GPS
-gps_gizmo      UBLOX    // options: NONE, UBLOX
+// GPS -- TODO (crashes)
+gps_gizmo      NONE    // options: NONE, UBLOX
 gps_baud       0        // use 0 for auto baud
 
-// BBX - Black Box Data Logger
+// BBX - Black Box Data Logger -- TODO
 bbx_gizmo      NONE     // options: NONE, SDSPI, SDMMC
 
 )"" // End of MADFLIGHT_CONFIG

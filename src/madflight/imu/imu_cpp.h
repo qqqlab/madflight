@@ -309,14 +309,25 @@ void _imu_ll_interrupt_handler();
 
   void _imu_ll_interrupt_setup(int interrupt_pin) {
     if(!_imu_ll_task_handle) {
-      //xTaskCreatePinnedToCore(_imu_ll_task, "_imu_ll_task", 4096, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //ESP32 only
-      xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+      //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
         int callcore = hal_get_core_num();
         int othercore = (callcore+1)%2;
-        vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //Sets the core affinity mask for a task, i.e. the cores on which a task can run.
+        
+        //TODO move this to hal
+        #if defined ARDUINO_ARCH_ESP32
+          //note: probably don't what to use this because of single FPU context switching issues...
+          xTaskCreatePinnedToCore(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
+        #elif defined ARDUINO_ARCH_RP2040
+          xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+          vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //[RP2040 only] Sets the core affinity mask for a task, i.e. the cores on which a task can run.
+        #else
+          #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
+        #endif
+
         Serial.printf(MF_MOD ": IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
+        xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }

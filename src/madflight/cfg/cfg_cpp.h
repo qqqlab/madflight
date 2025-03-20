@@ -240,7 +240,7 @@ void CfgClass::printValue(uint16_t i) {
       if(getOptionString(i, param_int32_t[i], option)) {
         Serial.print(option);
       }else{
-        Serial.printf("%d", param_int32_t[i]); //option lookup failed, print numeric value
+        Serial.printf("%d", (int)param_int32_t[i]); //option lookup failed, print numeric value
       }
       break;
     }
@@ -248,7 +248,7 @@ void CfgClass::printValue(uint16_t i) {
       Serial.printf("%f", param_float[i]);
       break;
     case 'i': //integer
-      Serial.printf("%d", param_int32_t[i]);
+      Serial.printf("%d", (int)param_int32_t[i]);
       break;
     case 'p': //pinnumber/pinname
       hal_print_pin_name(param_int32_t[i]);
@@ -316,7 +316,7 @@ bool CfgClass::setParam(String namestr, String val) {
         param_int32_t[i] = enum_idx;
         return true;
       }else{
-        Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: \n", namestr.c_str(), val.c_str(), Cfg::param_list[i].options);
+        Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: %s\n", namestr.c_str(), val.c_str(), Cfg::param_list[i].options);
         return false;
       }
       break;
