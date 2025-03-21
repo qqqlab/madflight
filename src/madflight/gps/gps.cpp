@@ -13,6 +13,11 @@ Gps gps;
 int Gps::setup() {
   Cfg::printModule(MF_MOD);
 
+  if(!config.ser_bus && config.gizmo != Cfg::gps_gizmo_enum::mf_NONE) {
+    Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+    return -1002;
+  }
+
   //create gizmo
   delete gizmo;
   switch(config.gizmo) {

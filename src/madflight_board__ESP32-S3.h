@@ -99,8 +99,8 @@ pin_rcl_ppm    -1
 // BUSSES
 
 // Serial Busses
-rcl_ser_bus     1
-gps_ser_bus     2
+rcl_ser_bus     0
+gps_ser_bus     1
 rdr_ser_bus    -1
 
 // SPI Busses

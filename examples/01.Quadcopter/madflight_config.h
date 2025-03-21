@@ -25,6 +25,8 @@
 //
 //========================================================================================================================//
 
+
+
 #define MADFLIGHT_CONFIG R""(
 
 // IMU - Inertial Measurement Unit (acc/gyro)
@@ -45,22 +47,22 @@ rcl_num_ch     8        // number of channels
 rcl_deadband   0        // center stick deadband
 
 // BAR - Barometer
-bar_gizmo      NONE   // options: NONE, BMP390, BMP388, BMP280, MS5611
+bar_gizmo      NONE     // options: NONE, BMP390, BMP388, BMP280, MS5611
 bar_i2c_adr    0
 
 // MAG - Magnetometer
-mag_gizmo      NONE  // options: NONE, QMC5883, MS5611
+mag_gizmo      NONE     // options: NONE, QMC5883, MS5611
 mag_i2c_adr    0
 
 // BAT - Battery Monitor
-bat_gizmo      NONE   // options: NONE, ADC, INA226, INA228
+bat_gizmo      NONE     // options: NONE, ADC, INA226, INA228
 bat_i2c_adr    0
 
-// GPS -- TODO (crashes)
-gps_gizmo      NONE    // options: NONE, UBLOX
+// GPS
+gps_gizmo      NONE     // options: NONE, UBLOX
 gps_baud       0        // use 0 for auto baud
 
-// BBX - Black Box Data Logger -- TODO
+// BBX - Black Box Data Logger
 bbx_gizmo      NONE     // options: NONE, SDSPI, SDMMC
 
 )"" // End of MADFLIGHT_CONFIG

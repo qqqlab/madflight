@@ -16,8 +16,12 @@
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
-#define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
-#define IMU_FREERTOS_TASK_PRIORITY 24 //IMU Interrupt task priority, higher number is higher priority. Max priority on ESP32 is 31, but max allowed is 24
+#ifndef IMU_EXEC
+  #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
+#endif
+#ifndef IMU_FREERTOS_TASK_PRIORITY
+  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 1) //IMU Interrupt task priority, higher number is higher priority.
+#endif
 
 //======================================================================================================================//
 //                    FREERTOS

@@ -27,7 +27,7 @@ Rcl rcl;
 
 int Rcl::setup() {
   Cfg::printModule("rcl");
-    
+
   //clear vars
   throttle = 0;
   roll = 0;
@@ -35,6 +35,11 @@ int Rcl::setup() {
   yaw = 0;
   vspeed = 0;
   arm = false;
+
+  if(!config.ser_bus && config.gizmo != Cfg::rcl_gizmo_enum::mf_PPM && config.gizmo != Cfg::rcl_gizmo_enum::mf_NONE) {
+    Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+    return -1002;
+  }
 
   //create gizmo
   delete gizmo;
