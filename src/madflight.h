@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//#pragma once //don't use here, should give error if included twice
+//#pragma once //don't use here, we want to get an error if included twice
 
 //madflight config string
 #ifndef MADFLIGHT_BOARD
@@ -43,19 +43,19 @@ const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
 
 //include all "_cpp.h" modules which have compile time config options
 #define MF_ALLOW_INCLUDE_CCP_H
-#include "madflight/cfg/cfg_cpp.h"
-#include "madflight/hal/hal_cpp.h"
-#include "madflight/cli/cli_cpp.h"
+#include "madflight/cfg/cfg_cpp.h" //include this first, because cfg.xxx parameters are used by other "_cpp.h" modules
+#include "madflight/bbx/bbx_cpp.h" 
 #include "madflight/ahr/ahr_cpp.h"
 #include "madflight/alt/alt_cpp.h"
+#include "madflight/cli/cli_cpp.h"
+#include "madflight/hal/hal_cpp.h"
 #include "madflight/imu/imu_cpp.h"
-#include "madflight/rcl/rcl_cpp.h" //needs "cfg_cpp.h" included before this
+#include "madflight/rcl/rcl_cpp.h"
 #undef MF_ALLOW_INCLUDE_CCP_H
 
 //include all other modules without compile time config options
 #include "madflight/bar/bar.h"
 #include "madflight/bat/bat.h"
-#include "madflight/bbx/bbx.h"
 #include "madflight/gps/gps.h"
 #include "madflight/led/led.h"
 #include "madflight/mag/mag.h"

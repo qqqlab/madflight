@@ -1,10 +1,7 @@
-// bbx.h -  madflight black box data logger
-
 /*==========================================================================================
-
 MIT License
 
-Copyright (c) 2024-2025 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,54 +24,29 @@ SOFTWARE.
 
 #pragma once
 
-#define BBX_USE_NONE    0
-#define BBX_USE_SD      1 //SDCARD with 1-bit SPI interface
-#define BBX_USE_SDMMC   2 //SDCARD with 1-bit MMC interface (ESP32/ESP32-S3)
-#define BBX_USE_SDDEBUG 3 //print log to Serial
+class BlackBox {
+  public:
+    //loggers
+    virtual void log_bar() {}
+    virtual void log_bat() {}
+    virtual void log_gps() {}
+    virtual void log_imu() {}
+    virtual void log_mode(uint8_t fm, const char* name) {(void)fm;(void)name;}
+    virtual void log_msg(const char* msg) {(void)msg;}
+    virtual void log_parm(const char* name, float value, float default_value) {(void)name;(void)value;(void)default_value;}
+    virtual void log_pid() {}
+    virtual void log_att() {}
+    virtual void log_ahrs() {}
+    virtual void log_sys() {}
 
-#include "bbx_interface.h" //defines class BlackBox
+    //Blackbox Interface
+    virtual void setup() {} //setup blackbox
+    virtual void start() {} //start logging (create new file)
+    virtual void stop()  {} //stop logging (closes file)
+    virtual void erase() {} //erase all log files
+    virtual void dir()   {} //list log files
+    virtual void bench() {} //benchmark read/write to blackbox
+    virtual void info()  {} //blackbox info (memory size, free space, etc.)
+};
 
-#ifndef BBX_USE
-  #define BBX_USE BBX_USE_NONE
-#endif
-
-//check BBX_USE setting is supported and has required pins defined
-#if BBX_USE == BBX_USE_SD
-  #if !defined ARDUINO_ARCH_RP2040 && !defined ARDUINO_ARCH_ESP32
-    #warning BBX_USE_SD not available for this processor
-    #undef BBX_USE
-    #define BBX_USE BBX_USE_NONE
-  #endif
-  #if !defined HW_PIN_SPI2_SCLK || !defined HW_PIN_SPI2_MISO || !defined HW_PIN_SPI2_MOSI || !defined HW_PIN_BBX_CS
-    #warning BBX_USE_SD needs HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI, HW_PIN_BBX_CS defined
-    #undef BBX_USE
-    #define BBX_USE BBX_USE_NONE
-  #endif
-#elif BBX_USE == BBX_USE_SDMMC
-  #if !defined ARDUINO_ARCH_ESP32
-    #warning BBX_USE_SDMMC not available for this processor
-    #undef BBX_USE
-    #define BBX_USE BBX_USE_NONE
-  #endif
-  #if !defined HW_PIN_SDMMC_CLK || !defined HW_PIN_SDMMC_CMD || !defined HW_PIN_SDMMC_DATA
-    #warning BBX_USE_SDMMC needs HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA defined
-    #undef BBX_USE
-    #define BBX_USE BBX_USE_NONE
-  #endif
-#endif
-
-//=====================================================================================================================
-// No Logging
-//=====================================================================================================================
-#if BBX_USE == BBX_USE_NONE
-
-#include "bbx_none/bbx_none.h"
-
-//=====================================================================================================================
-// Logging to SDCARD (SPI or MMC interface)
-//=====================================================================================================================
-#else
-
-#include "bbx_sdcard/bbx_sdcard.h"
-
-#endif
+extern BlackBox &bbx;

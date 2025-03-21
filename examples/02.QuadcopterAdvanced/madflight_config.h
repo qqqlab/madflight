@@ -25,8 +25,6 @@
 //
 //========================================================================================================================//
 
-
-
 #define MADFLIGHT_CONFIG R""(
 
 // IMU - Inertial Measurement Unit (acc/gyro)
@@ -35,14 +33,14 @@
 imu_spi_bus    0        // connect IMU to SPI bus 0
 //imu_i2c_bus    1        // connect IMU to I2C bus 1
 
-//NOTE: the IMU sensor should be the ONLY sensor on the selected bus
+// IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 
 imu_gizmo      MPU6500  // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
 imu_align      CW90     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 imu_i2c_adr    0        // use 0 for default i2c address
 
 // RCL - Remote Controller Link
-rcl_gizmo      CRSF     // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM, PWM
+rcl_gizmo      NONE     // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM, PWM
 rcl_num_ch     8        // number of channels
 rcl_deadband   0        // center stick deadband
 

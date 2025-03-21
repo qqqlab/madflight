@@ -1,9 +1,7 @@
 /*==========================================================================================
-cli.h - madflight Command Line Interface 
-
 MIT License
 
-Copyright (c) 2024-2025 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+// Make sure this file is includes from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
 #endif
+//#pragma once //don't use here, we want to get an error if included twice
 
 //include all module interfaces
 #include "../ahr/ahr.h"
@@ -38,7 +38,7 @@ SOFTWARE.
 #include "../hal/hal.h"
 #include "../imu/imu.h"
 #include "../led/led.h"
-#include "../bbx/bbx_interface.h"
+#include "../bbx/bbx.h"
 #include "../mag/mag.h"
 #include "../out/out.h"
 #include "../pid/pid.h"
@@ -421,15 +421,14 @@ public:
 public:
 
   void print_i2cScan() {
-    for(int bus_i=0;bus_i<HAL_I2C_NUM;bus_i++) {
-      Serial.printf("I2C: Scanning i2c_bus:%d - ", bus_i);
-      if(!hal_i2c[bus_i]) {
-        Serial.printf("Bus not configured\n");
-      }else{
+    for(int bus_i=0;bus_i<4;bus_i++) {
+      MF_I2C *i2c = hal_get_i2c_bus(bus_i);
+      if(i2c) {
+        Serial.printf("I2C: Scanning i2c_bus:%d - ", bus_i);
         int count = 0;
         for (byte i = 8; i < 120; i++) {
-          hal_i2c[bus_i]->beginTransmission(i);          // Begin I2C transmission Address (i)
-          if (hal_i2c[bus_i]->endTransmission() == 0) {  // Receive 0 = success (ACK response) 
+          i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
+          if (i2c->endTransmission() == 0) {  // Receive 0 = success (ACK response) 
             Serial.printf("0x%02X(%d) ", i, i);
             count++;
           }

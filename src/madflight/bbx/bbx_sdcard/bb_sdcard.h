@@ -31,9 +31,9 @@ SOFTWARE.
 #include "../../alt/alt.h"
 #include "../../bar/bar.h"
 #include "../../bat/bat.h"
-#include "../../log/log_interface.h"
+#include "../../bbx/bbx.h"
 #include "../../cfg/cfg.h"
-//#include "../../cli/cli_interface.h"
+//#include "../../cli/cli.h"
 #include "../../gps/gps.h"
 #include "../../imu/imu.h"
 #include "../../led/led.h"
@@ -52,10 +52,10 @@ SOFTWARE.
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
 
-//#define FREERTOS_DEFAULT_STACK_SIZE - defined in hw_xxx.h
+//#define FREERTOS_DEFAULT_STACK_SIZE - defined in hal_xxx.h
 
 #define LOG_TYPE_LEN  64    // max number of message types
-#define QUEUE_LENGTH  100    // max number of messages in the queue
+#define QUEUE_LENGTH  100   // max number of messages in the queue
 #define MAX_MSG_LEN   89    // max message len is FMT with 89 (0x59) bytes
 
 #define HEAD_BYTE1  0xA3

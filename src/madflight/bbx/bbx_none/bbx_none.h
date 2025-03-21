@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../bbx_interface.h"
+#include "../bbx.h"
 
 class BlackBoxNone : public BlackBox {
 };
