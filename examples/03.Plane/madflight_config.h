@@ -49,7 +49,7 @@ bar_gizmo      NONE     // options: NONE, BMP390, BMP388, BMP280, MS5611
 bar_i2c_adr    0
 
 // MAG - Magnetometer
-mag_gizmo      NONE     // options: NONE, QMC5883, MS5611
+mag_gizmo      NONE     // options: NONE, QMC5883
 mag_i2c_adr    0
 
 // BAT - Battery Monitor
