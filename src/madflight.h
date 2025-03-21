@@ -100,6 +100,11 @@ void madflight_setup() {
   #endif
 
   cfg.begin(); 
+  #ifdef MF_CONFIG_CLEAR
+    cfg.clear();
+    cfg.writeToEeprom();
+    madflight_die("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
+  #endif
   cfg.loadFromEeprom(); //load parameters from EEPROM
   if(madflight_config) {
     #ifdef MF_DEBUG

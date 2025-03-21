@@ -182,3 +182,6 @@ imu_i2c_bus    -1
 
 //-- AHRS sensor fusion 
 #define AHR_USE AHR_USE_MAHONY // Select one: AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
+
+// Reset config eeprom to defaults (uncomment this, upload, then comment out again)
+//#define MF_CONFIG_CLEAR
