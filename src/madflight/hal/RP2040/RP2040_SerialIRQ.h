@@ -176,7 +176,7 @@ public:
     rbuf->begin(rxbuffer, rxbufsize);
   }
 
-  void begin(uint32_t baud) {
+  void begin(uint32_t baud, uint8_t bits = 8, char parity = 'N', uint8_t stop = 1, bool invert = false) {
     //deinit
     irq_set_enabled(uart_irq_id, false); //disable interrupt
     uart_set_irq_enables(uart_inst, false, false); // disable the UART interrupts
@@ -185,6 +185,13 @@ public:
     //set pins
     gpio_set_function(rpin, GPIO_FUNC_UART);
     gpio_set_function(tpin, GPIO_FUNC_UART);
+
+    //invert
+    gpio_set_inover(rpin, (invert ? 1 : 0));
+    gpio_set_outover(tpin, (invert ? 1 : 0));
+
+    //mode
+    uart_set_format(uart_inst, bits, stop, (parity=='E' ? UART_PARITY_EVEN : ( parity=='O' ? UART_PARITY_ODD : UART_PARITY_NONE)) );
 
     //properties
     baud_actual = uart_init(uart_inst, baud); //The call will return the actual baud rate selected

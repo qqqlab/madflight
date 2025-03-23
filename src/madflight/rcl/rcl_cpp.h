@@ -66,43 +66,61 @@ int Rcl::setup() {
   vspeed = 0;
   arm = false;
 
-  if(!config.ser_bus && config.gizmo != Cfg::rcl_gizmo_enum::mf_PPM && config.gizmo != Cfg::rcl_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
-    return -1002;
-  }
-
   //create gizmo
   delete gizmo;
   switch(config.gizmo) {
-    case Cfg::rcl_gizmo_enum::mf_NONE :
+
+    case Cfg::rcl_gizmo_enum::mf_NONE : {
       gizmo = nullptr;
-      break;      
-    case Cfg::rcl_gizmo_enum::mf_MAVLINK :
-      if(config.ser_bus) {
-        gizmo = new RclGizmoMavlink(config.ser_bus, config.baud, pwm);
-      }
       break;
-    case Cfg::rcl_gizmo_enum::mf_CRSF :
-      if(config.ser_bus) {
-        gizmo = new RclGizmoCrsf(config.ser_bus, config.baud, pwm);
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_MAVLINK : {
+      MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
+      if(!ser_bus) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        return -1002;
       }
+      gizmo = new RclGizmoMavlink(ser_bus, config.baud, pwm);
       break;
-    case Cfg::rcl_gizmo_enum::mf_SBUS :
-      if(config.ser_bus) {
-        gizmo = new RclGizmoSbus(config.ser_bus, pwm); //baud is fixed 100000
-        Serial.println("\n" MF_MOD ": ERROR SBUS not implemented yet. Please create an issue on github to get it implemented!\n");
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_CRSF : {
+      MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
+      if(!ser_bus) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        return -1002;
       }
+      gizmo = new RclGizmoCrsf(ser_bus, config.baud, pwm);
       break;
-    case Cfg::rcl_gizmo_enum::mf_DSM :
-      if(config.ser_bus) {
-        gizmo = new RclGizmoDsm(config.ser_bus, config.baud, pwm);
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_SBUS : {
+      gizmo = RclGizmoSbus::create(config.ser_bus_id, pwm, config.baud, true);
+      break;
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_SBUS_NOT_INV : { 
+      gizmo = RclGizmoSbus::create(config.ser_bus_id, pwm, config.baud, false);
+      break;
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_DSM : {
+      MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
+      if(!ser_bus) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        return -1002;
       }
+      gizmo = new RclGizmoDsm(ser_bus, config.baud, pwm);
       break;
-    case Cfg::rcl_gizmo_enum::mf_PPM :
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_PPM : {
       gizmo = new RclGizmoPpm(config.ppm_pin, pwm);
       break;
     }
-    
+  }
+
   //check gizmo
   if(!installed() && config.gizmo != Cfg::rcl_gizmo_enum::mf_NONE) {
     Serial.println(MF_MOD ": ERROR check pin/bus config");
@@ -110,7 +128,6 @@ int Rcl::setup() {
   }
 
   //setup stick/switch parameters from config values
-  Serial.printf(MF_MOD ": Channels - throttle:%d roll:%d pitch:%d yaw:%d armed:%d flightmode:%d\n", (int)cfg.rcl_thr_ch, (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
   _setupStick(THR, cfg.rcl_thr_ch, cfg.rcl_thr_pull, cfg.rcl_thr_mid, cfg.rcl_thr_push);
   _setupStick(ROL, cfg.rcl_rol_ch, cfg.rcl_rol_left, cfg.rcl_rol_mid, cfg.rcl_rol_right);
   _setupStick(PIT, cfg.rcl_pit_ch, cfg.rcl_pit_pull, cfg.rcl_pit_mid, cfg.rcl_pit_push);
@@ -139,6 +156,8 @@ int Rcl::setup() {
     }
   }
 
+  Serial.printf(MF_MOD ": Setup completed.  Channels: throttle:%d roll:%d pitch:%d yaw:%d armed:%d flightmode:%d\n"
+  , (int)cfg.rcl_thr_ch, (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
   return 0;
 }
 

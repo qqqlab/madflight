@@ -32,7 +32,7 @@ SOFTWARE.
 struct RclConfig {
   public:
     Cfg::rcl_gizmo_enum gizmo = Cfg::rcl_gizmo_enum::mf_NONE; //the gizmo to use
-    MF_Serial *ser_bus = nullptr; //Serial bus
+    int ser_bus_id = -1; //Serial bus id
     int baud = 0; //baud rate. 0=autobaud
     int ppm_pin = -1; //pin for PPM receiver
 };

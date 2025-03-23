@@ -95,6 +95,11 @@ int Imu::setup() {
   //disable interrupt handler
   _imu_ll_interrupt_enabled = false;
 
+  delete gizmo;
+
+  //exit if gizmo == NONE
+  if(config.gizmo == Cfg::imu_gizmo_enum::mf_NONE) return 0;
+
   //==============================================================
   //create gizmo
   //==============================================================
@@ -200,6 +205,9 @@ int Imu::setup() {
     Serial.println("\n" MF_MOD ": ERROR - Check pin/bus/bus_type config\n");
     return -1001;
   }
+
+  //exit if no gizmo installed
+  if(!gizmo) return 0;
 
   //exit if no interrupt pin specified
   if(config.pin_int < 0) return 0;

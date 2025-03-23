@@ -64,7 +64,7 @@ void hal_eeprom_begin();
 
 void hal_setup() 
 { 
-  //Serial BUS
+  //Serial BUS late binding
 
   //NOTE: default serial buffer size is 64, and is defined in HardwareSerial.h
   //SERIAL_RX_BUFFER_SIZE and SERIAL_TX_BUFFER_SIZE
@@ -73,71 +73,6 @@ void hal_setup()
   #if SERIAL_RX_BUFFER_SIZE<256 || SERIAL_TX_BUFFER_SIZE<256
     #warning "RCL/GPS might need larger buffers. Set SERIAL_RX_BUFFER_SIZE 256 and SERIAL_TX_BUFFER_SIZE 256 in HardwareSerial.h"
   #endif
-
-  if(cfg.pin_ser0_tx >= 0 && cfg.pin_ser0_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser0_rx, cfg.pin_ser0_tx);
-    hal_ser[0] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser0_inv >= 0) {
-      pinMode(cfg.pin_ser0_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser0_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser1_tx >= 0 && cfg.pin_ser1_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser1_rx, cfg.pin_ser1_tx);
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser1_inv >= 0) {
-      pinMode(cfg.pin_ser1_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser1_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser2_tx >= 0 && cfg.pin_ser2_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser2_rx, cfg.pin_ser2_tx);
-    hal_ser[2] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser2_inv >= 0) {
-      pinMode(cfg.pin_ser2_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser2_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser3_tx >= 0 && cfg.pin_ser3_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser3_rx, cfg.pin_ser3_tx);
-    hal_ser[3] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser3_inv >= 0) {
-      pinMode(cfg.pin_ser3_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser3_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser4_tx >= 0 && cfg.pin_ser4_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser4_rx, cfg.pin_ser4_tx);
-    hal_ser[4] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser4_inv >= 0) {
-      pinMode(cfg.pin_ser4_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser4_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser5_tx >= 0 && cfg.pin_ser5_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser5_rx, cfg.pin_ser5_tx);
-    hal_ser[5] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser5_inv >= 0) {
-      pinMode(cfg.pin_ser5_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser5_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser6_tx >= 0 && cfg.pin_ser6_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser6_rx, cfg.pin_ser6_tx);
-    hal_ser[6] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser6_inv >= 0) {
-      pinMode(cfg.pin_ser6_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser6_inv, LOW); //not inverted
-    }
-  }
-  if(cfg.pin_ser7_tx >= 0 && cfg.pin_ser7_rx >= 0) {
-    auto *ser =new HardwareSerial(cfg.pin_ser7_rx, cfg.pin_ser7_tx);
-    hal_ser[7] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-    if(cfg.pin_ser7_inv >= 0) {
-      pinMode(cfg.pin_ser7_inv, OUTPUT);
-      digitalWrite(cfg.pin_ser7_inv, LOW); //not inverted
-    }
-  }
 
   //I2C BUS
   if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
@@ -275,4 +210,103 @@ void hal_print_pin_name(int pinnum) {
   }else{
     Serial.printf("P%c%d", pinnum / 16 + 'A', pinnum % 16);
   }
+}
+
+
+MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  uint32_t config;
+
+  switch(mode) {
+    case MF_SerialMode::mf_SERIAL_8N1:
+      config = SERIAL_8N1;
+      break;
+    case MF_SerialMode::mf_SERIAL_8E2:
+      config = SERIAL_8E2;
+      break;
+    default:
+      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      return nullptr;
+      break;
+  }
+
+
+  int pin_tx = -1;
+  int pin_rx = -1;
+  int pin_inv = -1;
+  switch(bus_id) {
+    case 0: {
+      pin_tx = cfg.pin_ser0_tx;
+      pin_rx = cfg.pin_ser0_rx;
+      pin_inv = cfg.pin_ser0_inv;
+      break;
+    }
+    case 1: {
+      pin_tx = cfg.pin_ser1_tx;
+      pin_rx = cfg.pin_ser1_rx;
+      pin_inv = cfg.pin_ser1_inv;
+      break;
+    }
+    case 2: {
+      pin_tx = cfg.pin_ser2_tx;
+      pin_rx = cfg.pin_ser2_rx;
+      pin_inv = cfg.pin_ser2_inv;
+      break;
+    }
+    case 3: {
+      pin_tx = cfg.pin_ser3_tx;
+      pin_rx = cfg.pin_ser3_rx;
+      pin_inv = cfg.pin_ser3_inv;
+      break;
+    }
+    case 4: {
+      pin_tx = cfg.pin_ser4_tx;
+      pin_rx = cfg.pin_ser4_rx;
+      pin_inv = cfg.pin_ser4_inv;
+      break;
+    }
+    case 5: {
+      pin_tx = cfg.pin_ser5_tx;
+      pin_rx = cfg.pin_ser5_rx;
+      pin_inv = cfg.pin_ser5_inv;
+      break;
+    }
+    case 6: {
+      pin_tx = cfg.pin_ser6_tx;
+      pin_rx = cfg.pin_ser6_rx;
+      pin_inv = cfg.pin_ser6_inv;
+      break;
+    }
+    case 7: {
+      pin_tx = cfg.pin_ser7_tx;
+      pin_rx = cfg.pin_ser7_rx;
+      pin_inv = cfg.pin_ser7_inv;
+      break;
+    }
+    default:
+      return nullptr;
+  }
+
+  //exit if no pins defined
+  if(pin_tx < 0 && pin_rx < 0) return nullptr;
+
+  //create new MF_SerialPtrWrapper
+  if(!hal_ser[bus_id]) {
+    HardwareSerial *ser = new HardwareSerial(pin_rx, pin_tx);
+    hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+  }
+
+  //get ser from MF_SerialPtrWrapper, and configure it
+  HardwareSerial *ser = ((MF_SerialPtrWrapper<HardwareSerial*>*)hal_ser[bus_id])->_serial;
+  ser->begin(baud, config);
+  if(pin_inv >= 0) {
+    pinMode(pin_inv, OUTPUT);
+    digitalWrite(pin_inv, (invert ? HIGH : LOW) );
+  }
+  if(invert && pin_inv < 0) {
+    Serial.printf("\nERROR: Serial bus %d requested inverted, but does not have an inverter pin\n\n");
+  }
+
+  return hal_ser[bus_id];
 }

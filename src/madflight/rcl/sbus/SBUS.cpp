@@ -6,8 +6,7 @@ void SBUS::begin()
   // initialize parsing state
   _parserState = 0;
 
-  //_bus->begin(_sbusBaud, SERIAL_8E2); //TODO need SERIAL_8E2
-  _bus->begin(_sbusBaud);
+  //_bus->begin(_sbusBaud, SERIAL_8E2); //NOTE: bus needs to be setup by the caller before calling SBUS::begin()
 }
 
 /* read the SBUS data */
@@ -51,11 +50,11 @@ bool SBUS::read(uint16_t* channels, bool* failsafe, bool* lostFrame)
           *failsafe = false;
       }
     }
-    // return true on receiving a full packet
-    return true;
+      // return true on receiving a full packet
+      return true;
     } else {
-    // return false if a full packet is not received
-    return false;
+      // return false if a full packet is not received
+      return false;
   }
 }
 

@@ -226,7 +226,7 @@ SOFTWARE.
   MF_PARAM( rdr_baud,          0, int32_t, 'i') \
 \
   /*RCL - Remote Control Link*/ \
-  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_DSM,mf_PPM) \
+  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM) \
   MF_PARAM( rcl_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rcl_baud,          0, int32_t, 'i') \
   MF_PARAM( rcl_num_ch,        8, int32_t, 'i') /*max 20*/ \

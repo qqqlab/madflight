@@ -2,6 +2,11 @@
 
 #include <stdint.h>
 
+enum class MF_SerialMode {
+  mf_SERIAL_8N1, 
+  mf_SERIAL_8E2, //for SBUS
+};
+
 // Serial Interface
 class MF_Serial {
   public:
@@ -21,9 +26,8 @@ class MF_Serial {
 // Wrapper around an arduino HardwareSerial-like pointer T
 template<class T>
 class MF_SerialPtrWrapper : public MF_Serial {
-  protected:
-    T _serial;
   public:
+    T _serial;
     MF_SerialPtrWrapper(T serial) { _serial = serial; }
     void begin(int baud)             override { _serial->begin(baud); }
     int available()                  override { return _serial->available(); }
@@ -94,6 +98,8 @@ https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/HardwareSeria
 Buffer size set by defines
 
 https://github.com/stm32duino/Arduino_Core_STM32/blob/main/cores/arduino/HardwareSerial.h
+
+class HardwareSerial : public Stream {
     void begin(unsigned long baud)
     virtual int available(void);
     int availableForWrite(void);

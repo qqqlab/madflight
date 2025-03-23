@@ -133,21 +133,30 @@ void cli_print_imu_Rate() {
   uint32_t now = micros();
   uint32_t dt = now - ts_last;
   ts_last = now;
-  //Serial.printf("imu%%:%d\t", (int)(100 * (imu.stat_runtime_max - imu.stat_latency) / imu.getSamplePeriod()));
-  Serial.printf("samp_hz:%d\t", (int)(1000000/imu.getSamplePeriod()));
+
+  int hz = 0;
+  if(imu.getSamplePeriod() > 0) hz = 1000000 / imu.getSamplePeriod();
+  Serial.printf("samp_hz:%d\t", hz);
+
+  if(dt == 0) dt = 1;
   Serial.printf("intr_hz:%.0f\t", (float)delta_int/(dt*1e-6));
   Serial.printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
-  int miss = (100 - (100 * delta_upd) / delta_int);
+
+  int miss = 0;
+  if(delta_int > 0) miss = (100 - (100 * delta_upd) / delta_int);
   Serial.printf("miss%%:%d\t", (miss<0?0:miss));
-  //Serial.printf("stat_cnt:%d\t", (int)(imu.stat_cnt));
-  Serial.printf("latency_us:%d\t", (int)(imu.stat_latency/imu.stat_cnt));
-  Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime/imu.stat_cnt));
-  Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime)/imu.stat_cnt));
-  Serial.printf("rt_us:%d\t", (int)(imu.stat_runtime/imu.stat_cnt));
+
+  int stat_cnt = 1;
+  if(imu.stat_cnt > 0) stat_cnt = imu.stat_cnt;
+  //Serial.printf("stat_cnt:%d\t", (int)(stat_cnt));
+  Serial.printf("latency_us:%d\t", (int)(imu.stat_latency / stat_cnt));
+  Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime / stat_cnt));
+  Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime) / stat_cnt));
+  Serial.printf("rt_us:%d\t", (int)(imu.stat_runtime / stat_cnt));
   Serial.printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
   Serial.printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
   Serial.printf("upd_cnt:%d\t", (int)imu.update_cnt);
-  Serial.printf("miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
+  Serial.printf("miss_cnt:%d\t", (int)(imu.interrupt_cnt - imu.update_cnt));
   imu.statReset();
 }
 

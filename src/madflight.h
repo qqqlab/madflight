@@ -107,15 +107,22 @@ void madflight_setup() {
   #endif
   cfg.loadFromEeprom(); //load parameters from EEPROM
   if(madflight_config) {
-    #ifdef MF_DEBUG
-      Serial.println(madflight_config);
-    #endif
     if(cfg.load_madflight_param(madflight_config)) {
       Serial.println("CFG: madflight_config - Loaded");
     }else{
       Serial.println("CFG: madflight_config - Skipped (was aready stored in eeprom)");
     }
   }
+
+  #ifdef MF_DEBUG
+    if(madflight_config) {
+      Serial.println("\nDEBUG: madflight_config ==============\n");
+      Serial.println(madflight_config);
+    }
+    Serial.println("\nDEBUG: cfg.list() ================\n");
+    cfg.list();
+  #endif
+
   cfg.printPins();
 
   // LED - Setup LED
@@ -131,7 +138,7 @@ void madflight_setup() {
   cli.print_i2cScan(); //print i2c scan
 
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use
-  rcl.config.ser_bus = hal_get_ser_bus(cfg.rcl_ser_bus); //serial bus
+  rcl.config.ser_bus_id = cfg.rcl_ser_bus; //serial bus id
   rcl.config.baud = cfg.rcl_baud; //baud rate
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.setup(); //Initialize radio communication.

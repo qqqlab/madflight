@@ -28,6 +28,8 @@ SOFTWARE.
 #endif
 //#pragma once //don't use here, we want to get an error if included twice
 
+#include "hal.h"
+
 #if defined ARDUINO_ARCH_ESP32
   #include "ESP32/hal_ESP32_cpp.h"
 #elif defined ARDUINO_ARCH_RP2040
@@ -44,13 +46,6 @@ MF_I2C* hal_get_i2c_bus(int bus_id) {
   MF_I2C *i2c_bus = hal_i2c[bus_id];
   if(!i2c_bus) return nullptr;
   return i2c_bus;
-}
-
-MF_Serial* hal_get_ser_bus(int bus_id) {
-  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
-  MF_Serial *ser_bus = hal_ser[bus_id];
-  if(!ser_bus) return nullptr;
-  return ser_bus;
 }
 
 SPIClass* hal_get_spi_bus(int bus_id) {

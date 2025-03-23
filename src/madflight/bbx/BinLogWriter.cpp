@@ -34,8 +34,9 @@ namespace BinLogWriter {
   };
 
   QueueHandle_t queue = nullptr;
-  StaticQueue_t xStaticQueue = {};
-  uint8_t ucQueueStorageArea[QUEUE_LENGTH * sizeof(msg_t)] = {};
+
+  //StaticQueue_t xStaticQueue = {};
+  //uint8_t ucQueueStorageArea[QUEUE_LENGTH * sizeof(msg_t)] = {};
 
   TaskHandle_t xHandle;
 
@@ -60,7 +61,9 @@ namespace BinLogWriter {
   }
 
   void setup() {
-    queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue);
+    //queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue); //not available for STM32
+    queue = xQueueCreate(QUEUE_LENGTH, sizeof(msg_t));
+
     if(xTaskCreate(bbx_task, "BBX", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       Serial.println("BBX: Task creation failed");
     }
@@ -273,6 +276,7 @@ namespace BinLogWriter {
   }
 
   static void bbx_task(void *pvParameters) {
+    (void)pvParameters;
     msg_t msg;
     for(;;) {
       if( xQueueReceive(queue, &msg, portMAX_DELAY) == pdPASS ) {

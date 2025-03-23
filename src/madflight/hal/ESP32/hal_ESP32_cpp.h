@@ -77,21 +77,7 @@ void startLoop1Task();
 
 void hal_setup()
 {
-  //Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
-  if(cfg.pin_ser0_tx >= 0 && cfg.pin_ser0_rx >= 0) {
-    auto *ser = &Serial1;
-    ser->setPins(cfg.pin_ser0_rx, cfg.pin_ser0_tx);
-    ser->setTxBufferSize(256);
-    ser->setRxBufferSize(256);
-    hal_ser[0] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-  }
-  if(cfg.pin_ser1_tx >= 0 && cfg.pin_ser1_rx >= 0) {
-    auto *ser = &Serial2;
-    ser->setPins(cfg.pin_ser1_rx, cfg.pin_ser1_tx);
-    ser->setTxBufferSize(256);
-    ser->setRxBufferSize(256);
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-  }
+  //Serial BUS uses late binding (i.e. gets created when used)
 
   //I2C BUS (&Wire, &Wire1)
   if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
@@ -203,4 +189,83 @@ int hal_get_pin_number(String val) {
 
 void hal_print_pin_name(int pinnum) {
   Serial.printf("%d",pinnum);
+}
+
+
+//create/get Serial bus (late binding)
+//Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
+
+/*
+
+  https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/HardwareSerial.h
+
+  // When pins are changed, it will detach the previous ones
+  // if pin is negative, it won't be set/changed and will be kept as is
+  // timeout_ms is used in baudrate detection (ESP32, ESP32S2 only)
+  // invert will invert RX/TX polarity
+  // rxfifo_full_thrhd if the UART Flow Control Threshold in the UART FIFO (max 127)
+  void begin(
+    unsigned long baud, uint32_t config = SERIAL_8N1, int8_t rxPin = -1, int8_t txPin = -1, bool invert = false, unsigned long timeout_ms = 20000UL,
+    uint8_t rxfifo_full_thrhd = 120
+  );
+*/
+
+MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  uint32_t config;
+
+  switch(mode) {
+    case MF_SerialMode::mf_SERIAL_8N1:
+      config = SERIAL_8N1;
+      break;
+    case MF_SerialMode::mf_SERIAL_8E2:
+      config = SERIAL_8E2;
+      break;
+    default:
+      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      return nullptr;
+      break;
+  }
+
+  int pin_tx = -1;
+  int pin_rx = -1;
+  HardwareSerial *ser;
+  switch(bus_id) {
+    case 0: {
+      pin_tx = cfg.pin_ser0_tx;
+      pin_rx = cfg.pin_ser0_rx;
+      ser = &Serial1;
+      break;
+    }
+    case 1: {
+      pin_tx = cfg.pin_ser1_tx;
+      pin_rx = cfg.pin_ser1_rx;
+      ser = &Serial2;
+      break;
+    }
+    default:
+      return nullptr;
+  }
+
+  //exit if no pins defined
+  if(pin_tx < 0 && pin_rx < 0) return nullptr;
+
+  //create new MF_SerialPtrWrapper
+  if(!hal_ser[bus_id]) {
+    hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+  }
+
+  //get ser from MF_SerialPtrWrapper, and (re)configure it
+  HardwareSerial *ser = ((MF_SerialPtrWrapper<HardwareSerial*>*)hal_ser[bus_id])->_serial;
+  ser->end();
+  ser->setTxBufferSize(256);
+  ser->setRxBufferSize(256);
+  ser->begin(baud, config, pin_rx, pin_tx, invert);
+  break;
+
+
+
+
+  return hal_ser[bus_id];
 }

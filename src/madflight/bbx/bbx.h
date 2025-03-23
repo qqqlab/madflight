@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../cfg/cfg.h"
-#include "Binlog.h"
+#include "BinLog.h"
 #include <SPI.h>
 
 struct BbxConfig {

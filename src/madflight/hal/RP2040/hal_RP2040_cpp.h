@@ -55,25 +55,7 @@ uint8_t ser1_txbuf[256];
 uint8_t ser1_rxbuf[256];
 
 void hal_setup() {
-  //Serial BUS
-  if(cfg.pin_ser0_tx >= 0 && cfg.pin_ser0_rx >= 0) {
-    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *ser = new SerialIRQ(uart0, cfg.pin_ser0_tx, ser0_txbuf, sizeof(ser0_txbuf), cfg.pin_ser0_rx, ser0_rxbuf, sizeof(ser0_rxbuf));
-    //auto *ser = new SerialIRQ(uart0, cfg.pin_ser0_tx, pin_ser0_rx, 256, 256); //TODO
-    //auto *ser = new SerialDMA(uart0, cfg.pin_ser0_tx, pin_ser0_rx, 256, 256); //TODO
-    //auto *ser = new SerialUART(uart0, cfg.pin_ser0_tx, pin_ser0_rx); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *ser = new SerialPIO(cfg.pin_ser0_tx, pin_ser0_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
-    hal_ser[0] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-  }
-  if(cfg.pin_ser1_tx >= 0 && cfg.pin_ser1_rx >= 0) {
-    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
-    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-  }
+  //Serial BUS on demand
 
   //I2C BUS
   if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
@@ -181,3 +163,131 @@ int hal_get_pin_number(String val) {
 void hal_print_pin_name(int pinnum) {
   Serial.printf("%d",pinnum);
 }
+
+
+//create/get Serial bus (late binding)
+//Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
+
+MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  uint16_t config;
+
+  switch(mode) {
+    case MF_SerialMode::mf_SERIAL_8N1:
+      config=SERIAL_8N1;
+      break;
+    case MF_SerialMode::mf_SERIAL_8E2:
+      config=SERIAL_8E2;
+      break;
+    default:
+      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      return nullptr;
+      break;
+  }
+
+/*
+    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
+    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
+    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
+    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+*/
+
+
+  //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
+  int pin_tx = -1;
+  int pin_rx = -1;
+  uart_inst_t *uart;
+  switch(bus_id) {
+    case 0:
+      pin_tx = cfg.pin_ser0_tx;
+      pin_rx = cfg.pin_ser0_rx;
+      uart = uart0;
+      break;
+    case 1:
+      pin_tx = cfg.pin_ser1_tx;
+      pin_rx = cfg.pin_ser1_rx;
+      uart = uart1;
+      break;
+    default:
+      return nullptr;
+  }
+
+  //exit if no pins defined
+  if(pin_tx < 0 && pin_rx < 0) return nullptr;
+
+  //create new MF_SerialPtrWrapper
+  if(!hal_ser[bus_id]) {
+    SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
+    hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+  }
+
+  //get ser from MF_SerialPtrWrapper, and configure it
+  SerialUART *ser = ((MF_SerialPtrWrapper<SerialUART*>*)hal_ser[bus_id])->_serial;
+  ser->end();
+  ser->setRX(pin_rx);
+  ser->setTX(pin_tx);
+  ser->setFIFOSize(256);
+  ser->setInvertTX(invert);
+  ser->setInvertRX(invert);
+  ser->begin(baud, config);
+
+  return hal_ser[bus_id];
+}
+
+/*
+
+MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  uint8_t bits = 8;
+  char parity;
+  uint8_t stop;
+  uint16_t config;
+
+  switch(mode) {
+    case MF_SerialMode::mf_SERIAL_8N1:
+      bits = 8; parity='N'; stop=1; config=SERIAL_8N1;
+      break;
+    case MF_SerialMode::mf_SERIAL_8E2:
+      bits = 8; parity='E'; stop=2; config=SERIAL_8E2;
+      break;
+    default:
+      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      return nullptr;
+      break;
+  }
+
+  //using SerialIRQ - does not work correctly for sbus ...
+  switch(bus_id) {
+    case 0: {
+      int pin_tx = cfg.pin_ser0_tx;
+      int pin_rx = cfg.pin_ser0_rx;
+      auto *ser = new SerialIRQ(uart0, pin_tx, ser0_txbuf, sizeof(ser0_txbuf), pin_rx, ser0_rxbuf, sizeof(ser0_rxbuf));
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        ser->begin(baud, bits, parity, stop, invert);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+      }
+      break;
+    }
+    case 1: {
+      int pin_tx = cfg.pin_ser1_tx;
+      int pin_rx = cfg.pin_ser1_rx;
+      auto *ser = new SerialIRQ(uart1, pin_tx, ser1_txbuf, sizeof(ser1_txbuf), pin_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        ser->begin(baud, bits, parity, stop, invert);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+    default:
+      return nullptr;
+  }
+*/
+
+
