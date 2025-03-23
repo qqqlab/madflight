@@ -1,3 +1,5 @@
+#include "MF_SerialUartTask_RP2040.h"
+
 
 //Arduino version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR 
@@ -165,9 +167,12 @@ void hal_print_pin_name(int pinnum) {
 }
 
 
+
+//SerialUartTask version
+#include "MF_SerialUartTask_RP2040.h"
+
 //create/get Serial bus (late binding)
 //Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
-
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
 
@@ -186,16 +191,73 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       break;
   }
 
-/*
-    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
-    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-*/
+  //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
+  int pin_tx = -1;
+  int pin_rx = -1;
+  uart_inst_t *uart;
+  char taskname[16];
+  switch(bus_id) {
+    case 0:
+      pin_tx = cfg.pin_ser0_tx;
+      pin_rx = cfg.pin_ser0_rx;
+      uart = uart0;
+      strcpy(taskname, "uart0");
+      break;
+    case 1:
+      pin_tx = cfg.pin_ser1_tx;
+      pin_rx = cfg.pin_ser1_rx;
+      uart = uart1;
+      strcpy(taskname, "uart1");
+      break;
+    default:
+      return nullptr;
+  }
 
+  //exit if no pins defined
+  if(pin_tx < 0 && pin_rx < 0) return nullptr;
+
+  //create new MF_Serial
+  if(!hal_ser[bus_id]) {
+    SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
+    hal_ser[bus_id] = new MF_SerialUartTask(ser, taskname);
+  }
+
+  //get ser from MF_SerialPtrWrapper, and configure it
+  SerialUART *ser = ((MF_SerialUartTask*)hal_ser[bus_id])->_serial;
+  ser->end();
+  ser->setRX(pin_rx);
+  ser->setTX(pin_tx);
+  ser->setFIFOSize(256);
+  ser->setInvertTX(invert);
+  ser->setInvertRX(invert);
+  ser->begin(baud, config);
+
+  return hal_ser[bus_id];
+}
+
+
+
+/* //SerialUART version - works
+
+//create/get Serial bus (late binding)
+//Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
+MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  uint16_t config;
+
+  switch(mode) {
+    case MF_SerialMode::mf_SERIAL_8N1:
+      config=SERIAL_8N1;
+      break;
+    case MF_SerialMode::mf_SERIAL_8E2:
+      config=SERIAL_8E2;
+      break;
+    default:
+      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      return nullptr;
+      break;
+  }
 
   //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
   int pin_tx = -1;
@@ -237,6 +299,23 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 
   return hal_ser[bus_id];
 }
+
+
+*/
+
+
+
+
+
+/*
+    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
+    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
+    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
+    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+*/
 
 /*
 
