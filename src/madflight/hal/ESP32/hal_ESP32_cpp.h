@@ -257,7 +257,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   }
 
   //get ser from MF_SerialPtrWrapper, and (re)configure it
-  *ser = ((MF_SerialPtrWrapper<HardwareSerial*>*)hal_ser[bus_id])->_serial;
+  //not needed, ser already pointing to Serial1 or Serial2 ... ser = ((MF_SerialPtrWrapper<HardwareSerial*>*)hal_ser[bus_id])->_serial;
   ser->end();
   ser->setTxBufferSize(256);
   ser->setRxBufferSize(256);
