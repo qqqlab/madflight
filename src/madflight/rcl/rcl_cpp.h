@@ -24,7 +24,7 @@ SOFTWARE.
 
 //needs to be header because of "cfg." usage in this file
 
-// Make sure this file is includes from madflight.h and not from somewhere else
+// Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
 #endif

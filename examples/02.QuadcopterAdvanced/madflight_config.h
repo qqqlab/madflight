@@ -180,6 +180,8 @@ imu_i2c_bus    -1
 //                                               COMPILER OPTIONS                                                         //
 //========================================================================================================================//
 
+#define BBX_USE BBX_USE_SDSPI
+
 //-- AHRS sensor fusion 
 #define AHR_USE AHR_USE_MAHONY // Select one: AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
 

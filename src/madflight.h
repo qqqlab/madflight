@@ -28,7 +28,7 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if included twice
 
-//madflight config string
+// madflight config string
 #ifndef MADFLIGHT_BOARD
   #define MADFLIGHT_BOARD ""
 #endif
@@ -37,14 +37,13 @@ SOFTWARE.
 #endif
 const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
 
-//bus abstraction
+// bus abstraction
 #include "madflight/hal/MF_Serial.h"
 #include "madflight/hal/MF_I2C.h"
 
-//include all "_cpp.h" modules which have compile time config options
+// include all "_cpp.h" modules which have compile time config options
 #define MF_ALLOW_INCLUDE_CCP_H
-#include "madflight/cfg/cfg_cpp.h" //include this first, because cfg.xxx parameters are used by other "_cpp.h" modules
-#include "madflight/bbx/bbx_cpp.h" 
+#include "madflight/cfg/cfg_cpp.h" //include this first, because cfg.xxx parameters are used by other "_cpp.h" modules 
 #include "madflight/ahr/ahr_cpp.h"
 #include "madflight/alt/alt_cpp.h"
 #include "madflight/cli/cli_cpp.h"
@@ -53,21 +52,21 @@ const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
 #include "madflight/rcl/rcl_cpp.h"
 #undef MF_ALLOW_INCLUDE_CCP_H
 
-//include all other modules without compile time config options
+// include all other modules without compile time config options
 #include "madflight/bar/bar.h"
 #include "madflight/bat/bat.h"
+#include "madflight/bbx/bbx.h"
 #include "madflight/gps/gps.h"
 #include "madflight/led/led.h"
 #include "madflight/mag/mag.h"
 #include "madflight/out/out.h"
 #include "madflight/pid/pid.h"
-
 #include "madflight/veh/veh.h"
 
-//toolbox
+// toolbox
 #include "madflight/tbx/RuntimeTrace.h"
 
-//prototypes
+// prototypes
 void madflight_die(String msg);
 void madflight_warn(String msg);
 void madflight_warn_or_die(String msg, bool die);
@@ -79,7 +78,7 @@ void madflight_warn_or_die(String msg, bool die);
 void madflight_setup() {
   Serial.begin(115200); //start console serial
 
-  //6 second startup delay
+  // 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
     #ifndef MF_DEBUG 
@@ -99,6 +98,7 @@ void madflight_setup() {
     Serial.println("Processor: " HAL_MCU);
   #endif
 
+  // CFG - Configuration parameters
   cfg.begin(); 
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
@@ -118,14 +118,14 @@ void madflight_setup() {
   }
   cfg.printPins();
 
-  //setup LED
+  // LED - Setup LED
   led.config.pin = cfg.pin_led;
   led.config.on_value = cfg.led_on;
   led.setup();
   led.on(); //turn on to signal startup
   led.enabled = false; //do not change state until setup compled
 
-  //hardware abstraction layer setup: serial, spi, i2c (see hal.h)
+  // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
 
   cli.print_i2cScan(); //print i2c scan
@@ -136,21 +136,21 @@ void madflight_setup() {
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.setup(); //Initialize radio communication.
 
-  //Barometer
+  // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
   bar.config.i2c_bus = hal_get_i2c_bus(cfg.bar_i2c_bus); //i2c bus
   bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address  
   bar.config.sampleRate = 100; //sample rate [Hz]
   bar.setup();
 
-  //External Magnetometer
+  // MAG - External Magnetometer
   mag.config.gizmo = (Cfg::mag_gizmo_enum)cfg.mag_gizmo; //the gizmo to use
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
   mag.config.sampleRate = 100; //sample rate [Hz]
   mag.setup(); 
 
-  //Battery Monitor
+  // BAT - Battery Monitor
   bat.config.gizmo = (Cfg::bat_gizmo_enum)cfg.bat_gizmo; //the gizmo to use
   bat.config.i2c_bus = hal_get_i2c_bus(cfg.bat_i2c_bus); //i2c bus
   bat.config.i2c_adr = cfg.bat_i2c_adr; //i2c address. 0=default address
@@ -162,22 +162,28 @@ void madflight_setup() {
   bat.config.rshunt = cfg.bat_cal_i;
   bat.setup();
 
-  //GPS
+  // GPS
   gps.config.gizmo = (Cfg::gps_gizmo_enum)cfg.gps_gizmo; //the gizmo to use
   gps.config.ser_bus = hal_get_ser_bus(cfg.gps_ser_bus); //serial bus
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
 
-  //Black Box
+  // BBX - Black Box
+  bbx.config.gizmo = (Cfg::bbx_gizmo_enum)cfg.bbx_gizmo; //the gizmo to use
+  bbx.config.spi_bus = hal_get_spi_bus(cfg.bbx_spi_bus); //SPI bus
+  bbx.config.spi_cs = cfg.pin_bbx_cs; //SPI select pin
+  bbx.config.pin_mmc_dat = cfg.pin_mmc_dat;
+  bbx.config.pin_mmc_clk = cfg.pin_mmc_clk;
+  bbx.config.pin_mmc_cmd = cfg.pin_mmc_cmd;
   bbx.setup();
 
-  //Altitude Estimator
+  // ALT - Altitude Estimator
   alt.setup(bar.alt); 
   
-  //setup low pass filters for AHRS filters
+  // AHR - setup low pass filters for AHRS filters
   ahr.setup(cfg.imu_gyr_lp, cfg.imu_acc_lp, cfg.mag_lp);
 
-  //IMU
+  // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
   imu.config.gizmo = (Cfg::imu_gizmo_enum)cfg.imu_gizmo; //the gizmo to use
@@ -185,7 +191,7 @@ void madflight_setup() {
   imu.config.spi_cs = cfg.pin_imu_cs; //SPI select pin
   imu.config.i2c_bus = hal_get_i2c_bus(cfg.imu_i2c_bus); //I2C bus (only used if spi_bus==nullptr)
   imu.config.i2c_adr = cfg.imu_i2c_adr; //i2c address. 0=default address
-  //Some sensors need a couple of tries...
+  // Some sensors need a couple of tries...
   int tries = 10;
   while(true) {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
@@ -196,7 +202,7 @@ void madflight_setup() {
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_die("IMU install failed.");
   }
-  //start IMU update handler
+  // start IMU update handler
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
@@ -210,10 +216,10 @@ void madflight_setup() {
     #endif
   }
 
-  //CLI - command line interface
+  // CLI - Command Line Interface
   cli.begin();
 
-  //Enable LED, and switch it off signal end of startup.
+  // Enable LED, and switch it off signal end of startup.
   led.enabled = true; 
   led.off();
 }

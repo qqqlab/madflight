@@ -1,52 +1,20 @@
-/*==========================================================================================
-BBFS_SD_RP2040.h: madflight sdcard spi logging file system
+#ifdef ARDUINO_ARCH_RP2040
 
-MIT License
+#include "BbxGizmoSdspi_RP2040.h"
+#include <Arduino.h> //Serial
 
-Copyright (c) 2024 qqqlab - https://github.com/qqqlab
+  BbxGizmoSdspi::BbxGizmoSdspi(SPIClass *spi, int pin_cs) {
+    this->spi = spi;
+    this->pin_cs = pin_cs;
+  }
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-===========================================================================================*/
-
-
-#include "SPI.h"
-#include "SD.h"
-
-extern SPIClassRP2040 *bbx_spi;
-
-class BBFS_SD : public BBFS {
-private:
-  const char* BB_LOG_DIR_NAME = "/log";
-  bool setup_done = false;
-  uint8_t wbuf[512];
-  uint32_t wbuf_len = 0;
-  String filename;
-  File file = {};
-
-public:
   //setup the file system
-  void setup() override {
+  void BbxGizmoSdspi::setup() {
     Serial.println("BBX: SD");
     sd_setup();
   }
 
-  bool writeOpen() override {
+  bool BbxGizmoSdspi::writeOpen() {
     close();
 
     int attempt = 0;
@@ -69,8 +37,7 @@ public:
     return false;
   }
 
-private:
-  void _writeChar(uint8_t c) {
+  void BbxGizmoSdspi::_writeChar(uint8_t c) {
     if(!file) return;
     if(wbuf_len < sizeof(wbuf)) {
      wbuf[wbuf_len++] = c;
@@ -83,14 +50,13 @@ private:
     }
   }
 
-public:
-  void write(const uint8_t *buf, const uint8_t len) override {
+  void BbxGizmoSdspi::write(const uint8_t *buf, const uint8_t len) {
     for(int i=0;i<len;i++) {
       _writeChar(buf[i]);
     }
   }
 
-  void close() override {
+  void BbxGizmoSdspi::close() {
     if(file) {
       if(wbuf_len>0) {
         file.write(wbuf, wbuf_len);
@@ -104,13 +70,13 @@ public:
     }
   }
 
-  void erase() override {
+  void BbxGizmoSdspi::erase() {
     if(sd_setup()) {
       sd_deleteFilesFromDir(BB_LOG_DIR_NAME);
     }
   }
 
-  void dir() override {
+  void BbxGizmoSdspi::dir() {
     int attempt = 0;
     while(++attempt<2) {
       if(sd_setup()) {
@@ -120,7 +86,7 @@ public:
     }
   }
 
-  void bench() override {
+  void BbxGizmoSdspi::bench() {
       const char* path = "madfli.ght";
       uint8_t *buf;
       size_t len = 0;
@@ -183,7 +149,7 @@ public:
       free(buf);
   }
 
-  void info() override {
+  void BbxGizmoSdspi::info() {
     // 0 - SD V1, 1 - SD V2, or 3 - SDHC/SDXC
     // print the type of card
     Serial.println();
@@ -248,9 +214,8 @@ public:
     sd_listDir("/");
   }
 
-private:
 
-  bool sd_setup() {
+  bool BbxGizmoSdspi::sd_setup() {
     if(setup_done) return true;
     
     SD.end(); //force begin() to re-initialize SD
@@ -282,8 +247,8 @@ private:
     }
 */
 
-    if (!SD.begin(HW_PIN_LOG_CS, *bbx_spi)) {
-      Serial.println("BBX:   Card Mount Failed");
+    if (!SD.begin(pin_cs, *spi)) {
+      Serial.println("BBX: Card Mount Failed");
       setup_done = false;
       return setup_done;
     }
@@ -292,7 +257,7 @@ private:
     return setup_done;
   }
 
-  bool sd_listDir(const char * dirname, uint8_t levels=0){
+  bool BbxGizmoSdspi::sd_listDir(const char * dirname, uint8_t levels) {
       Serial.printf("Listing directory: %s\n", dirname);
 
       File root = SD.open(dirname);
@@ -320,7 +285,7 @@ private:
       return true;
   }
 
-  void sd_deleteFilesFromDir(const char * dirname){
+  void BbxGizmoSdspi::sd_deleteFilesFromDir(const char * dirname){
       File root = SD.open(dirname);
       if(!root) return;
       if(!root.isDirectory()) return;
@@ -334,7 +299,7 @@ private:
       }
   }
 
-  void sd_logOpen(const char * dirname){
+  void BbxGizmoSdspi::sd_logOpen(const char * dirname){
       File root = SD.open(dirname);
       if(!root){
          if(!SD.mkdir(dirname)){
@@ -366,4 +331,5 @@ private:
       Serial.println(filename);
       file = SD.open(filename, FILE_WRITE);
   }
-};
+
+#endif //#ifdef ARDUINO_ARCH_RP2040

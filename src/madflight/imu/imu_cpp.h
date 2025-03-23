@@ -45,7 +45,7 @@ Limitations:
 - only via SPI + interupt; I2C can be added using the same driver lib
 ========================================================================================================================*/
 
-// Make sure this file is includes from madflight.h and not from somewhere else
+// Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
 #endif
@@ -343,9 +343,9 @@ void _imu_ll_interrupt_handler();
         //TODO move this to hal
         #if defined ARDUINO_ARCH_ESP32
           //note: probably don't what to use this because of single FPU context switching issues...
-          xTaskCreatePinnedToCore(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
+          xTaskCreatePinnedToCore(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
         #elif defined ARDUINO_ARCH_RP2040
-          xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+          xTaskCreate(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
           vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //[RP2040 only] Sets the core affinity mask for a task, i.e. the cores on which a task can run.
         #else
           #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
@@ -353,7 +353,7 @@ void _imu_ll_interrupt_handler();
 
         Serial.printf(MF_MOD ": IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
-        xTaskCreate(_imu_ll_task, "IMU", FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+        xTaskCreate(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }

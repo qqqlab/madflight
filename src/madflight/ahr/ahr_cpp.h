@@ -24,7 +24,7 @@ SOFTWARE.
 
 //This file is kept as header to allow #AHR_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
 
-// Make sure this file is includes from madflight.h and not from somewhere else
+// Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
 #endif

@@ -1,36 +1,19 @@
-/*==========================================================================================
-BBFS_SD_ESP32.h: madflight sdcard spi/mmc logging file system
 
-MIT License
+#include "bbx.h"
 
-Copyright (c) 2024 qqqlab - https://github.com/qqqlab
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-===========================================================================================*/
-
-
-#if BB_USE == BB_USE_SDMMC
+#ifdef BBX_USE_MMC
 
   #include "SD_MMC.h"
   
   #define _BB_SDFS SD_MMC
   #define _BB_SETUP_STR "BBX: SDMMC"
+
+class BbxGizmoSdmmc : public BbxGizmo {
+  
+public:
+  BbxGizmoSdmmc(BbxConfig *config) {
+    this->config = config;
+  }
 
 #else
 
@@ -38,13 +21,19 @@ SOFTWARE.
   #include "SD.h"
   
   #define _BB_SDFS SD
-  #define _BB_SETUP_STR "BBX: SD"
-  extern SPIClass *bbx_spi;
+  #define _BB_SETUP_STR "BBX: SDSPI"
+
+class BbxGizmoSdspi : public BbxGizmo {
+public:
+  BbxGizmoSdspi(BbxConfig *config) {
+    this->config = config;
+  }
 
 #endif
 
-class BBFS_SD : public BBFS {
+
 private:
+  BbxConfig *config;
   const char* BB_LOG_DIR_NAME = "/log";
   bool setup_done = false;
   uint8_t wbuf[512];
@@ -214,16 +203,15 @@ private:
 
     _BB_SDFS.end(); //force begin() to re-initialize
  
-    #if BB_USE == BB_USE_SDMMC
-      _BB_SDFS.setPins(HW_PIN_SDMMC_CLK, HW_PIN_SDMMC_CMD, HW_PIN_SDMMC_DATA);
+    #ifdef BBX_USE_MMC
+      _BB_SDFS.setPins(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat);
       if (!_BB_SDFS.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
-        Serial.println("BBX:   BB_USE_SDMMC Card Mount Failed");
+        Serial.println("BBX: SDMMC Card Mount Failed");
         return setup_done;
       }
     #else
-      bbx_spi->begin(HW_PIN_SPI2_SCLK, HW_PIN_SPI2_MISO, HW_PIN_SPI2_MOSI, HW_PIN_BB_CS);
-      if (!_BB_SDFS.begin(HW_PIN_BB_CS, *bbx_spi)) {
-        Serial.println("BBX:   BB_USE_SD Card Mount Failed");
+      if (!_BB_SDFS.begin(config->spi_cs, *config->spi_bus)) {
+        Serial.println("BBX: SDSPI Card Mount Failed");
         return setup_done;
       }
     #endif
@@ -313,3 +301,7 @@ private:
     file = _BB_SDFS.open(filename, FILE_WRITE, true);
   }
 };
+
+
+#undef _BB_SDFS
+#undef _BB_SETUP_STR
