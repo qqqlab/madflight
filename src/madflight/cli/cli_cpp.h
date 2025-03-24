@@ -272,10 +272,10 @@ public:
     "bbbench   Benchmark\n"
     "bbinfo    Info\n"
     "-- CONFIG --\n"
-    "set [name] [value]\n"
-    "clist     List config\n"
-    "cclear    Clear config\n"
-    "cwrite    Write config to flash\n"
+    "set <name> <value>  Set config parameter\n"
+    "clist <filter>      List config\n"
+    "cclear              Clear config\n"
+    "cwrite              Write config to flash\n"
     "-- CALIBRATE --\n"
     "calinfo   Sensor info\n"
     "calimu    Calibrate IMU error\n"
@@ -395,7 +395,7 @@ public:
     }else if (cmd == "set") {
       cfg.setParam(arg1, arg2);
     }else if (cmd == "clist") {
-      cfg.list();
+      cfg.list(arg1.c_str());
     }else if (cmd == "cclear") {
       cfg.clear();
       Serial.println("Config cleared, use 'cwrite' to write to flash");

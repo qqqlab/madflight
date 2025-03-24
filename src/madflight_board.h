@@ -1,22 +1,22 @@
 #if defined ARDUINO_ARCH_ESP32
 
   #ifdef CONFIG_IDF_TARGET_ESP32S3
-    #include "madflight_board__ESP32-S3.h"
+    #include "madflight_board_ESP32-S3.h"
   #else
-    #include "madflight_board__ESP32.h"
+    #include "madflight_board_ESP32.h"
   #endif
 
 
 
 #elif defined ARDUINO_ARCH_RP2040
 
-  #include "madflight_board__RP2040.h"
+  #include "madflight_board_RP2040.h"
 
 
 
 #elif defined ARDUINO_ARCH_STM32
 
-  #include "madflight_board__STM32.h"
+  #include "madflight_board_STM32.h"
 
 
 

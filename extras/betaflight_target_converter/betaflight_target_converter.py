@@ -7,7 +7,7 @@ DEBUG = False
 
 source_dirname = "betaflight_source" # copy from https://github.com/betaflight/unified-targets/tree/master/configs/default
 destination_path = "../../src/"
-destination_prefix = "madflight_board_"
+destination_prefix = "madflight_zzz_"
 
 CMT = " // "
 

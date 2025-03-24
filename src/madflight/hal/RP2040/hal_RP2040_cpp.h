@@ -1,6 +1,3 @@
-#include "MF_SerialUartTask_RP2040.h"
-
-
 //Arduino version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR 
 
@@ -32,9 +29,11 @@
 #include <Wire.h> //I2C communication
 #include <SPI.h> //SPI communication
 #include "RP2040_PWM.h"  //Servo and oneshot
-#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver
-#include "../MF_Serial.h"
 #include "../MF_I2C.h"
+#include "../MF_Serial.h"
+//#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver (did not work very well...)
+#include "MF_SerialUART_RP2040.h" //MF_Serial wrappers for SerialUART with task based TX buffer
+#include "MF_SerialPIO_RP2040.h" //MF_Serial wrappers for SerialPIO with task based TX buffer
 
 //-------------------------------------
 //Bus Setup
@@ -168,8 +167,7 @@ void hal_print_pin_name(int pinnum) {
 
 
 
-//SerialUartTask version
-#include "MF_SerialUartTask_RP2040.h"
+
 
 //create/get Serial bus (late binding)
 //Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
@@ -194,7 +192,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
   int pin_tx = -1;
   int pin_rx = -1;
-  uart_inst_t *uart;
+  uart_inst_t *uart = nullptr;
   char taskname[16];
   switch(bus_id) {
     case 0:
@@ -209,6 +207,18 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       uart = uart1;
       strcpy(taskname, "uart1");
       break;
+    case 3:
+      pin_tx = cfg.pin_ser3_tx;
+      pin_rx = cfg.pin_ser3_rx;
+      uart = nullptr;
+      strcpy(taskname, "uart3");
+      break;
+    case 4:
+      pin_tx = cfg.pin_ser4_tx;
+      pin_rx = cfg.pin_ser4_rx;
+      uart = nullptr;
+      strcpy(taskname, "uart4");
+      break;
     default:
       return nullptr;
   }
@@ -216,21 +226,36 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   //exit if no pins defined
   if(pin_tx < 0 && pin_rx < 0) return nullptr;
 
-  //create new MF_Serial
-  if(!hal_ser[bus_id]) {
-    SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
-    hal_ser[bus_id] = new MF_SerialUartTask(ser, taskname);
-  }
+  if(uart) {
+    //create new wrapped SerialUART
+    if(!hal_ser[bus_id]) {
+      SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
+      hal_ser[bus_id] = new MF_SerialUART(ser, taskname);
+    }
 
-  //get ser from MF_SerialPtrWrapper, and configure it
-  SerialUART *ser = ((MF_SerialUartTask*)hal_ser[bus_id])->_serial;
-  ser->end();
-  ser->setRX(pin_rx);
-  ser->setTX(pin_tx);
-  ser->setFIFOSize(256);
-  ser->setInvertTX(invert);
-  ser->setInvertRX(invert);
-  ser->begin(baud, config);
+    //get SerialUART from MF_Serial wrapper, and configure it
+    SerialUART *ser = ((MF_SerialUART*)hal_ser[bus_id])->_serial;
+    ser->end();
+    ser->setRX(pin_rx);
+    ser->setTX(pin_tx);
+    ser->setFIFOSize(256);
+    ser->setInvertTX(invert);
+    ser->setInvertRX(invert);
+    ser->begin(baud, config);
+  }else{
+    //create new wrapped SerialPIO
+    if(!hal_ser[bus_id]) {
+      SerialPIO *ser = new SerialPIO(pin_rx, pin_tx, 256);
+      hal_ser[bus_id] = new MF_SerialPIO(ser, taskname);
+    }
+
+    //get SerialPIO from MF_Serial wrapper, and configure it
+    SerialPIO *ser = ((MF_SerialPIO*)hal_ser[bus_id])->_serial;
+    ser->end();
+    ser->setInvertTX(invert);
+    ser->setInvertRX(invert);
+    ser->begin(baud, config);
+  }
 
   return hal_ser[bus_id];
 }

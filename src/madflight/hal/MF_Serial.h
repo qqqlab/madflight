@@ -37,8 +37,9 @@ class MF_SerialPtrWrapper : public MF_Serial {
 };
 
 /*
-// Dummy interface
-class MF_SerialNone : public MF_Serial {
+============ Template for new classes ================
+
+class MF_SerialXXX : public MF_Serial {
   public:
     void begin(int baud)             override { (void)baud; }
     int available()                  override { return 0; }
@@ -46,6 +47,7 @@ class MF_SerialNone : public MF_Serial {
     int read(uint8_t *buf, int len)  override { (void)buf; (void)len; return 0; }
     int write(uint8_t *buf, int len) override { (void)buf; (void)len; return 0; }
 };
+
 */
 
 /*--------------------------------------------------------------------------------------

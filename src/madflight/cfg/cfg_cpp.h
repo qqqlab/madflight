@@ -103,7 +103,7 @@ public:
   void begin();
   uint16_t paramCount(); //get number of parameters
   bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
-  void list(); //CLI print all config values
+  void list(const char* filter = nullptr); //CLI print all config values
   bool setParam(String namestr, String val); //CLI set a parameter value, returns true on success
   bool setParamMavlink(String namestr, float val); //set a parameter value, returns true on success
   int getIndex(String namestr); //get parameter index for a parameter name
@@ -287,9 +287,11 @@ void CfgClass::printValue(uint16_t i) {
 }
 
 //CLI print all config values
-void CfgClass::list() {
+void CfgClass::list(const char* filter) {
   for(int i=0;i<paramCount();i++) {
-    printNameAndValue(i);
+    if(strstr(Cfg::param_list[i].name, filter)) {
+      printNameAndValue(i);
+    }
   }
 }
 
