@@ -5,7 +5,7 @@
 // You have 3 options to setup the pins (gpio numbers) and busses for the flight controller:
 //
 //   1) Default - #include <madflight_board.h> and see https://madflight.com for default pinout diagrams for the supported
-//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
+//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_XXX.h
 // 
 //   2) Header - #include the BetaFlight flight controller you want to use. See library/madflight/src for all available 
 //      boards. For example: #include <madflight_zzz_MTKS-MATEKH743.h>
@@ -62,6 +62,10 @@ gps_baud       0        // use 0 for auto baud
 
 // BBX - Black Box Data Logger
 bbx_gizmo      NONE     // options: NONE, SDSPI, SDMMC
+
+// RDR - Radar
+rdr_gizmo      NONE     // options: NONE, LD2411S, LD2413, USD1
+rdr_baud       0
 
 )"" // End of MADFLIGHT_CONFIG
 

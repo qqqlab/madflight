@@ -179,7 +179,7 @@ void madflight_setup() {
 
   // GPS
   gps.config.gizmo = (Cfg::gps_gizmo_enum)cfg.gps_gizmo; //the gizmo to use
-  gps.config.ser_bus = hal_get_ser_bus(cfg.gps_ser_bus); //serial bus
+  gps.config.ser_bus_id = cfg.gps_ser_bus; //serial bus id
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
 

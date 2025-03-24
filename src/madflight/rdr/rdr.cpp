@@ -30,6 +30,7 @@ SOFTWARE.
 //the gizmos
 #include "RdrGizmoLD2411S.h"
 #include "RdrGizmoLD2413.h"
+#include "RdrGizmoUSD1.h"
 
 //create global module instance
 Rdr rdr;
@@ -48,6 +49,9 @@ int Rdr::setup() {
       break;
     case Cfg::rdr_gizmo_enum::mf_LD2413 :
       gizmo = RdrGizmoLD2413::create(&dist, config.ser_bus_id, config.baud);
+      break;
+    case Cfg::rdr_gizmo_enum::mf_USD1 :
+      gizmo = RdrGizmoUSD1::create(&dist, config.ser_bus_id, config.baud);
       break;
   }
 

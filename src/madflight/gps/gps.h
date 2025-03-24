@@ -71,7 +71,7 @@ struct GpsState {
 struct GpsConfig {
   public:
     Cfg::gps_gizmo_enum gizmo = Cfg::gps_gizmo_enum::mf_NONE; //the gizmo to use
-    MF_Serial *ser_bus = nullptr; //Serial bus
+    int ser_bus_id = -1; //Serial bus id
     int baud = 0; //baud rate. 0=autobaud
 };
 

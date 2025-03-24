@@ -1,6 +1,7 @@
 // HKL-LD2413 driver
+// range: 10m
+// reporting rate: 50-1000ms, 160ms default
 // default baud rate 115200
-// default reporting rate: 160ms
 // reported data: F4 F3 F2 F1 04 00 xx xx xx xx F8 F7 F6 F5 
 // where xx xx xx xx is a LE float with distance in mm
 
