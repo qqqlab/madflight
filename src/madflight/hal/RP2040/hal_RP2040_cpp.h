@@ -39,7 +39,7 @@
 //Bus Setup
 //-------------------------------------
 
-#define HAL_SER_NUM 2
+#define HAL_SER_NUM 6
 #define HAL_I2C_NUM 2
 #define HAL_SPI_NUM 2
 
@@ -199,25 +199,37 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       pin_tx = cfg.pin_ser0_tx;
       pin_rx = cfg.pin_ser0_rx;
       uart = uart0;
-      strcpy(taskname, "uart0");
+      strcpy(taskname, "ser0");
       break;
     case 1:
       pin_tx = cfg.pin_ser1_tx;
       pin_rx = cfg.pin_ser1_rx;
       uart = uart1;
-      strcpy(taskname, "uart1");
+      strcpy(taskname, "ser1");
+      break;
+    case 2:
+      pin_tx = cfg.pin_ser2_tx;
+      pin_rx = cfg.pin_ser2_rx;
+      uart = nullptr;
+      strcpy(taskname, "ser2");
       break;
     case 3:
       pin_tx = cfg.pin_ser3_tx;
       pin_rx = cfg.pin_ser3_rx;
       uart = nullptr;
-      strcpy(taskname, "uart3");
+      strcpy(taskname, "ser3");
       break;
     case 4:
       pin_tx = cfg.pin_ser4_tx;
       pin_rx = cfg.pin_ser4_rx;
       uart = nullptr;
-      strcpy(taskname, "uart4");
+      strcpy(taskname, "ser4");
+      break;
+    case 5:
+      pin_tx = cfg.pin_ser5_tx;
+      pin_rx = cfg.pin_ser5_rx;
+      uart = nullptr;
+      strcpy(taskname, "ser5");
       break;
     default:
       return nullptr;
@@ -229,7 +241,10 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   if(uart) {
     //create new wrapped SerialUART
     if(!hal_ser[bus_id]) {
-      SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
+      #ifdef MF_DEBUG
+        Serial.printf("Creating MF_SerialUART for bus %d\n",bus_id);
+      #endif
+      SerialUART *ser = new SerialUART(uart, pin_tx, pin_rx); //uart_inst_t *uart, pin_size_t tx, pin_size_t rx, pin_size_t rts = UART_PIN_NOT_DEFINED, pin_size_t cts = UART_PIN_NOT_DEFINED
       hal_ser[bus_id] = new MF_SerialUART(ser, taskname);
     }
 
@@ -245,7 +260,10 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   }else{
     //create new wrapped SerialPIO
     if(!hal_ser[bus_id]) {
-      SerialPIO *ser = new SerialPIO(pin_rx, pin_tx, 256);
+      #ifdef MF_DEBUG
+        Serial.printf("Creating MF_SerialPIO for bus %d\n",bus_id);
+      #endif
+      SerialPIO *ser = new SerialPIO(pin_tx, pin_rx, 256); //pin_size_t tx, pin_size_t rx, size_t fifoSize = 32
       hal_ser[bus_id] = new MF_SerialPIO(ser, taskname);
     }
 

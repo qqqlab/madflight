@@ -24,7 +24,8 @@ void loop() {
   mag.update(); // magnetometer
   gps.update(); // gps
   bat.update(); // battery consumption
-  cli.update(); //process CLI commands
+  rdr.update(); // radar
+  cli.update(); // process CLI commands
 }
 
 //This is __MAIN__ function of this program. It is called when new IMU data is available.

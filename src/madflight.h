@@ -61,6 +61,7 @@ const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
 #include "madflight/mag/mag.h"
 #include "madflight/out/out.h"
 #include "madflight/pid/pid.h"
+#include "madflight/rdr/rdr.h"
 #include "madflight/veh/veh.h"
 
 // toolbox
@@ -168,6 +169,13 @@ void madflight_setup() {
   bat.config.adc_cal_i = cfg.bat_cal_i;
   bat.config.rshunt = cfg.bat_cal_i;
   bat.setup();
+
+  //RDR
+  rdr.config.gizmo = (Cfg::rdr_gizmo_enum)cfg.rdr_gizmo; //the gizmo to use
+  rdr.config.ser_bus_id = cfg.rdr_ser_bus; //serial bus
+  rdr.config.baud = cfg.rdr_baud; //baud rate
+  rdr.setup();
+
 
   // GPS
   gps.config.gizmo = (Cfg::gps_gizmo_enum)cfg.gps_gizmo; //the gizmo to use

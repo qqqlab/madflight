@@ -43,6 +43,7 @@ SOFTWARE.
 #include "../out/out.h"
 #include "../pid/pid.h"
 #include "../rcl/rcl.h"
+#include "../rdr/rdr.h"
 #include "../veh/veh.h"
 
 #include "cli_RclCalibrate.h"
@@ -191,13 +192,17 @@ static void cli_print_alt() {
   Serial.printf("ahr.aup:%.2f\t", ahr.getAccelUp());
 }
 
+void cli_print_rdr() {
+  Serial.printf("rdr.dist:%d\t", rdr.dist);
+}
+
 struct cli_print_s {
   const char *cmd;
   const char *info;
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 14
+#define CLI_PRINT_FLAG_COUNT 15
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 static const struct cli_print_s cli_print_options[] = {
@@ -215,6 +220,7 @@ static const struct cli_print_s cli_print_options[] = {
   {"pbar",   "Barometer", cli_print_bar},
   {"palt",   "Altitude estimator", cli_print_alt},
   {"pgps",   "GPS", cli_print_gps},
+  {"prdr",   "Radar", cli_print_rdr},  
 };
 
 
