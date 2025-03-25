@@ -44,5 +44,7 @@ class GpsGizmoUblox: public GpsGizmo {
         inline int I_write(uint8_t* data, size_t len) override {return ser_bus->write(data, len);}
         inline uint32_t I_millis()                    override {return ::millis();}
         void I_print(const char *str)                 override {Serial.print("GPS: "); Serial.print(str);}
-    } gps_ublox;
+    };
+
+    GPS_UBLOX gps_ublox = {}; //init to 0 is NEEDED!!!
   };

@@ -5,10 +5,10 @@
 // You have 3 options to setup the pins (gpio numbers) and busses for the flight controller:
 //
 //   1) Default - #include <madflight_board.h> and see https://madflight.com for default pinout diagrams for the supported
-//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_default_XXX.h
+//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_XXX.h
 // 
 //   2) Header - #include the BetaFlight flight controller you want to use. See library/madflight/src for all available 
-//      boards. For example: #include <madflight_board_betaflight_MTKS-MATEKH743.h>
+//      boards. For example: #include <madflight_zzz_MTKS-MATEKH743.h>
 // 
 //   3) Custom - Do not include a board file here, and set your own board definition in the CUSTOM PINS section below.
 //
@@ -21,7 +21,7 @@
 //                                               HARDWARE CONFIG                                                          //
 //========================================================================================================================//
 //
-// Hardware configuration is a simple key-value list. Anything after '#' or '/' is ignored as comment
+// Hardware configuration is a raw string with a key-value list. On a line, anything after '#' or '/' is ignored as comment
 //
 //========================================================================================================================//
 
@@ -35,7 +35,7 @@ imu_spi_bus    0        // connect IMU to SPI bus 0
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 
-imu_gizmo      NONE     // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
+imu_gizmo      MPU6500  // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
 imu_align      CW90     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 imu_i2c_adr    0        // use 0 for default i2c address
 
@@ -62,6 +62,10 @@ gps_baud       0        // use 0 for auto baud
 
 // BBX - Black Box Data Logger
 bbx_gizmo      NONE     // options: NONE, SDSPI, SDMMC
+
+// RDR - Radar
+rdr_gizmo      NONE     // options: NONE, LD2411S, LD2413, USD1
+rdr_baud       0
 
 )"" // End of MADFLIGHT_CONFIG
 
@@ -183,7 +187,7 @@ imu_i2c_bus    -1
 //-- AHRS sensor fusion 
 #define AHR_USE AHR_USE_MAHONY // Select one: AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
 
-// Reset config eeprom to defaults (uncomment this, upload, then comment out again)
+// Reset config eeprom to defaults (uncomment this, upload, then comment out, and upload again)
 //#define MF_CONFIG_CLEAR
 
 // Uncomment to print additional debug information and reduce startup delay
