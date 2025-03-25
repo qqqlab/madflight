@@ -14,7 +14,6 @@ class MF_SerialUART : public MF_Serial {
     StreamBufferHandle_t xStreamBuffer = NULL;
 
 
-
     MF_SerialUART(SerialUART *_serial, const char* taskname) {
       this->_serial = _serial;
 
@@ -22,7 +21,7 @@ class MF_SerialUART : public MF_Serial {
 
       xTaskCreate( MF_SerialUART_task,       // The function that implements the task
                    taskname,                 // Human readable name for the task
-                   configMINIMAL_STACK_SIZE, // Stack size (in words!)
+                   configMINIMAL_STACK_SIZE, // Stack size (in words!) (configMINIMAL_STACK_SIZE=256)
                    (void*)this,              // Task parameter
                    uxTaskPriorityGet(NULL),  // The priority at which the task is created
                    NULL );                   // No use for the task handle
@@ -45,6 +44,7 @@ class MF_SerialUART : public MF_Serial {
     }
 
     int write(uint8_t *buf, int len) override {
+      if(len <= 0) return 0;
       if(availableForWrite() < len) return 0;
       return xStreamBufferSend( xStreamBuffer, (const void *)buf, len, 0 ); //0 = no wait
     }

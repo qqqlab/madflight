@@ -31,7 +31,7 @@
 #include "RP2040_PWM.h"  //Servo and oneshot
 #include "../MF_I2C.h"
 #include "../MF_Serial.h"
-//#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver (did not work very well...)
+#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver (did not work very well...)
 #include "MF_SerialUART_RP2040.h" //MF_Serial wrappers for SerialUART with task based TX buffer
 #include "MF_SerialPIO_RP2040.h" //MF_Serial wrappers for SerialPIO with task based TX buffer
 
@@ -166,8 +166,7 @@ void hal_print_pin_name(int pinnum) {
 }
 
 
-
-
+//* MF_SerialUART version - works for sbus & ublox
 
 //create/get Serial bus (late binding)
 //Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
@@ -278,9 +277,11 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   return hal_ser[bus_id];
 }
 
+//*/
 
 
-/* //SerialUART version - works
+
+/* //SerialUART version - works for sbus, not for gps because of lacking TX buffer
 
 //create/get Serial bus (late binding)
 //Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
@@ -344,23 +345,14 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 }
 
 
-*/
+//*/
 
 
 
 
 
-/*
-    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
-    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-*/
 
-/*
+/* //SerialIRQ version - does not work for SBUS, works for UBLOX
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
@@ -383,7 +375,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       break;
   }
 
-  //using SerialIRQ - does not work correctly for sbus ...
+  //using SerialIRQ - works for gps, does not work correctly for sbus ...
   switch(bus_id) {
     case 0: {
       int pin_tx = cfg.pin_ser0_tx;
@@ -392,8 +384,6 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       if(pin_tx >= 0 || pin_rx >= 0) {
         ser->begin(baud, bits, parity, stop, invert);
         if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-      }
-      break;
       }
       break;
     }
@@ -410,6 +400,20 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     default:
       return nullptr;
   }
+  
+  return hal_ser[bus_id];
+}
+
+//*/
+
+
+
+/*
+    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
+    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
+    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
+    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
+    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
+    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
 */
-
-
