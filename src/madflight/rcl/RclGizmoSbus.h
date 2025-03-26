@@ -30,7 +30,8 @@ class RclGizmoSbus : public RclGizmo {
       uint16_t sbusChannels[16];
       bool sbusFailSafe;
       bool sbusLostFrame;
-      if(!sbus.read(sbusChannels, &sbusFailSafe, &sbusLostFrame)) return false;
+      int packet_cnt = sbus.read(sbusChannels, &sbusFailSafe, &sbusLostFrame);
+      if(packet_cnt == 0) return false;
   
       //sBus scaling below is for Taranis-Plus and X4R-SB
       float scale = 0.615;

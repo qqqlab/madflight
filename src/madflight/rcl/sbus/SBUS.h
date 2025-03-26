@@ -9,7 +9,7 @@ class SBUS{
     MF_Serial* serial;
 
     void begin();
-    bool read(uint16_t* channels, bool* failsafe, bool* lostFrame);
+    int read(uint16_t* channels, bool* failsafe, bool* lostFrame); //returns number of packets received
 
   private:
     bool parse();

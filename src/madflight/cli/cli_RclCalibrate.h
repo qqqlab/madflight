@@ -3,23 +3,18 @@
 #include "../hal/hal.h"
 #include "../imu/imu.h"
 
-//this class assumes rcl.update() is called in the background... (i.e. in imu_loop())
-
-void rcl_cal_imu_loop() {
-   rcl.update();
-}
-
 class RclCalibrate {
 
 public:
   static void calibrate() {
-    imu.onUpdate = rcl_cal_imu_loop;
     RclCalibrate *cal = new RclCalibrate();
-    cal->_calibrate();
+    if(!cal->_calibrate()) {
+      Serial.println("\n==== Radio Calibration Aborted ====");
+    }
   }
 
   struct stick_t{
-    uint8_t ch; //stick channel
+    int8_t ch = -1; //stick channel (0-based, -1 is not assigned)
     uint16_t left_pull; //spwm at left/pull position
     uint16_t mid; //pwm at center position
     uint16_t right_push; //pwm at right/push position
@@ -35,23 +30,47 @@ private:
   stick_t arm; //arm switch
   stick_t flt; //flightmode switch
 
-  bool ignore[RCL_MAX_CH] = {}; //channels to ignore
-  int16_t pc[RCL_MAX_CH] = {}; //temp value
-  int16_t arm_last; //temp value
+  bool assigned_ch[RCL_MAX_CH] = {}; //channels which were assigned a function
+  int16_t prev_pwm[RCL_MAX_CH] = {}; //previous pwm values
+  int16_t prev_arm; //previous arm value
 
-void prompt(const char *msg) {
-  Serial.println(msg);
+//update rcl, yield and check for cancel, return false if 'q' was pressed
+bool do_events(bool *event_key = nullptr) {
+  rcl.update();
 
-  //empty buffer
-  while(Serial.available()) Serial.read();
+  taskYIELD();
 
-  //wait for enter
-  for(;;) {
-    if(Serial.available()) {
-      char c = Serial.read();
-      if ( c=='\r' || c=='\n' ) return;
+  while(Serial.available()) {
+    //set event_key flag
+    if(event_key) *event_key = true;
+    
+    //exit if 'q' was pressed
+    char c = Serial.read();
+    if(c=='q' || c=='Q') {
+      //empty receive buffer
+      while(Serial.available()) Serial.read();
+      return false;
     }
   }
+
+  return true;
+}
+
+//wait for key, returns false if 'q' was pressed
+bool prompt(const char *msg) {
+  Serial.println(msg);
+
+  //empty receive buffer
+  while(Serial.available()) Serial.read();
+
+  //wait for event
+  bool event_key = false;
+  for(;;) {
+    if(!do_events(&event_key)) return false;;
+    if(event_key) break;
+  }
+
+  return true;
 }
 
 void printpwm() {
@@ -75,45 +94,36 @@ void setVal(int16_t *p, int16_t v) {
   }
 }
 
-void setPc() {
+void set_prev_pwm() {
   for(int i=0;i<cfg.rcl_num_ch;i++) {
-    pc[i] = rcl.pwm[i];
+    prev_pwm[i] = rcl.pwm[i];
   }
 }
 
-void armToggleInit() {
-  arm_last = rcl.pwm[arm.ch];
-}
-
-bool armToggled() {
-  return (abs((int16_t)rcl.pwm[arm.ch] - arm_last) > 500);
-}
-
-void armToggleWait() {
-  armToggleInit();
-  for(;;) {
-    if(armToggled()) return;
-    taskYIELD();
-  }
-}
-
-void findStick(stick_t &stk) {
+//returns false if 'q' was pressed
+bool findStick(stick_t &stk) {
   int16_t pmin[cfg.rcl_num_ch]={};
   setVal(pmin,9999);
   uint32_t tmin[cfg.rcl_num_ch]={};
   int16_t pmax[cfg.rcl_num_ch]={};
   uint32_t tmax[cfg.rcl_num_ch]={};
-  armToggleInit();
+  int16_t prev_arm = rcl.pwm[arm.ch];
 
   //for each channel: record pwm_min and pwm_max, and record timestamps
-  for(int c = 0; ; c++) {
-    if(ignore[c]) c++; //skip known channels
-    if(c>=cfg.rcl_num_ch) c=0;
-    int16_t p = rcl.pwm[c];
-    if(pmin[c] > p) {pmin[c] = p; tmin[c] = micros();}
-    if(pmax[c] < p) {pmax[c] = p; tmax[c] = micros();}
-    if(armToggled()) break;
-    taskYIELD();
+  //until armed switch toggle or key press
+  bool event_key = false;
+  int c = 0;
+  while(1) {
+    if(!do_events(&event_key)) return false; //quit
+
+    c++;
+    if(c >= cfg.rcl_num_ch) c=0;
+    if(!assigned_ch[c]) { //skip assigned channels
+      int16_t p = rcl.pwm[c];
+      if(pmin[c] > p) {pmin[c] = p; tmin[c] = micros();}
+      if(pmax[c] < p) {pmax[c] = p; tmax[c] = micros();}
+      if(event_key || (arm.ch >= 0 && abs((int16_t)rcl.pwm[arm.ch] - prev_arm) > 500)) break;
+    }
   }
 
   //find channel with max difference between pwm_min and pwm_max
@@ -138,61 +148,90 @@ void findStick(stick_t &stk) {
     stk.left_pull = pmax[stk.ch];
     stk.right_push = pmin[stk.ch];
   }
-  ignore[stk.ch] = true; //ignore this channel from now on
+  assigned_ch[stk.ch] = true; //assigned_ch this channel from now on
+
+  return true;
 }
 
 protected:
-void _calibrate() {
-  int c;
+bool _calibrate() {
   Serial.println("\n==== Radio Calibration ====");
-  while(!rcl.connected()) {
-    Serial.println("Connect radio to continue...");
-    delay(500);
+
+  //check connected
+  if(!rcl.connected()) {
+    Serial.println("ERROR: radio not connected. Connect and try again");
+    return false;
   }
 
-  Serial.println("Switch to ARMED (if already armed, toggle until calibration done, then restart 'calradio' DISARMED)");
-  setPc();
-  for(c=0;;c++) {
-    if(c>=cfg.rcl_num_ch) c=0;
-    if(abs((int16_t)rcl.pwm[c] - pc[c]) > 500) break;
-    taskYIELD();
+  Serial.println("During calibration type 'q' to quit");
+
+  //prompt DISARMED
+  if(!prompt("\n--- Step 1: Start Calibration ---\nCENTER all sticks (including throttle), armed swich to DISARMED, then press ENTER to continue")) return false;
+
+  //get armed switch
+  Serial.println("\n--- Step 2: Arm Switch Calibration ---\nSwitch to ARMED, or press enter for no arm switch");
+  bool event_key = false;
+  set_prev_pwm();
+  int c = 0;
+  while(1) {
+    c++;
+    if(c >= cfg.rcl_num_ch) c = 0;
+    if(abs((int16_t)rcl.pwm[c] - prev_pwm[c]) > 500) break;
+    if(!do_events(&event_key)) return false;
+    if(event_key) break;
   }
-  arm.ch = c;
-  int16_t arm_v1 = pc[c];
-  int16_t arm_v2 = rcl.pwm[c];
-  
-  int16_t arm_armed = arm_v2;
-  int16_t arm_disarmed = arm_v1;
-  if(abs(arm_disarmed - arm_armed) < 100) arm_disarmed = arm_v2;
-  if(arm_disarmed < arm_armed) {
-    arm.min = (arm_disarmed+arm_armed)/2;
-    arm.max = 2500;
+  if(event_key) {
+    //no armed channel - can't arm!
+    arm.ch = -1;
+    arm.min = 0;
+    arm.max = 0;
   }else{
-    arm.min = 500;
-    arm.max = (arm_disarmed+arm_armed)/2;
+    arm.ch = c;
+    int16_t arm_v1 = prev_pwm[c];
+    int16_t arm_v2 = rcl.pwm[c];
+    int16_t arm_armed = arm_v2;
+    int16_t arm_disarmed = arm_v1;
+    if(abs(arm_disarmed - arm_armed) < 100) arm_disarmed = arm_v2;
+    if(arm_disarmed < arm_armed) {
+      arm.min = (arm_disarmed+arm_armed)/2;
+      arm.max = 2500;
+    }else{
+      arm.min = 500;
+      arm.max = (arm_disarmed+arm_armed)/2;
+    }
+    assigned_ch[arm.ch] = true;
   }
-  Serial.printf("==> ARMED: ch=%d from=%d to=%d\n", arm.ch+1, arm.min, arm.max);
-  ignore[arm.ch]=true;
+  Serial.printf("==> Arm Switch: ch=%d from=%d to=%d\n", arm.ch+1, arm.min, arm.max);
 
-  Serial.println("THROTTLE: First pull throttle idle, then full throttle, then back to center, then toggle arm switch");
-  findStick(thr);
-  Serial.printf("==> THROTTLE: ch=%d pull=%d mid=%d push=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
+  //get throttle
+  Serial.println("\n--- Step 3: Throttle Stick Calibration ---\nFirst pull throttle idle, then full throttle, then back to center, then toggle arm switch or press enter");
+  if(!findStick(thr)) return false;
+  Serial.printf("==> Throttle: ch=%d pull=%d mid=%d push=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
 
-  Serial.println("PITCH: First pull stick back, then push forward, then back to center, then toggle arm switch");
-  findStick(pit);
-  Serial.printf("==> PITCH: ch=%d pull=%d mid=%d push=%d\n", pit.ch+1, pit.left_pull, pit.mid, pit.right_push);
+  //get pitch
+  Serial.println("\n--- Step 4: Pitch Stick Calibration ---\nFirst pull pitch stick back, then push forward, then back to center, then toggle arm switch or press enter");
+  if(!findStick(pit)) return false;
+  Serial.printf("==> Pitch: ch=%d pull=%d mid=%d push=%d\n", pit.ch+1, pit.left_pull, pit.mid, pit.right_push);
 
-  Serial.println("ROLL: First move stick left, then right, then back to center, then toggle arm switch");
-  findStick(rol);
-  Serial.printf("==> ROLL: ch=%d left=%d mid=%d right=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
+  //get roll
+  Serial.println("\n--- Step 5: Roll Stick Calibration ---\nFirst move roll stick left, then right, then back to center, then toggle arm switch or press enter");
+  if(!findStick(rol)) return false;
+  Serial.printf("  ==> Roll: ch=%d left=%d mid=%d right=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
 
-  Serial.println("YAW: First move stick left, then right, then back to center, then toggle arm switch");
-  findStick(yaw);
-  Serial.printf("==> YAW: ch=%d left=%d mid=%d right=%d\n", yaw.ch+1, yaw.left_pull, yaw.mid, yaw.right_push);
+  //get yaw
+  Serial.println("\n--- Step 6: Yaw Stick Calibration ---\nFirst move yaw stick left, then right, then back to center, then toggle arm switch or press enter");
+  if(!findStick(yaw)) return false;
+  Serial.printf("  ==> Yaw: ch=%d left=%d mid=%d right=%d\n", yaw.ch+1, yaw.left_pull, yaw.mid, yaw.right_push);
 
-  Serial.println("Select min and max flight modes, then toggle arm switch");
-  findStick(flt);
-  Serial.printf("==> FLIGHTMODE: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
+  //get flight mode
+  Serial.println("\n--- Step 7: Flight Mode Switch Calibration ---\nSelect min and max flight modes, then toggle arm switch or press enter");
+  Serial.println("  -or- Press 'q' for no flight mode switch");
+  if(!findStick(flt)) {
+    flt.ch = -1;
+    flt.min = 0;
+    flt.max = 0;
+  }
+  Serial.printf("  ==> Flight Mode Switch: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
 
   //set config
   cfg.rcl_thr_ch    = thr.ch + 1;
@@ -223,9 +262,11 @@ void _calibrate() {
   cfg.rcl_flt_min   = flt.min;
   cfg.rcl_flt_max   = flt.max;
 
-  rcl.setup(); //restart rc to reload config
+  Serial.println();
+  rcl.setup(); //restart rcl to reload config (outputs RCL messages)
 
-  Serial.printf("Radio calibration completed! Now use 'pradio' to check, 'cwrite' to save config, or reboot to restart with old config.\n");
+  Serial.printf("\n=== Radio Calibration Completed ===\nNow use 'prcl' to check, 'cwrite' to save config, or reboot to restart with old config.\n");
+  return true;
 }
 
 };

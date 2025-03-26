@@ -60,7 +60,7 @@ class Rcl {
     void calibrate(); //interactive calibration
     bool telem_statustext(uint8_t severity, char *text); //send MAVLink status text
 
-    uint16_t pwm[RCL_MAX_CH] = {}; //pwm channel data. values: 988-2012
+    uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
 
     float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
     float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
@@ -71,6 +71,7 @@ class Rcl {
     uint8_t flightmode = 0; //flightmode 0 to 5
 
   private:
+    int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
     float _ChannelNormalize(int val, int min, int center, int max, int deadband);
     void _setupStick(int stickno, int ch, int left_pull, int mid, int right_push);
     

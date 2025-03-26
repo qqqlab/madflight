@@ -127,43 +127,35 @@ int Rcl::setup() {
     return -1001;
   }
 
+  pwm[RCL_MAX_CH] = 1500; //set 'unassigned' pwm value
+
   //setup stick/switch parameters from config values
   _setupStick(THR, cfg.rcl_thr_ch, cfg.rcl_thr_pull, cfg.rcl_thr_mid, cfg.rcl_thr_push);
   _setupStick(ROL, cfg.rcl_rol_ch, cfg.rcl_rol_left, cfg.rcl_rol_mid, cfg.rcl_rol_right);
   _setupStick(PIT, cfg.rcl_pit_ch, cfg.rcl_pit_pull, cfg.rcl_pit_mid, cfg.rcl_pit_push);
   _setupStick(YAW, cfg.rcl_yaw_ch, cfg.rcl_yaw_left, cfg.rcl_yaw_mid, cfg.rcl_yaw_right);
-  st[ARM].ch  = cfg.rcl_arm_ch - 1;
+  st[ARM].ch  = _getCh(cfg.rcl_arm_ch);
   st[ARM].min = cfg.rcl_arm_min;
   st[ARM].mid = 0; //NOT USED
   st[ARM].max = cfg.rcl_arm_max;
   st[ARM].inv = 0; //NOT USED
-  st[FLT].ch  = cfg.rcl_flt_ch - 1;
+  st[FLT].ch  = _getCh(cfg.rcl_flt_ch);
   st[FLT].min = cfg.rcl_flt_min;
   st[FLT].mid = 0; //NOT USED
   st[FLT].max = 0; //NOT USED
   st[FLT].inv = 0; //NOT USED
   st_flt_spacing = (cfg.rcl_flt_max - cfg.rcl_flt_min) / 5;
 
-  //check st parameters
-  for(int i=0;i<6;i++) {
-    if(st[i].ch >= cfg.rcl_num_ch) {
-      Serial.println(MF_MOD ": ERROR invalid channel in config, re-calibrate radio");
-      st[i].ch  = 0;
-      st[i].min = 1;
-      st[i].mid = 2;
-      st[i].max = 3;
-      st[i].inv = 1;
-    }
-  }
-
   Serial.printf(MF_MOD ": Setup completed.  Channels: throttle:%d roll:%d pitch:%d yaw:%d armed:%d flightmode:%d\n"
   , (int)cfg.rcl_thr_ch, (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
   return 0;
 }
 
+
 bool Rcl::update() { //returns true if channel pwm data was updated
   if(!gizmo) return false;
   bool rv = gizmo->update();
+
   if(rv) {
     //throttle: 0.0 in range from stick full back to rcl_cfg_thro_low, 1.0 on full throttle
     float tlow = st[THR].min + RCL_THROTTLE_DEADBAND;
@@ -176,10 +168,26 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     yaw    =  st[YAW].inv * _ChannelNormalize(pwm[st[YAW].ch], st[YAW].min, st[YAW].mid, st[YAW].max, cfg.rcl_deadband); // output: -1 (yaw left, st left) to 1 (yaw right, st right)
 
     //arm switch
-    arm = (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max);
+    if(st[ARM].ch < RCL_MAX_CH) {
+      //get arm switch state
+      arm = (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max);
+    }else{
+      //no arm switch - use stick commands
+      if(throttle == 0.0 && pitch > 0.9 && yaw > 0.9 && roll < -0.9) {
+        //sticks pulled & toward eachother
+        arm = true;
+      }else if(throttle == 0.0 && pitch > 0.9 && yaw < -0.9 && roll > 0.9) {
+        //sticks pulled & away from eachother
+        arm = false;
+      }
+    }
 
     //flightmode 6 position switch
-    flightmode = constrain( ( pwm[st[FLT].ch] - st[FLT].min + st_flt_spacing/2) / st_flt_spacing, 0, 5); //output 0..5
+    if(st_flt_spacing<5) {
+      flightmode = 0;
+    }else{
+      flightmode = constrain( ( pwm[st[FLT].ch] - st[FLT].min + st_flt_spacing/2) / st_flt_spacing, 0, 5); //output 0..5
+    }
 
     //set update timestamp
     update_time = millis();
@@ -202,8 +210,13 @@ float Rcl::_ChannelNormalize(int val, int min, int center, int max, int deadband
   return rev * 1.0;
 }
 
+//normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
+int Rcl::_getCh(int ch) {
+  if(ch >= 1 && ch <= RCL_MAX_CH) return ch - 1; else return RCL_MAX_CH;
+}
+
 void Rcl::_setupStick(int stickno, int ch, int left_pull, int mid, int right_push) {
-  st[stickno].ch  = ch-1;
+  st[stickno].ch  = _getCh(ch);
   st[stickno].mid = mid;
   if(left_pull < right_push) {
     st[stickno].min = left_pull;
