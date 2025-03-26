@@ -101,7 +101,7 @@ void *memmem(const void *haystack, size_t haystacklen, const void *needle, size_
  # define MB_Debug(fmt, args ...)
 #endif
 
-#if UBLOX_CFG_DEBUGGINGt
+#if UBLOX_CFG_DEBUGGING
  # define CFG_Debug(fmt, args ...)  do {interface_printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); } while(0)
 #else
  # define CFG_Debug(fmt, args ...)
@@ -2254,7 +2254,8 @@ void AP_GPS_UBLOX::update2() {
     if (!result) {
         if (tnow - timing.last_message_time_ms > GPS_TIMEOUT_MS) {
             interface_printf("LOST CONNECTION\n");
-            memset((void *)&state, 0, sizeof(state));
+            //memset((void *)&state, 0, sizeof(state));
+            state = {};
             state->hdop = GPS_UNKNOWN_DOP;
             state->vdop = GPS_UNKNOWN_DOP;
             // timing.last_message_time_ms = tnow;

@@ -14,6 +14,7 @@
 //======================================================================================================================//
 #ifndef IMU_EXEC
   #define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE
+  //#define IMU_EXEC IMU_EXEC_FREERTOS
 #endif
 #ifndef IMU_FREERTOS_TASK_PRIORITY
   #define IMU_FREERTOS_TASK_PRIORITY 7
@@ -31,15 +32,13 @@
 #include "RP2040_PWM.h"  //Servo and oneshot
 #include "../MF_I2C.h"
 #include "../MF_Serial.h"
-#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver (did not work very well...)
-#include "MF_SerialUART_RP2040.h" //MF_Serial wrappers for SerialUART with task based TX buffer
-#include "MF_SerialPIO_RP2040.h" //MF_Serial wrappers for SerialPIO with task based TX buffer
+#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver
 
 //-------------------------------------
 //Bus Setup
 //-------------------------------------
 
-#define HAL_SER_NUM 6
+#define HAL_SER_NUM 2
 #define HAL_I2C_NUM 2
 #define HAL_SPI_NUM 2
 
@@ -166,193 +165,6 @@ void hal_print_pin_name(int pinnum) {
 }
 
 
-//* MF_SerialUART version - works for sbus & ublox
-
-//create/get Serial bus (late binding)
-//Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
-MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
-  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
-
-  uint16_t config;
-
-  switch(mode) {
-    case MF_SerialMode::mf_SERIAL_8N1:
-      config=SERIAL_8N1;
-      break;
-    case MF_SerialMode::mf_SERIAL_8E2:
-      config=SERIAL_8E2;
-      break;
-    default:
-      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
-      return nullptr;
-      break;
-  }
-
-  //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
-  int pin_tx = -1;
-  int pin_rx = -1;
-  uart_inst_t *uart = nullptr;
-  char taskname[16];
-  switch(bus_id) {
-    case 0:
-      pin_tx = cfg.pin_ser0_tx;
-      pin_rx = cfg.pin_ser0_rx;
-      uart = uart0;
-      strcpy(taskname, "ser0");
-      break;
-    case 1:
-      pin_tx = cfg.pin_ser1_tx;
-      pin_rx = cfg.pin_ser1_rx;
-      uart = uart1;
-      strcpy(taskname, "ser1");
-      break;
-    case 2:
-      pin_tx = cfg.pin_ser2_tx;
-      pin_rx = cfg.pin_ser2_rx;
-      uart = nullptr;
-      strcpy(taskname, "ser2");
-      break;
-    case 3:
-      pin_tx = cfg.pin_ser3_tx;
-      pin_rx = cfg.pin_ser3_rx;
-      uart = nullptr;
-      strcpy(taskname, "ser3");
-      break;
-    case 4:
-      pin_tx = cfg.pin_ser4_tx;
-      pin_rx = cfg.pin_ser4_rx;
-      uart = nullptr;
-      strcpy(taskname, "ser4");
-      break;
-    case 5:
-      pin_tx = cfg.pin_ser5_tx;
-      pin_rx = cfg.pin_ser5_rx;
-      uart = nullptr;
-      strcpy(taskname, "ser5");
-      break;
-    default:
-      return nullptr;
-  }
-
-  //exit if no pins defined
-  if(pin_tx < 0 && pin_rx < 0) return nullptr;
-
-  if(uart) {
-    //create new wrapped SerialUART
-    if(!hal_ser[bus_id]) {
-      #ifdef MF_DEBUG
-        Serial.printf("Creating MF_SerialUART for bus %d\n",bus_id);
-      #endif
-      SerialUART *ser = new SerialUART(uart, pin_tx, pin_rx); //uart_inst_t *uart, pin_size_t tx, pin_size_t rx, pin_size_t rts = UART_PIN_NOT_DEFINED, pin_size_t cts = UART_PIN_NOT_DEFINED
-      hal_ser[bus_id] = new MF_SerialUART(ser, taskname);
-    }
-
-    //get SerialUART from MF_Serial wrapper, and configure it
-    SerialUART *ser = ((MF_SerialUART*)hal_ser[bus_id])->_serial;
-    ser->end();
-    ser->setRX(pin_rx);
-    ser->setTX(pin_tx);
-    ser->setFIFOSize(256);
-    ser->setInvertTX(invert);
-    ser->setInvertRX(invert);
-    ser->begin(baud, config);
-  }else{
-    //create new wrapped SerialPIO
-    if(!hal_ser[bus_id]) {
-      #ifdef MF_DEBUG
-        Serial.printf("Creating MF_SerialPIO for bus %d\n",bus_id);
-      #endif
-      SerialPIO *ser = new SerialPIO(pin_tx, pin_rx, 256); //pin_size_t tx, pin_size_t rx, size_t fifoSize = 32
-      hal_ser[bus_id] = new MF_SerialPIO(ser, taskname);
-    }
-
-    //get SerialPIO from MF_Serial wrapper, and configure it
-    SerialPIO *ser = ((MF_SerialPIO*)hal_ser[bus_id])->_serial;
-    ser->end();
-    ser->setInvertTX(invert);
-    ser->setInvertRX(invert);
-    ser->begin(baud, config);
-  }
-
-  return hal_ser[bus_id];
-}
-
-//*/
-
-
-
-/* //SerialUART version - works for sbus, not for gps because of lacking TX buffer
-
-//create/get Serial bus (late binding)
-//Serial BUS (&Serial, &Serial1, &Serial2) - ser0 &Serial is used for CLI via uart->USB converter
-MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
-  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
-
-  uint16_t config;
-
-  switch(mode) {
-    case MF_SerialMode::mf_SERIAL_8N1:
-      config=SERIAL_8N1;
-      break;
-    case MF_SerialMode::mf_SERIAL_8E2:
-      config=SERIAL_8E2;
-      break;
-    default:
-      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
-      return nullptr;
-      break;
-  }
-
-  //SerialUART default Arduino impementation (does not have TX buffer -> problem for ublox gps and mavlink ...)
-  int pin_tx = -1;
-  int pin_rx = -1;
-  uart_inst_t *uart;
-  switch(bus_id) {
-    case 0:
-      pin_tx = cfg.pin_ser0_tx;
-      pin_rx = cfg.pin_ser0_rx;
-      uart = uart0;
-      break;
-    case 1:
-      pin_tx = cfg.pin_ser1_tx;
-      pin_rx = cfg.pin_ser1_rx;
-      uart = uart1;
-      break;
-    default:
-      return nullptr;
-  }
-
-  //exit if no pins defined
-  if(pin_tx < 0 && pin_rx < 0) return nullptr;
-
-  //create new MF_SerialPtrWrapper
-  if(!hal_ser[bus_id]) {
-    SerialUART *ser = new SerialUART(uart, pin_rx, pin_tx);
-    hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-  }
-
-  //get ser from MF_SerialPtrWrapper, and configure it
-  SerialUART *ser = ((MF_SerialPtrWrapper<SerialUART*>*)hal_ser[bus_id])->_serial;
-  ser->end();
-  ser->setRX(pin_rx);
-  ser->setTX(pin_tx);
-  ser->setFIFOSize(256);
-  ser->setInvertTX(invert);
-  ser->setInvertRX(invert);
-  ser->begin(baud, config);
-
-  return hal_ser[bus_id];
-}
-
-
-//*/
-
-
-
-
-
-
-/* //SerialIRQ version - does not work for SBUS, works for UBLOX
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
@@ -360,14 +172,13 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   uint8_t bits = 8;
   char parity;
   uint8_t stop;
-  uint16_t config;
 
   switch(mode) {
     case MF_SerialMode::mf_SERIAL_8N1:
-      bits = 8; parity='N'; stop=1; config=SERIAL_8N1;
+      bits = 8; parity='N'; stop=1;
       break;
-    case MF_SerialMode::mf_SERIAL_8E2:
-      bits = 8; parity='E'; stop=2; config=SERIAL_8E2;
+    case MF_SerialMode::mf_SERIAL_8E2: //for SBUS
+      bits = 8; parity='E'; stop=2;
       break;
     default:
       Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
@@ -375,7 +186,6 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       break;
   }
 
-  //using SerialIRQ - works for gps, does not work correctly for sbus ...
   switch(bus_id) {
     case 0: {
       int pin_tx = cfg.pin_ser0_tx;
@@ -403,17 +213,3 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   
   return hal_ser[bus_id];
 }
-
-//*/
-
-
-
-/*
-    //uncomment one: SerialIRQ, SerialUART or SerialPIO and use uart0 or uart1
-    auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, ser1_txbuf, sizeof(ser1_txbuf), cfg.pin_ser1_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
-    //auto *ser = new SerialIRQ(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialDMA(uart1, cfg.pin_ser1_tx, pin_ser1_rx, 256, 256); //TODO
-    //auto *ser = new SerialUART(uart1, cfg.pin_ser1_tx, pin_ser1_rx); //SerialUART default Arduino impementation (had some problems with this)
-    //auto *ser = new SerialPIO(cfg.pin_ser1_tx, pin_ser1_rx, 32); //PIO uarts, any pin allowed (not tested, but expect same as SerialUART)
-    hal_ser[1] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-*/

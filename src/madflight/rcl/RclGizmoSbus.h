@@ -21,7 +21,7 @@ class RclGizmoSbus : public RclGizmo {
       //setup sbus gizmo
       auto gizmo = new RclGizmoSbus();
       gizmo->pwm = pwm;
-      gizmo->sbus._bus = ser_bus;
+      gizmo->sbus.serial = ser_bus;
       gizmo->sbus.begin();
       return gizmo;
     }
