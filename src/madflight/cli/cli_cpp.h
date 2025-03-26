@@ -88,7 +88,7 @@ void cli_print_rcl_RadioScaled() {
   Serial.printf("roll:%+.2f\t", rcl.roll);
   Serial.printf("pitch:%+.2f\t", rcl.pitch);
   Serial.printf("yaw:%+.2f\t", rcl.yaw);
-  Serial.printf("arm:%d\t", rcl.arm);
+  Serial.printf("armed:%d\t", rcl.armed);
   Serial.printf("flightmode:%d\t", rcl.flightmode);
 }
 

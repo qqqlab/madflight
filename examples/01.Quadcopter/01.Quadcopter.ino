@@ -19,8 +19,15 @@ Connecting Hardware
     RC receiver: connect pin_ser0_rx to receiver TX pin
     ESCs: pin_out0 ... pin_out3 to the ESC inputs of motor1 ... motor4
 
-Arming: Set throttle low, then flip arm switch from DISARMED to ARMED.
-Disarming: Flip arm switch from ARMED to DISARMED, at any throttle position. "Kill switch".
+Arming/disarming with dedicated switch
+
+    Arm: Set throttle low, then flip arm switch from DISARMED to ARMED.
+    Disarm: Flip arm switch from ARMED to DISARMED, at any throttle position. "Kill switch".
+
+Arming/disarming with sticks (when no arm switch is defined, i.e. cfg.rcl_arm_ch == 0 ) 
+
+    Arm: Pull both sticks toward you, yaw full right, and roll full left
+    Disarm: Pull both sticks toward you, yaw full left, and roll full right
 
 LED State                              Meaning
 ---------                              -------
@@ -282,25 +289,21 @@ void control_Rate(bool zero_integrators) {
 }
 
 void out_KillSwitchAndFailsafe() {
-  static bool rcin_arm_prev = true; //initial value is true: forces out.armed false on startup even if arm switch is ON
-
-  //Change to ARMED when throttle is zero and radio armed switch was flipped from disamed to armed position
-  if (!out.armed && rcl.throttle == 0 && rcl.arm && !rcin_arm_prev) {
+  //Change to ARMED when rcl is armed (by switch or stick command)
+  if (!out.armed && rcl.armed) {
     out.armed = true;
     Serial.println("OUT: ARMED");
   }
 
-  //Change to DISARMED when radio armed switch is in disarmed position, or if radio lost connection
-   if (out.armed && (!rcl.arm || !rcl.connected())) {
+  //Change to DISARMED when rcl is disarmed, or if radio lost connection
+  if (out.armed && (!rcl.armed || !rcl.connected())) {
     out.armed = false;
-    if(!rcl.arm) {
+    if(!rcl.armed) {
       Serial.println("OUT: DISARMED");
     }else{
       Serial.println("OUT: DISARMED due to lost radio connection");
     }
   }
-
-  rcin_arm_prev = rcl.arm;
 }
 
 void out_Mixer() {

@@ -67,7 +67,7 @@ class Rcl {
     float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
     float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
     float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
-    bool arm = false; //arm switch state
+    bool armed = false; //armed state (triggered by arm switch or stick commands)
     uint8_t flightmode = 0; //flightmode 0 to 5
 
   private:
@@ -88,6 +88,7 @@ class Rcl {
     } st[6];
 
     uint16_t st_flt_spacing;
+    bool _arm_sw_prev = true; //default to true, to require arm switch first off, then on to enter armed state!
 };
 
 extern Rcl rcl;

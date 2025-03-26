@@ -64,7 +64,8 @@ int Rcl::setup() {
   pitch = 0;
   yaw = 0;
   vspeed = 0;
-  arm = false;
+  armed = false;
+  _arm_sw_prev = true; //default to true, to require arm switch first off, then on to enter armed state!
 
   //create gizmo
   delete gizmo;
@@ -167,18 +168,26 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     pitch  = -st[PIT].inv * _ChannelNormalize(pwm[st[PIT].ch], st[PIT].min, st[PIT].mid, st[PIT].max, cfg.rcl_deadband); // output: -1 (pitch down, st back) to 1 (pitch up, st forward)
     yaw    =  st[YAW].inv * _ChannelNormalize(pwm[st[YAW].ch], st[YAW].min, st[YAW].mid, st[YAW].max, cfg.rcl_deadband); // output: -1 (yaw left, st left) to 1 (yaw right, st right)
 
-    //arm switch
+    //armed state
     if(st[ARM].ch < RCL_MAX_CH) {
-      //get arm switch state
-      arm = (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max);
+      //use arm switch
+      bool arm_sw = (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max); //get arm switch state
+      if(throttle == 0 && arm_sw && !_arm_sw_prev) {
+        //Arm: Throttle is zero and radio armed switch was flipped from disarmed to armed position
+        armed = true;
+      }else if (!arm_sw) {
+        //Disarm: As soon as arm switch is in disarmed position. "Kill switch"
+        armed = false;
+      }
+      _arm_sw_prev = arm_sw;
     }else{
-      //no arm switch - use stick commands
+      //use stick commands (no arm switch defined)
       if(throttle == 0.0 && pitch > 0.9 && yaw > 0.9 && roll < -0.9) {
-        //sticks pulled & toward eachother
-        arm = true;
+        //Arm: Pull both sticks toward you, yaw full right, and roll full left
+        armed = true;
       }else if(throttle == 0.0 && pitch > 0.9 && yaw < -0.9 && roll > 0.9) {
-        //sticks pulled & away from eachother
-        arm = false;
+        //Disarm: Pull both sticks toward you, yaw full left, and roll full right
+        armed = false;
       }
     }
 
