@@ -30,7 +30,7 @@ SOFTWARE.
 #include "LedGizmoSingle.h"
 
 int Led::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
 
   //create gizmo
   delete gizmo;

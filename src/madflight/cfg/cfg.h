@@ -24,8 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-//NOTE: class Cfg is kept "private" (header only) to enable injection of user parameters via USER_PARAM_LIST
-
 //=========================================================================================
 // Parameter List
 //=========================================================================================
@@ -234,18 +232,95 @@ SOFTWARE.
 //end MF_PARAM_LIST
 
 
+#include <Arduino.h> //String
 
-#include <Arduino.h>
-
+//=========================================================================================
+// Generate parameter count, enums, lookup table, and CfgParam member variables from MF_PARAM_LIST
+//=========================================================================================
 namespace Cfg {
+  //count number of parameters, generated from MF_PARAM_LIST
+  #define MF_PARAM(name, defval, datatype, type, ...) + 1
+    const uint16_t param_cnt = 0 MF_PARAM_LIST ;
+  #undef MF_PARAM
+  
   //enums for madflight library parameters, generated from MF_PARAM_LIST
   #define MF_PARAM(name, defval, datatype, type, ...) enum class name##_enum { __VA_ARGS__ };
     MF_PARAM_LIST
   #undef MF_PARAM
+  
+  //list of parameters (generate from MF_PARAM_LIST)
+  #define MF_PARAM(name, defval, datatype, type, ...) {#name, defval, type, #__VA_ARGS__},
+    struct param_list_t {
+      const char* name;
+      const float defval;
+      const char type;
+      const char* options;
+    };
+    const param_list_t param_list[] = { MF_PARAM_LIST };
+  #undef MF_PARAM
+};
 
-  void printModule(const char* modulename);
-  int getIndex(String namestr);
-  uint16_t paramCount();
-  bool setParamMavlink(String namestr, float val);
-  bool getNameAndValue(uint16_t index, String* name, float* value);
-}; //namespace Cfg
+//struct CfgParam for parameters, generated from MF_PARAM_LIST
+#define MF_PARAM(name, defval, datatype, type, ...) datatype name = defval;
+struct __attribute__((packed)) CfgParam {
+  union __attribute__((packed)) {
+    struct __attribute__((packed)) {
+      MF_PARAM_LIST
+    };
+    float param_float[Cfg::param_cnt];
+    int32_t param_int32_t[Cfg::param_cnt];
+  };
+};
+#undef MF_PARAM
+
+
+
+#define CFG_HDR0 'm'
+#define CFG_HDR1 'a'
+#define CFG_HDR2 'd'
+#define CFG_HDR3 '2'
+
+class CfgClass : public CfgParam {
+private:
+  //keep CfgHeader 40 bytes long!!!
+  struct __attribute__((packed)) CfgHeader {
+    uint8_t header0 = CFG_HDR0;
+    uint8_t header1 = CFG_HDR1;
+    uint8_t header2 = CFG_HDR2;
+    uint8_t header3 = CFG_HDR3;
+    uint16_t len = 0; //number of bytes for hdr+param+crc
+    uint16_t _reserved0;
+    uint32_t madflight_param_crc;
+    uint8_t _reserved1[28] = {0};
+  } hdr;
+
+public:
+  CfgClass();
+  void begin();
+  uint16_t paramCount(); //get number of parameters
+  bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
+  void list(const char* filter = nullptr); //CLI print all config values
+  bool setParam(String namestr, String val); //CLI set a parameter value, returns true on success
+  bool setParamMavlink(String namestr, float val); //set a parameter value, returns true on success
+  int getIndex(String namestr); //get parameter index for a parameter name
+  void clear(); //load defaults from param_list
+  void loadFromEeprom(); //read parameters from eeprom/flash
+  void loadFromString(const char *batch); //load text unconditional
+  bool load_madflight_param(const char *batch); //load text if crc is different, returns true when loaded
+  void writeToEeprom(); //write config to flash
+  float getValue(String namestr, float default_value);
+
+  //print
+  void printParamOption(const int32_t* param);
+  bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
+  void printPins();
+  void printModule(const char* module_name);
+  void printNameAndValue(uint16_t i, const char* comment = nullptr);
+  void printValue(uint16_t i);
+
+private:
+  bool load_cmdline(String cmdline);
+  int get_enum_index(const char* k, const char* values);
+};
+
+extern CfgClass cfg;

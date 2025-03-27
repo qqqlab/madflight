@@ -49,7 +49,7 @@
   #include <Wire.h>
 #endif
 #include <SPI.h> //SPI communication
-#include "ESP32_PWM.h" //Servo and onshot
+#include "ESP32_PWM_cpp.h" //Servo and onshot
 #include "../MF_Serial.h"
 #include "../MF_I2C.h"
 

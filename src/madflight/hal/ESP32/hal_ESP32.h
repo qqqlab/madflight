@@ -1,3 +1,6 @@
+//NOTE: all files in this directory should be .h headers, or use #ifdef ARDUINO_ARCH_ESP32 guards to 
+//stop the Arduino builder from compiling these source files when a different target is selected
+
 #pragma once
 
 #include <Arduino.h>

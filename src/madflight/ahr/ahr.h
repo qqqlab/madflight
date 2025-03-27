@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <stdint.h>
+
 class Ahr {
   public:
     float gx = 0, gy = 0, gz = 0; //corrected and filtered imu gyro measurements in [deg/sec]

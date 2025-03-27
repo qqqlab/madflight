@@ -35,7 +35,7 @@ SOFTWARE.
 Gps gps;
 
 int Gps::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
 
   //create gizmo
   delete gizmo;

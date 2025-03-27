@@ -32,7 +32,7 @@ SOFTWARE.
 Mag mag;
 
 int Mag::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
 
   _samplePeriod = 1000000 / config.sampleRate;
 

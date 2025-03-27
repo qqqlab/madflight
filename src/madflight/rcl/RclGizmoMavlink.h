@@ -194,7 +194,7 @@ bool RclGizmoMavlink::receive() {
             char name[17];
             memcpy(name, m.param_id, 16);
             name[16] = 0;
-            int param_index = Cfg::getIndex(String(name));
+            int param_index = cfg.getIndex(String(name));
             if(param_index >= 0) telem_param_value(param_index);
           }
           break;
@@ -206,7 +206,7 @@ bool RclGizmoMavlink::receive() {
           char name[17];
           memcpy(name, m.param_id, 16);
           name[16] = 0;
-          int param_index = Cfg::setParamMavlink(String(name), m.param_value);
+          int param_index = cfg.setParamMavlink(String(name), m.param_value);
           if(param_index >= 0) telem_param_value(param_index);
           break;
         }
@@ -371,12 +371,12 @@ void RclGizmoMavlink::telem_param_value_enable() {
 }
 
 bool RclGizmoMavlink::telem_param_value(uint16_t param_index) {
-  uint16_t param_count = Cfg::paramCount();
+  uint16_t param_count = cfg.paramCount();
   if(param_index >= param_count) return true; //return true (i.e. command executed), even if nothing was send...
   
   String param_id;
   float param_value = 0;
-  Cfg::getNameAndValue(param_index, &param_id, &param_value);
+  cfg.getNameAndValue(param_index, &param_id, &param_value);
   param_id.toUpperCase();
 
   mavlink_message_t msg;
@@ -392,7 +392,7 @@ bool RclGizmoMavlink::telem_param_value(uint16_t param_index) {
 
 
 bool RclGizmoMavlink::telem_param_list() {
-  uint16_t param_count = Cfg::paramCount();
+  uint16_t param_count = cfg.paramCount();
   if(telem_param_list_index < param_count) {
     if(telem_param_value(telem_param_list_index)) {
       telem_param_list_index++;

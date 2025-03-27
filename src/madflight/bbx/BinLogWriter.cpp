@@ -254,7 +254,7 @@ namespace BinLogWriter {
     String name;
     float value = 0;
     int i = 0;
-    while(Cfg::getNameAndValue(i,&name,&value)) {
+    while(cfg.getNameAndValue(i,&name,&value)) {
       log_header_parm(name.c_str(), value, 0);
       queueFlush();
       i++;

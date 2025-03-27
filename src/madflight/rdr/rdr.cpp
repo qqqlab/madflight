@@ -36,7 +36,7 @@ SOFTWARE.
 Rdr rdr;
 
 int Rdr::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
 
   //create gizmo
   delete gizmo;

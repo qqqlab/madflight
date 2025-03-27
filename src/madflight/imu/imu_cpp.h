@@ -90,7 +90,7 @@ bool Imu::hasMag() { return gizmo->has_mag; }
 
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
   
   //disable interrupt handler
   _imu_ll_interrupt_enabled = false;

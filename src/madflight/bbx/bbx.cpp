@@ -84,7 +84,7 @@ Bbx bbx;
 
 
 int Bbx::setup() {
-  Cfg::printModule(MF_MOD);
+  cfg.printModule(MF_MOD);
 
   //create gizmo
   delete gizmo;
@@ -239,7 +239,6 @@ void Bbx::log_att() {
 
 //raw (unfiltered but corrected) IMU data
 void Bbx::log_imu() {
-  /*
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
   bl.TimeUS(imu.ts);
@@ -265,7 +264,6 @@ void Bbx::log_imu() {
   bl.i16("roll",ahr.roll*100, 1e-2, "deg"); //deg -180 to 180
   bl.i16("pitch",ahr.pitch*100, 1e-2, "deg");; //deg -90 to 90
   bl.i16("yaw",ahr.yaw*100, 1e-2, "deg");; //deg -180 to 180
-  */
 }
 
 void Bbx::log_mode(uint8_t fm, const char* name) {

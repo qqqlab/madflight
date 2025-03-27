@@ -22,14 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//needs to be header because of "cfg." usage in this file
-
-// Make sure this file is included from madflight.h and not from somewhere else
-#ifndef MF_ALLOW_INCLUDE_CCP_H
-  #error "Only include this file from madflight.h"
-#endif
-//#pragma once //don't use here, we want to get an error if included twice
-
 #define MF_MOD "RCL"
 
 #include "rcl.h"
@@ -56,7 +48,7 @@ SOFTWARE.
 Rcl rcl;
 
 int Rcl::setup() {
-  Cfg::printModule("rcl");
+  cfg.printModule("rcl");
 
   //clear vars
   throttle = 0;
@@ -237,5 +229,3 @@ void Rcl::_setupStick(int stickno, int ch, int left_pull, int mid, int right_pus
     st[stickno].inv = -1;
   }
 }
-
-#undef MF_MOD

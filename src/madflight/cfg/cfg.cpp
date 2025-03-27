@@ -22,130 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-// Make sure this file is included from madflight.h and not from somewhere else
-#ifndef MF_ALLOW_INCLUDE_CCP_H
-  #error "Only include this file from madflight.h"
-#endif
-//#pragma once //don't use here, we want to get an error if included twice
-
-#ifndef USER_PARAM_LIST
-  #define USER_PARAM_LIST
-#endif
-
 #include "cfg.h" //MF_PARAM_LIST and enums for options
 #include "../hal/hal.h"
 #include "../tbx/tbx_crc.h"
 
-#define CFG_HDR0 'm'
-#define CFG_HDR1 'a'
-#define CFG_HDR2 'd'
-#define CFG_HDR3 '2'
-
-
-namespace Cfg {
-  //list of parameters (generate from MF_PARAM_LIST and USER_PARAM_LIST)
-  #define MF_PARAM(name, defval, datatype, type, ...) {#name, defval, type, #__VA_ARGS__},
-    struct param_list_t {
-      const char* name;
-      const float defval;
-      const char type;
-      const char* options;
-    };
-    const param_list_t param_list[] = { MF_PARAM_LIST USER_PARAM_LIST };
-  #undef MF_PARAM
-
-  //enums for user parameters, generated from USER_PARAM_LIST
-  //NOTE: MF_PARAM_LIST already expanded in cfg.h
-  #define MF_PARAM(name, defval, datatype, type, ...) enum class name##_enum { __VA_ARGS__ };
-    USER_PARAM_LIST
-  #undef MF_PARAM
-
-  //count number of parameters, generated from MF_PARAM_LIST
-  #define MF_PARAM(name, defval, datatype, type, ...) + 1
-    //count number of madflight library parameters
-    const uint16_t mf_param_cnt = 0 MF_PARAM_LIST ;
-    //count number of all (madflight+user) parameters
-    const uint16_t param_cnt = 0 MF_PARAM_LIST USER_PARAM_LIST ;
-  #undef MF_PARAM
-};
-
-
-//struct CfgParam for parameters, generated from MF_PARAM_LIST
-#define MF_PARAM(name, defval, datatype, type, ...) datatype name = defval;
-struct __attribute__((packed)) CfgParam {
-  union __attribute__((packed)) {
-    struct __attribute__((packed)) {
-      MF_PARAM_LIST
-      USER_PARAM_LIST
-    };
-    float param_float[Cfg::param_cnt];
-    int32_t param_int32_t[Cfg::param_cnt];
-  };
-};
-#undef MF_PARAM
-
-class CfgClass : public CfgParam {
-private:
-  //keep CfgHeader 40 bytes long!!!
-  struct __attribute__((packed)) CfgHeader {
-    uint8_t header0 = CFG_HDR0;
-    uint8_t header1 = CFG_HDR1;
-    uint8_t header2 = CFG_HDR2;
-    uint8_t header3 = CFG_HDR3;
-    uint16_t len = 0; //number of bytes for hdr+param+crc
-    uint16_t mf_param_cnt; //number of madflight library parameters
-    uint32_t madflight_param_crc;
-    uint8_t _reserved[28] = {0};
-  } hdr;
-
-public:
-  CfgClass();
-  void begin();
-  uint16_t paramCount(); //get number of parameters
-  bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
-  void list(const char* filter = nullptr); //CLI print all config values
-  bool setParam(String namestr, String val); //CLI set a parameter value, returns true on success
-  bool setParamMavlink(String namestr, float val); //set a parameter value, returns true on success
-  int getIndex(String namestr); //get parameter index for a parameter name
-  void clear(); //load defaults from param_list
-  void loadFromEeprom(); //read parameters from eeprom/flash
-  void loadFromString(const char *batch); //load text unconditional
-  bool load_madflight_param(const char *batch); //load text if crc is different, returns true when loaded
-  void writeToEeprom(); //write config to flash
-  float getValue(String namestr, float default_value);
-
-  //print
-  void printParamOption(const int32_t* param);
-  bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
-  void printPins();
-  void printModule(const char* module_name);
-  void printNameAndValue(uint16_t i, const char* comment = nullptr);
-  void printValue(uint16_t i);
-
-private:
-  bool load_cmdline(String cmdline);
-  int get_enum_index(const char* k, const char* values);
-};
-
+//create global module instance
 CfgClass cfg;
-
-namespace Cfg {
-  void printModule(const char* modulename) {
-    cfg.printModule(modulename);
-  }
-  int getIndex(String namestr) {
-    return cfg.getIndex(namestr);
-  }
-  uint16_t paramCount(){
-    return cfg.paramCount();
-  }
-  bool setParamMavlink(String namestr, float val){
-    return cfg.setParamMavlink(namestr, val);
-  }
-  bool getNameAndValue(uint16_t index, String* name, float* value) {
-    return cfg.getNameAndValue(index, name, value);
-  }
-};
 
 CfgClass::CfgClass() {}
 
@@ -452,7 +334,6 @@ void CfgClass::writeToEeprom() {
 
   //write header
   hdr.len = sizeof(CfgHeader) + sizeof(CfgParam) + 4; //4=crc
-  hdr.mf_param_cnt = Cfg::mf_param_cnt;
   for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
     uint8_t byte = ((uint8_t*)&hdr)[i];
     hal_eeprom_write(pos, byte);
