@@ -1,7 +1,7 @@
 //==============================================================================================================
 //  Mahony Sensor Fusion
 //==============================================================================================================
-//source: https://github.com/PaulStoffregen/MahonyAHRS
+// source: https://github.com/PaulStoffregen/MahonyAHRS
 
 class Mahony {
 public:
