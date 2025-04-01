@@ -78,7 +78,7 @@ Copyright (c) 2024-2025 https://madflight.com
 #define VEH_FLIGHTMODE_AP_IDS {AP_PLANE_FLIGHTMODE_MANUAL, AP_PLANE_FLIGHTMODE_STABILIZE, AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A} //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
 #define VEH_FLIGHTMODE_NAMES {"MANUAL", "ROLL", "FBWA"} //fightmode names for telemetry
 enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
-flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
+flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 3/6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>

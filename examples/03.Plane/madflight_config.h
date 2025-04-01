@@ -5,7 +5,7 @@
 // You have 3 options to setup the pins (gpio numbers) and busses for the flight controller:
 //
 //   1) Default - #include <madflight_board.h> and see https://madflight.com for default pinout diagrams for the supported
-//      processor families. Default pinouts are defined in the board header files library/src/madflight_board_XXX.h
+//      processor families. Default pinouts are defined in the board header files library/madflight/src/madflight_board_XXX.h
 // 
 //   2) Header - #include the BetaFlight flight controller you want to use. See library/madflight/src for all available 
 //      boards. For example: #include <madflight_zzz_MTKS-MATEKH743.h>
@@ -23,6 +23,8 @@
 //
 // Hardware configuration is a raw string with a key-value list. On a line, anything after '#' or '/' is ignored as comment
 //
+// You can also set these values from the CLI, for example "set imu_gizmo MPU6500"
+//
 //========================================================================================================================//
 
 #define MADFLIGHT_CONFIG R""(
@@ -35,9 +37,9 @@ imu_spi_bus    0        // connect IMU to SPI bus 0
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 
-imu_gizmo      MPU6500  // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
+imu_gizmo      NONE     // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
 imu_align      CW90     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
-imu_i2c_adr    0        // use 0 for default i2c address
+imu_i2c_adr    0        // enter decimal i2c address, not hex (use 0 for default i2c address)
 
 // RCL - Remote Controller Link
 rcl_gizmo      NONE     // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM, PWM
@@ -66,6 +68,9 @@ bbx_gizmo      NONE     // options: NONE, SDSPI, SDMMC
 // RDR - Radar
 rdr_gizmo      NONE     // options: NONE, LD2411S, LD2413, USD1
 rdr_baud       0
+
+// AHR - AHRS
+ahr_gizmo      MAHONY   // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 
 )"" // End of MADFLIGHT_CONFIG
 
@@ -184,10 +189,7 @@ imu_i2c_bus    -1
 //                                               COMPILER OPTIONS                                                         //
 //========================================================================================================================//
 
-//-- AHRS sensor fusion 
-#define AHR_USE AHR_USE_MAHONY // Select one: AHRS_USE_MAHONY, AHRS_USE_MAHONY_BF, AHRS_USE_MADGWICK, AHRS_USE_VQF
-
-// Reset config eeprom to defaults (uncomment this, upload, then comment out, and upload again)
+// Reset config eeprom to defaults (uncomment this, upload, execute, then comment out, and upload again)
 //#define MF_CONFIG_CLEAR
 
 // Uncomment to print additional debug information and reduce startup delay
