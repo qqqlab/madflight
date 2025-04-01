@@ -89,6 +89,7 @@ class Rcl {
 
     uint16_t st_flt_spacing;
     bool _arm_sw_prev = true; //default to true, to require arm switch first off, then on to enter armed state!
+    uint32_t _arm_ts = 0;
 };
 
 extern Rcl rcl;

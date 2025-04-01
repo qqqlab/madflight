@@ -29,6 +29,7 @@ SOFTWARE.
 //#pragma once //don't use here, we want to get an error if included twice
 
 #include "hal.h"
+#include "../cfg/cfg.h"
 
 #if defined ARDUINO_ARCH_ESP32
   #include "ESP32/hal_ESP32_cpp.h"

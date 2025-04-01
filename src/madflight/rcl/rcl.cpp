@@ -174,12 +174,22 @@ bool Rcl::update() { //returns true if channel pwm data was updated
       _arm_sw_prev = arm_sw;
     }else{
       //use stick commands (no arm switch defined)
-      if(throttle == 0.0 && pitch > 0.9 && yaw > 0.9 && roll < -0.9) {
-        //Arm: Pull both sticks toward you, yaw full right, and roll full left
-        armed = true;
-      }else if(throttle == 0.0 && pitch > 0.9 && yaw < -0.9 && roll > 0.9) {
-        //Disarm: Pull both sticks toward you, yaw full left, and roll full right
-        armed = false;
+      if(!armed && throttle == 0.0 && pitch > 0.9 && yaw > 0.9 && roll < -0.9) {
+        //Arm: Pull both sticks toward you, yaw full right, and roll full left and keep then there for 2 sec
+        if(_arm_ts == 0) {
+          _arm_ts = millis();
+        }else if(millis() - _arm_ts > 2000) {
+          armed = true;
+        }
+      }else if(armed && throttle == 0.0 && pitch > 0.9 && yaw < -0.9 && roll > 0.9) {
+        //Disarm: Pull both sticks toward you, yaw full left, and roll full right and keep then there for 2 sec
+        if(_arm_ts == 0) {
+          _arm_ts = millis();
+        }else if(millis() - _arm_ts > 2000) {
+          armed = false;
+        }
+      }else {
+        _arm_ts = 0;
       }
     }
 

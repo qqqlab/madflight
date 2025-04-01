@@ -32,11 +32,12 @@ SOFTWARE.
 //global module class instance
 Veh veh;
 
-void Veh::setFlightmode(uint8_t flightmode) {
-  if(_flightmode != flightmode) {
-    _flightmode = flightmode;
-    bbx.log_mode(_flightmode, flightmode_name());
-  }
+//returns true if flightmode changed
+bool Veh::setFlightmode(uint8_t flightmode) {
+  if(_flightmode == flightmode) return false;
+  _flightmode = flightmode;
+  bbx.log_mode(flightmode_ap_id(), flightmode_name());
+  return true;
 }
 
 uint8_t Veh::getFlightmode() {
@@ -45,7 +46,7 @@ uint8_t Veh::getFlightmode() {
 
 uint8_t Veh::flightmode_ap_id() {
   if(_flightmode<6) return flightmode_ap_ids[_flightmode];
-  return 0xff;
+  return _flightmode;
 }
 
 const char* Veh::flightmode_name() {

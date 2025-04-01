@@ -133,25 +133,13 @@ typedef enum {
     AP_SUB_FLIGHTMODE_MOTOR_DETECT = 20   // Automatically detect motors orientation
 } AP_SUB_FLIGHTMODE_ENUM;
 
-#ifndef VEH_TYPE
-  #define VEH_TYPE VEH_TYPE_GENERIC
-#endif
-
-#ifndef VEH_FLIGHTMODE_NAMES
-  #define VEH_FLIGHTMODE_NAMES {"FM0","FM1","FM2","FM3","FM4","FM5"}
-#endif
-
-#ifndef VEH_FLIGHTMODE_AP_IDS
-  #define VEH_FLIGHTMODE_AP_IDS {0,1,2,3,4,5}
-#endif
-
 class Veh {
   public:
-    uint8_t mav_type = VEH_TYPE; //mavlink vehicle type
-    uint8_t flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
-    const char* flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
-
-    void setFlightmode(uint8_t flightmode);
+    static const uint8_t mav_type; //mavlink vehicle type
+    static const uint8_t flightmode_ap_ids[6]; //mapping from flightmode to ArduPilot flight mode id
+    static const char* flightmode_names[6]; //define flightmode name strings for telemetry
+  
+    bool setFlightmode(uint8_t flightmode); //returns true if flightmode changed
     uint8_t getFlightmode();
     uint8_t flightmode_ap_id();
     const char* flightmode_name();
@@ -160,5 +148,7 @@ class Veh {
     uint8_t _flightmode = 0; //current flight mode index
     const char* flightmode_name_unknown = "???";
 };
+
+
 
 extern Veh veh;

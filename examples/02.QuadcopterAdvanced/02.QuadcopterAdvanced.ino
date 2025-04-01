@@ -46,10 +46,10 @@ Copyright (c) 2023-2025 https://madflight.com
 
 //Vehicle specific madflight configuration
 #define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
-#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_STABILIZE, AP_COPTER_FLIGHTMODE_ACRO} //mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_ACRO, AP_COPTER_FLIGHTMODE_STABILIZE} //mapping of fightmode index to ArduPilot code for logging and mavlink
 #define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
 enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
-flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, ANGLE, ANGLE, ANGLE}; //flightmode mapping from 6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}; //flightmode mapping from 2/3/6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
@@ -131,7 +131,11 @@ void loop() {
 
   mag.update();
   
-  if(gps.update()) {bbx.log_gps(); bbx.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
+  //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
+  if(gps.update()) {
+    bbx.log_gps(); 
+    bbx.log_att();
+  } 
 
   //logging
   static uint32_t log_ts = 0;
@@ -157,7 +161,9 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcl.update();
-  veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] ); //map rcl.flightmode (0 to 5) to vehicle flightmode
+  if(rcl.connected() && veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] )) { //map rcl.flightmode (0 to 5) to vehicle flightmode
+    Serial.printf("Flightmode:%s\n",veh.flightmode_name());
+  }
 
   //PID Controller
   switch( veh.getFlightmode() ) {

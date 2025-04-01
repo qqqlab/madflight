@@ -26,16 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//#pragma once //don't use here, we want to get an error if included twice
-
-// madflight config string
-#ifndef MADFLIGHT_BOARD
-  #define MADFLIGHT_BOARD ""
-#endif
-#ifndef MADFLIGHT_CONFIG
-  #define MADFLIGHT_CONFIG ""
-#endif
-const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
+//#pragma once //don't use here, we want to get an error if this file is included twice
 
 // bus abstraction
 #include "madflight/hal/MF_Serial.h"
@@ -43,13 +34,13 @@ const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
 
 // include all "_cpp.h" modules which have compile time config options
 #define MF_ALLOW_INCLUDE_CCP_H
-#include "madflight/ahr/ahr_cpp.h" //TODO - convert to use gizmos
 #include "madflight/alt/alt_cpp.h" //TODO - convert to use gizmos
 #include "madflight/hal/hal_cpp.h"
 #include "madflight/imu/imu_cpp.h" //for IMU_EXEC
 #undef MF_ALLOW_INCLUDE_CCP_H
 
 // include all other modules without compile time config options
+#include "madflight/ahr/ahr.h"
 #include "madflight/cfg/cfg.h"
 #include "madflight/cli/cli.h"
 #include "madflight/bar/bar.h"
@@ -75,6 +66,29 @@ void madflight_warn_or_die(String msg, bool die);
 //===============================================================================================
 // madflight_setup()
 //===============================================================================================
+
+// madflight config string by defines MADFLIGHT_BOARD, MADFLIGHT_CONFIG
+#ifndef MADFLIGHT_BOARD
+  #define MADFLIGHT_BOARD ""
+#endif
+#ifndef MADFLIGHT_CONFIG
+  #define MADFLIGHT_CONFIG ""
+#endif
+const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
+
+// vehicle setup by defines VEH_TYPE, VEH_FLIGHTMODE_AP_IDS, VEH_FLIGHTMODE_NAMES
+#ifndef VEH_TYPE
+  #define VEH_TYPE VEH_TYPE_GENERIC
+#endif
+#ifndef VEH_FLIGHTMODE_AP_IDS
+  #define VEH_FLIGHTMODE_AP_IDS {0,1,2,3,4,5}
+#endif
+#ifndef VEH_FLIGHTMODE_NAMES
+  #define VEH_FLIGHTMODE_NAMES {"FM0","FM1","FM2","FM3","FM4","FM5"}
+#endif
+const uint8_t Veh::mav_type = VEH_TYPE; //mavlink vehicle type
+const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
+const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //[6] define flightmode name strings for telemetry
 
 void madflight_setup() {
   Serial.begin(115200); //start console serial
@@ -176,7 +190,6 @@ void madflight_setup() {
   rdr.config.baud = cfg.rdr_baud; //baud rate
   rdr.setup();
 
-
   // GPS
   gps.config.gizmo = (Cfg::gps_gizmo_enum)cfg.gps_gizmo; //the gizmo to use
   gps.config.ser_bus_id = cfg.gps_ser_bus; //serial bus id
@@ -194,9 +207,19 @@ void madflight_setup() {
 
   // ALT - Altitude Estimator
   alt.setup(bar.alt); 
-  
+
   // AHR - setup low pass filters for AHRS filters
-  ahr.setup(cfg.imu_gyr_lp, cfg.imu_acc_lp, cfg.mag_lp);
+  ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
+  ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
+  ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
+  ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
+  ahr.config.pimu = &imu; //pointer to Imu to use
+  ahr.config.pmag = &mag; //pointer to Mag to use
+  ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
+  ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
+  ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
+  ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
+  ahr.setup();
 
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]

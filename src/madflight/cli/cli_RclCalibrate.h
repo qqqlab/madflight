@@ -7,10 +7,18 @@ class RclCalibrate {
 
 public:
   static void calibrate() {
+    //disable IMU interrupt
+    void (*onUpdate_saved)(void) = imu.onUpdate;
+    imu.onUpdate = nullptr;
+
+    //calibrate
     RclCalibrate *cal = new RclCalibrate();
     if(!cal->_calibrate()) {
       Serial.println("\n==== Radio Calibration Aborted ====");
     }
+    
+    //enable IMU interrupt
+    imu.onUpdate = onUpdate_saved;
   }
 
   struct stick_t{
@@ -166,7 +174,7 @@ bool _calibrate() {
   Serial.println("During calibration type 'q' to quit");
 
   //prompt DISARMED
-  if(!prompt("\n--- Step 1: Start Calibration ---\nCENTER all sticks (including throttle), armed swich to DISARMED, then press ENTER to continue")) return false;
+  if(!prompt("\n--- Step 1: Start Calibration ---\nSet arm switch to DISARMED and CENTER all sticks including throttle, then press ENTER to continue")) return false;
 
   //get armed switch
   Serial.println("\n--- Step 2: Arm Switch Calibration ---\nSwitch to ARMED, or press enter for no arm switch");

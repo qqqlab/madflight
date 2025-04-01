@@ -179,6 +179,9 @@ SOFTWARE.
   MF_PARAM( pin_mmc_cmd,      -1, int32_t, 'p') \
   MF_PARAM( pin_rcl_ppm,      -1, int32_t, 'p') \
 \
+  /*AHR - AHRS*/ \
+  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF) \
+\
   /*BAR - Barometer*/ \
   MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611) \
   MF_PARAM( bar_i2c_bus,      -1, int32_t, 'i') \
@@ -218,17 +221,17 @@ SOFTWARE.
   MF_PARAM( mag_i2c_adr,       0, int32_t, 'i') \
   MF_PARAM( mag_lp,         1e10, float, 'f') /*Magnetometer Gyro Low Pass Filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering) */ \
 \
-  /*RDR - Radar*/ \
-  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1) \
-  MF_PARAM( rdr_ser_bus,      -1, int32_t, 'i') \
-  MF_PARAM( rdr_baud,          0, int32_t, 'i') \
-\
   /*RCL - Remote Control Link*/ \
   MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM) \
   MF_PARAM( rcl_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rcl_baud,          0, int32_t, 'i') \
   MF_PARAM( rcl_num_ch,        8, int32_t, 'i') /*max 20*/ \
   MF_PARAM( rcl_deadband,      0, int32_t, 'i') \
+\
+  /*RDR - Radar*/ \
+  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1) \
+  MF_PARAM( rdr_ser_bus,      -1, int32_t, 'i') \
+  MF_PARAM( rdr_baud,          0, int32_t, 'i') \
 //end MF_PARAM_LIST
 
 
@@ -262,9 +265,9 @@ namespace Cfg {
 
 //struct CfgParam for parameters, generated from MF_PARAM_LIST
 #define MF_PARAM(name, defval, datatype, type, ...) datatype name = defval;
-struct __attribute__((packed)) CfgParam {
-  union __attribute__((packed)) {
-    struct __attribute__((packed)) {
+struct CfgParam {
+  union {
+    struct {
       MF_PARAM_LIST
     };
     float param_float[Cfg::param_cnt];
