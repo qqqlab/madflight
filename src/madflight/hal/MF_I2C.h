@@ -35,18 +35,58 @@ class MF_I2C {
       return requestFrom(address, len, true);
     }
 
-    //non "Arduino standard" extension 
-    uint32_t transceive(uint8_t address, uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {
-      beginTransmission(address);
-      write(wbuf, wlen);
-      endTransmission(false);
-      requestFrom(address, rlen);
-      return read(rbuf, rlen);
-    }
-
     //virtual void begin(uint8_t address) = 0; 
     //virtual void onReceive(void(*)(int)) = 0;
     //virtual void onRequest(void(*)(void)) = 0;
+};
+
+
+class MF_I2CDevice {
+  public:
+    MF_I2C *i2c;
+    uint8_t adr;
+
+    MF_I2CDevice(MF_I2C *i2c, uint8_t adr) {
+      this->i2c = i2c;
+      this->adr = adr;
+    }
+
+    uint32_t write(uint8_t reg, uint8_t *data, uint32_t len) {
+      i2c->beginTransmission(adr);
+      uint32_t rv = i2c->write(&reg, 1);
+      if(len > 0) {
+        rv += i2c->write(data, len);
+      }
+      return rv;
+    }
+
+    uint32_t write(uint8_t reg, uint8_t data) {
+      return write(reg, &data, 1);
+    }
+
+    uint32_t read(uint8_t reg, uint8_t *data, uint32_t len) {
+      uint32_t rv = 0;
+      i2c->beginTransmission(adr);
+      i2c->write(&reg, 1);
+      if(len > 0) {
+        i2c->endTransmission(false);
+        i2c->requestFrom(adr, len);
+        rv = i2c->read(data, len);
+      }
+      return rv;
+    }
+
+    uint32_t transceive(uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {
+      uint32_t rv = 0;
+      i2c->beginTransmission(adr);
+      if(wlen > 0) rv = i2c->write(wbuf, wlen);
+      if(wlen > 0 && rlen > 0) i2c->endTransmission(false);
+      if(rlen > 0) {
+        i2c->requestFrom(adr, rlen);
+        rv = i2c->read(rbuf, rlen);
+      }
+      return rv;
+    }
 };
 
 // Wrapper around an arduino TwoWire-like pointer T

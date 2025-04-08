@@ -29,6 +29,7 @@ SOFTWARE.
 #include "BarGizmoBMP280.h"
 #include "BarGizmoBMP390.h"
 #include "BarGizmoMS5611.h"
+#include "BarGizmoHP203B.h"
 #include <math.h>
 
 //create global module instance
@@ -43,8 +44,8 @@ int Bar::setup() {
   press = 0;
   temp = 0;
   alt = 0;
-  ts = micros();
-  dt = 0;  
+  ts = 0;
+  dt = 0;
 
   //create gizmo
   delete gizmo;
@@ -68,6 +69,11 @@ int Bar::setup() {
         gizmo = new BarGizmoMS5611(config.i2c_bus, config.i2c_adr, config.sampleRate);
       }
       break;
+    case Cfg::bar_gizmo_enum::mf_HP203B :
+      if(config.i2c_bus) {
+        gizmo = new BarGizmoHP203B(config.i2c_bus, config.i2c_adr, config.sampleRate);
+      }
+      break;
   }
 
   //check gizmo
@@ -81,17 +87,18 @@ int Bar::setup() {
 
 bool Bar::update() {
   if(!gizmo) return false;
-  if (micros() - ts >= _samplePeriod) {
-    uint32_t tsnew = micros();
-    dt = (tsnew - ts) / 1000000.0;
-    gizmo->update(&press, &temp);
-    float P = press;
-    //float T = temp;
-    //alt = 153.84348f * (1 - pow(P/101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
-    alt = 44330.0f * (1 - pow(P/101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
-    //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
-    ts = tsnew;
-    return true;
-  }
-  return false;
+  
+  uint32_t now = micros();
+  if(now - ts < _samplePeriod) return false;
+  if(now - ts < 2 * _samplePeriod) ts += _samplePeriod; else ts = now; //keep exact _samplePeriod timing, unless we missed an interval
+
+  dt = (now - ts) / 1000000.0;
+  gizmo->update(&press, &temp);
+  float P = press;
+  //float T = temp;
+  //alt = 153.84348f * (1 - pow(P / 101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
+  alt = 44330.0f * (1 - pow(P / 101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
+  //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
+  ts = now;
+  return true;
 }

@@ -27,6 +27,7 @@ SOFTWARE.
 #include <Arduino.h> //Serial
 #include "mag.h"
 #include "MagGizmoQMC5883L.h"
+#include "MagGizmoQMC6309.h"
 
 //create global module instance
 Mag mag;
@@ -35,6 +36,12 @@ int Mag::setup() {
   cfg.printModule(MF_MOD);
 
   _samplePeriod = 1000000 / config.sampleRate;
+
+  //clear state
+   x = 0; //"North" magnetic flux [uT]
+   y = 0; //"East" magnetic flux [uT]
+   z = 0; //"Down" magnetic flux [uT]
+   ts = 0; //last sample time in [us]
 
   //create gizmo
   delete gizmo;
@@ -45,6 +52,11 @@ int Mag::setup() {
     case Cfg::mag_gizmo_enum::mf_QMC5883 :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC5883L(config.i2c_bus, config.i2c_adr);
+      }
+      break;
+    case Cfg::mag_gizmo_enum::mf_QMC6309 :
+      if(config.i2c_bus) {
+        gizmo = new MagGizmoQMC6309(config.i2c_bus, config.i2c_adr);
       }
       break;
   }
@@ -60,7 +72,12 @@ int Mag::setup() {
 
 bool Mag::update() {
   if(!gizmo) return false;
-  if(micros() - mag_time < _samplePeriod) return false;
-  mag_time = micros();
-  return gizmo->read_uT(&x, &y, &z);
+  
+  uint32_t now = micros();
+  if(now - ts < _samplePeriod) return false;
+  if(now - ts < 2 * _samplePeriod) ts += _samplePeriod; else ts = now; //keep exact _samplePeriod timing, unless we missed an interval
+
+  if(!gizmo->update(&x, &y, &z)) return false;
+  ts = now;
+  return true;
 }

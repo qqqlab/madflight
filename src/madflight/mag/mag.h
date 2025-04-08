@@ -32,6 +32,7 @@ struct MagState {
     float x = 0; //"North" magnetic flux [uT]
     float y = 0; //"East" magnetic flux [uT]
     float z = 0; //"Down" magnetic flux [uT]
+    uint32_t ts = 0; //last sample time in [us]
 };
 
 struct MagConfig {
@@ -45,7 +46,7 @@ struct MagConfig {
 class MagGizmo {
 public:
   virtual ~MagGizmo() {};
-  virtual bool read_uT(float *x, float *y, float *z) = 0; //returns true if new sample was retrieved
+  virtual bool update(float *x, float *y, float *z) = 0; //returns true if new sample was retrieved
 };
 
 class Mag : public MagState {
@@ -59,7 +60,6 @@ class Mag : public MagState {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
   protected:
-    uint32_t mag_time = 0; //last sample time in [us]
     uint32_t _samplePeriod = 0; //gizmo sample period in [us]
 
     bool _installed = false;
