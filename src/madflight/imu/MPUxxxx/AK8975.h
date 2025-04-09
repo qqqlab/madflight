@@ -47,8 +47,8 @@ class AK8975 {
     
     int begin()
     {
-      _iface->WriteReg(MPUREG_I2C_MST_CTRL, 0x0D);  // MPU9150I2C master clock speed 400KHz
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x20);     // MPU9150 Enable I2C master mode 
+      _iface->writeReg(MPUREG_I2C_MST_CTRL, 0x0D);  // MPU9150I2C master clock speed 400KHz
+      _iface->writeReg(MPUREG_USER_CTRL, 0x20);     // MPU9150 Enable I2C master mode 
 
       //warm up AK8975
       for(int i=0;i<10;i++) {
@@ -60,25 +60,25 @@ class AK8975 {
 
       AK8975_getASA();
 
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x00); //disable master I2C
+      _iface->writeReg(MPUREG_USER_CTRL, 0x00); //disable master I2C
 
       // Let I2C slave get Mag data, these commands repeated with the sample rate (1kHz) 
       // slave0: get 7 bytes of data
-      _iface->WriteReg(MPUREG_I2C_SLV0_ADDR, AK8975_I2C_ADDR|READ_FLAG); //write operation
-      _iface->WriteReg(MPUREG_I2C_SLV0_REG, AK8975_HXL); //mag data register
-      _iface->WriteReg(MPUREG_I2C_SLV0_CTRL, 0x87);   //enable, read 7 bytes (3*2 mag + status)
+      _iface->writeReg(MPUREG_I2C_SLV0_ADDR, AK8975_I2C_ADDR|READ_FLAG); //write operation
+      _iface->writeReg(MPUREG_I2C_SLV0_REG, AK8975_HXL); //mag data register
+      _iface->writeReg(MPUREG_I2C_SLV0_CTRL, 0x87);   //enable, read 7 bytes (3*2 mag + status)
       // slave1: restart mag sampling
-      _iface->WriteReg(MPUREG_I2C_SLV1_ADDR, AK8975_I2C_ADDR);  //write operation
-      _iface->WriteReg(MPUREG_I2C_SLV1_REG, AK8975_CNTL);  //write to mode register
-      _iface->WriteReg(MPUREG_I2C_SLV1_DO, 0x01);  //data to write (set single conversion mode)
-      _iface->WriteReg(MPUREG_I2C_SLV1_CTRL, 0x81); //enable, read 1 bytes (need to read at least one byte!!!!)
+      _iface->writeReg(MPUREG_I2C_SLV1_ADDR, AK8975_I2C_ADDR);  //write operation
+      _iface->writeReg(MPUREG_I2C_SLV1_REG, AK8975_CNTL);  //write to mode register
+      _iface->writeReg(MPUREG_I2C_SLV1_DO, 0x01);  //data to write (set single conversion mode)
+      _iface->writeReg(MPUREG_I2C_SLV1_CTRL, 0x81); //enable, read 1 bytes (need to read at least one byte!!!!)
 
-      _iface->WriteReg(MPUREG_I2C_MST_DELAY_CTRL, 0x03+0x80); //wait for SLV0+SLV1, shadow
-      _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 9); //read slaves every n+1 samples -> 100Hz
+      _iface->writeReg(MPUREG_I2C_MST_DELAY_CTRL, 0x03+0x80); //wait for SLV0+SLV1, shadow
+      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 9); //read slaves every n+1 samples -> 100Hz
 
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x00); //clear 
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x02); //I2C_MST_RESET i2c reset
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x20); //enable master I2C
+      _iface->writeReg(MPUREG_USER_CTRL, 0x00); //clear 
+      _iface->writeReg(MPUREG_USER_CTRL, 0x02); //I2C_MST_RESET i2c reset
+      _iface->writeReg(MPUREG_USER_CTRL, 0x20); //enable master I2C
 
       return 0;
     }
@@ -111,14 +111,14 @@ class AK8975 {
 
     int AK8975_ReadReg(uint8_t reg)
     {
-      _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8975_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8975 and set for reading.
-      _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8975_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8975 and set for reading.
+      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 4000) {
         //wait for I2C_SLV4_DONE
-        if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
-          return _iface->ReadReg(MPUREG_I2C_SLV4_DI);
+        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+          return _iface->readReg(MPUREG_I2C_SLV4_DI);
         }
       }
       return -1;
@@ -126,14 +126,14 @@ class AK8975 {
 
     bool AK8975_WriteReg(uint8_t reg, uint8_t data) 
     {
-      _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8975_I2C_ADDR); //Set the I2C slave addres of AK8975 and set for writing.
-      _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->WriteReg(MPUREG_I2C_SLV4_DO, data);   // Reset AK8975
-      _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8975_I2C_ADDR); //Set the I2C slave addres of AK8975 and set for writing.
+      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_DO, data);   // Reset AK8975
+      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 2000) {
         //wait for I2C_SLV4_DONE 
-        if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
           return true;
         }
       }

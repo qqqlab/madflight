@@ -47,9 +47,9 @@ class AK8963 {
     //error codes 2000, warning codes -2000
     int begin()
     {
-      _iface->WriteReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
-      //_iface->WriteReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus --> ONLY DO THIS IN SPI MODE, disables the external I2C interface....
-      _iface->WriteReg(MPUREG_USER_CTRL, 0x20);        // Enable I2C master mode 
+      _iface->writeReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
+      //_iface->writeReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus --> ONLY DO THIS IN SPI MODE, disables the external I2C interface....
+      _iface->writeReg(MPUREG_USER_CTRL, 0x20);        // Enable I2C master mode 
 
       int rv = 0;
 
@@ -66,9 +66,9 @@ class AK8963 {
 
       // Send I2C command to get Mag data, this command is repeated with the sample rate (1kHz) 
       // as long as these MPU registers are not overwritten with an another command
-      _iface->WriteReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
-      _iface->WriteReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
-      _iface->WriteReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
+      _iface->writeReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
+      _iface->writeReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
+      _iface->writeReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
       // must start your read from AK8963A register 0x03 and read seven bytes so that upon read of ST2 register 0x09 the AK8963A will unlatch the data registers for the next measurement.
 
       return rv;
@@ -102,14 +102,14 @@ class AK8963 {
 
     int AK8963_ReadReg(uint8_t reg)
     {
-      _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
-      _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
+      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 2000) {
         //wait for I2C_SLV4_DONE
-        if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
-          return _iface->ReadReg(MPUREG_I2C_SLV4_DI);
+        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+          return _iface->readReg(MPUREG_I2C_SLV4_DI);
         }
       }
       return -1;
@@ -117,14 +117,14 @@ class AK8963 {
 
     bool AK8963_WriteReg(uint8_t reg, uint8_t data) 
     {
-      _iface->WriteReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
-      _iface->WriteReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->WriteReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
-      _iface->WriteReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
+      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _iface->writeReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
+      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 2000) {
         //wait for I2C_SLV4_DONE 
-        if( _iface->ReadReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
           return true;
         }
       }

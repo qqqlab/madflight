@@ -4,7 +4,16 @@
 
 #pragma once
 
+//Datasheet: spi clock up to 1MHz for register operations, up to 20MHz allowed for reading data.
+#define MPU_SPI_FREQ_SLOW 1000000
+#define MPU_SPI_FREQ_FAST 20000000
+
+//Datasheet: i2c clock up to 400kHz
+#define MPU_I2C_FREQ_SLOW 400000
+#define MPU_I2C_FREQ_FAST 1000000 //2.5 times overclocking
+
 #include "MPU_interface.h"
+#include "MPU_regs.h"
 #include "AK8963.h"
 #include "AK8975.h"
 
@@ -36,6 +45,9 @@ class MPUXXXX : public ImuGizmo {
     MPU_Type _type;
     int _rate_hz;
 
+    uint32_t freq_slow = 0;
+    uint32_t freq_fast = 0;
+
   public:
 
     //some MPU6000/6050 revisions have half acc resolution
@@ -59,16 +71,24 @@ class MPUXXXX : public ImuGizmo {
     //Actual sample rate is set to the max possible rate smaller than/equal to the requested rate. 
     //I.e. 99999..1000->1000, 999..500->500, 499..333->333, 332..250->250, etc
     int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
-      //start interface
-      _iface->begin();
-      _iface->setFreqSlow();
+      //set interface frequencies
+      if(_iface->isSPI()) {
+        freq_slow = MPU_SPI_FREQ_SLOW;
+        freq_fast = MPU_SPI_FREQ_FAST;
+      }else{
+        freq_slow = MPU_I2C_FREQ_SLOW;
+        freq_fast = MPU_I2C_FREQ_FAST;
+      }
+      
+      //start interface slow
+      _iface->setFreq(freq_slow);
 
       //config
-      _iface->WriteReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // Reset
+      _iface->writeReg(MPUREG_PWR_MGMT_1, BIT_H_RESET);        // Reset
       delay(20);
-      _iface->WriteReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source XGyro
-      _iface->WriteReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
-      _iface->WriteReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);    // Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
+      _iface->writeReg(MPUREG_PWR_MGMT_1, 0x01);               // Clock Source XGyro
+      _iface->writeReg(MPUREG_PWR_MGMT_2, 0x00);               // Enable Acc & Gyro
+      _iface->writeReg(MPUREG_CONFIG, BITS_DLPF_CFG_188HZ);    // Use DLPF set Gyroscope bandwidth 184Hz, acc bandwidth 188Hz
 
       //sample rate: 
       if(rate_hz > 1000) {
@@ -77,7 +97,7 @@ class MPUXXXX : public ImuGizmo {
         int div = 1000 / (rate_hz + 1);
         if(div > 255) div = 255;
         rate_hz = 1000 / (div + 1);
-        _iface->WriteReg(MPUREG_SMPLRT_DIV, div);
+        _iface->writeReg(MPUREG_SMPLRT_DIV, div);
       }
       _rate_hz = rate_hz;
 
@@ -87,8 +107,8 @@ class MPUXXXX : public ImuGizmo {
       set_acc_scale_g(acc_scale_g);
 
       //enable 50us data ready pulse on int pin
-      _iface->WriteReg(MPUREG_INT_PIN_CFG, 0x00);
-      _iface->WriteReg(MPUREG_INT_ENABLE, 0x01);
+      _iface->writeReg(MPUREG_INT_PIN_CFG, 0x00);
+      _iface->writeReg(MPUREG_INT_ENABLE, 0x01);
 
       //check whoami
       int wai = whoami();
@@ -145,16 +165,16 @@ class MPUXXXX : public ImuGizmo {
     // MPU9255 should return 0x73
     unsigned int whoami()
     {
-        _iface->setFreqSlow();
-        return _iface->ReadReg(MPUREG_WHOAMI);
+        _iface->setFreq(freq_slow);
+        return _iface->readReg(MPUREG_WHOAMI);
     }
 
     void set_acc_resolution() {
         if(_type == MPU6000 || _type == MPU6050) {
             uint8_t data[6] = {0};
-            _iface->ReadRegs(MPUREG_XA_OFFS_H,data,6);
+            _iface->readRegs(MPUREG_XA_OFFS_H,data,6);
             rev1 = ((data[5]&1)<<2) | ((data[3]&1)<<1) | ((data[1]&1)<<0);
-            rev2 = _iface->ReadReg(MPUREG_PRODUCT_ID) & 0x0F;
+            rev2 = _iface->readReg(MPUREG_PRODUCT_ID) & 0x0F;
             //rev 0.4 and 1.x have half acc resolution
             acc_resolution = ( (rev1 == 0 && rev2 == 4) || (rev1 == 1) ? 16384 : 32786);
 
@@ -166,36 +186,36 @@ class MPUXXXX : public ImuGizmo {
 
     void set_acc_scale_g(int scale_in_g)
     {
-        _iface->setFreqSlow();
+        _iface->setFreq(freq_slow);
         if(scale_in_g <= 2) {
-          _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);
+          _iface->writeReg(MPUREG_ACCEL_CONFIG, BITS_FS_2G);
           acc_multiplier = 2.0 / acc_resolution;
         }else if(scale_in_g <= 4) { 
-          _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_4G);
+          _iface->writeReg(MPUREG_ACCEL_CONFIG, BITS_FS_4G);
           acc_multiplier = 4.0 / acc_resolution;
         }else if(scale_in_g <= 8) { 
-          _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_8G);
+          _iface->writeReg(MPUREG_ACCEL_CONFIG, BITS_FS_8G);
           acc_multiplier = 8.0 / acc_resolution;
         }else{ 
-          _iface->WriteReg(MPUREG_ACCEL_CONFIG, BITS_FS_16G);
+          _iface->writeReg(MPUREG_ACCEL_CONFIG, BITS_FS_16G);
           acc_multiplier = 16.0 / acc_resolution;
         }
     }
 
     void set_gyro_scale_dps(int scale_in_dps)
     {
-        _iface->setFreqSlow();
+        _iface->setFreq(freq_slow);
         if(scale_in_dps <= 250) {
-          _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);
+          _iface->writeReg(MPUREG_GYRO_CONFIG, BITS_FS_250DPS);
           gyro_multiplier = 250.0 / 32768.0;
         }else if(scale_in_dps <= 500) { 
-          _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_500DPS);
+          _iface->writeReg(MPUREG_GYRO_CONFIG, BITS_FS_500DPS);
           gyro_multiplier = 500.0 / 32768.0;
         }else if(scale_in_dps <= 1000) { 
-          _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_1000DPS);
+          _iface->writeReg(MPUREG_GYRO_CONFIG, BITS_FS_1000DPS);
           gyro_multiplier = 1000.0 / 32768.0;
         }else{ 
-          _iface->WriteReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
+          _iface->writeReg(MPUREG_GYRO_CONFIG, BITS_FS_2000DPS);
           gyro_multiplier = 2000.0 / 32768.0;
         }
     }
@@ -226,8 +246,8 @@ class MPUXXXX : public ImuGizmo {
     void read6()
     {
         uint8_t d[14]; //response is 14 bytes = 6 acc + 2 temp + 6 gyro
-        _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 14); 
+        _iface->setFreq(freq_fast);
+        _iface->readRegs(MPUREG_ACCEL_XOUT_H, d, 14); 
         // Get accelerometer (6 bytes) - sensor orientation for acc/gyro is NWU
         rawa[0] = -(int16_t)((d[0]<<8) | d[1]); //-N = -N
         rawa[1] =  (int16_t)((d[2]<<8) | d[3]); //-E =  W
@@ -267,8 +287,8 @@ class MPUXXXX : public ImuGizmo {
     void read9()
     {
         uint8_t d[20]; //response is 21 bytes = 6 acc + 2 temp + 6 gyro + 6 mag + 1 magstatus (last byte not retrieved)
-        _iface->setFreqFast();
-        _iface->ReadRegs(MPUREG_ACCEL_XOUT_H, d, 20); 
+        _iface->setFreq(freq_fast);
+        _iface->readRegs(MPUREG_ACCEL_XOUT_H, d, 20); 
         // Get accelerometer (6 bytes) - sensor orientation for acc/gyro is NWU
         rawa[0] = -(int16_t)((d[0]<<8) | d[1]); //-N = -N
         rawa[1] =  (int16_t)((d[2]<<8) | d[3]); //-E =  W
@@ -286,7 +306,7 @@ class MPUXXXX : public ImuGizmo {
 
         //this hack appears to help to get more reasonable mag values from MPU9150
         if(_type == MPU9150) {
-          _iface->WriteReg(MPUREG_ACCEL_XOUT_H+15,0xff);
+          _iface->writeReg(MPUREG_ACCEL_XOUT_H+15,0xff);
         }
 
     }

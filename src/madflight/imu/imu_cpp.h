@@ -75,6 +75,7 @@ Limitations:
 #include "./MPUxxxx/MPUxxxx.h"
 #include "./ImuGizmoBMI270.h"
 #include "./ImuGizmoICM45686.h"
+#include "./ImuGizmoICM426XX.h"
 
 //global module class instance
 Imu imu;
@@ -86,7 +87,6 @@ volatile uint32_t _imu_ll_interrupt_ts = 0;
 
 bool Imu::usesI2C() { return gizmo->uses_i2c; } //returns true if IMU uses I2C bus (not SPI bus)
 bool Imu::hasMag() { return gizmo->has_mag; }
-
 
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup() {
@@ -146,6 +146,10 @@ int Imu::setup() {
         gizmo->has_mag = false;
         break;
       }
+      case Cfg::imu_gizmo_enum::mf_ICM42688 : {
+        gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
+        break;
+      }
       default: {
         Serial.println("\n" MF_MOD ": ERROR - Sensor does not support imu_bus_type=SPI\n");
       }
@@ -192,6 +196,10 @@ int Imu::setup() {
         gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
         gizmo->uses_i2c = true;
         gizmo->has_mag = false;
+        break;
+      }
+      case Cfg::imu_gizmo_enum::mf_ICM42688 : {
+        gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
         break;
       }
       default: {

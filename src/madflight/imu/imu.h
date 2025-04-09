@@ -30,7 +30,7 @@ SOFTWARE.
 
 struct ImuConfig {
   public:
-    uint32_t sampleRate = 100; //sample rate [Hz]
+    uint32_t sampleRate = 1000; //sample rate [Hz]
     int pin_int = -1; //IMU data ready interrupt pin
     Cfg::imu_gizmo_enum gizmo = Cfg::imu_gizmo_enum::mf_NONE; //the gizmo to use
     SPIClass *spi_bus = nullptr; //SPI bus
@@ -39,20 +39,39 @@ struct ImuConfig {
     uint8_t i2c_adr = 0; //i2c address. 0=default address
 };
 
+//imu sample data (raw, uncorrected and unfiltered) 
+struct ImuState {
+public:
+    uint32_t ts = 0; //sample low level interrupt trigger timestamp [us]
+    float dt = 0; //time since last sample [seconds]
+    float ax = 0; //"North" acceleration [G]
+    float ay = 0; //"East" acceleration [G]
+    float az = 0; //"Down" acceleration [G]
+    float gx = 0; //"North" rotation speed [deg/s]
+    float gy = 0; //"East" rotation speed [deg/s]
+    float gz = 0; //"Down" rotation speed [deg/s]
+    float mx = 0; //"North" magnetic flux [uT]
+    float my = 0; //"East" magnetic flux [uT]
+    float mz = 0; //"Down" magnetic flux [uT]
+    float temp = 0; //temperature [C]
+};
 
 class ImuGizmo {
 public:
+  virtual int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) = 0;
+  virtual bool update() {return false;}
+  
+  virtual int get_rate() = 0;
+
   virtual ~ImuGizmo() {}
   virtual void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) = 0;
   virtual void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {(void)ax;(void)ay;(void)az;(void)gx;(void)gy;(void)gz;(void)mx;(void)my;(void)mz;};
-  virtual int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) = 0;
-  virtual int get_rate() = 0;
   virtual bool installed() {return true;}
   bool has_mag = false;
   bool uses_i2c = false;
 };
 
-class Imu {
+class Imu : public ImuState {
   public:
     ImuConfig config;
 
@@ -61,19 +80,6 @@ class Imu {
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } //returns true if a gizmo is installed
-
-    //imu sample data (raw, uncorrected and unfiltered) 
-    uint32_t ts = 0; //sample low level interrupt trigger timestamp in us
-    float dt = 0; //time since last sample in seconds
-    float ax = 0; //"North" acceleration in G
-    float ay = 0; //"East" acceleration in G
-    float az = 0; //"Down" acceleration in G
-    float gx = 0; //"North" rotation speed in deg/s
-    float gy = 0; //"East" rotation speed in deg/s
-    float gz = 0; //"Down" rotation speed in deg/s
-    float mx = 0; //"North" magnetic flux in uT
-    float my = 0; //"East" magnetic flux in uT
-    float mz = 0; //"Down" magnetic flux in uT
 
     //interrupt statistics
     volatile uint32_t interrupt_cnt = 0; //number of times interrupt was triggered since start
@@ -93,8 +99,6 @@ class Imu {
     void (*onUpdate)(void) = NULL;
 
     //methods
-
-
     bool waitNewSample(); //wait for new sample, returns false on fail
     bool hasMag(); //returns true if IMU has a magnetometer
     bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)
