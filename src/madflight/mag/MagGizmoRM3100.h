@@ -26,37 +26,35 @@ SOFTWARE.
 
 #include "mag.h"
 #include "../hal/MF_I2C.h"
+#include "RM3100/RM3100.h"
 
-class MagGizmoQMC6309 : public MagGizmo {
-private:
-  MF_I2CDevice *dev = nullptr;
+class MagGizmoRM3100: public MagGizmo {
+protected:
+  MagGizmoRM3100() {}; //protected constructor
+  RM3100 *rm3100 = nullptr;
 
 public:
-  MagGizmoQMC6309(MF_I2C *i2c, int8_t i2c_adr) {
-    i2c_adr = 0x7C; // fixed: 0x7C
-    this->dev = new MF_I2CDevice(i2c, i2c_adr);
+  static MagGizmoRM3100* create(MF_I2C *i2c) {
+    uint8_t probe_adr = RM3100::probe(i2c);
+    if(probe_adr == 0) {
+      Serial.printf("MAG: ERROR: RM3100 not detected\n", probe_adr);
+      return nullptr;
+    }
 
-    //setup for 16 sample moving average (my interpretation of data sheet OSR2 setting), sample rate = 1500Hz (continous mode)
-    dev->writeReg(0x0B, 0x04); //ODR=1Hz, Scale=8G, Reset
-    dev->writeReg(0x0A, 0xFD); //OSR2(filter)=16, OSR=1, Continuous Mode
+    //create and configure gizmo
+    auto gizmo = new MagGizmoRM3100();
+    uint16_t cycle_count = 294; //cycle_count=294 gives approx 100Hz update rate
+    gizmo->rm3100 = new RM3100(i2c, probe_adr, cycle_count);
+    Serial.printf("MAG: RM3100 detected - i2c_adr:0x%02X cycle_count:%d resolution:%d nT/LSB\n", probe_adr, cycle_count, (int)(gizmo->rm3100->scale_uT*1000));
+    return gizmo;
   }
-
-
-  ~MagGizmoQMC6309() {
-    delete dev;
-  }
-
 
   bool update(float *x, float *y, float *z) override {
-    uint8_t d[6];
-    dev->readReg(0x01, d, 6);
-    int16_t mx = d[0] | (d[1] << 8); //16 bit litte-endian signed
-    int16_t my = d[2] | (d[3] << 8);
-    int16_t mz = d[4] | (d[5] << 8);
-
-    *x = 200e-9 * mx; //in [T]
-    *y = 200e-9 * my;
-    *z = 200e-9 * mz;
+    rm3100->read(x,y,z);
     return true;
+  }
+
+  ~MagGizmoRM3100() {
+    delete rm3100;
   }
 };

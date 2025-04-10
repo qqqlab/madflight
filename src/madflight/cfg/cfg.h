@@ -216,7 +216,7 @@ SOFTWARE.
   MF_PARAM( led_on,            0, int32_t, 'e', mf_LOW_IS_ON,mf_HIGH_IS_ON) \
 \
   /*MAG - Magnetometer*/ \
-  MF_PARAM( mag_gizmo,         0, int32_t, 'e', mf_NONE,mf_QMC5883,mf_QMC6309) \
+  MF_PARAM( mag_gizmo,         0, int32_t, 'e', mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100) \
   MF_PARAM( mag_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( mag_i2c_adr,       0, int32_t, 'i') \
   MF_PARAM( mag_lp,         1e10, float, 'f') /*Magnetometer Gyro Low Pass Filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering) */ \

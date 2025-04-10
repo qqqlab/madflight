@@ -28,6 +28,7 @@ SOFTWARE.
 #include "mag.h"
 #include "MagGizmoQMC5883L.h"
 #include "MagGizmoQMC6309.h"
+#include "MagGizmoRM3100.h"
 
 //create global module instance
 Mag mag;
@@ -58,6 +59,9 @@ int Mag::setup() {
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC6309(config.i2c_bus, config.i2c_adr);
       }
+      break;
+    case Cfg::mag_gizmo_enum::mf_RM3100 :
+      gizmo = MagGizmoRM3100::create(config.i2c_bus);
       break;
   }
 

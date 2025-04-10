@@ -43,15 +43,15 @@ class MF_I2C {
 
 class MF_I2CDevice {
   public:
-    MF_I2C *i2c;
-    uint8_t adr;
+    MF_I2C *i2c = nullptr;
+    uint8_t adr = 0;
 
     MF_I2CDevice(MF_I2C *i2c, uint8_t adr) {
       this->i2c = i2c;
       this->adr = adr;
     }
 
-    uint32_t write(uint8_t reg, uint8_t *data, uint32_t len) {
+    uint32_t writeReg(uint8_t reg, uint8_t *data, uint32_t len) {
       i2c->beginTransmission(adr);
       uint32_t rv = i2c->write(&reg, 1);
       if(len > 0) {
@@ -60,11 +60,11 @@ class MF_I2CDevice {
       return rv;
     }
 
-    uint32_t write(uint8_t reg, uint8_t data) {
-      return write(reg, &data, 1);
+    uint32_t writeReg(uint8_t reg, uint8_t data) {
+      return writeReg(reg, &data, 1);
     }
 
-    uint32_t read(uint8_t reg, uint8_t *data, uint32_t len) {
+    uint32_t readReg(uint8_t reg, uint8_t *data, uint32_t len) {
       uint32_t rv = 0;
       i2c->beginTransmission(adr);
       i2c->write(&reg, 1);
@@ -74,6 +74,12 @@ class MF_I2CDevice {
         rv = i2c->read(data, len);
       }
       return rv;
+    }
+
+    uint8_t readReg(uint8_t reg) {
+      uint8_t data;
+      readReg(reg, &data, 1);
+      return data;
     }
 
     uint32_t transceive(uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {

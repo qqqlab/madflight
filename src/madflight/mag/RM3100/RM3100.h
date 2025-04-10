@@ -24,39 +24,27 @@ SOFTWARE.
 
 #pragma once
 
-#include "mag.h"
-#include "../hal/MF_I2C.h"
+#include "../../hal/MF_I2C.h"
 
-class MagGizmoQMC6309 : public MagGizmo {
-private:
-  MF_I2CDevice *dev = nullptr;
+class RM3100 {
+  public:
+    float scale_uT = 1;
 
-public:
-  MagGizmoQMC6309(MF_I2C *i2c, int8_t i2c_adr) {
-    i2c_adr = 0x7C; // fixed: 0x7C
-    this->dev = new MF_I2CDevice(i2c, i2c_adr);
+    //probe for RM3100, returns i2c address on success, or 0 on fail
+    static uint8_t probe(MF_I2C *i2c);
 
-    //setup for 16 sample moving average (my interpretation of data sheet OSR2 setting), sample rate = 1500Hz (continous mode)
-    dev->writeReg(0x0B, 0x04); //ODR=1Hz, Scale=8G, Reset
-    dev->writeReg(0x0A, 0xFD); //OSR2(filter)=16, OSR=1, Continuous Mode
-  }
+    RM3100(MF_I2C *i2c, uint8_t i2c_adr, uint16_t cycle_count=200); 
 
+    ~RM3100();
 
-  ~MagGizmoQMC6309() {
-    delete dev;
-  }
+    bool dataReady();
 
+    //returns xyz[3] with counts
+    void readRaw(int32_t *xyz);
+    
+    //returns x,y,z as uT values
+    void read(float *x, float *y, float *z);
 
-  bool update(float *x, float *y, float *z) override {
-    uint8_t d[6];
-    dev->readReg(0x01, d, 6);
-    int16_t mx = d[0] | (d[1] << 8); //16 bit litte-endian signed
-    int16_t my = d[2] | (d[3] << 8);
-    int16_t mz = d[4] | (d[5] << 8);
-
-    *x = 200e-9 * mx; //in [T]
-    *y = 200e-9 * my;
-    *z = 200e-9 * mz;
-    return true;
-  }
+  protected:
+    MF_I2CDevice *dev;
 };
