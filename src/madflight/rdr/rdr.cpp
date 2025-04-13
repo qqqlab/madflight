@@ -31,6 +31,7 @@ SOFTWARE.
 #include "RdrGizmoLD2411S.h"
 #include "RdrGizmoLD2413.h"
 #include "RdrGizmoUSD1.h"
+#include "RdrGizmoSR04.h"
 
 //create global module instance
 Rdr rdr;
@@ -52,6 +53,9 @@ int Rdr::setup() {
       break;
     case Cfg::rdr_gizmo_enum::mf_USD1 :
       gizmo = RdrGizmoUSD1::create(&dist, config.ser_bus_id, config.baud);
+      break;
+    case Cfg::rdr_gizmo_enum::mf_SR04 :
+      gizmo = RdrGizmoSR04::create(&dist, config.pin_trig, config.pin_echo);
       break;
   }
 

@@ -229,9 +229,13 @@ SOFTWARE.
   MF_PARAM( rcl_deadband,      0, int32_t, 'i') \
 \
   /*RDR - Radar*/ \
-  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1) \
+  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04) \
   MF_PARAM( rdr_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rdr_baud,          0, int32_t, 'i') \
+\
+  /*v2.0.1 additions */ \
+  MF_PARAM( pin_rdr_trig,     -1, int32_t, 'p') \
+  MF_PARAM( pin_rdr_echo,     -1, int32_t, 'p') \
 //end MF_PARAM_LIST
 
 

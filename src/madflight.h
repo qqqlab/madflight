@@ -188,6 +188,8 @@ void madflight_setup() {
   rdr.config.gizmo = (Cfg::rdr_gizmo_enum)cfg.rdr_gizmo; //the gizmo to use
   rdr.config.ser_bus_id = cfg.rdr_ser_bus; //serial bus
   rdr.config.baud = cfg.rdr_baud; //baud rate
+  rdr.config.pin_trig = cfg.pin_rdr_trig;
+  rdr.config.pin_echo = cfg.pin_rdr_echo;
   rdr.setup();
 
   // GPS

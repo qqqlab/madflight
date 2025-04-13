@@ -36,6 +36,8 @@ struct RdrConfig {
     Cfg::rdr_gizmo_enum gizmo = Cfg::rdr_gizmo_enum::mf_NONE;
     int ser_bus_id = -1; //Serial bus id
     int baud = 0; //baud rate. 0=autobaud
+    int pin_trig = -1; //trigger pulse output pin
+    int pin_echo = -1; //echo pulse input pin
 };
 
 class RdrGizmo {
