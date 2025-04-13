@@ -60,6 +60,7 @@ C8 0C 14 33 00 64 0D 00 04 01 00 00 00 96 --> 0x0c:len 12 bytes (frame len is 14
 #include "../../bat/bat.h"
 #include "../../gps/gps.h"
 #include "../../out/out.h"
+#include "../../veh/veh.h"
 
 #define CRSF_BAUD 420000
 #define CRSF_FRAME_SIZE_MAX 64 //max number of bytes of a frame

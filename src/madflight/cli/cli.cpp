@@ -182,7 +182,7 @@ static const struct cli_print_s cli_print_options[] = {
   {"pbar",   "Barometer", cli_print_bar},
   {"palt",   "Altitude estimator", cli_print_alt},
   {"pgps",   "GPS", cli_print_gps},
-  {"prdr",   "Radar", cli_print_rdr},  
+  {"prdr",   "Radar", cli_print_rdr},
 };
 
 
@@ -194,16 +194,27 @@ void Cli::setup() {
 
 //returns true if a command was processed (even an invalid one)
 bool Cli::update() {
-  //process chars from Serial
-  bool rv = false;
-  while(Serial.available()) {
-    if(cmd_process_char(Serial.read())) rv = true;
+  if(mavlink) {
+    return mavlink->update();
+  }else{
+    //process chars from Serial
+    bool rv = false;
+    while(Serial.available()) {
+      uint8_t c = Serial.read();
+      if(c == 0xFD || c == 0xFE) { //mavlink v1,v2 protocol header byte
+        auto ser = &Serial;
+        MF_Serial *ser_bus = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+        mavlink = new RclGizmoMavlink(ser_bus, 115200, nullptr);
+        return false;
+      }
+      if(cmd_process_char(c)) rv = true;
+    }
+
+    //handle output for pxxx commands
+    cli_print_loop();
+
+    return rv;
   }
-
-  //handle output for pxxx commands
-  cli_print_loop();
-
-  return rv;
 }
 
 void Cli::begin() {

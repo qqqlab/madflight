@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include <Arduino.h> //String
+#include "../rcl/RclGizmoMavlink.h"
 
 //cli command extension, return true if command was processed
 extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((weak));
@@ -97,6 +98,7 @@ private:
 
   void cli_print_all(bool val);
   void cli_print_loop();
+  RclGizmoMavlink* mavlink = nullptr;
 };
 
 extern Cli cli;
