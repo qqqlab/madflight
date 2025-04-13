@@ -76,12 +76,11 @@ int Mag::setup() {
 
 bool Mag::update() {
   if(!gizmo) return false;
-  
-  uint32_t now = micros();
-  if(now - ts < _samplePeriod) return false;
-  if(now - ts < 2 * _samplePeriod) ts += _samplePeriod; else ts = now; //keep exact _samplePeriod timing, unless we missed an interval
+
+  //wait for next sample interval
+  if(!schedule.interval(_samplePeriod)) return false;
 
   if(!gizmo->update(&x, &y, &z)) return false;
-  ts = now;
+  ts = micros();
   return true;
 }

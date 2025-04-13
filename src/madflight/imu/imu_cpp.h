@@ -103,7 +103,7 @@ int Imu::setup() {
   //==============================================================
   //create gizmo
   //==============================================================
-  if(config.spi_bus && config.spi_cs >= 0) {
+  if(!config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
     //-----------
     //SPI Sensors
     //-----------
@@ -154,7 +154,7 @@ int Imu::setup() {
         Serial.println("\n" MF_MOD ": ERROR - Sensor does not support imu_bus_type=SPI\n");
       }
     }
-  }else if(config.i2c_bus) {
+  }else if(config.uses_i2c && config.i2c_bus) {
     //-----------
     //I2C Sensors
     //-----------

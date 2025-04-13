@@ -37,6 +37,7 @@ struct ImuConfig {
     int spi_cs = -1; //SPI select pin
     MF_I2C *i2c_bus = nullptr; //i2c bus (only used if spi_bus == nullptr)
     uint8_t i2c_adr = 0; //i2c address. 0=default address
+    bool uses_i2c = false; //use I2C bus?
 };
 
 //imu sample data (raw, uncorrected and unfiltered) 

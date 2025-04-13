@@ -87,18 +87,18 @@ int Bar::setup() {
 
 bool Bar::update() {
   if(!gizmo) return false;
-  
-  uint32_t now = micros();
-  if(now - ts < _samplePeriod) return false;
-  if(now - ts < 2 * _samplePeriod) ts += _samplePeriod; else ts = now; //keep exact _samplePeriod timing, unless we missed an interval
 
-  dt = (now - ts) / 1000000.0;
+  //wait for next sample interval
+  if(!schedule.interval(_samplePeriod)) return false;
+
   gizmo->update(&press, &temp);
   float P = press;
   //float T = temp;
   //alt = 153.84348f * (1 - pow(P / 101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
   alt = 44330.0f * (1 - pow(P / 101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
   //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
+  uint32_t now = micros();
+  dt = (now - ts) / 1000000.0;
   ts = now;
   return true;
 }

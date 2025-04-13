@@ -22,35 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+/* simple scheduler, keeping exact sampling period
+
+example usage:
+
+MF_Schedule schedule;
+
+if(schedule.interval(1000)) {
+  //this code is called every 1000 us
+}
+
+*/
+
 #pragma once
 
-#include <Arduino.h> //String
-#include "MF_I2C.h"
-#include "MF_Serial.h"
-#include "MF_Schedule.h"
-#include <SPI.h> //TODO remove this
+class MF_Schedule {
+private:
+  uint32_t ts = 0;
 
-//prototypes
-void hal_setup();
-void hal_eeprom_begin();
-uint8_t hal_eeprom_read(uint32_t adr);
-void hal_eeprom_write(uint32_t adr, uint8_t val);
-void hal_eeprom_commit();
-void hal_reboot();
-uint32_t hal_get_core_num();
-int hal_get_pin_number(String val);
-void hal_print_pin_name(int pinnum);
-MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
-SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
-MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
+public:
+  MF_Schedule() {
+    ts = micros();
+  }
 
-
-#if defined ARDUINO_ARCH_ESP32
-  #include "ESP32/hal_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "RP2040/hal_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "STM32/hal_STM32.h"
-#else 
-  #error "HAL: Unknown hardware architecture, madflight runs on ESP32 / RP2040 / STM32"
-#endif
+  bool interval(uint32_t interval_us)
+  {
+    uint32_t now = micros();
+    if(now - ts < interval_us) return false;
+    if(now - ts < 2 * interval_us) {
+      ts += interval_us; //keep exact interval_us timing
+    }else{
+      ts = now; //unless we missed an interval
+    }
+    return true;
+  }
+};

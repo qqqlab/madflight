@@ -236,6 +236,7 @@ SOFTWARE.
   /*v2.0.1 additions */ \
   MF_PARAM( pin_rdr_trig,     -1, int32_t, 'p') \
   MF_PARAM( pin_rdr_echo,     -1, int32_t, 'p') \
+  MF_PARAM( imu_bus_type,      0, int32_t, 'e', mf_SPI,mf_I2C) \
 //end MF_PARAM_LIST
 
 

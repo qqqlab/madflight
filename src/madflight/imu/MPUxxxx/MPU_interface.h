@@ -8,6 +8,7 @@
 
 class MPU_Interface {
   public:
+    virtual ~MPU_Interface() {}
     virtual void setFreq(int freq) = 0;
     virtual uint32_t writeRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
     virtual void readRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
@@ -38,7 +39,7 @@ class MPU_InterfaceSPI : public MPU_Interface {
       setFreq(1000000); //default to 1MHz
     }
 
-    ~MPU_InterfaceSPI() {
+    ~MPU_InterfaceSPI() override {
       pinMode(_spi_cs, INPUT);
       _spi = nullptr;
     }
@@ -93,7 +94,7 @@ class MPU_InterfaceI2C : public MPU_Interface{
       setFreq(100000); //default to 100kHz
     }
 
-    ~MPU_InterfaceI2C() {}
+    ~MPU_InterfaceI2C() override {}
 
     void setFreq(int freq) override {
       _i2c->setClock(freq);

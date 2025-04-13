@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../hal/MF_I2C.h"
+#include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 
 struct MagState {
@@ -60,8 +61,8 @@ class Mag : public MagState {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
   protected:
-    uint32_t _samplePeriod = 0; //gizmo sample period in [us]
-
+    uint32_t _samplePeriod = 10000; //gizmo sample period in [us]
+    MF_Schedule schedule;
     bool _installed = false;
 };
 

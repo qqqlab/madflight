@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../hal/MF_I2C.h"
+#include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 
 struct BarState {
@@ -61,7 +62,8 @@ class Bar : public BarState {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
   private:
-    uint32_t _samplePeriod;
+    uint32_t _samplePeriod = 10000;
+    MF_Schedule schedule;
 };
 
 //Global module instance
