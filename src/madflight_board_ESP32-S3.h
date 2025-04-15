@@ -9,9 +9,10 @@
 
 #pragma once
 
-#define HAL_BOARD_NAME "ESP32-S3 DevKitC-1 (default board)"
+#define MF_BOARD_NAME "ESP32-S3 DevKitC-1 (default board)"
+#define MF_MCU_NAME "ESP32-S3"
 
-#define MADFLIGHT_BOARD R""(
+const char* madflight_board = R""(
 
 // PINOUT
 
@@ -113,5 +114,4 @@ bar_i2c_bus     0
 mag_i2c_bus     0
 bat_i2c_bus     0
 
-)""
-//end of #define MADFLIGHT_BOARD
+)""; //end of madflight_board

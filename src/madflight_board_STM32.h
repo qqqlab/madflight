@@ -44,10 +44,10 @@ SPI5_MOSI:PA10,PE6,PE14
 
 #pragma once
 
-#define HAL_BOARD_NAME "STM32F411CE Black Pill (default board)" 
-#define HAL_MCU "STM32F411CEUx" //STM32F411CEUx - not all pin combinations are allowed, see datasheet
+#define MF_BOARD_NAME "STM32F411CE Black Pill (default board)" 
+#define MF_MCU_NAME "STM32F411CEUx" //STM32F411CEUx - not all pin combinations are allowed, see datasheet
 
-#define MADFLIGHT_BOARD R""(
+const char* madflight_board = R""(
 
 // PINOUT
 
@@ -149,5 +149,4 @@ bar_i2c_bus    0
 mag_i2c_bus    0
 bat_i2c_bus    0
 
-)""
-//end of #define MADFLIGHT_BOARD
+)""; //end of madflight_board

@@ -1,11 +1,11 @@
 //Arduino version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR 
 
-#ifndef HAL_MCU
+#ifndef MF_MCU_NAME
   #ifdef PICO_RP2350
-    #define HAL_MCU "RP2350"
+    #define MF_MCU_NAME "RP2350"
   #else
-    #define HAL_MCU "RP2040"
+    #define MF_MCU_NAME "RP2040"
   #endif
 #endif
 

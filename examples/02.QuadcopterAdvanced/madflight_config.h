@@ -1,21 +1,21 @@
 /*========================================================================================================================
-                                              MADFLIGHT CONFIG                                                          
+                                              MADFLIGHT CONFIG
 ==========================================================================================================================
 
-MADFLIGHT_CONFIG is a multi-line raw string in with a key-value list. Anything after '#' or '/' is ignored as comment.
+madflight_config is a multi-line raw string in with a key-value list. Anything after '#' or '/' is ignored as comment.
 
 You have 4 options to setup the pins (gpio numbers) and serial/spi/i2c busses for the flight controller:
 
   1) Default - #include <madflight_board.h> and see https://madflight.com for default pinout diagrams for the supported
      processor families. Default pinouts are defined in the board header files library/madflight/src/madflight_board_XXX.h
-     Leave lines with "pin_..." and "..._bus" commented in MADFLIGHT_CONFIG. 
+     Leave lines with "pin_..." and "..._bus" commented in madflight_config. 
  
   2) BetaFlight - #include the BetaFlight flight controller you want to use. See library/madflight/src for all available 
      boards. For example: #include <madflight_zzz_MTKS-MATEKH743.h>
 
-  3) Override - Keep #include <madflight_board.h>, and uncomment lines in MADFLIGHT_CONFIG to override the board settings.
+  3) Override - Keep #include <madflight_board.h>, and uncomment lines in madflight_config to override the board settings.
  
-  4) Custom - Remove #include <madflight_board.h>, and set the full configuration in MADFLIGHT_CONFIG below.
+  4) Bare Metal - Remove #include <madflight_board.h>, and set the full configuration in madflight_config below.
 
 Pins and busses use zero-based numbering, i.e. imu_spi_bus 0 is the first spi bus. Use -1 to disable a pin or bus.
 
@@ -28,7 +28,7 @@ If things do not work as expected, have a good look at the startup messages!
 
 #include <madflight_board.h>
 
-#define MADFLIGHT_CONFIG R""(
+const char* madflight_config = R""(
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 imu_gizmo      MPU6500  // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250 
@@ -138,7 +138,7 @@ ahr_gizmo      MAHONY  // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 //pin_out14     -1
 //pin_out15     -1
 
-)"" // End of MADFLIGHT_CONFIG
+)""; // End of madflight_config
 
 
 //========================================================================================================================//

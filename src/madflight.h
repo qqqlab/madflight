@@ -28,6 +28,12 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
+//const char* madflight_config = "..."; should be defined before including this file
+
+#ifndef MF_BOARD_NAME
+  const char* madflight_board = nullptr;
+#endif
+
 // bus abstraction
 #include "madflight/hal/MF_Serial.h"
 #include "madflight/hal/MF_I2C.h"
@@ -67,14 +73,7 @@ void madflight_warn_or_die(String msg, bool die);
 // madflight_setup()
 //===============================================================================================
 
-// madflight config string by defines MADFLIGHT_BOARD, MADFLIGHT_CONFIG
-#ifndef MADFLIGHT_BOARD
-  #define MADFLIGHT_BOARD ""
-#endif
-#ifndef MADFLIGHT_CONFIG
-  #define MADFLIGHT_CONFIG ""
-#endif
-const char* madflight_config = MADFLIGHT_BOARD MADFLIGHT_CONFIG;
+
 
 // vehicle setup by defines VEH_TYPE, VEH_FLIGHTMODE_AP_IDS, VEH_FLIGHTMODE_NAMES
 #ifndef VEH_TYPE
@@ -105,12 +104,12 @@ void madflight_setup() {
 
   Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
 
-  #ifdef HAL_BOARD_NAME
-    Serial.println("Board: " HAL_BOARD_NAME);
+  #ifdef MF_BOARD_NAME
+    Serial.println("Board: " MF_BOARD_NAME);
   #endif
 
-  #ifdef HAL_MCU
-    Serial.println("Processor: " HAL_MCU);
+  #ifdef MF_MCU_NAME
+    Serial.println("Processor: " MF_MCU_NAME);
   #endif
 
   // CFG - Configuration parameters
@@ -121,13 +120,7 @@ void madflight_setup() {
     madflight_die("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
   #endif
   cfg.loadFromEeprom(); //load parameters from EEPROM
-  if(madflight_config) {
-    if(cfg.load_madflight_param(madflight_config)) {
-      Serial.println("CFG: Loading MADFLIGHT_CONFIG - OK");
-    }else{
-      Serial.println("CFG: Loading MADFLIGHT_CONFIG - Skipped (EEPROM is newer than MADFLIGHT_CONFIG)");
-    }
-  }
+  cfg.load_madflight(madflight_board, madflight_config); //load config
 
   #ifdef MF_DEBUG
     if(madflight_config) {
@@ -152,6 +145,7 @@ void madflight_setup() {
 
   cli.print_i2cScan(); //print i2c scan
 
+  // RCL - Radio Control Link
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use
   rcl.config.ser_bus_id = cfg.rcl_ser_bus; //serial bus id
   rcl.config.baud = cfg.rcl_baud; //baud rate

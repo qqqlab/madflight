@@ -1,7 +1,14 @@
 
-#define HAL_BOARD_NAME "Raspberry Pi Pico/Pico2 (default board)"
 
-#define MADFLIGHT_BOARD R""(
+#ifdef PICO_RP2350
+  #define MF_BOARD_NAME "Raspberry Pi Pico2 (default board)"
+  #define MF_MCU_NAME "RP2350"
+#else
+  #define MF_BOARD_NAME "Raspberry Pi Pico (default board)"
+  #define MF_MCU_NAME "RP2040"
+#endif
+
+const char* madflight_board = R""(
 
 // PINOUT
 
@@ -103,4 +110,4 @@ bar_i2c_bus     0
 mag_i2c_bus     0
 bat_i2c_bus     0
 
-)""//end of #define MADFLIGHT_BOARD
+)""; //end of madflight_board

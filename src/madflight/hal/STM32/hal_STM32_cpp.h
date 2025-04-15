@@ -20,14 +20,6 @@
 #define df2str(s)               df2xstr(s)
 #define HAL_ARDUINO_STR "Arduino_Core_STM32 v" df2str(STM32_CORE_VERSION_MAJOR) "." df2str(STM32_CORE_VERSION_MINOR) "." df2str(STM32_CORE_VERSION_PATCH)
 
-
-#ifndef HAL_MCU
-  #ifdef BOARD_NAME
-    #define HAL_MCU BOARD_NAME
-  #endif
-#endif
-
-
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//

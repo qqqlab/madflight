@@ -314,7 +314,7 @@ public:
   void clear(); //load defaults from param_list
   void loadFromEeprom(); //read parameters from eeprom/flash
   void loadFromString(const char *batch); //load text unconditional
-  bool load_madflight_param(const char *batch); //load text if crc is different, returns true when loaded
+  void load_madflight(const char *board, const char *config); //load board+config if crc is different
   void writeToEeprom(); //write config to flash
   float getValue(String namestr, float default_value);
 

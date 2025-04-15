@@ -146,20 +146,21 @@ def convert(filename) :
     fprint( "//copy this line to madflight.ino to use this flight controller" )
     fprint( "#include <" + outfilename + ">" )
     fprint( "" )
-    fprint( "Note: madflight will pick the last sensor defined here, this might not be the sensor that is actually on the board. Comment the offending sensors out." )
+    fprint( "Note: madflight will pick the last sensor defined here, this might not be the sensor that is actually on the board. Comment the offending sensors out, or use madflight_config to override." )
     fprint( "==============================================================================*/" )
 
     fprint( "" )
-    fprint( "#define HAL_BOARD_NAME \"BETAFLIGHT-" + strippedfilename + "\"" )
+    fprint( "#define MF_BOARD_NAME \"BETAFLIGHT-" + strippedfilename + "\"" )
     mcu_re = re.search(r"\bSTM32\w+", lines[0] + " " + lines[1]);
-    if mcu_re : fprint( "#define HAL_MCU \"" + mcu_re.group() + "\"" )
+    if mcu_re : fprint( "#define MF_MCU_NAME \"" + mcu_re.group() + "\"" )
 
     fprint( "" )
 
-    fprint( '#define MADFLIGHT_BOARD R""(' )
+    fprint( 'const char* madflight_board = R""(' )
+    fprint( 'imu_bus_type SPI' )  #all bf controllers use SPI
     for define in defines:
         fprint( define.strip() )
-    fprint( ')"" //end of MADFLIGHT_BOARD' )
+    fprint( ')""; //end of madflight_board' )
 
     fprint( "" )
     fprint( "" )
