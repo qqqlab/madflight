@@ -123,9 +123,9 @@ void madflight_setup() {
   cfg.loadFromEeprom(); //load parameters from EEPROM
   if(madflight_config) {
     if(cfg.load_madflight_param(madflight_config)) {
-      Serial.println("CFG: madflight_config - Loaded");
+      Serial.println("CFG: Loading MADFLIGHT_CONFIG - OK");
     }else{
-      Serial.println("CFG: madflight_config - Skipped (was aready stored in eeprom)");
+      Serial.println("CFG: Loading MADFLIGHT_CONFIG - Skipped (EEPROM is newer than MADFLIGHT_CONFIG)");
     }
   }
 

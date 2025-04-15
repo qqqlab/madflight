@@ -297,8 +297,8 @@ private:
     uint8_t header2 = CFG_HDR2;
     uint8_t header3 = CFG_HDR3;
     uint16_t len = 0; //number of bytes for hdr+param+crc
-    uint16_t _reserved0;
-    uint32_t madflight_param_crc;
+    uint16_t _reserved0 = 0;
+    uint32_t madflight_param_crc = 0;
     uint8_t _reserved1[28] = {0};
   } hdr;
 
@@ -329,6 +329,7 @@ public:
 private:
   bool load_cmdline(String cmdline);
   int get_enum_index(const char* k, const char* values);
+  void print_options(const char *str); //print option list without "mf_"
 };
 
 extern CfgClass cfg;

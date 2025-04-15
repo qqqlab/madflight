@@ -88,7 +88,7 @@ rdr_gizmo      NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
 //pin_rdr_echo  -1
 
 //--- LED ---
-//led_on         LOW_IS_OFF // options: LOW_IS_OFF, LOW_IS_ON
+//led_on         LOW_IS_ON // options: LOW_IS_ON,HIGH_IS_ON
 //pin_led       -1
 
 //--- AHR --- AHRS (keep MAHONY, unless you want to experiment)

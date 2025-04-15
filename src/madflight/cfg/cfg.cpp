@@ -137,7 +137,10 @@ void CfgClass::printNameAndValue(uint16_t i, const char* comment) {
   printValue(i);
   if(comment) Serial.printf(" # %s", comment);
   const char *options = Cfg::param_list[i].options;
-  if(options && options[0] != 0) Serial.printf(" # options: %s", options);
+  if(options && options[0] != 0) {
+    Serial.printf(" # options: ");
+    print_options(options);
+  }
   Serial.println();
 }
 
@@ -208,7 +211,7 @@ void CfgClass::printPins() {
 
 //CLI set a parameter value, returns true on success
 bool CfgClass::setParam(String namestr, String val) {
-  //erial.printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
+  //Serial.printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
   namestr.trim();
   val.trim();
   if(namestr == "") return false;
@@ -228,7 +231,9 @@ bool CfgClass::setParam(String namestr, String val) {
         param_int32_t[i] = enum_idx;
         return true;
       }else{
-        Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: %s\n", namestr.c_str(), val.c_str(), Cfg::param_list[i].options);
+        Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: ", namestr.c_str(), val.c_str());
+        print_options(Cfg::param_list[i].options);
+        Serial.println();
         return false;
       }
       break;
@@ -283,21 +288,30 @@ void CfgClass::clear() {
 //read parameters from eeprom/flash
 void CfgClass::loadFromEeprom() {
   //Serial.printf("mf=%d all=%d i[17]=%d\n", Cfg::mf_param_cnt, Cfg::param_cnt, param_int32_t[16]);
-  Serial.print("CFG: Loading EEPROM ... ");
+  Serial.print("CFG: Loading EEPROM - ");
 
-  //load header
-  uint8_t *buf = (uint8_t*)&hdr;
-  for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
+  cfg.clear();
+
+  //load header into buffer
+  CfgHeader hdr_new;
+  uint8_t *buf = (uint8_t*)&hdr_new;
+  for(uint32_t i = 0; i < sizeof(CfgHeader); i++) {
     buf[i] = hal_eeprom_read(i);
+    //Serial.printf("%02X ",buf[i]);
   }
 
   //check header
-  if(hdr.header0 != CFG_HDR0 || hdr.header1 != CFG_HDR1 || hdr.header2 != CFG_HDR2 || hdr.header3 != CFG_HDR3 || hdr.len<sizeof(CfgHeader)+8 || hdr.len>4096) {
+  if(hdr_new.header0 != CFG_HDR0 
+  || hdr_new.header1 != CFG_HDR1 
+  || hdr_new.header2 != CFG_HDR2 
+  || hdr_new.header3 != CFG_HDR3 
+  || hdr_new.len<sizeof(CfgHeader)+8 
+  || hdr_new.len>4096) {
     Serial.println("Header invalid, using defaults");
     return;
   }
-  uint32_t datalen = hdr.len - 4; //lenght of header+param (4=crc)
-  uint32_t paramlen = datalen - sizeof(CfgHeader); //lenght of param
+  uint32_t datalen = hdr_new.len - 4; //length of header+param (4=crc)
+  uint32_t paramlen = datalen - sizeof(CfgHeader); //length of param
 
   //check crc
   uint32_t crc = 0xFFFFFFFF;
@@ -314,6 +328,9 @@ void CfgClass::loadFromEeprom() {
     Serial.println("CRC invalid, using defaults");
     return;
   }
+
+  //load header from eeprom
+  memcpy(&hdr, &hdr_new, sizeof(CfgHeader));
 
   //load param from eeprom
   CfgParam *param = this;
@@ -332,8 +349,17 @@ void CfgClass::writeToEeprom() {
   uint32_t pos = 0;
   uint32_t crc = 0xFFFFFFFF;
 
+  //setup header
+  hdr.header0 = CFG_HDR0;
+  hdr.header1 = CFG_HDR1;
+  hdr.header2 = CFG_HDR2;
+  hdr.header3 = CFG_HDR3;
+  hdr.len = sizeof(CfgHeader) + sizeof(CfgParam) + 4; //number of bytes for hdr+param+crc
+  hdr._reserved0 = 0;
+  //hdr.madflight_param_crc; //this was set in load_madflight_param()
+  //hdr._reserved1;
+
   //write header
-  hdr.len = sizeof(CfgHeader) + sizeof(CfgParam) + 4; //4=crc
   for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
     uint8_t byte = ((uint8_t*)&hdr)[i];
     hal_eeprom_write(pos, byte);
@@ -412,9 +438,12 @@ bool CfgClass::load_cmdline(String cmdline) {
   return setParam(name, value);
 }
 
+
 //get enum index from key string, return -1 if not found
 int CfgClass::get_enum_index(const char* key, const char* options) {
-  String skey = String("mf_") + key;
+  String skey = key;
+  skey.toUpperCase();
+  skey = String("mf_") + skey;
   const char *k = skey.c_str();
   int klen = strlen(k);
   int len = strlen(options);
@@ -429,4 +458,20 @@ int CfgClass::get_enum_index(const char* key, const char* options) {
     pos++; //skip comma
   }
   return -1;
+}
+
+//print options without "mf_" prefix
+void CfgClass::print_options(const char *str)
+{
+  const char *p = str;
+  const char *p2;
+  while(*p) {
+    p2 = strstr(p, "mf_");
+    if(!p2) {
+      Serial.print(p);
+      return;
+    }
+    for(const char *c = p; c < p2; c++) Serial.print(*c);
+    p = p2 + 3;
+  }
 }
