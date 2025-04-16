@@ -47,7 +47,7 @@ SPI5_MOSI:PA10,PE6,PE14
 #define MF_BOARD_NAME "STM32F411CE Black Pill (default board)" 
 #define MF_MCU_NAME "STM32F411CEUx" //STM32F411CEUx - not all pin combinations are allowed, see datasheet
 
-const char* madflight_board = R""(
+const char madflight_board[] = R""(
 
 // PINOUT
 

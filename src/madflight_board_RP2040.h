@@ -8,7 +8,7 @@
   #define MF_MCU_NAME "RP2040"
 #endif
 
-const char* madflight_board = R""(
+const char madflight_board[] = R""(
 
 // PINOUT
 

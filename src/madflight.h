@@ -28,10 +28,11 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
-//const char* madflight_config = "..."; should be defined before including this file
+extern const char madflight_config[]; //madflight_config should be defined before including this file
 
+//board headers should define MF_BOARD_NAME and const char madflight_board[]
 #ifndef MF_BOARD_NAME
-  const char* madflight_board = nullptr;
+  const char madflight_board[] = "";
 #endif
 
 // bus abstraction

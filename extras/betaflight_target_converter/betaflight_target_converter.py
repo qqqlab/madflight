@@ -156,7 +156,7 @@ def convert(filename) :
 
     fprint( "" )
 
-    fprint( 'const char* madflight_board = R""(' )
+    fprint( 'const char madflight_board[] = R""(' )
     fprint( 'imu_bus_type SPI' )  #all bf controllers use SPI
     for define in defines:
         fprint( define.strip() )

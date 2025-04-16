@@ -407,29 +407,30 @@ void CfgClass::loadFromString(const char *batch) {
 }
 
 void CfgClass::load_madflight(const char *board, const char *config) {
+  Serial.print("CFG: Loading config - ");
+
   //calc crc
   uint32_t crc = 0xFFFFFFFF;
-  if(board) crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);
-  if(config) crc = tbx_crc32((const uint8_t*)config, strlen(config), crc);
+  if(board && board[0]) crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);
+  if(config && config[0]) crc = tbx_crc32((const uint8_t*)config, strlen(config), crc);
 
   //check board+config crc against board+config crc stored in eeprom
   if(hdr.madflight_param_crc == crc) {
     //the board+config parameters were already applied (and potentially modified since, so do not re-apply)
-    Serial.println("CFG: Skipping madflight_board + madflight_config (EEPROM is newer)");
+    Serial.println("Skipping madflight_board + madflight_config (EEPROM is newer)");
     return;
   }
 
   //load board + config
-  Serial.print("CFG: ");
-  if(board) {
+  if(board && board[0]) {
     loadFromString(board);
-    Serial.print("Loading madflight_board, ");
+    Serial.print("madflight_board OK, ");
   }else{
     Serial.print("madflight_board is empty, ");
   }
-  if(config) {
+  if(config && config[0]) {
     loadFromString(config);
-    Serial.println("loading madflight_config");
+    Serial.println("madflight_config OK");
   }else{
     Serial.println("madflight_config is empty");
   }

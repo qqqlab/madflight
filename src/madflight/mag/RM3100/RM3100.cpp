@@ -44,8 +44,8 @@ uint8_t RM3100::probe(MF_I2C *i2c) {
   for(int i = 0; i < 4; i++) {
     dev.adr = RM3100_BASE_ADDRESS + i;
     uint8_t revid = 0;
-    int rv = dev.readReg(RM3100_REG_REVID, &revid, 1); //returns 1 when data was received
-    //Serial.printf("RM3100.probe(0x%02X) = 0x%02X rv=%d\n", dev.adr, revid, rv);
+    dev.readReg(RM3100_REG_REVID, &revid, 1); //readReg returns 1 when data was received
+    //Serial.printf("RM3100.probe(0x%02X) = 0x%02X\n", dev.adr, revid);
     if(revid == 0x22) return dev.adr;
   }
   return 0;

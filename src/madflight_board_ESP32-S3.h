@@ -12,7 +12,7 @@
 #define MF_BOARD_NAME "ESP32-S3 DevKitC-1 (default board)"
 #define MF_MCU_NAME "ESP32-S3"
 
-const char* madflight_board = R""(
+const char madflight_board[] = R""(
 
 // PINOUT
 
