@@ -408,7 +408,7 @@ void Cli::print_i2cScan() {
     if(i2c) {
       Serial.printf("I2C: Scanning i2c_bus:%d - ", bus_i);
       int count = 0;
-      for (byte i = 8; i < 120; i++) {
+      for (byte i = 1; i < 128; i++) {
         i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
         if (i2c->endTransmission() == 0) {  // Receive 0 = success (ACK response) 
           Serial.printf("0x%02X(%d) ", i, i);

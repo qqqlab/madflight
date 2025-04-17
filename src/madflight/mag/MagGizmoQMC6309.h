@@ -27,36 +27,163 @@ SOFTWARE.
 #include "mag.h"
 #include "../hal/MF_I2C.h"
 
+//#include "../cli/stat.h" //for debugging
+
+
+// https://www.lcsc.com/datasheet/lcsc_datasheet_2410121623_QST-QMC6309_C5439871.pdf
+
+// Who Am I register
+#define QMC6309_WAI_REG 0x00
+
+#define QMC6309_WAI_VALUE 0x90
+
+// Data register
+#define QMC6309_OUTX_REG 0x01
+
+// Status register {DRDY:1;OVFL:1;...}
+#define QMC6309_STAT_REG 0x09
+
+#define QMC6309_STAT_DRDY 0x01 //1=data ready
+#define QMC6309_STAT_OVFL 0x02 //1=overflow
+#define QMC6309_STAT_ST_RDY 0x04 //1=self test ready
+#define QMC6309_STAT_NVM_RDY 0x08 //1=nvm ready for access
+#define QMC6309_STAT_NVM_LOAD_DONE 0x10 //1=nvm loading done
+
+// Control register 1 {MD:2;:1;OSR:2;LPF:3;}
+#define QMC6309_CTRL1_REG 0x0A
+
+#define QMC6309_CTRL1_MD_SUSPEND    0b00
+#define QMC6309_CTRL1_MD_NORMAL     0b01
+#define QMC6309_CTRL1_MD_SINGLE     0b10
+#define QMC6309_CTRL1_MD_CONTINUOUS 0b11
+
+#define QMC6309_CTRL1_OSR_1 (0b11<<3)
+#define QMC6309_CTRL1_OSR_2 (0b10<<3)
+#define QMC6309_CTRL1_OSR_4 (0b01<<3)
+#define QMC6309_CTRL1_OSR_8 (0b00<<3)
+
+#define QMC6309_CTRL1_LPF_1  (0b000<<5)
+#define QMC6309_CTRL1_LPF_2  (0b001<<5)
+#define QMC6309_CTRL1_LPF_4  (0b010<<5)
+#define QMC6309_CTRL1_LPF_8  (0b011<<5)
+#define QMC6309_CTRL1_LPF_16 (0b100<<5)
+
+// Control register 2 {SET:2;RGN:2;ODR:3;SRT:1;}
+#define QMC6309_CTRL2_REG 0x0B
+
+#define QMC6309_CTRL2_SET_RESET_ON  0b00
+#define QMC6309_CTRL2_SET_ONLY      0b01
+#define QMC6309_CTRL2_SET_RESET_OFF 0b11
+
+#define QMC6309_CTRL2_RNG_32G (0b00<<2)
+#define QMC6309_CTRL2_RNG_16G (0b01<<2)
+#define QMC6309_CTRL2_RNG_8G  (0b10<<2)
+
+//output data rate for normal mode
+#define QMC6309_CTRL2_ODR_1Hz   (0b000<<4)
+#define QMC6309_CTRL2_ODR_10Hz  (0b001<<4)
+#define QMC6309_CTRL2_ODR_50Hz  (0b010<<4)
+#define QMC6309_CTRL2_ODR_100Hz (0b011<<4)
+#define QMC6309_CTRL2_ODR_200Hz (0b100<<4)
+
+#define QMC6309_CTRL2_SOFT_RESET_START 0x80
+#define QMC6309_CTRL2_SOFT_RESET_STOP  0x00
+
+
 class MagGizmoQMC6309 : public MagGizmo {
 private:
   MF_I2CDevice *dev = nullptr;
 
+
 public:
-  MagGizmoQMC6309(MF_I2C *i2c, int8_t i2c_adr) {
-    i2c_adr = 0x7C; // fixed: 0x7C
-    this->dev = new MF_I2CDevice(i2c, i2c_adr);
-
-    //setup for 16 sample moving average (my interpretation of data sheet OSR2 setting), sample rate = 1500Hz (continous mode)
-    dev->writeReg(0x0B, 0x04); //ODR=1Hz, Scale=8G, Reset
-    dev->writeReg(0x0A, 0xFD); //OSR2(filter)=16, OSR=1, Continuous Mode
-  }
-
+  const float scale_uT = 0.025; //scale factor to uT   (at +/-800uT (+/-8G) RNG)
+    int16_t mx; //raw adc values
+    int16_t my;
+    int16_t mz;
 
   ~MagGizmoQMC6309() {
     delete dev;
   }
 
+  MagGizmoQMC6309(MF_I2C *i2c) {
+    i2c->setClock(400000);
+
+    this->dev = new MF_I2CDevice(i2c, 0x7C); //i2c address is always 0x7C
+
+    //soft reset
+    //dev->writeReg(QMC6309_CTRL2_REG, QMC6309_CTRL2_SOFT_RESET_START);
+    //dev->writeReg(QMC6309_CTRL2_REG, QMC6309_CTRL2_SOFT_RESET_STOP);
+
+    //configure 220Hz update rate with LPF_16
+    uint8_t ctrl2_val = QMC6309_CTRL2_SET_RESET_ON | QMC6309_CTRL2_RNG_8G | QMC6309_CTRL2_ODR_100Hz;
+    uint8_t ctrl1_val = QMC6309_CTRL1_MD_CONTINUOUS | QMC6309_CTRL1_OSR_8 | QMC6309_CTRL1_LPF_16; //mx	mean:-10.982379	stdev:1.401531	min:-14.000000	max:-8.000000	n:227
+    //uint8_t ctrl1_val = QMC6309_CTRL1_MD_CONTINUOUS | QMC6309_CTRL1_OSR_8 | QMC6309_CTRL1_LPF_1; //mx	mean:-10.060345	stdev:6.673316	min:-33.000000	max:+4.000000	n:232
+    //uint8_t ctrl1_val = QMC6309_CTRL1_MD_CONTINUOUS | QMC6309_CTRL1_OSR_1 | QMC6309_CTRL1_LPF_1; //mx	mean:-11.925335	stdev:38.645042	min:-119.000000	max:+106.000000	n:1125
+
+    int tries = 20;
+    uint8_t wai = 0;
+    while(tries) {
+      uint8_t ctrl1 = dev->readReg(QMC6309_CTRL1_REG);
+      uint8_t ctrl2 = dev->readReg(QMC6309_CTRL2_REG);
+      wai = dev->readReg(QMC6309_WAI_REG);
+
+      //setup
+      if(ctrl2 != ctrl2_val) dev->writeReg(QMC6309_CTRL2_REG, ctrl2_val);
+      if(ctrl1 != ctrl1_val) dev->writeReg(QMC6309_CTRL1_REG, ctrl1_val);
+      delay(1);
+
+      uint8_t stat = dev->readReg(QMC6309_STAT_REG);
+      if(stat & QMC6309_STAT_DRDY) {
+        break;
+      }
+
+      tries--;
+
+      //Serial.printf("try wai=%02X stat=%02X ctrl2=%02X(%02X) ctrl1=%02X(%02X)\n", wai, stat, ctrl2, ctrl2_val, ctrl1, ctrl1_val);
+    }
+    if(!tries) Serial.printf("MAG: ERROR could not configure QMC6309. wai:0x%02X, expected 0x%02X\n", wai, QMC6309_WAI_VALUE);
+
+    /* //DEBUG 
+    while(1) {
+      Stat mx,my,mz;
+      uint32_t start_ts = micros();
+      while(micros() - start_ts < 1000000) {
+        float x,y,z;
+        if(update(&x,&y,&z)) {
+          mx.append(x);
+          my.append(y);
+          mz.append(z);
+        }
+      }
+      
+      Serial.println("=== Magnetometer (external) ===");
+      mx.print("mx");
+      my.print("my");
+      mz.print("mz");
+    }
+    */
+  }
+
+  bool update_raw() {
+    uint8_t stat = dev->readReg(QMC6309_STAT_REG);
+    if((stat & QMC6309_STAT_DRDY) == 0 || (stat & QMC6309_STAT_OVFL) != 0 ) return false;
+
+    uint8_t d[6];
+    dev->readReg(QMC6309_OUTX_REG, d, 6);
+
+    mx = d[0] | (d[1] << 8); //16 bit litte-endian signed - 40LSB/uT at +/-800uT scale
+    my = d[2] | (d[3] << 8);
+    mz = d[4] | (d[5] << 8);
+
+    return true;
+  }
 
   bool update(float *x, float *y, float *z) override {
-    uint8_t d[6];
-    dev->readReg(0x01, d, 6);
-    int16_t mx = d[0] | (d[1] << 8); //16 bit litte-endian signed
-    int16_t my = d[2] | (d[3] << 8);
-    int16_t mz = d[4] | (d[5] << 8);
+    if(!update_raw()) return false;
 
-    *x = 200e-9 * mx; //in [T]
-    *y = 200e-9 * my;
-    *z = 200e-9 * mz;
+    *x =  scale_uT * mx; 
+    *y =  scale_uT * my;
+    *z =  scale_uT * mz;
     return true;
   }
 };

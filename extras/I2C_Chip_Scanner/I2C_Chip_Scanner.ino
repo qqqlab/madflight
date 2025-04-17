@@ -25,13 +25,13 @@ TwoWire *i2c = &Wire;
 #define ESP32_SDA_PIN 23
 #define ESP32_SCL_PIN 22
 
-#define RP2040_SDA_PIN 20 //Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
-#define RP2040_SCL_PIN 21 //Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
+#define RP2040_SDA_PIN 32 //RP2040/RP2350A Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
+#define RP2040_SCL_PIN 33 //RP2040/RP2350A Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)
 
 #define STM32_SDA_PIN PB9
 #define STM32_SCL_PIN PB8
 
-#define I2C_FRQ 400000
+#define I2C_FRQ 100000
 
 
 
@@ -46,6 +46,7 @@ void setup() {
     i2c->setSDA(RP2040_SDA_PIN);
     i2c->setSCL(RP2040_SCL_PIN);
     i2c->setClock(I2C_FRQ);
+    i2c->setTimeout(25, true); //timeout, reset_with_timeout
     i2c->begin();
   #elif defined ARDUINO_ARCH_STM32
     i2c->setSDA(STM32_SDA_PIN);
@@ -63,16 +64,17 @@ void loop() {
 
   Serial.printf("I2C: Scanning ...\n");
   int num_adr_found = 0;
-  for (uint8_t adr = 8; adr < 120; adr++) {
+  for (uint8_t adr = 1; adr < 128; adr++) {
     i2c->beginTransmission(adr);       // Begin I2C transmission Address (i)
     if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
       Serial.printf("I2C: Found address: 0x%02X (decimal %d)\n",adr,adr);
       num_adr_found++;
       i2c_identify_chip(adr);
     }
+    delay(10);
   }
   Serial.printf("I2C: Found %d device(s)\n", num_adr_found);
-  delay(1000);
+  delay(100);
 }
 
 struct test_struct{
@@ -108,6 +110,7 @@ test_struct tests[] = {
   {0x68, 0x69, 0x75, 1, 0x75, "FAKE MPU9250, got WHO_AM_I=0x75, real chip returns 0x71"}, 
   {0x68, 0x69, 0x75, 1, 0x78, "FAKE MPU9250, got WHO_AM_I=0x78, real chip returns 0x71"},  
   {0x68, 0x69, 0x75, 1, 0x98, "ICM20689 6DOF motion"},
+  {0x76, 0x77, 0x8F, 1, 0x80, "HP203B pressure"}, //needs to be first 0x76 sensor, otherwise this sensor will lock up
   {0x76, 0x77, 0x00, 1, 0x50, "BMP388 pressure"},
   {0x76, 0x77, 0x00, 1, 0x60, "BMP390 pressure"},  
   {0x76, 0x77, 0x0D, 1, 0x10, "DPS310, HP303B, or SPL06 pressure"},
@@ -117,6 +120,7 @@ test_struct tests[] = {
   {0x76, 0x77, 0xD0, 1, 0x58, "BMP280 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x60, "BME280 pressure, temperature, humidity"},
   {0x76, 0x77, 0xD0, 1, 0x61, "BME680 pressure, temperature, humidity, gas sensor"},
+  {0x7C, 0x7C, 0x00, 1, 0x90, "QMC6309 magnetometer"},
 
   {0,0,0,0,0,""} //end
 };
@@ -202,6 +206,7 @@ void i2c_ReadRegs( uint8_t adr, uint8_t reg, uint8_t *data, uint8_t n ) {
   if(bytesReceived == n) {
     i2c->readBytes(data, bytesReceived);
   }
+  i2c->endTransmission();
 }
 
 void i2c_scan() {

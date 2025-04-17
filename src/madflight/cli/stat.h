@@ -36,6 +36,6 @@ public:
     return sqrt(var());
   }
   void print(const char *hdr) {
-    Serial.printf("%s mean:%+f stdev:%f var:%f min:%+f max:%+f n:%d\n", hdr, mean(), std(), var(), min, max, n);
+    Serial.printf("%s\tmean:%+f\tstdev:%f\tmin:%+f\tmax:%+f\tn:%d\n", hdr, mean(), std(), min, max, n);
   }
 };

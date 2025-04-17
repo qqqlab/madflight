@@ -124,12 +124,8 @@ void madflight_setup() {
   cfg.load_madflight(madflight_board, madflight_config); //load config
 
   #ifdef MF_DEBUG
-    if(madflight_config) {
-      Serial.println("\nDEBUG: madflight_config ==============\n");
-      Serial.println(madflight_config);
-    }
-    Serial.println("\nDEBUG: cfg.list() ================\n");
-    cfg.list();
+    //Serial.println("\nDEBUG: cfg.list() ================\n");
+    //cfg.list();
   #endif
 
   cfg.printPins();

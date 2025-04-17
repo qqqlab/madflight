@@ -57,7 +57,7 @@ int Mag::setup() {
       break;
     case Cfg::mag_gizmo_enum::mf_QMC6309 :
       if(config.i2c_bus) {
-        gizmo = new MagGizmoQMC6309(config.i2c_bus, config.i2c_adr);
+        gizmo = new MagGizmoQMC6309(config.i2c_bus); //i2c address is always 0x7C
       }
       break;
     case Cfg::mag_gizmo_enum::mf_RM3100 :
