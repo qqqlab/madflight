@@ -46,15 +46,30 @@ class ImuGizmoICM426XX : public ImuGizmo {
   }
 
 
+/* Get sensor data in NED frame
+   x=North (forward), y=East (right), z=Down 
+   acc: gravitation force is positive in axis direction: 
+        [ax,ay,az] nose-down:[1,0,0], right-down:[0,1,0], level:[0,0,1]
+   gyr: direction of positive rotation by right hand rule: 
+        [gx,gy,gz] roll-right:[positive,0,0], pitch-up:[0,positive,0], yaw-right:[0,0,positive]
+
+ICM42688 has NWU orientation
+
+  * +--+         Y
+    |  | --> X   ^   Z-up
+    +--+         |
+    
+*/
+  
   void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override {
     int16_t accgyr[7];
     icm->read(accgyr);
-    *ax = accgyr[0] * icm->acc_scale;
-    *ay = accgyr[1] * icm->acc_scale;
-    *az = accgyr[2] * icm->acc_scale;
-    *gx = accgyr[3] * icm->gyr_scale;
-    *gy = accgyr[4] * icm->gyr_scale;
-    *gz = accgyr[5] * icm->gyr_scale;
+    *ax = -accgyr[0] * icm->acc_scale; //-N = -N
+    *ay =  accgyr[1] * icm->acc_scale; //-E =  W
+    *az =  accgyr[2] * icm->acc_scale; //-D =  U
+    *gx =  accgyr[3] * icm->gyr_scale; // N =  N
+    *gy = -accgyr[4] * icm->gyr_scale; // E = -W
+    *gz = -accgyr[5] * icm->gyr_scale; // D = -U
   }
 
   int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {

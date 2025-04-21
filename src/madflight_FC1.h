@@ -33,18 +33,19 @@ imu_i2c_adr   0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c
 rcl_gizmo     NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
 rcl_num_ch    8     // number of channels
 rcl_deadband  0     // center stick deadband
-rcl_ser_bus   -1
+rcl_ser_bus   0
 pin_rcl_ppm   -1
 
 //--- BAR --- Barometer
 bar_gizmo     HP203B  // options: NONE, BMP390, BMP388, BMP280, MS5611, HP203B
 bar_i2c_adr   118 //0x76
 bar_i2c_bus   0
+bar_rate      100
 
 //--- MAG --- Magnetometer
 mag_gizmo     QMC6309  // options: NONE, QMC5883, QMC6309, RM3100
 mag_i2c_adr   124 //0x7C
-mag_i2c_bus   0
+mag_i2c_bus   0 //sample rate [Hz]
 
 //--- BAT --- Battery Monitor  (use i2c bus -OR- adc pins)
 bat_gizmo     INA226  // options: NONE, ADC, INA226, INA228
@@ -52,11 +53,13 @@ bat_i2c_adr   64 //0x40
 bat_i2c_bus   0
 pin_bat_i     -1
 pin_bat_v     -1
+bat_cal_v     1 //adc voltage scale, value is: actual_voltage_in_v / adc_reading
+bat_cal_i     0.0005 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
 
 //--- GPS ---
 gps_gizmo     NONE  // options: NONE, UBLOX
 gps_baud      0   // use 0 for auto baud
-gps_ser_bus   -1
+gps_ser_bus   1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
 bbx_gizmo     SDSPI  // options: NONE, SDSPI, SDMMC

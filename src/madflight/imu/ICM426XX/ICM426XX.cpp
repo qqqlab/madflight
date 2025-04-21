@@ -335,7 +335,7 @@ ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI) {
 }
 
 void ICM426XX::read(int16_t *accgyr) {
-  dev->readRegs(ICM426XX_RA_ACCEL_DATA_X1, (uint8_t*)accgyr, 12); //little endian, no byte juggling needed for RP2,ESP32,STM32
+  dev->readRegs(ICM426XX_RA_ACCEL_DATA_X1, (uint8_t*)accgyr, 12); //ax,ay,az,gx,gy,gz little endian, no byte juggling needed for RP2,ESP32,STM32
 }
 
 /*

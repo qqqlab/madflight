@@ -273,7 +273,7 @@ bool _calibrate() {
   Serial.println();
   rcl.setup(); //restart rcl to reload config (outputs RCL messages)
 
-  Serial.printf("\n=== Radio Calibration Completed ===\nNow use 'prcl' to check, 'cwrite' to save config, or reboot to restart with old config.\n");
+  Serial.printf("\n=== Radio Calibration Completed ===\nNow use 'prcl' to check, 'save' to save config, or 'reboot' to restart with old config.\n");
   return true;
 }
 

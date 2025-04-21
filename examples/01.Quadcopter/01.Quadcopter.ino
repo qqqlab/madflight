@@ -54,7 +54,7 @@ const float armed_min_throttle = 0.20; //Minimum throttle when armed, set to a v
 
 //Flight Mode: Uncommment only one
 #define FLIGHTMODE_RATE   //control rate - stick centered will keep current roll/pitch angle
-//#define FLIGHTMODE_ANGLE  //control angle - stick centered will return to horizontal - IMPORTANT: execute CLI 'calimu' and 'cwrite' before using this!!!
+//#define FLIGHTMODE_ANGLE  //control angle - stick centered will return to horizontal - IMPORTANT: execute CLI 'calimu' and 'save' before using this!!!
 
 //Controller parameters (take note of defaults before modifying!): 
 const float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)

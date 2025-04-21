@@ -251,9 +251,10 @@ void Cli::help() {
   "bbinfo    Info\n"
   "-- CONFIG --\n"
   "set <name> <value>  Set config parameter\n"
-  "clist <filter>      List config\n"
-  "cclear              Clear config\n"
-  "cwrite              Write config to flash\n"
+  "dump <filter>       List config\n"
+  "diff <filter>       List config changes from default d\n"
+  "save                Save config and reboot\n"
+  "defaults            Reset to defaults and reboot\n"
   "-- CALIBRATE --\n"
   "calinfo   Sensor info\n"
   "calimu    Calibrate IMU error\n"
@@ -367,15 +368,21 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     bbx.bench();
   }else if (cmd == "set") {
     cfg.setParam(arg1, arg2);
-  }else if (cmd == "clist") {
-    cfg.list(arg1.c_str());
-  }else if (cmd == "cclear") {
+  }else if (cmd == "dump") {
+    cfg.cli_dump(arg1.c_str());
+  }else if (cmd == "diff") {
+    cfg.cli_diff(arg1.c_str());
+  }else if (cmd == "defaults") {
+    Serial.println("Resetting to defaults and rebooting, please wait... ");
     cfg.clear();
-    Serial.println("Config cleared, use 'cwrite' to write to flash");
-  }else if (cmd == "cwrite") {
-    Serial.println("writing, please wait... ");
     cfg.writeToEeprom();
-    Serial.println("cwrite completed");
+    delay(1000);
+    hal_reboot();
+  }else if (cmd == "save") {
+    Serial.println("Saving and rebooting, please wait... ");
+    cfg.writeToEeprom();
+    delay(1000);
+    hal_reboot();
   }else if (cmd == "calinfo") {
     cli_print_all(false);
     calibrate_info(arg1.toInt());
@@ -500,7 +507,7 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     cfg.imu_cal_az = azerr;
   }
   
-  Serial.println("Use CLI 'cwrite' to write these values to flash");
+  Serial.println("Use 'save' to save these values to flash");
 }
 
 void Cli::calibrate_Magnetometer() {
@@ -520,7 +527,7 @@ void Cli::calibrate_Magnetometer() {
     Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
     Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
     Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
-    Serial.println("Note: use CLI 'cwrite' to write these values to flash");
+    Serial.println("Note: use 'save' to save these values to flash");
     Serial.println(" ");
     Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
     cfg.mag_cal_x = bias[0];

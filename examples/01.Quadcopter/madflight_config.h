@@ -17,13 +17,13 @@ You have 3 options to setup the flight controller:
      "#include <madflight_zzz_MTKS-MATEKH743.h>". See library/madflight/src for all available boards. Edit madflight_config
      to fine-tune the configuration.
  
-  4) Bare Metal - Remove "#include <madflight_board.h>", and set the full configuration in madflight_config below.
+  3) Bare Metal - Remove "#include <madflight_board.h>", and set the full configuration in madflight_config below.
 
 Pins and spi/i2c/serial busses use zero-based numbering, i.e. "gps_ser_bus 0" connects the GPS to the first serial bus
 with pins pin_ser0_tx and pin_ser0_rx. Pins use GPIO numbers, not physical pin numbers. Use -1 to disable a pin or bus.
 
 You can also modify the configuration from the CLI, for example "set imu_gizmo MPU6500" or "set imu_spi_bus 1", then
-use "cwrite" to save the config to eeprom and reboot to use the new config.
+use "save" to save the config to eeprom and reboot to use the new config.
 
 If things do not work as expected, have a good look at the startup messages!
 
@@ -69,6 +69,8 @@ const char madflight_config[] = R""(
 //bat_i2c_bus   -1
 //pin_bat_i     -1
 //pin_bat_v     -1
+//bat_cal_v      1 //adc voltage scale, value is: actual_voltage_in_v / adc_reading
+//bat_cal_i,     1 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
 
 //--- GPS ---
 //gps_gizmo      NONE  // options: NONE, UBLOX

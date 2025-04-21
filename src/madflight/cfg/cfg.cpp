@@ -57,12 +57,19 @@ bool CfgClass::getNameAndValue(uint16_t index, String* name, float* value) {
 float CfgClass::getValue(String namestr, float default_value) {
   int i = getIndex(namestr);
   if(i<0) return default_value;
+  return getValue(i);
+}
+
+//get parameter value as float
+float CfgClass::getValue(int i) {
+  if(i<0 || i>paramCount()) return 0;
   if(Cfg::param_list[i].type == 'f') {
     return param_float[i];
   }else{
-    return  param_int32_t[i];
+    return param_int32_t[i];
   }
 }
+
 
 //print enum option name for parameter pointer
 void CfgClass::printParamOption(const int32_t* param) {
@@ -171,14 +178,39 @@ void CfgClass::printValue(uint16_t i) {
   }
 }
 
-//CLI print all config values
-void CfgClass::list(const char* filter) {
-  for(int i=0;i<paramCount();i++) {
+static int _cfg_param_list_name_compare(const void *a, const void *b) {
+  uint16_t i = *(uint16_t*)a;
+  uint16_t j = *(uint16_t*)b;
+  return strcmp( Cfg::param_list[i].name, Cfg::param_list[j].name );
+}
+
+//CLI dump: print all config values, sorted by name
+void CfgClass::cli_dump(const char* filter) {
+  uint16_t arr[paramCount()];
+  for(int i=0; i<paramCount(); i++) arr[i] = i;
+  qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
+  for(int j=0; j<paramCount(); j++) {
+    uint16_t i = arr[j];
     if(strstr(Cfg::param_list[i].name, filter)) {
       printNameAndValue(i);
     }
   }
 }
+
+//CLI diff: print all modified config values, sorted by name
+void CfgClass::cli_diff(const char* filter) {
+  CfgClass cfgdefault;
+  uint16_t arr[paramCount()];
+  for(int i=0; i<paramCount(); i++) arr[i] = i;
+  qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
+  for(int j=0; j<paramCount(); j++) {
+    uint16_t i = arr[j];
+    if(strstr(Cfg::param_list[i].name, filter) && getValue(i) != cfgdefault.getValue(i)) {
+      printNameAndValue(i);
+    }
+  }
+}
+
 
 /* non-sorted version
 void CfgClass::printPins() {
@@ -280,9 +312,11 @@ int CfgClass::getIndex(String namestr) {
 
 //load defaults
 void CfgClass::clear() {
-  CfgParam cfg2;
+  CfgParam cfg_clear;
   CfgParam *param = this;
-  memcpy(param, &cfg2, sizeof(CfgParam));
+  memcpy(param, &cfg_clear, sizeof(CfgParam));
+  CfgHeader hdr_clear;
+  memcpy(&hdr, &hdr_clear, sizeof(CfgHeader));
 }
 
 //read parameters from eeprom/flash

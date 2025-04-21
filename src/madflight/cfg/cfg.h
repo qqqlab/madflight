@@ -186,7 +186,7 @@ SOFTWARE.
   MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B) \
   MF_PARAM( bar_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( bar_i2c_adr,       0, int32_t, 'i') \
-  MF_PARAM( bar_rate,       1000, float, 'f') /*Barometer sample rate in Hz (default 100)*/ \
+  MF_PARAM( bar_rate,        100, float, 'f') /*Barometer sample rate in Hz (default 100)*/ \
 \
   /*BAT - Battery Monitor*/ \
   MF_PARAM( bat_gizmo,         0, int32_t, 'e', mf_NONE,mf_ADC,mf_INA226,mf_INA228) \
@@ -283,10 +283,15 @@ struct CfgParam {
 
 
 
+
+
 #define CFG_HDR0 'm'
 #define CFG_HDR1 'a'
 #define CFG_HDR2 'd'
 #define CFG_HDR3 '2'
+
+
+
 
 class CfgClass : public CfgParam {
 private:
@@ -307,7 +312,7 @@ public:
   void begin();
   uint16_t paramCount(); //get number of parameters
   bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
-  void list(const char* filter = nullptr); //CLI print all config values
+
   bool setParam(String namestr, String val); //CLI set a parameter value, returns true on success
   bool setParamMavlink(String namestr, float val); //set a parameter value, returns true on success
   int getIndex(String namestr); //get parameter index for a parameter name
@@ -316,7 +321,12 @@ public:
   void loadFromString(const char *batch); //load text unconditional
   void load_madflight(const char *board, const char *config); //load board+config if crc is different
   void writeToEeprom(); //write config to flash
-  float getValue(String namestr, float default_value);
+  float getValue(String namestr, float default_value); //get parameter as float
+  float getValue(int i); //get parameter as float
+
+  //CLI commands
+  void cli_dump(const char* filter = nullptr); //CLI dump: print all config values
+  void cli_diff(const char* filter = nullptr); //CLI diff: print all modified config values
 
   //print
   void printParamOption(const int32_t* param);
