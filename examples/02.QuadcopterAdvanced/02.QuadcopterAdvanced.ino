@@ -385,12 +385,20 @@ Yaw right               (CCW+ CW-)       -++-
 */
 
   // IMPORTANT: This is a safety feature to remind the pilot to disarm.
-  // Set throttle to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed == false
-  float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
+  // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed == false
+  float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
 
-  // Quad mixing
-  out.set(0, thr - PIDpitch.PID - PIDroll.PID - PIDyaw.PID); //M1 Back Right CW
-  out.set(1, thr + PIDpitch.PID - PIDroll.PID + PIDyaw.PID); //M2 Front Right CCW
-  out.set(2, thr - PIDpitch.PID + PIDroll.PID + PIDyaw.PID); //M3 Back Left CCW
-  out.set(3, thr + PIDpitch.PID + PIDroll.PID - PIDyaw.PID); //M4 Front Left CW 
+  if(rcl.throttle == 0) {
+    //if throttle idle, then run props at low speed without applying PID. This allows for stick commands for arm/disarm.
+    out.set(0, thr);
+    out.set(1, thr);
+    out.set(2, thr);
+    out.set(3, thr);
+  }else{
+    // Quad mixing
+    out.set(0, thr - PIDpitch.PID - PIDroll.PID - PIDyaw.PID); //M1 Back Right CW
+    out.set(1, thr + PIDpitch.PID - PIDroll.PID + PIDyaw.PID); //M2 Front Right CCW
+    out.set(2, thr - PIDpitch.PID + PIDroll.PID + PIDyaw.PID); //M3 Back Left CCW
+    out.set(3, thr + PIDpitch.PID + PIDroll.PID - PIDyaw.PID); //M4 Front Left CW
+  }
 }

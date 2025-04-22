@@ -468,7 +468,7 @@ void CfgClass::load_madflight(const char *board, const char *config) {
   }else{
     Serial.println("madflight_config is empty");
   }
-  hdr.madflight_param_crc = crc; //save crc (and write it to eeprom with next CLI cwrite)
+  hdr.madflight_param_crc = crc; //save crc (and save it to eeprom with next CLI 'save')
 }
 
 //returns true on success
