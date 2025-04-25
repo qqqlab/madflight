@@ -23,18 +23,19 @@ private:
 public:
   //setup the file system
   void setup() override;
-  bool writeOpen();// override;
+  bool writeOpen() override;
 
 private:
   void _writeChar(uint8_t c);
 
 public:
-  void write(const uint8_t *buf, const uint8_t len);// override;
-  void close();// override;
-  void erase();// override;
-  void dir();// override;
-  void bench();// override;
-  void info();// override;
+  void write(const uint8_t *buf, const uint8_t len) override;
+  void close() override;
+  void erase() override;
+  void dir() override;
+  void bench() override;
+  void info() override;
+  int read(const char* filename, uint8_t **data) override;
 
 private:
   bool sd_setup();

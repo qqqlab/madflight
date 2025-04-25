@@ -332,4 +332,19 @@
       file = SD.open(filename, FILE_WRITE);
   }
 
+
+int BbxGizmoSdspi::read(const char* filename, uint8_t **data) {
+  if(!sd_setup()) return 0;
+  if(!SD.exists(filename)) return 0;
+  File file = SD.open(filename, FILE_READ);
+  int len = file.size();
+  if(len == 0) return 0;
+  uint8_t* buf = (uint8_t*)malloc(len);
+  if(!buf) return 0;
+  file.read(buf, len);
+  file.close();
+  *data = buf;
+  return len;
+}
+
 #endif //#ifdef ARDUINO_ARCH_RP2040

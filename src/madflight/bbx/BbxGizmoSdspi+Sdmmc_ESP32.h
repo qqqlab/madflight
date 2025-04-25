@@ -196,6 +196,20 @@ public:
     Serial.println();
   }
 
+  int read(const char* filename, uint8_t **data) override {
+    if(!sd_setup()) return 0;
+    if(!_BB_SDFS.exists(filename)) return 0;
+    File file = _BB_SDFS.open(filename, FILE_READ);
+    int len = file.size();
+    if(len == 0) return 0;
+    uint8_t* buf = (uint8_t*)malloc(len);
+    if(!buf) return 0;
+    file.read(buf, len);
+    file.close();
+    *data = buf;
+    return len;
+  }
+
 private:
 
   bool sd_setup() {

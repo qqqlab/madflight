@@ -55,6 +55,7 @@ extern const char madflight_config[]; //madflight_config should be defined befor
 #include "madflight/bbx/bbx.h"
 #include "madflight/gps/gps.h"
 #include "madflight/led/led.h"
+#include "madflight/lua/lua.h"
 #include "madflight/mag/mag.h"
 #include "madflight/out/out.h"
 #include "madflight/pid/pid.h"
@@ -248,6 +249,9 @@ void madflight_setup() {
       cli.calibrate_gyro();
     #endif
   }
+
+  // LUA
+  lua.begin();
 
   // CLI - Command Line Interface
   cli.begin();

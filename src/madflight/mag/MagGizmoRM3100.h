@@ -37,7 +37,7 @@ public:
   static MagGizmoRM3100* create(MF_I2C *i2c) {
     uint8_t probe_adr = RM3100::probe(i2c);
     if(probe_adr == 0) {
-      Serial.printf("MAG: ERROR: RM3100 not detected\n", probe_adr);
+      Serial.printf("MAG: ERROR: RM3100 not detected\n");
       return nullptr;
     }
 

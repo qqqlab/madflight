@@ -52,6 +52,8 @@ public:
   virtual void dir() = 0; //list files
   virtual void bench() = 0; //benchmark read/write
   virtual void info() = 0; //card info
+  
+  virtual int read(const char* filename, uint8_t **data) {return 0;}
 };
 
 class Bbx {
@@ -72,7 +74,8 @@ class Bbx {
     void dir();   //list log files
     void bench(); //benchmark read/write to blackbox
     void info();  //blackbox info (memory size, free space, etc.)
-
+    int read(const char* filename, uint8_t **data); //read file into data (malloc), returns file size.
+  
     //loggers
     void log_bar();
     void log_bat();

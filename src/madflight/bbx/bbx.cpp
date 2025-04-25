@@ -130,6 +130,10 @@ void Bbx::info() {
   gizmo->info();
 }
 
+int Bbx::read(const char* filename, uint8_t **data) {
+  if(!gizmo) return 0;
+  return gizmo->read(filename, data);
+}
 
 //-------------------------------
 // Loggers
