@@ -70,7 +70,7 @@ public:
   size_t __not_in_flash_func(push)(uint8_t c) {
     uint32_t next = inc(head);
     if(next == tail) return 0; //buffer full
-    buf[next] = c;
+    buf[head] = c;
     head = next;
     return 1;
   }
