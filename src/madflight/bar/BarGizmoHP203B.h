@@ -48,7 +48,7 @@ public:
     //only read device when dev_rdy and pa_rdy
     //FIXME: put timeout on waiting for pa_rdy
     const uint8_t mask = HP203B_INT_SRC_DEV_RDY | HP203B_INT_SRC_DEV_RDY;
-    if( dev->readReg(HP203B_INT_SRC) & mask != mask) return false;
+    if( (dev->readReg(HP203B_INT_SRC) & mask) != mask) return false;
    
     uint8_t d[6];
     dev->readReg(HP203B_READ_PT, d, 6); //READ_PT pressure [Pa] + temp [0.01*C]

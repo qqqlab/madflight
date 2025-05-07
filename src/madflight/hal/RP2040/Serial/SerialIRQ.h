@@ -1,5 +1,5 @@
 /*==========================================================================================
-RP2040_SerialIRQ.h - High Performance RP2040 Buffered RX/TX UART Driver
+SerialIRQ.h - High Performance RP2 Buffered RX/TX UART Driver
 
 MIT License
 
@@ -28,79 +28,7 @@ SOFTWARE.
 // https://github.com/raspberrypi/pico-sdk/blob/master/src/rp2_common/hardware_uart/include/hardware/uart.h
 // https://github.com/raspberrypi/pico-sdk/blob/master/src/rp2_common/hardware_uart/uart.c
 
-
-// Ring buffer class for SerialIRQ
-class SerialRingBuf {
-
-private:
-public:
-  uint8_t *buf;
-  uint32_t bufsize = 0; //buffer can hold bufsize-1 bytes
-  uint32_t head = 0; //previous push position
-  uint32_t tail = 0; //next pop position
-
-public:
-  void begin(uint8_t *buf, uint32_t bufsize) {
-    this->buf = buf;
-    this->bufsize = bufsize;
-    clear();
-  }
-
-  //clear buffer
-  void clear() {
-    tail = head;
-  }
-
-  //number of bytes in buffer
-  uint32_t len() {
-    return (head >= tail ? head - tail : bufsize + head - tail); 
-  }
-  
-  //number of bytes free in buffer
-  uint32_t available() {
-    return bufsize - 1 - len();
-  }
-
-  //increase a buffer position - used in IRQ so store in RAM
-  uint32_t __not_in_flash_func(inc)( uint32_t v) {
-    return (v < bufsize - 1 ? v + 1 : 0 ); 
-  }
-
-  //push a byte in to the buffer - used in IRQ so store in RAM
-  size_t __not_in_flash_func(push)(uint8_t c) {
-    uint32_t next = inc(head);
-    if(next == tail) return 0; //buffer full
-    buf[head] = c;
-    head = next;
-    return 1;
-  }
-
-  //pop a byte from the buffer - used in IRQ so store in RAM
-  size_t __not_in_flash_func(pop)(uint8_t *c) {
-    if(head == tail) return 0; //buffer empty
-    *c = buf[tail];
-    tail = inc(tail);
-    return 1;
-  }
-
-/*
-  //optimized push
-  void push(uint8_t *data, size_t len) {
-    if(head + len < bufsize && (head >= tail || head + len < tail )) {
-      memcpy(buf+head+1, data, len);
-      head+=len;
-      return len;
-    }else{
-      //TODO - optimize using two memcpy() calls
-      size_t push_len = 0;
-      for(int i=0;i<len;i++) 
-        push_len += push(data[i]);
-      return push_len;
-    }
-  }
-*/
-
-};
+#include "SerialRingBuf.h"
 
 //global buffers for two uarts
 SerialRingBuf _uart_rxbuf[2];
@@ -220,7 +148,7 @@ public:
   }
 
   uint32_t availableForWrite() {
-    return tbuf->available();
+    return tbuf->free_space();
   }
 
   int read() {

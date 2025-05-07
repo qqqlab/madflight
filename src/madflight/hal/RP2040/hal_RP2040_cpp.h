@@ -32,7 +32,8 @@
 #include "RP2040_PWM.h"  //Servo and oneshot
 #include "../MF_I2C.h"
 #include "../MF_Serial.h"
-#include "RP2040_SerialIRQ.h"  //Replacement high performance serial driver
+#include "Serial/SerialIRQ.h"  //Replacement high performance hardware serial driver
+#include "Serial/SerialPioIRQ.h"  //Replacement high performance PIO serial driver
 
 //-------------------------------------
 //Bus Setup
@@ -167,7 +168,11 @@ void hal_print_pin_name(int pinnum) {
 
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  //exit on invalid bus_id
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  //exit when exists
+  if(hal_ser[bus_id]) return hal_ser[bus_id];
 
   uint8_t bits = 8;
   char parity;
@@ -187,6 +192,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   }
 
   switch(bus_id) {
+    //Hardware UARTs
     case 0: {
       int pin_tx = cfg.pin_ser0_tx;
       int pin_rx = cfg.pin_ser0_rx;
@@ -207,9 +213,55 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       }
       break;
     }
+
+    //PIO UARTs 
+    case 2: {
+      int pin_tx = cfg.pin_ser2_tx;
+      int pin_rx = cfg.pin_ser2_rx;
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
+        ser->begin(baud);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+    case 3: {
+      int pin_tx = cfg.pin_ser3_tx;
+      int pin_rx = cfg.pin_ser3_rx;
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
+        ser->begin(baud);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+    case 4: {
+      int pin_tx = cfg.pin_ser4_tx;
+      int pin_rx = cfg.pin_ser4_rx;
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
+        ser->begin(baud);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+    case 5: {
+      int pin_tx = cfg.pin_ser5_tx;
+      int pin_rx = cfg.pin_ser5_rx;
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
+        ser->begin(baud);
+        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
     default:
       return nullptr;
   }
-  
+
   return hal_ser[bus_id];
 }

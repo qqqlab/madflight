@@ -3,45 +3,15 @@
 #include <Arduino.h>
 #include "../hal/hal.h" //xTaskDelay
 
-static jmp_buf luawrap_panic_jump;
 
-bool luawrap_overtime = false;
-uint32_t luawrap_start_ts = 0;
+//=============================================================================
+// MADFLIGHT LUA FUNCTIONS
+//=============================================================================
 
-//debug handler, called every time 1000 lines are executed
-static void luawrap_hook(lua_State *L, lua_Debug *ar) {
-    return;
-    
-    Serial.printf("luawrap_hookcnt dt=%u\n", micros() - luawrap_start_ts);
-    if(micros() - luawrap_start_ts < 1000000) return;
-
-    luawrap_overtime = true;
-
-    // we need to aggressively bail out as we are over time
-    // so we will aggressively trap errors until we clear out
-    lua_sethook(L, luawrap_hook, LUA_MASKCOUNT, 1);
-
-    luaL_error(L, "Exceeded CPU time");
-}
-
-static void luawrap_reset_loop_overtime(lua_State *L) {
-    luawrap_overtime = false;
-    // reset the hook to clear the counter
-    lua_sethook(L, luawrap_hook, LUA_MASKCOUNT, 1000);
-    luawrap_start_ts = micros();
-    Serial.println("luawrap_reset_loop_overtime");
-}
-
-/* custom panic handler */
-static int luawrap_panic(lua_State *L)
-{
-  longjmp(luawrap_panic_jump, 1);
-  /* will never return */
-  return 0;
-}
+#include "../cfg/cfg.h"
 
 //lua print()
-static int luawrap_print(lua_State *L) {
+static int global_print(lua_State *L) {
   int n = lua_gettop(L);  /* number of arguments */
   int i;
   lua_getglobal(L, "tostring");
@@ -62,22 +32,124 @@ static int luawrap_print(lua_State *L) {
   return 0;
 }
 
-static int luawrap_millis(lua_State *L) {
+static int mf_millis(lua_State *L) {
   lua_pushinteger(L, millis());
   return 1;
 }
 
-static int luawrap_micros(lua_State *L) {
+static int mf_micros(lua_State *L) {
   lua_pushinteger(L, micros());
   return 1;
-}  
+}
 
-static int luawrap_delay(lua_State *L) {
+static int mf_delay(lua_State *L) {
   int a = luaL_checkinteger(L, 1) / portTICK_PERIOD_MS;
   vTaskDelay(a);
   return 0;
-}  
+}
 
+static int mf_pinModeOutput(lua_State *L) {
+  int pin = luaL_checkinteger(L, 1);
+  pinMode(pin, OUTPUT);
+  return 0;
+}
+
+static int mf_pinModeInput(lua_State *L) {
+  int pin = luaL_checkinteger(L, 1);
+  pinMode(pin, INPUT);
+  return 0;
+}
+
+static int mf_digitalRead(lua_State *L) {
+  int pin = luaL_checkinteger(L, 1);
+  int val = (digitalRead(pin) == LOW ? 0 : 1);
+  lua_pushinteger(L, val);
+  return 1;
+}
+
+static int mf_digitalWrite(lua_State *L) {
+  int pin = luaL_checkinteger(L, 1);
+  int val = luaL_checkinteger(L, 1);
+  digitalWrite(pin, val);
+  return 0;
+}
+
+static int mf_get_cfg(lua_State *L) {
+  const char *name = luaL_checkstring(L, 1);
+  float val = cfg.getValue(String(name), 0);
+  lua_pushnumber(L, val);
+  return 1;
+}
+
+#define LUA_ADD_MF_FUNCTION(name) lua_pushcfunction(L, mf_##name); lua_setfield(L, -2, #name)
+//macro expands to:
+//  lua_pushcfunction(L, mf_millis);
+//  lua_setfield(L, -2, "millis");
+
+//register mf table and global lua functions
+static void mf_register(lua_State *L) {
+  //global functions
+  lua_register(L, "print", global_print); //c function for lua print()
+
+  //mf table
+  lua_createtable(L, 0, 2);
+  LUA_ADD_MF_FUNCTION(millis);
+  LUA_ADD_MF_FUNCTION(micros);
+  LUA_ADD_MF_FUNCTION(delay);
+  LUA_ADD_MF_FUNCTION(pinModeOutput);
+  LUA_ADD_MF_FUNCTION(pinModeInput);
+  LUA_ADD_MF_FUNCTION(digitalRead);
+  LUA_ADD_MF_FUNCTION(digitalWrite);
+  LUA_ADD_MF_FUNCTION(get_cfg);
+  lua_setglobal(L, "mf");
+}
+
+#undef LUA_ADD_MF_FUNCTION
+
+//=============================================================================
+// LUA IMPLEMENTATION
+//=============================================================================
+
+static jmp_buf luawrap_panic_jump;
+
+bool luawrap_overtime = false;
+uint32_t luawrap_start_ts = 0;
+
+/* custom panic handler */
+static int luawrap_panic(lua_State *L)
+{
+  longjmp(luawrap_panic_jump, 1);
+  /* will never return */
+  return 0;
+}
+
+//debug handler, called every time 1000 lines are executed
+static void luawrap_hook(lua_State *L, lua_Debug *ar) {
+    return;
+    
+    Serial.printf("luawrap_hookcnt dt=%u\n", micros() - luawrap_start_ts);
+    if(micros() - luawrap_start_ts < 1000000) return;
+
+    luawrap_overtime = true;
+
+    // we need to aggressively bail out as we are over time
+    // so we will aggressively trap errors until we clear out
+    lua_sethook(L, luawrap_hook, LUA_MASKCOUNT, 1);
+
+    luaL_error(L, "Exceeded CPU time");
+}
+
+/*
+static void luawrap_reset_loop_overtime(lua_State *L) {
+    luawrap_overtime = false;
+    // reset the hook to clear the counter
+    lua_sethook(L, luawrap_hook, LUA_MASKCOUNT, 1000);
+    luawrap_start_ts = micros();
+    Serial.println("luawrap_reset_loop_overtime");
+}
+*/
+
+/*
 static void luawrap_dumpstack (lua_State *L) {
   int top = lua_gettop(L);
   for (int i = 1; i <= top; i++) {
@@ -101,6 +173,7 @@ static void luawrap_dumpstack (lua_State *L) {
     }
   }
 }
+*/
 
 static lua_State *L = NULL;
 
@@ -111,27 +184,16 @@ void luawrap_run(const char* code) {
   if (setjmp(luawrap_panic_jump) != 0) {
     // execution will resume here if a lua_xxx() call generates a panic which would otherwise hang the application
     const char *err = luaL_checkstring(L, -1);
-    Serial.printf("LUA: PANIC %s\n",err);      
+    Serial.printf("LUA: PANIC %s\n",err);
     lua_close(L);
     return;
   }
 
   luaL_openlibs(L);
 
-  lua_register(L, "print", luawrap_print); //c function for lua print()
+  //register mf table and global lua functions
+  mf_register(L);
 
-  //register mf table
-  lua_createtable(L, 0, 2);
-  lua_pushcfunction(L, luawrap_millis);
-  lua_setfield(L, -2, "millis");
-  lua_pushcfunction(L, luawrap_micros);
-  lua_setfield(L, -2, "micros");
-  lua_pushcfunction(L, luawrap_delay);
-  lua_setfield(L, -2, "delay");
-  lua_setglobal(L, "mf");
-
-  int result = 0;
-  uint32_t dt = micros();
   //execute
   //luawrap_reset_loop_overtime(L); //optional
   if (luaL_dostring(L, code) == LUA_OK) {
