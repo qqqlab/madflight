@@ -26,11 +26,9 @@ Use a [release version](https://github.com/qqqlab/madflight/releases) if you wan
 - [Development board](https://madflight.com/Controller-Boards/): 
     - [RP2350/RP2040](https://madflight.com/Board-RP2040/) (e.g. Raspberry Pi Pico/Pico2)
     - [ESP32-S3/ESP32](https://madflight.com/Board-ESP32/) (e.g. Espressiv ESP32/ESP32-S3 DevKitC)
-    - [STM32](https://madflight.com/Board-STM32/) (e.g. Black Pill or a commercial flight controller)
-- [SPI/I2C IMU sensor](https://madflight.com/Sensor-Boards/) (BMI270, MPU9250, MPU6500, MPU6000, MPU6050 or MPU9150) 
+    - [STM32](https://madflight.com/Board-STM32/) (e.g. Black Pill or a commercial flight 
+- [IMU sensor](https://madflight.com/Sensor-Boards/): MPU6000, MPU6050, MPU6500, MPU9250, BMI270, ICM42688P, etc.
 - RC Receiver: MAVLink, ELRS, CRSF, SBUS, DMSX, or PPM
-- BEC or DC-DC converter to power your board from a battery
-- ESC (OneShot125 or 50-490Hz PWM) and/or servos (50-490Hz PWM)
 
 ## Optional Hardware
 
