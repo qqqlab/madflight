@@ -20,6 +20,7 @@
  * Updated 4 April 2019 to support ESP32
  * updated 13 jun 2019 to support STM32 (pauluzs)
  * Updated 21 Jul 2020 to support MBED (David Peverley) 
+ * Updated 7 June 20204 to support IBus for Madflight (Atin M <atinm.dev@gmail.com>) - removed things not needed for Madflight
  */
 
 #include <Arduino.h>
@@ -145,12 +146,12 @@ bool IBus::update(void) {
               case PROTOCOL_COMMAND_TYPE: // 0x90, send sensor type
                 // echo sensortype command: 0x06 0x91 0x00 0x02 0x66 0xFF 
                 writeBuf[writeLen++] = 0x06;
-                writeBuf[writeLen++] = PROTOCOL_COMMAND_TYPE + adr;
-                writeBuf[writeLen++] = s->sensorType;
-                writeBuf[writeLen++] = s->sensorLength;
                 //stream->write(0x06);
+                writeBuf[writeLen++] = PROTOCOL_COMMAND_TYPE + adr;
                 //stream->write(PROTOCOL_COMMAND_TYPE + adr);
+                writeBuf[writeLen++] = s->sensorType;
                 //stream->write(s->sensorType);
+                writeBuf[writeLen++] = s->sensorLength;
                 //stream->write(s->sensorLength);
                 chksum = 0xFFFF - (0x06 + PROTOCOL_COMMAND_TYPE + adr + s->sensorType + s->sensorLength);
                 break;
