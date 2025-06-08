@@ -34,6 +34,7 @@ SOFTWARE.
 #include "RclGizmoSbus.h" //TODO need SERIAL_8E2
 #include "RclGizmoDsm.h"
 #include "RclGizmoPpm.h"
+#include "RclGizmoIbus.h"
 //#include "RclGizmoPwm.h" //not implemented
 
 //set defaults
@@ -110,6 +111,11 @@ int Rcl::setup() {
 
     case Cfg::rcl_gizmo_enum::mf_PPM : {
       gizmo = new RclGizmoPpm(config.ppm_pin, pwm);
+      break;
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_IBUS : {
+      gizmo = RclGizmoIbus::create(config.ser_bus_id, pwm, config.baud);
       break;
     }
   }
