@@ -112,8 +112,7 @@ static void mf_register(lua_State *L) {
 
 static jmp_buf luawrap_panic_jump;
 
-bool luawrap_overtime = false;
-uint32_t luawrap_start_ts = 0;
+
 
 /* custom panic handler */
 static int luawrap_panic(lua_State *L)
@@ -123,11 +122,16 @@ static int luawrap_panic(lua_State *L)
   return 0;
 }
 
+/*
+//------------------------
+// lua CPU time watchdog
+//------------------------
+uint32_t luawrap_start_ts = 0;
+bool luawrap_overtime = false;
+
 //debug handler, called every time 1000 lines are executed
 static void luawrap_hook(lua_State *L, lua_Debug *ar) {
-    return;
-    
-    Serial.printf("luawrap_hookcnt dt=%u\n", micros() - luawrap_start_ts);
+    //Serial.printf("luawrap_hookcnt dt=%d\n", (int)(micros() - luawrap_start_ts));
     if(micros() - luawrap_start_ts < 1000000) return;
 
     luawrap_overtime = true;
@@ -139,7 +143,6 @@ static void luawrap_hook(lua_State *L, lua_Debug *ar) {
     luaL_error(L, "Exceeded CPU time");
 }
 
-/*
 static void luawrap_reset_loop_overtime(lua_State *L) {
     luawrap_overtime = false;
     // reset the hook to clear the counter
@@ -194,13 +197,16 @@ void luawrap_run(const char* code) {
   //register mf table and global lua functions
   mf_register(L);
 
-  //execute
-  //luawrap_reset_loop_overtime(L); //optional
+  //optional cpu time watchdog
+  //luawrap_reset_loop_overtime(L);
+
+  //execute lua script
   if (luaL_dostring(L, code) == LUA_OK) {
     lua_pop(L, lua_gettop(L)); // Pop the return value
   }else{
     const char *err = luaL_checkstring(L, -1);
     Serial.printf("LUA: ERROR: %s\n", err);
   }
+
   lua_close(L);
 }

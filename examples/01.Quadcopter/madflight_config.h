@@ -155,3 +155,6 @@ const char madflight_config[] = R""(
 
 // Uncomment to print additional debug information and reduce startup delay
 //#define MF_DEBUG
+
+// Uncomment to enable Lua Scripting
+//#define MF_LUA_ENABLE 1

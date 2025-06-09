@@ -250,7 +250,7 @@ void madflight_setup() {
     #endif
   }
 
-  // LUA
+  // LUA - Start Lua script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();
 
   // CLI - Command Line Interface
