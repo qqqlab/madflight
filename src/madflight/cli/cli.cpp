@@ -67,7 +67,14 @@ static void cli_print_imu_MagData() {
 }
 
 static void cli_print_ahr_RollPitchYaw() {
-  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
+  // from ahr.h:
+  // roll in degrees: -180 to 180, roll right is +
+  // pitch in degrees: -90 to 90, pitch up is +
+  // yaw in degrees: -180 to 180, yaw right is positive
+  const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left"; // roll right is clockwise, is it?
+  const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
+  const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
+  Serial.printf("roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
 }
 
 static void cli_print_control_PIDoutput() {
