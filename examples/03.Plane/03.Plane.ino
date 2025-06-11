@@ -88,7 +88,7 @@ void led_Blink();
 void control_FBWA(bool zero_integrators);
 void control_ROLL(bool zero_integrators);
 void control_MANUAL();
-void out_Mixer()
+void out_Mixer();
 
 //========================================================================================================================//
 //                                               OUTPUTS                                                                  //
