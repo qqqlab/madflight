@@ -2,22 +2,22 @@
                                               MADFLIGHT CONFIG
 ==========================================================================================================================
 
-The configuration is loaded from two strings: first from madflight_board in <madflight_board.h>, and then from 
+The configuration is loaded from two strings: first from madflight_board in from the board header in /brd/, and then from 
 madflight_config in this file. If the same setting occurs more than once, the last one is applied.
 
 The strings are multi-line raw strings in with a key-value list. Anything after '#' or '/' is ignored as comment.
 
 You have 3 options to setup the flight controller:
 
-  1) Default - Keep "#include <madflight_board.h>", this defines the default pinout as shown on https://madflight.com 
+  1) Default - Keep #define MF_BOARD "brd/default.h", this defines the default pinout as shown on https://madflight.com 
      for the supported processor families. Now edit madflight_config below, and uncomment and configure imu_gizmo, 
      imu_bus_type, rcl_gizmo, and other lines as needed. (Do not change the pin_xxx_yyy and xxx_yyy_bus settings.)
  
-  2) BetaFlight - Change "#include <madflight_board.h>" to the BetaFlight flight controller you want to use, for example: 
-     "#include <madflight_zzz_MTKS-MATEKH743.h>". See library/madflight/src for all available boards. Edit madflight_config
-     to fine-tune the configuration.
+  2) BetaFlight - Change "brd/default.h" to the BetaFlight flight controller you want to use, for example: 
+     #define MF_BOARD "brd/betaflight/MTKS-MATEKH743.h". See library/madflight/src for all available boards. Edit 
+     madflight_config to fine-tune the configuration.
  
-  3) Bare Metal - Remove "#include <madflight_board.h>", and set the full configuration in madflight_config below.
+  3) Bare Metal - Comment out "#define MF_BOARD", and set the full configuration in madflight_config below.
 
 Pins and spi/i2c/serial busses use zero-based numbering, i.e. "gps_ser_bus 0" connects the GPS to the first serial bus
 with pins pin_ser0_tx and pin_ser0_rx. Pins use GPIO numbers, not physical pin numbers. Use -1 to disable a pin or bus.
@@ -29,7 +29,8 @@ If things do not work as expected, have a good look at the startup messages!
 
 ========================================================================================================================*/
 
-#include <madflight_board.h>
+//define the board header to use, or comment out for none
+#define MF_BOARD "brd/default.h"
 
 const char madflight_config[] = R""(
 

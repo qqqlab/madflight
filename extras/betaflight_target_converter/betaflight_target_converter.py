@@ -6,8 +6,8 @@ DEBUG = False
 #DEBUG = True
 
 source_dirname = "betaflight_source" # copy from https://github.com/betaflight/unified-targets/tree/master/configs/default
-destination_path = "../../src/"
-destination_prefix = "madflight_zzz_"
+destination_path = "../../src/brd/betaflight/"
+destination_prefix = ""
 
 CMT = " // "
 
@@ -144,7 +144,7 @@ def convert(filename) :
     fprint( "Manufacturer ID: " + manufacturer_id )
     fprint( "" )
     fprint( "//copy this line to madflight.ino to use this flight controller" )
-    fprint( "#include <" + outfilename + ">" )
+    fprint( "#define MF_BOARD \"brd/betaflight/" + outfilename + "\"" )
     fprint( "" )
     fprint( "Note: madflight will pick the last sensor defined here, this might not be the sensor that is actually on the board. Comment the offending sensors out, or use madflight_config to override." )
     fprint( "==============================================================================*/" )

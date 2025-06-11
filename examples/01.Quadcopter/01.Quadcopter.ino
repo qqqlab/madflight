@@ -45,6 +45,13 @@ Copyright (c) 2023-2025 https://madflight.com
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
+//prototypes (for PlatformIO, not needed for Arduino IDE)
+void led_Blink();
+float degreeModulus(float v);
+void control_Angle(bool zero_integrators);
+void control_Rate(bool zero_integrators);
+void out_Mixer();
+
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//

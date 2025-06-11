@@ -54,6 +54,14 @@ flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
+//prototypes (for PlatformIO, not needed for Arduino IDE)
+void led_Blink();
+float degreeModulus(float v);
+void control_Angle(bool zero_integrators);
+void control_Rate(bool zero_integrators);
+void out_KillSwitchAndFailsafe();
+void out_Mixer();
+
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//

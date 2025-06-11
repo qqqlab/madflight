@@ -83,6 +83,13 @@ flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBW
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
+//prototypes (for PlatformIO, not needed for Arduino IDE)
+void led_Blink();
+void control_FBWA(bool zero_integrators);
+void control_ROLL(bool zero_integrators);
+void control_MANUAL();
+void out_Mixer()
+
 //========================================================================================================================//
 //                                               OUTPUTS                                                                  //
 //========================================================================================================================//
