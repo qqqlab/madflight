@@ -106,15 +106,16 @@ void setup() {
   // STOP if imu is not installed
   if(!imu.installed()) madflight_die("This program needs an IMU.");
 
-  // Uncomment ONE line - select output type
-  int out_hz = 400; int min_us = 950; int max_us = 2000; //Standard PWM: 400Hz, 950-2000 us
-  //int out_hz = 2000; int min_us = 125; int max_us = 250; //Oneshot125: 2000Hz, 125-250 us
-
   // Setup 4 motors for the quadcopter
-  out.setupMotor(0, cfg.pin_out0, out_hz, min_us, max_us);
-  out.setupMotor(1, cfg.pin_out1, out_hz, min_us, max_us);
-  out.setupMotor(2, cfg.pin_out2, out_hz, min_us, max_us);
-  out.setupMotor(3, cfg.pin_out3, out_hz, min_us, max_us);
+  int motor_idxs[] = {0, 1, 2, 3}; //motor indexes
+  int motor_pins[] = {cfg.pin_out0, cfg.pin_out1, cfg.pin_out2, cfg.pin_out3}; //motor pins
+
+  // Uncomment ONE line - select output type
+  bool success = out.setupMotors(4, motor_idxs, motor_pins, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
+  //bool success = out.setupMotors(4, motor_idxs, motor_pins, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
+  //bool success = out.setupDshot(4, motor_idxs, motor_pins, 300);             // Dshot300
+  //bool success = out.setupDshotBidir(4, motor_idxs, motor_pins, 300);        // Dshot300 Bi-Directional
+  if(!success) madflight_die("Motor init failed.");
 
   // Set initial desired yaw
   yaw_desired = ahr.yaw;

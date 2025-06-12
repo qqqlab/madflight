@@ -26,7 +26,7 @@ SOFTWARE.
 
 #define OUT_SIZE 16 //max number of outputs
 
-#include "../hal/hal.h"
+#include "../hal/hal.h" //class PWM, Dshot
 #include <stdint.h> //uint8_t
 
 class Out {
@@ -34,18 +34,30 @@ class Out {
     bool armed = false; //output is enabled when armed == true
 
     void setup();
-    bool setupMotor(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    bool setupServo(uint8_t i, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    void set(uint8_t i, float value); //set output (might not be output value because of armed == false)
-    float get(uint8_t i); //get last set value (might not be output value because of armed == false)
-    char getType(uint8_t i); //type 'M' or 'S'
+    bool setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);
+    bool setupDshotBidir(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);    
+    bool setupMotors(uint8_t cnt, int* idxs, int* pins, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setupMotor(uint8_t idx, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setupServo(uint8_t idx, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    void set(uint8_t idx, float value); //set output (might not be output value because of armed == false)
+    float get(uint8_t idx); //get last set value (might not be output value because of armed == false)
+    char getType(uint8_t idx); //type 'D', 'M', or 'S'
 
   private:
-    bool _setupOutput(char typ, uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
-    
-    PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
+    bool _setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
+
     float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     char type[OUT_SIZE] = {};
+    int pins[OUT_SIZE] = {};
+    
+    //PWM
+    PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
+
+    //Dshot
+    Dshot dshot;
+    DshotBidir dshotbidir;
+    int dshot_cnt = 0; //number of dshot pins
+    int dshot_idxs[OUT_SIZE]; //dshot out indices
 };
 
 extern Out out;

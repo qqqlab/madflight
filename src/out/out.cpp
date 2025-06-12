@@ -27,41 +27,103 @@ SOFTWARE.
 //global module class instance
 Out out;
 
-char Out::getType(uint8_t i) {
-  if(i >= OUT_SIZE) return 0;
-  return type[i];
+char Out::getType(uint8_t idx) {
+  if(idx >= OUT_SIZE) return 0;
+  return type[idx];
 }
 
-float Out::get(uint8_t i) {//get last set value (might not be output because of armed == false)
-  if(i >= OUT_SIZE) return 0;
-  return command[i];
+float Out::get(uint8_t idx) {//get last set value (might not be output because of armed == false)
+  if(idx >= OUT_SIZE) return 0;
+  return command[idx];
 }
 
-void Out::setup() {
-}
+void Out::setup() {}
 
-bool Out::_setupOutput(char typ, uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us){
-  if(i >= OUT_SIZE) return false;
-  type[i] = typ;
-  pwm[i].begin(pin, freq_hz, pwm_min_us, pwm_max_us);
-  command[i] = 0;
-  pwm[i].writeFactor(command[i]);
+bool Out::_setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us){
+  if(idx >= OUT_SIZE) return false;
+  type[idx] = typ;
+  pins[idx] = pin;
+  command[idx] = 0.0f;
+  switch(type[idx]) {
+    case 'D':
+    case 'B':
+      //do nothing
+      break;
+    case 'M':
+    case 'S':
+      pwm[idx].begin(pin, freq_hz, pwm_min_us, pwm_max_us);
+      pwm[idx].writeFactor(command[idx]);
+      break;
+    default:
+      return false;
+  }
   return true;
 }
 
-bool Out::setupMotor(uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setupOutput('M', i, pin, freq_hz, pwm_min_us, pwm_max_us);
-}
-bool Out::setupServo(uint8_t i, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setupOutput('S', i, pin, freq_hz, pwm_min_us, pwm_max_us);
+bool Out::setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz) {
+  for(int i = 0; i < cnt; i++) {
+    if(!_setupOutput('D', idxs[i], pins[i], 0, 0, 0)) return false;
+    dshot_idxs[i] = idxs[i];
+  }
+  if(!dshot.setup(pins, cnt, freq_khz)) return false;
+  dshot_cnt = cnt;
+  return true; 
 }
 
-void Out::set(uint8_t i, float value) {
-  if(i >= OUT_SIZE) return;
-  command[i] = value;
-  if(armed) {
-    pwm[i].writeFactor(value);
-  }else{
-    if(type[i] == 'M') pwm[i].writeFactor(0);
+bool Out::setupDshotBidir(uint8_t cnt, int* idxs, int* pins, int freq_khz) {
+  for(int i = 0; i < cnt; i++) {
+    if(!_setupOutput('B', idxs[i], pins[i], 0, 0, 0)) return false;
+    dshot_idxs[i] = idxs[i];
+  }
+  if(!dshotbidir.setup(pins, cnt, freq_khz)) return false;
+  dshot_cnt = cnt;
+  return true; 
+}
+
+bool Out::setupMotors(uint8_t cnt, int* idxs, int* pins, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  for(int i = 0; i < cnt; i++) {
+    if(!setupMotor(idxs[i], pins[i], freq_hz, pwm_min_us, pwm_max_us)) return false;
+  }
+  return true;
+}
+
+bool Out::setupMotor(uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  return _setupOutput('M', idx, pin, freq_hz, pwm_min_us, pwm_max_us);
+}
+
+bool Out::setupServo(uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  return _setupOutput('S', idx, pin, freq_hz, pwm_min_us, pwm_max_us);
+}
+
+void Out::set(uint8_t idx, float value) {
+  if(idx >= OUT_SIZE) return;
+  command[idx] = value;
+  switch(type[idx]) {
+    case 'D':
+    case 'B':
+      //only send throttle values on last mot index
+      if(idx == dshot_idxs[dshot_cnt - 1]) {
+        uint16_t throttle[OUT_SIZE];
+        for(int i = 0; i < dshot_cnt; i++) {
+          int idx2 = dshot_idxs[i];
+          float v = constrain(command[idx2], 0.0f, 1.0f);
+          if(!armed) v = 0;
+          throttle[idx2] = v * 2000;
+        }
+        if(type[idx] == 'D') {
+          dshot.set_throttle(throttle);
+        }else{
+          dshotbidir.set_throttle(throttle);
+        }
+      }
+      break;
+    case 'M':
+    case 'S':
+      if(armed) {
+        pwm[idx].writeFactor(value);
+      }else{
+        if(type[idx] == 'M') pwm[idx].writeFactor(0);
+      }
+      break;
   }
 }
