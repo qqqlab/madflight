@@ -3,7 +3,11 @@
 
 #ifndef MF_MCU_NAME
   #ifdef PICO_RP2350
-    #define MF_MCU_NAME "RP2350"
+    #if !PICO_RP2350A
+      #define MF_MCU_NAME "RP2350B (48 GPIO)"
+    #else
+      #define MF_MCU_NAME "RP2350A (30 GPIO)"
+    #endif
   #else
     #define MF_MCU_NAME "RP2040"
   #endif
