@@ -9,6 +9,7 @@ See http://madflight.com for detailed description
 MIT license
 Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
+
 #include <Arduino.h>
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight

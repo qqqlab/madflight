@@ -90,6 +90,7 @@ class RclGizmoMavlink : public RclGizmo {
     typedef bool (RclGizmoMavlink::*sched_func_t)();
 
     struct telem_sched_t {
+      constexpr telem_sched_t(sched_func_t func, uint32_t interval_ms) : func(func), interval_ms(interval_ms), last_ms(0) {}
       sched_func_t func;
       uint32_t interval_ms;
       uint32_t last_ms = 0;
