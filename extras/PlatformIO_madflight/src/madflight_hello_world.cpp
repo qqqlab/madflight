@@ -6,6 +6,8 @@ Upload, connect Serial Monitor at 115200 baud and send 'help' to see available c
 
 See http://madflight.com for detailed description
 
+Replace this file with a .ino file from the examples directory when you want something more interesting.
+
 MIT license
 Copyright (c) 2023-2025 https://madflight.com
 ##########################################################################################################################*/
