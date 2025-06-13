@@ -1,4 +1,4 @@
-<img src="extras/img/logo/madflight_logo_2000x538.png" width="100%" />
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/logo/madflight_logo_2000x538.png" width="100%" />
 
 <p align="center">&star;&nbsp;&star;&nbsp;&star;&nbsp;</p>
 <p align="center">If you like <i>madflight</i>, please give it a &star; star</p>
@@ -13,7 +13,7 @@ Flight tested example programs for quadcopter and airplane are included. The exa
 
 The source code and [website](https://madflight.com/) have extensive documentation explaning what the settings and functions do.
 
-<img src="extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="38%" /> <img src="extras/img/madflight drone.jpeg" title="madflight drone" width="30%" /> <img src="extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="29%" />
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="38%" /> <img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight drone.jpeg" title="madflight drone" width="30%" /> <img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="29%" />
 
 ## DEV Version
 
