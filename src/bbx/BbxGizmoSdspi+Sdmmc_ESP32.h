@@ -189,7 +189,7 @@ public:
         Serial.print("UNKNOWN");
     }
     Serial.println();
-    Serial.printf("SectorSize: %d\n", _BB_SDFS.sectorSize());
+    //Serial.printf("SectorSize: %d\n", _BB_SDFS.sectorSize()); //'class fs::SDMMCFS' has no member named 'sectorSize'
     Serial.printf("CardSize: %lluMB\n", _BB_SDFS.cardSize() / (1024 * 1024));
     Serial.printf("used: %lluMB\n", _BB_SDFS.usedBytes()/ (1024 * 1024));
     Serial.printf("free: %lluMB\n", (_BB_SDFS.totalBytes() - _BB_SDFS.usedBytes()) / (1024 * 1024));

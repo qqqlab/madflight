@@ -28,6 +28,8 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
+#include <Arduino.h> //keep PlatformIO happy
+
 extern const char madflight_config[]; //madflight_config should be defined before including this file
 
 #ifdef MF_BOARD
