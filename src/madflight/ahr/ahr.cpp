@@ -29,6 +29,7 @@ SOFTWARE.
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
+#include "AhrGizmoImu.h"
 
 #include "../mag/mag.h"
 #include "../imu/imu.h"
@@ -60,6 +61,10 @@ int Ahr::setup() {
     case Cfg::ahr_gizmo_enum::mf_VQF :
       gizmo = new AhrGizmoVqf(this);
       break;
+    case Cfg::ahr_gizmo_enum::mf_IMU :
+      gizmo = new AhrGizmoImu(this);
+      config.is_sensor_fusion = true;
+      break;
     default:
       gizmo = new AhrGizmoMahony(this, false);
       break;
@@ -69,12 +74,26 @@ int Ahr::setup() {
 }
 
 bool Ahr::update() {
-  // get sensor data from imu and mag
-  // correct the sensor data with the calibration values
-  // use simple first-order low-pass filter to get rid of high frequency noise
-  // store filtered data in ax ay az gx gy gz mx my mz
-  // call the sensor fusion algorithm to update q
-  // compute euler angles from q
+  // if gizmo is already doing sensor fusion and returning quaternions, just set them
+  if (config.is_sensor_fusion) {
+    q[0] = config.pimu->q[0];
+    q[1] = config.pimu->q[1];
+    q[2] = config.pimu->q[2];
+    q[3] = config.pimu->q[3];
+
+    //update euler angles
+    computeAngles();
+
+    return true;
+  }
+
+  // else if the gizmo is sending x, y, z, then
+  //   get sensor data from imu and mag
+  //   correct the sensor data with the calibration values
+  //   use simple first-order low-pass filter to get rid of high frequency noise
+  //   store filtered data in ax ay az gx gy gz mx my mz
+  //   call the sensor fusion algorithm to update q
+  //   compute euler angles from q
 
   //Low-pass filtered, corrected accelerometer data
   ax += B_acc * ((config.pimu->ax - config.acc_offset[0]) - ax);

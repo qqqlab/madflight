@@ -54,6 +54,7 @@ struct AhrConfig {
     float* acc_offset = nullptr; //acc offset[3] [G]
     float* mag_offset = nullptr; //mag offset[3] [adc_lsb]
     float* mag_scale = nullptr; //mag scale[3] [uT/adc_lsb]
+    bool is_sensor_fusion = false; // true if the IMU does sensor fusion already
 };
 
 class AhrGizmo {

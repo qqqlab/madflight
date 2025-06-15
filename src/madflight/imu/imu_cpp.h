@@ -155,6 +155,7 @@ int Imu::setup() {
         gizmo = new ImuGizmoICM20948(config.spi_bus, config.spi_cs, config.pin_int);
         gizmo->uses_i2c = false;
         gizmo->has_mag = true;
+        gizmo->has_sensor_fusion = true;
         break;
       }
       default: {
@@ -251,14 +252,30 @@ int Imu::setup() {
 bool Imu::update() {
   if(!gizmo) return false;
 
+  // Quaternion correction helper
+  auto applyQuatCorrection = [](float q[4], const float qc[4]) {
+    float w1 = qc[0], x1 = qc[1], y1 = qc[2], z1 = qc[3];
+    float w2 = q[0],  x2 = q[1],  y2 = q[2],  z2 = q[3];
+    q[0] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
+    q[1] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
+    q[2] = w1*y2 - x1*z2 + y1*w2 + z1*x2;
+    q[3] = w1*z2 + x1*y2 - y1*x2 + z1*w2;
+  };
+
   //start of update timestamp
   uint32_t update_ts = micros();
 
   //get sensor data and update timestamps, count
   if(gizmo->has_mag) {
-    gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    if (gizmo->has_sensor_fusion)
+      gizmo->get9DOF(&q[0], &q[1], &q[2], &q[3]);
+    else
+      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
   }else{
-    gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+    if (gizmo->has_sensor_fusion)
+      gizmo->get6DOF(&q[0], &q[1], &q[2], &q[3]);
+    else
+      gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
   }
 
   //handle rotation for different mounting positions
@@ -266,25 +283,85 @@ bool Imu::update() {
     case Cfg::imu_align_enum::mf_CW0 :
       break;
     case Cfg::imu_align_enum::mf_CW90 :
-      { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp;   tmp=mx; mx=-my; my=tmp; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.7071f, 0.0f, 0.0f, 0.7071f }; // +90° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = -ay; ay = tmp;
+        tmp = gx; gx = -gy; gy = tmp;
+        tmp = mx; mx = -my; my = tmp;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW180 :
-      { ax=-ax; ay=-ay;   gx=-gx; gy=-gy;   mx=-mx; my=-my; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 180° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        ax = -ax; ay = -ay;
+        gx = -gx; gy = -gy;
+        mx = -mx; my = -my;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW270 :
-      { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp;   tmp=mx; mx=my; my=-tmp; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.7071f, 0.0f, 0.0f, -0.7071f }; // -90° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = ay; ay = -tmp;
+        tmp = gx; gx = gy; gy = -tmp;
+        tmp = mx; mx = my; my = -tmp;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW0FLIP :
-      { ay=-ay; az=-az;   gy=-gy; gz=-gz;   my=-my; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.0f, 1.0f, 0.0f, 0.0f }; // 180° about X (flip Z)
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        ax = ax; ay = -ay; az = -az;
+        gx = gx; gy = -gy; gz = -gz;
+        mx = mx; my = -my; mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW90FLIP :
-      { float tmp; tmp=ax; ax=-ay; ay=tmp; az=-az;   tmp=gx; gx=-gy; gy=tmp; gz=-gz;   tmp=mx; mx=-my; my=tmp; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.5f, -0.5f, -0.5f, -0.5f }; // 90° CW + flip
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = -ay; ay = tmp; az = -az;
+        tmp = gx; gx = -gy; gy = tmp; gz = -gz;
+        tmp = mx; mx = -my; my = tmp; mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW180FLIP :
-      { ax=-ax; az=-az;   gx=-gx; gz=-gz;   mx=-mx; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.0f, 0.0f, 1.0f, 0.0f }; // 180° about Y then flip
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        ax = -ax; ay = -ay; az = -az;
+        gx = -gx; gy = -gy; gz = -gz;
+        mx = -mx; my = -my; mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW270FLIP :
-      { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz;   tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        const float qc[4] = { 0.5f, 0.5f, 0.5f, -0.5f }; // -90° + flip
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = ay; ay = -tmp; az = -az;
+        tmp = gx; gx = gy; gy = -tmp; gz = -gz;
+        tmp = mx; mx = my; my = -tmp; mz = -mz;
+      }
       break;
   }
 

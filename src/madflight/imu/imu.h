@@ -56,6 +56,8 @@ public:
     float my = 0; //"East" magnetic flux [uT]
     float mz = 0; //"Down" magnetic flux [uT]
     float temp = 0; //temperature [C]
+    // sensor fusion IMUs return quaternions
+    float q[4] = {1.0, 0.0, 0.0, 0.0};
 };
 
 class ImuGizmo {
@@ -68,9 +70,13 @@ public:
   virtual ~ImuGizmo() {}
   virtual void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) = 0;
   virtual void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {(void)ax;(void)ay;(void)az;(void)gx;(void)gy;(void)gz;(void)mx;(void)my;(void)mz;};
+  // if has_sensor_fusion, one of these has to be implemented depending on whether Magnetometer is available (9DOF) or not (6DOF)
+  virtual void get6DOF(float *q0, float *q1, float *q2, float *q3) {(void)q0;(void)q1;(void)q2;(void)q3;}
+  virtual void get9DOF(float *q0, float *q1, float *q2, float *q3) {(void)q0;(void)q1;(void)q2;(void)q3;}
   virtual bool installed() {return true;}
   bool has_mag = false;
   bool uses_i2c = false;
+  bool has_sensor_fusion = false;
 };
 
 class Imu : public ImuState {

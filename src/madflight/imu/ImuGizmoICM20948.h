@@ -97,6 +97,7 @@ public:
         : _spi(spi), _csPin(csPin), _interrupt_pin(intPin) {
         has_mag = true;
         uses_i2c = false;
+        has_sensor_fusion = true;
     }
 
     // Converting raw values to physical values
@@ -149,83 +150,191 @@ public:
         _wrapped_imu.sleep(false);
         _wrapped_imu.lowPower(false);
 
-        // The next few configuration functions accept a bit-mask of sensors for which the settings should be applied.
+        if (has_sensor_fusion) {
+              // Initialize the DMP. initializeDMP is a weak function. You can overwrite it if you want to e.g. to change the sample rate
+            status = _wrapped_imu.initializeDMP();
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("initializeDMP returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        // Set Gyro and Accelerometer to a particular sample mode
-        // options: ICM_20948_Sample_Mode_Continuous
-        //          ICM_20948_Sample_Mode_Cycled
-        _wrapped_imu.setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled);
-        if (_wrapped_imu.status != ICM_20948_Stat_Ok)
-        {
-            Serial.print(F("setSampleMode returned: "));
-            Serial.println(_wrapped_imu.statusString());
-        }
-        
-        // Set full scale ranges for both acc and gyr
-        ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
+            // DMP sensor options are defined in ICM_20948_DMP.h
+            //    INV_ICM20948_SENSOR_ACCELEROMETER               (16-bit accel)
+            //    INV_ICM20948_SENSOR_GYROSCOPE                   (16-bit gyro + 32-bit calibrated gyro)
+            //    INV_ICM20948_SENSOR_RAW_ACCELEROMETER           (16-bit accel)
+            //    INV_ICM20948_SENSOR_RAW_GYROSCOPE               (16-bit gyro + 32-bit calibrated gyro)
+            //    INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED (16-bit compass)
+            //    INV_ICM20948_SENSOR_GYROSCOPE_UNCALIBRATED      (16-bit gyro)
+            //    INV_ICM20948_SENSOR_STEP_DETECTOR               (Pedometer Step Detector)
+            //    INV_ICM20948_SENSOR_STEP_COUNTER                (Pedometer Step Detector)
+            //    INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR        (32-bit 6-axis quaternion)
+            //    INV_ICM20948_SENSOR_ROTATION_VECTOR             (32-bit 9-axis quaternion + heading accuracy)
+            //    INV_ICM20948_SENSOR_GEOMAGNETIC_ROTATION_VECTOR (32-bit Geomag RV + heading accuracy)
+            //    INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD           (32-bit calibrated compass)
+            //    INV_ICM20948_SENSOR_GRAVITY                     (32-bit 6-axis quaternion)
+            //    INV_ICM20948_SENSOR_LINEAR_ACCELERATION         (16-bit accel + 32-bit 6-axis quaternion)
+            //    INV_ICM20948_SENSOR_ORIENTATION                 (32-bit 9-axis quaternion + heading accuracy)
 
-        myFSS.a = gpm2; // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
-                        // gpm2
-                        // gpm4
-                        // gpm8
-                        // gpm16
+            // Enable the DMP orientation sensor
+            status = _wrapped_imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION);
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("enableDMPSensor returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        myFSS.g = dps250; // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
-                            // dps250
-                            // dps500
-                            // dps1000
-                            // dps2000
+            // Enable any additional sensors / features
+            //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);
+            //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);
+            //success &= (myICM.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok);
 
-        _wrapped_imu.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
-        if (_wrapped_imu.status != ICM_20948_Stat_Ok)
-        {
-            Serial.print(F("setFullScale returned: "));
-            Serial.println(_wrapped_imu.statusString());
-        }
+            // Configuring DMP to output data at multiple ODRs:
+            // DMP is capable of outputting multiple sensor data at different rates to FIFO.
+            // Setting value can be calculated as follows:
+            // Value = (DMP running rate / ODR ) - 1
+            // E.g. For a 5Hz ODR rate when DMP is running at 55Hz, value = (55/5) - 1 = 10.
+            status = _wrapped_imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0); // Set to the maximum
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("setDMPODRrate returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
+                
+            //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+            //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+            //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+            //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass, 0) == ICM_20948_Stat_Ok); // Set to the maximum
+            //success &= (myICM.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 0) == ICM_20948_Stat_Ok); // Set to the maximum
 
-        // Set up Digital Low-Pass Filter configuration
-        ICM_20948_dlpcfg_t myDLPcfg;    // Similar to FSS, this uses a configuration structure for the desired sensors
-        myDLPcfg.a = acc_d473bw_n499bw; // (ICM_20948_ACCEL_CONFIG_DLPCFG_e)
-                                        // acc_d246bw_n265bw      - means 3db bandwidth is 246 hz and nyquist bandwidth is 265 hz
-                                        // acc_d111bw4_n136bw
-                                        // acc_d50bw4_n68bw8
-                                        // acc_d23bw9_n34bw4
-                                        // acc_d11bw5_n17bw
-                                        // acc_d5bw7_n8bw3        - means 3 db bandwidth is 5.7 hz and nyquist bandwidth is 8.3 hz
-                                        // acc_d473bw_n499bw
+            // Enable the FIFO
+            status = _wrapped_imu.enableFIFO();
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("enableFIFO returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        myDLPcfg.g = gyr_d361bw4_n376bw5; // (ICM_20948_GYRO_CONFIG_1_DLPCFG_e)
-                                            // gyr_d196bw6_n229bw8
-                                            // gyr_d151bw8_n187bw6
-                                            // gyr_d119bw5_n154bw3
-                                            // gyr_d51bw2_n73bw3
-                                            // gyr_d23bw9_n35bw9
-                                            // gyr_d11bw6_n17bw8
-                                            // gyr_d5bw7_n8bw9
-                                            // gyr_d361bw4_n376bw5
+            // Enable the DMP
+            status = _wrapped_imu.enableDMP();
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("enableDMP returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        _wrapped_imu.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
-        if (_wrapped_imu.status != ICM_20948_Stat_Ok)
-        {
-            Serial.print(F("setDLPcfg returned: "));
-            Serial.println(_wrapped_imu.statusString());
-        }
+            // Reset DMP
+            status = _wrapped_imu.resetDMP();
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("resetDMP returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        // Choose whether or not to use DLPF
-        // Here we're also showing another way to access the status values, and that it is OK to supply individual sensor masks to these functions
-        ICM_20948_Status_e accDLPEnableStat = _wrapped_imu.enableDLPF(ICM_20948_Internal_Acc, true);
-        ICM_20948_Status_e gyrDLPEnableStat = _wrapped_imu.enableDLPF(ICM_20948_Internal_Gyr, true);
-        Serial.print(F("Enable DLPF for Accelerometer returned: "));
-        Serial.println(_wrapped_imu.statusString(accDLPEnableStat));
-        Serial.print(F("Enable DLPF for Gyroscope returned: "));
-        Serial.println(_wrapped_imu.statusString(gyrDLPEnableStat));
+            // Reset FIFO
+            status = _wrapped_imu.resetFIFO();
+            if (status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("resetFIFO returned: "));
+                Serial.println(_wrapped_imu.statusString());
+                return status;
+            }
 
-        // Choose whether or not to start the magnetometer
-        _wrapped_imu.startupMagnetometer();
-        if (_wrapped_imu.status != ICM_20948_Stat_Ok)
-        {
-            Serial.print(F("startupMagnetometer returned: "));
-            Serial.println(_wrapped_imu.statusString());
+            // Check success
+            if (status == ICM_20948_Stat_Ok)
+            {
+                Serial.println(F("DMP enabled!"));
+            }
+            else
+            {
+                Serial.println(F("Enable DMP failed!"));
+                Serial.println(F("Please check that you have uncommented line 29 (#define ICM_20948_USE_DMP) in ICM_20948_C.h..."));
+            }
+        } else {
+            // The next few configuration functions accept a bit-mask of sensors for which the settings should be applied.
+
+            // Set Gyro and Accelerometer to a particular sample mode
+            // options: ICM_20948_Sample_Mode_Continuous
+            //          ICM_20948_Sample_Mode_Cycled
+            _wrapped_imu.setSampleMode((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Cycled);
+            if (_wrapped_imu.status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("setSampleMode returned: "));
+                Serial.println(_wrapped_imu.statusString());
+            }
+            
+            // Set full scale ranges for both acc and gyr
+            ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
+
+            myFSS.a = gpm2; // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+                            // gpm2
+                            // gpm4
+                            // gpm8
+                            // gpm16
+
+            myFSS.g = dps250; // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+                                // dps250
+                                // dps500
+                                // dps1000
+                                // dps2000
+
+            _wrapped_imu.setFullScale((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS);
+            if (_wrapped_imu.status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("setFullScale returned: "));
+                Serial.println(_wrapped_imu.statusString());
+            }
+
+            // Set up Digital Low-Pass Filter configuration
+            ICM_20948_dlpcfg_t myDLPcfg;    // Similar to FSS, this uses a configuration structure for the desired sensors
+            myDLPcfg.a = acc_d473bw_n499bw; // (ICM_20948_ACCEL_CONFIG_DLPCFG_e)
+                                            // acc_d246bw_n265bw      - means 3db bandwidth is 246 hz and nyquist bandwidth is 265 hz
+                                            // acc_d111bw4_n136bw
+                                            // acc_d50bw4_n68bw8
+                                            // acc_d23bw9_n34bw4
+                                            // acc_d11bw5_n17bw
+                                            // acc_d5bw7_n8bw3        - means 3 db bandwidth is 5.7 hz and nyquist bandwidth is 8.3 hz
+                                            // acc_d473bw_n499bw
+
+            myDLPcfg.g = gyr_d361bw4_n376bw5; // (ICM_20948_GYRO_CONFIG_1_DLPCFG_e)
+                                                // gyr_d196bw6_n229bw8
+                                                // gyr_d151bw8_n187bw6
+                                                // gyr_d119bw5_n154bw3
+                                                // gyr_d51bw2_n73bw3
+                                                // gyr_d23bw9_n35bw9
+                                                // gyr_d11bw6_n17bw8
+                                                // gyr_d5bw7_n8bw9
+                                                // gyr_d361bw4_n376bw5
+
+            _wrapped_imu.setDLPFcfg((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+            if (_wrapped_imu.status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("setDLPcfg returned: "));
+                Serial.println(_wrapped_imu.statusString());
+            }
+
+            // Choose whether or not to use DLPF
+            // Here we're also showing another way to access the status values, and that it is OK to supply individual sensor masks to these functions
+            ICM_20948_Status_e accDLPEnableStat = _wrapped_imu.enableDLPF(ICM_20948_Internal_Acc, true);
+            ICM_20948_Status_e gyrDLPEnableStat = _wrapped_imu.enableDLPF(ICM_20948_Internal_Gyr, true);
+            Serial.print(F("Enable DLPF for Accelerometer returned: "));
+            Serial.println(_wrapped_imu.statusString(accDLPEnableStat));
+            Serial.print(F("Enable DLPF for Gyroscope returned: "));
+            Serial.println(_wrapped_imu.statusString(gyrDLPEnableStat));
+
+            // Choose whether or not to start the magnetometer
+            _wrapped_imu.startupMagnetometer();
+            if (_wrapped_imu.status != ICM_20948_Stat_Ok)
+            {
+                Serial.print(F("startupMagnetometer returned: "));
+                Serial.println(_wrapped_imu.statusString());
+            }
         }
 
         // Now we're going to set up interrupts. There are a lot of options, but for this test we're just configuring the interrupt pin and enabling interrupts to tell us when new data is ready
@@ -255,9 +364,15 @@ public:
         Serial.println(_wrapped_imu.statusString());
         _wrapped_imu.cfgIntAnyReadToClear(true);
 
-        _wrapped_imu.intEnableRawDataReady(true); // enable interrupts on raw data ready
-        Serial.print(F("intEnableRawDataReady returned: "));
-        Serial.println(_wrapped_imu.statusString());
+        if (has_sensor_fusion) {
+            _wrapped_imu.intEnableDMP(true);
+            Serial.print(F("intEnableDMP returned: "));
+            Serial.println(_wrapped_imu.statusString());
+        } else {
+            _wrapped_imu.intEnableRawDataReady(true); // enable interrupts on raw data ready
+            Serial.print(F("intEnableRawDataReady returned: "));
+            Serial.println(_wrapped_imu.statusString());
+        }
 
         //  // Note: weirdness with the Wake on Motion interrupt being always enabled.....
         //  uint8_t zero_0 = 0xFF;
@@ -267,6 +382,7 @@ public:
         //  ICM_20948_execute_w( &_wrapped_imu._device, AGB0_REG_INT_ENABLE, (uint8_t*)&zero_0, sizeof(uint8_t) );
 
         //_wrapped_imu.clearInterrupts();
+
         return status;
     }
 
@@ -326,6 +442,42 @@ public:
         *mx = _wrapped_imu.magX();
         *my = _wrapped_imu.magY();
         *mz = _wrapped_imu.magZ();
+    }
+
+    void get9DOF(float *q0, float *q1, float *q2, float *q3) {
+        // Read any DMP data waiting in the FIFO
+        // Note:
+        //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFONoDataAvail if no data is available.
+        //    If data is available, readDMPdataFromFIFO will attempt to read _one_ frame of DMP data.
+        //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOIncompleteData if a frame was present but was incomplete
+        //    readDMPdataFromFIFO will return ICM_20948_Stat_Ok if a valid frame was read.
+        //    readDMPdataFromFIFO will return ICM_20948_Stat_FIFOMoreDataAvail if a valid frame was read _and_ the FIFO contains more (unread) data.
+        icm_20948_DMP_data_t data;
+        _wrapped_imu.readDMPdataFromFIFO(&data);
+
+        if ((_wrapped_imu.status == ICM_20948_Stat_Ok) || (_wrapped_imu.status == ICM_20948_Stat_FIFOMoreDataAvail)) // Was valid data available?
+        {
+            //Serial.print(F("Received data! Header: 0x")); // Print the header in HEX so we can see what data is arriving in the FIFO
+            //if ( data.header < 0x1000) Serial.print( "0" ); // Pad the zeros
+            //if ( data.header < 0x100) Serial.print( "0" );
+            //if ( data.header < 0x10) Serial.print( "0" );
+            //Serial.println( data.header, HEX );
+
+            if ((data.header & DMP_header_bitmap_Quat9) > 0) // We have asked for orientation data so we should receive Quat9
+            {
+                // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+                // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+                // The quaternion data is scaled by 2^30.
+
+                //Serial.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
+
+                // Scale to +/- 1
+                *q1 = (float)((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+                *q2 = (float)((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+                *q3 = (float)((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+                *q0 = (float)sqrt(1.0 - ((*q1 * *q1) + (*q2 * *q2) + (*q3 * *q3)));
+            }
+        }
     }
 };
 

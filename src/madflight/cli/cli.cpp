@@ -70,6 +70,10 @@ static void cli_print_ahr_RollPitchYaw() {
   Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
 
+static void cli_print_ahr_Quaternion() {
+  Serial.printf("q1:%+.4f\tq1:%+.4f\tq2:%+.4f\tq3:%+.4f\t", ahr.q[0], ahr.q[1], ahr.q[2], ahr.q[3]);
+}
+
 static void cli_print_control_PIDoutput() {
   Serial.printf("PID.roll:%+.3f\t",PIDroll.PID);
   Serial.printf("pitch:%+.3f\t",PIDpitch.PID);
@@ -176,6 +180,7 @@ static const struct cli_print_s cli_print_options[] = {
   {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_print_imu_AccData},
   {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
   {"pahr",   "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw},
+  {"pquat",  "AHRS quaternion", cli_print_ahr_Quaternion},
   {"ppid",   "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
