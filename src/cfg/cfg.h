@@ -180,7 +180,7 @@ SOFTWARE.
   MF_PARAM( pin_rcl_ppm,      -1, int32_t, 'p') \
 \
   /*AHR - AHRS*/ \
-  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF) \
+  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF,mf_IMU) \
 \
   /*BAR - Barometer*/ \
   MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B) \
@@ -203,7 +203,7 @@ SOFTWARE.
   MF_PARAM( gps_baud,          0, int32_t, 'i') \
 \
   /*IMU - Inertial Measurement Unit (acc/gyro)*/ \
-  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688) \
+  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688,mf_ICM20948) \
   MF_PARAM( imu_spi_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_adr,       0, int32_t, 'i') \
@@ -211,6 +211,7 @@ SOFTWARE.
   MF_PARAM( imu_rate,       1000, float, 'f') /*IMU sample rate in Hz (default 1000) NOTE: not all IMU drivers support a different rate*/ \
   MF_PARAM( imu_acc_lp,       70, float, 'f') /*Accelerometer Low Pass Filter cutoff frequency in Hz */ \
   MF_PARAM( imu_gyr_lp,       60, float, 'f') /*Gyro Low Pass Filter cutoff frequency in Hz */ \
+  MF_PARAM( imu_int_mode,      0, int32_t, 'e', mf_RISING,mf_FALLING) \
 \
   /*LED*/ \
   MF_PARAM( led_on,            0, int32_t, 'e', mf_LOW_IS_ON,mf_HIGH_IS_ON) \
@@ -222,7 +223,7 @@ SOFTWARE.
   MF_PARAM( mag_lp,         1e10, float, 'f') /*Magnetometer Gyro Low Pass Filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering) */ \
 \
   /*RCL - Remote Control Link*/ \
-  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM) \
+  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS) \
   MF_PARAM( rcl_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rcl_baud,          0, int32_t, 'i') \
   MF_PARAM( rcl_num_ch,        8, int32_t, 'i') /*max 20*/ \

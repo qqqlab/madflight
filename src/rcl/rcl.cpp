@@ -34,6 +34,7 @@ SOFTWARE.
 #include "RclGizmoSbus.h" //TODO need SERIAL_8E2
 #include "RclGizmoDsm.h"
 #include "RclGizmoPpm.h"
+#include "RclGizmoIbus.h"
 //#include "RclGizmoPwm.h" //not implemented
 
 //set defaults
@@ -112,6 +113,15 @@ int Rcl::setup() {
       gizmo = new RclGizmoPpm(config.ppm_pin, pwm);
       break;
     }
+
+    case Cfg::rcl_gizmo_enum::mf_IBUS : {
+      gizmo = RclGizmoIbus::create(config.ser_bus_id, pwm, config.baud);
+      if (!gizmo) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+      }
+
+      break;
+    }
   }
 
   //check gizmo
@@ -163,7 +173,11 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     //armed state
     if(st[ARM].ch < RCL_MAX_CH) {
       //use arm switch
-      bool arm_sw = (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max); //get arm switch state
+      bool arm_sw = false;
+      if (pwm[st[ARM].ch] <= st[ARM].min) arm_sw = false;
+      else if (pwm[st[ARM].ch] >= st[ARM].max) arm_sw = true;
+
+      //if (st[ARM].min <= pwm[st[ARM].ch] && pwm[st[ARM].ch] < st[ARM].max); //get arm switch state
       if(throttle == 0 && arm_sw && !_arm_sw_prev) {
         //Arm: Throttle is zero and radio armed switch was flipped from disarmed to armed position
         armed = true;

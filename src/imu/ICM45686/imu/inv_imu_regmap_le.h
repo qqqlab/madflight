@@ -520,7 +520,7 @@ typedef struct {
 	uint8_t resv_1                                                                 : 4;
 } int_aux2_status_t;
 
-#define WHO_AM_I                                                                0x72
+#define REG_WHO_AM_I                                                                0x72
 typedef struct {
 	uint8_t who_am_i                                                               : 8;
 } who_am_i_t;
