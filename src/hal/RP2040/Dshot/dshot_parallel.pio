@@ -1,0 +1,62 @@
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2025 https://github.com/qqqlab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+==========================================================================================*/
+
+.pio_version 0 // only requires PIO version 0
+
+.program dshot_parallel
+
+.define public T1 6
+.define public T2 6
+.define public T3 4
+
+.wrap_target
+    out x, 8
+    mov pins, !null [T1-1]
+    mov pins, x     [T2-1]
+    mov pins, null  [T3-2]
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+//pin_count 1-8
+static inline void dshot_parallel_program_init(PIO pio, uint sm, uint offset, uint pin_base, uint pin_count, float freq) {
+    for(uint i=pin_base; i<pin_base+pin_count; i++) {
+        pio_gpio_init(pio, i);
+    }
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, pin_count, true);
+
+    pio_sm_config c = dshot_parallel_program_get_default_config(offset);
+    sm_config_set_out_shift(&c, true, true, 32);
+    sm_config_set_out_pins(&c, pin_base, pin_count);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+
+    int cycles_per_bit = dshot_parallel_T1 + dshot_parallel_T2 + dshot_parallel_T3;
+    float div = clock_get_hz(clk_sys) / (freq * cycles_per_bit);
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}

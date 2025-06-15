@@ -1,4 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v2.0.2-DEV"
+#define MADFLIGHT_VERSION "madflight v2.1.0"
 
 //madflight.h - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
 
@@ -28,43 +28,47 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
+#include <Arduino.h> //keep PlatformIO happy
+
 extern const char madflight_config[]; //madflight_config should be defined before including this file
 
-//board headers should define MF_BOARD_NAME and const char madflight_board[]
-#ifndef MF_BOARD_NAME
+#ifdef MF_BOARD
+  //the board header file must define const char madflight_board[] and should define MF_BOARD_NAME, MF_MCU_NAME
+  #include MF_BOARD
+#else
   const char madflight_board[] = "";
 #endif
 
 // bus abstraction
-#include "madflight/hal/MF_Serial.h"
-#include "madflight/hal/MF_I2C.h"
+#include "hal/MF_Serial.h"
+#include "hal/MF_I2C.h"
 
 // include all "_cpp.h" modules which have compile time config options
 #define MF_ALLOW_INCLUDE_CCP_H
-#include "madflight/alt/alt_cpp.h" //TODO - convert to use gizmos
-#include "madflight/hal/hal_cpp.h"
-#include "madflight/imu/imu_cpp.h" //for IMU_EXEC
+#include "alt/alt_cpp.h" //TODO - convert to use gizmos
+#include "hal/hal_cpp.h"
+#include "imu/imu_cpp.h" //for IMU_EXEC
 #undef MF_ALLOW_INCLUDE_CCP_H
 
 // include all other modules without compile time config options
-#include "madflight/ahr/ahr.h"
-#include "madflight/cfg/cfg.h"
-#include "madflight/cli/cli.h"
-#include "madflight/bar/bar.h"
-#include "madflight/bat/bat.h"
-#include "madflight/bbx/bbx.h"
-#include "madflight/gps/gps.h"
-#include "madflight/led/led.h"
-#include "madflight/lua/lua.h"
-#include "madflight/mag/mag.h"
-#include "madflight/out/out.h"
-#include "madflight/pid/pid.h"
-#include "madflight/rcl/rcl.h"
-#include "madflight/rdr/rdr.h"
-#include "madflight/veh/veh.h"
+#include "ahr/ahr.h"
+#include "cfg/cfg.h"
+#include "cli/cli.h"
+#include "bar/bar.h"
+#include "bat/bat.h"
+#include "bbx/bbx.h"
+#include "gps/gps.h"
+#include "led/led.h"
+#include "lua/lua.h"
+#include "mag/mag.h"
+#include "out/out.h"
+#include "pid/pid.h"
+#include "rcl/rcl.h"
+#include "rdr/rdr.h"
+#include "veh/veh.h"
 
 // toolbox
-#include "madflight/tbx/RuntimeTrace.h"
+#include "tbx/RuntimeTrace.h"
 
 // prototypes
 void madflight_die(String msg);
@@ -254,7 +258,7 @@ void madflight_setup() {
     #endif
   }
 
-  // LUA
+  // LUA - Start Lua script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();
 
   // CLI - Command Line Interface
