@@ -664,6 +664,11 @@ void Cli::calibrate_info(int seconds) {
       gx.append(imu.gx);
       gy.append(imu.gy);
       gz.append(imu.gz);
+      if (imu.hasMag()) {
+        mx.append(imu.mx);
+        my.append(imu.my);
+        mz.append(imu.mz);
+      }
       last_cnt = imu.update_cnt;
     }
     if(bar.installed() && bar.update()) {
@@ -686,17 +691,17 @@ void Cli::calibrate_info(int seconds) {
   ax.print("ax[g]         ");
   ay.print("ay[g]         ");
   az.print("az[g]         ");
+  if(mag.installed() || imu.hasMag()) {
+    Serial.printf("=== Magnetometer (%s) ===\n", mag.installed() ? "external" : "imu");
+    mx.print("mx[uT]        ");
+    my.print("my[uT]        ");
+    mz.print("mz[uT]        ");
+  }
   if(bar.installed()) {
     Serial.println("=== Barometer ===");
     sa.print("Altitude[m]   ");
     sp.print("Pressure[Pa]  ");
     st.print("Temperature[C]");
-  }
-  if(mag.installed()) {
-    Serial.println("=== Magnetometer (external) ===");
-    mx.print("mx[uT]        ");
-    my.print("my[uT]        ");
-    mz.print("mz[uT]        ");
   }
 }
 

@@ -61,6 +61,7 @@ void IBus::begin() {
   this->len = 0;
   this->chksum = 0;
   this->lchksum = 0;
+  bzero(this->channel, sizeof(this->channel));
 
   // we need to process the iBUS sensor protocol handler frequently enough (at least once each ms) to ensure the response data
   // from the sensor is sent on time to the receiver

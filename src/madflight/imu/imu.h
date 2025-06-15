@@ -32,6 +32,7 @@ struct ImuConfig {
   public:
     uint32_t sampleRate = 1000; //sample rate [Hz]
     int pin_int = -1; //IMU data ready interrupt pin
+    PinStatus int_mode = RISING; // default(RISING) or FALLING
     Cfg::imu_gizmo_enum gizmo = Cfg::imu_gizmo_enum::mf_NONE; //the gizmo to use
     SPIClass *spi_bus = nullptr; //SPI bus
     int spi_cs = -1; //SPI select pin

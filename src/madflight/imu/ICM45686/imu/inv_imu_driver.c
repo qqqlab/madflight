@@ -61,14 +61,14 @@ int inv_imu_get_who_am_i(inv_imu_device_t *s, uint8_t *who_am_i)
 {
 	int status;
 
-	status = inv_imu_read_reg(s, WHO_AM_I, 1, who_am_i);
+	status = inv_imu_read_reg(s, REG_WHO_AM_I, 1, who_am_i);
 
 	/* AN-000364
 	 * In I2C mode, after chip power-up, the host should perform one retry
 	 * on the very first I2C transaction if it receives a NACK 
 	 */
 	if (s->transport.serif_type == UI_I2C && status)
-		status = inv_imu_read_reg(s, WHO_AM_I, 1, who_am_i);
+		status = inv_imu_read_reg(s, REG_WHO_AM_I, 1, who_am_i);
 
 	return status;
 }

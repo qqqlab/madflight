@@ -92,7 +92,10 @@ void hal_setup() {
 
   //IMU
   if(cfg.pin_imu_int >= 0) {
-    pinMode(cfg.pin_imu_int, INPUT); //apparently needed for RP2350, should not hurt for RP2040
+    if ((Cfg::imu_int_mode_enum)cfg.imu_int_mode == Cfg::imu_int_mode_enum::mf_FALLING)
+      pinMode(cfg.pin_imu_int, INPUT_PULLUP); //apparently needed for RP2350, should not hurt for RP2040
+    else
+      pinMode(cfg.pin_imu_int, INPUT); //apparently needed for RP2350, should not hurt for RP2040
   }
 }
 

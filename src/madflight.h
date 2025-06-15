@@ -218,6 +218,10 @@ void madflight_setup() {
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
+  if ((Cfg::imu_int_mode_enum)cfg.imu_int_mode == Cfg::imu_int_mode_enum::mf_FALLING)
+    imu.config.int_mode = FALLING;
+  else
+    imu.config.int_mode = RISING;
   imu.config.gizmo = (Cfg::imu_gizmo_enum)cfg.imu_gizmo; //the gizmo to use
   imu.config.spi_bus = hal_get_spi_bus(cfg.imu_spi_bus); //SPI bus
   imu.config.spi_cs = cfg.pin_imu_cs; //SPI select pin
@@ -242,7 +246,7 @@ void madflight_setup() {
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
-    if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
+    while(!imu.waitNewSample()) madflight_warn("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
       //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)

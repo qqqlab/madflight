@@ -76,11 +76,12 @@ Limitations:
 #include "./ImuGizmoBMI270.h"
 #include "./ImuGizmoICM45686.h"
 #include "./ImuGizmoICM426XX.h"
+#include "./ImuGizmoICM20948.h"
 
 //global module class instance
 Imu imu;
 
-void _imu_ll_interrupt_setup(int interrupt_pin); //prototype
+void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus mode); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
@@ -148,6 +149,12 @@ int Imu::setup() {
       }
       case Cfg::imu_gizmo_enum::mf_ICM42688 : {
         gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
+        break;
+      }
+      case Cfg::imu_gizmo_enum::mf_ICM20948 : {
+        gizmo = new ImuGizmoICM20948(config.spi_bus, config.spi_cs, config.pin_int);
+        gizmo->uses_i2c = false;
+        gizmo->has_mag = true;
         break;
       }
       default: {
@@ -234,7 +241,7 @@ int Imu::setup() {
   dt = 0;
   ts = micros();
   statReset();
-  _imu_ll_interrupt_setup(config.pin_int);
+  _imu_ll_interrupt_setup(config.pin_int, config.int_mode);
   _imu_ll_interrupt_enabled = true;
   interrupt_cnt = 0;
   update_cnt = 0;
@@ -271,7 +278,7 @@ bool Imu::update() {
       { ay=-ay; az=-az;   gy=-gy; gz=-gz;   my=-my; mz=-mz; }
       break;
     case Cfg::imu_align_enum::mf_CW90FLIP :
-      { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;   tmp=mx; mx=my; my=tmp; mz=-mz; }
+      { float tmp; tmp=ax; ax=-ay; ay=tmp; az=-az;   tmp=gx; gx=-gy; gy=tmp; gz=-gz;   tmp=mx; mx=-my; my=tmp; mz=-mz; }
       break;
     case Cfg::imu_align_enum::mf_CW180FLIP :
       { ax=-ax; az=-az;   gx=-gx; gz=-gz;   mx=-mx; mz=-mz; }
@@ -349,7 +356,7 @@ void _imu_ll_interrupt_handler();
     }
   }
 
-  void _imu_ll_interrupt_setup(int interrupt_pin) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus mode) {
     if(!_imu_ll_task_handle) {
       //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
@@ -373,7 +380,8 @@ void _imu_ll_interrupt_handler();
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING); 
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, mode);
+    Serial.printf("Attached interrupt to pin %d with mode %d\n", interrupt_pin, mode);
   }
   
   inline void _imu_ll_interrupt_handler2() {
