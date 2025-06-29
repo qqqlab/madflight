@@ -34,6 +34,7 @@ SOFTWARE.
 #include "RclGizmoSbus.h" //TODO need SERIAL_8E2
 #include "RclGizmoDsm.h"
 #include "RclGizmoPpm.h"
+#include "RclGizmoIbus.h"
 //#include "RclGizmoPwm.h" //not implemented
 
 //set defaults
@@ -93,7 +94,7 @@ int Rcl::setup() {
       break;
     }
 
-    case Cfg::rcl_gizmo_enum::mf_SBUS_NOT_INV : { 
+    case Cfg::rcl_gizmo_enum::mf_SBUS_NOT_INV : {
       gizmo = RclGizmoSbus::create(config.ser_bus_id, pwm, config.baud, false);
       break;
     }
@@ -110,6 +111,15 @@ int Rcl::setup() {
 
     case Cfg::rcl_gizmo_enum::mf_PPM : {
       gizmo = new RclGizmoPpm(config.ppm_pin, pwm);
+      break;
+    }
+
+    case Cfg::rcl_gizmo_enum::mf_IBUS : {
+      gizmo = RclGizmoIbus::create(config.ser_bus_id, pwm, config.baud);
+      if (!gizmo) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+      }
+
       break;
     }
   }
@@ -217,7 +227,7 @@ float Rcl::_ChannelNormalize(int val, int min, int center, int max, int deadband
   if(val<min) return rev * -1.0;
   if(val<center-deadband) return (float)(rev * (val-(center-deadband))) / ((center-deadband)-min); //returns -1 to 0
   if(val<center+deadband) return 0;
-  if(val<max) return (float)(rev * (val-(center+deadband))) / (max-(center+deadband)); 
+  if(val<max) return (float)(rev * (val-(center+deadband))) / (max-(center+deadband));
   return rev * 1.0;
 }
 
