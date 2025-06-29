@@ -32,6 +32,7 @@ struct ImuConfig {
   public:
     uint32_t sampleRate = 1000; //sample rate [Hz]
     int pin_int = -1; //IMU data ready interrupt pin
+    PinStatus int_mode = RISING; // default(RISING) or FALLING
     Cfg::imu_gizmo_enum gizmo = Cfg::imu_gizmo_enum::mf_NONE; //the gizmo to use
     SPIClass *spi_bus = nullptr; //SPI bus
     int spi_cs = -1; //SPI select pin
@@ -55,6 +56,8 @@ public:
     float my = 0; //"East" magnetic flux [uT]
     float mz = 0; //"Down" magnetic flux [uT]
     float temp = 0; //temperature [C]
+    // sensor fusion IMUs return quaternions
+    float q[4] = {1.0, 0.0, 0.0, 0.0};
 };
 
 class ImuGizmo {
@@ -67,9 +70,13 @@ public:
   virtual ~ImuGizmo() {}
   virtual void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) = 0;
   virtual void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {(void)ax;(void)ay;(void)az;(void)gx;(void)gy;(void)gz;(void)mx;(void)my;(void)mz;};
+  // if has_sensor_fusion, one of these has to be implemented depending on whether Magnetometer is available (9DOF) or not (6DOF)
+  virtual void get6DOF(float *q0, float *q1, float *q2, float *q3) {(void)q0;(void)q1;(void)q2;(void)q3;}
+  virtual void get9DOF(float *q0, float *q1, float *q2, float *q3) {(void)q0;(void)q1;(void)q2;(void)q3;}
   virtual bool installed() {return true;}
   bool has_mag = false;
   bool uses_i2c = false;
+  bool has_sensor_fusion = false;
 };
 
 class Imu : public ImuState {
@@ -102,6 +109,7 @@ class Imu : public ImuState {
     //methods
     bool waitNewSample(); //wait for new sample, returns false on fail
     bool hasMag(); //returns true if IMU has a magnetometer
+    bool hasSensorFusion(); //returns true if IMU has sensor fusion
     bool usesI2C(); //returns true if IMU uses I2C bus (not SPI bus)
     uint32_t getSampleRate() {return _sampleRate;}  //sensor sample rate in Hz
     uint32_t getSamplePeriod() {return (_sampleRate != 0 ? 1000000 / _sampleRate : 1000000);} //sensor sample period in us

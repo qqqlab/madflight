@@ -203,7 +203,7 @@ SOFTWARE.
   MF_PARAM( gps_baud,          0, int32_t, 'i') \
 \
   /*IMU - Inertial Measurement Unit (acc/gyro)*/ \
-  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688) \
+  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688,mf_ICM20948) \
   MF_PARAM( imu_spi_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_adr,       0, int32_t, 'i') \
@@ -250,12 +250,12 @@ namespace Cfg {
   #define MF_PARAM(name, defval, datatype, type, ...) + 1
     const uint16_t param_cnt = 0 MF_PARAM_LIST ;
   #undef MF_PARAM
-  
+
   //enums for madflight library parameters, generated from MF_PARAM_LIST
   #define MF_PARAM(name, defval, datatype, type, ...) enum class name##_enum { __VA_ARGS__ };
     MF_PARAM_LIST
   #undef MF_PARAM
-  
+
   //list of parameters (generate from MF_PARAM_LIST)
   #define MF_PARAM(name, defval, datatype, type, ...) {#name, defval, type, #__VA_ARGS__},
     struct param_list_t {
