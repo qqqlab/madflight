@@ -25,14 +25,14 @@ SOFTWARE.
 /*========================================================================================================================
 This file is kept as header to allow #IMU_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
 
-Body frame is NED: 
+Body frame is NED:
   x-axis North(front) - gyro-x roll right is positive - accelerometer-x vehicle right side down position is +1 G
   y-axis East(right)  - gyro-y pitch up is positive   - accelerometer-y vehicle nose down postion is +1 G
   z-axis Down         - gyro-z yaw right is positive  - accelerometer-z vehicle level position is +1 G
 
 MPU-6XXX and MPU-9XXX sensor family
 ===================================
-These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kHz, and mag 100 Hz. The driver 
+These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kHz, and mag 100 Hz. The driver
 configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
 
 ===================================
@@ -40,7 +40,7 @@ ICM-4xxxx sensors
 ===================================
 Currently only ICM45686 is supported.
 This is a 6 axis sensor, with maximum sample rates of 6.4khz, max gyro range 4000dps, max accelerometer range 32G
-Limitations: 
+Limitations:
 - The underlying driver lib supports only one sensor instance
 - only via SPI + interupt; I2C can be added using the same driver lib
 ========================================================================================================================*/
@@ -76,22 +76,24 @@ Limitations:
 #include "./ImuGizmoBMI270.h"
 #include "./ImuGizmoICM45686.h"
 #include "./ImuGizmoICM426XX.h"
+#include "./ImuGizmoICM20948.h"
 
 //global module class instance
 Imu imu;
 
-void _imu_ll_interrupt_setup(int interrupt_pin); //prototype
+void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus mode); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
 bool Imu::usesI2C() { return gizmo->uses_i2c; } //returns true if IMU uses I2C bus (not SPI bus)
 bool Imu::hasMag() { return gizmo->has_mag; }
+bool Imu::hasSensorFusion() { return gizmo->has_sensor_fusion; }
 
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup() {
   cfg.printModule(MF_MOD);
-  
+
   //disable interrupt handler
   _imu_ll_interrupt_enabled = false;
 
@@ -148,6 +150,10 @@ int Imu::setup() {
       }
       case Cfg::imu_gizmo_enum::mf_ICM42688 : {
         gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
+        break;
+      }
+      case Cfg::imu_gizmo_enum::mf_ICM20948 : {
+        gizmo = new ImuGizmoICM20948(config.spi_bus, config.spi_cs, config.pin_int);
         break;
       }
       default: {
@@ -234,7 +240,7 @@ int Imu::setup() {
   dt = 0;
   ts = micros();
   statReset();
-  _imu_ll_interrupt_setup(config.pin_int);
+  _imu_ll_interrupt_setup(config.pin_int, config.int_mode);
   _imu_ll_interrupt_enabled = true;
   interrupt_cnt = 0;
   update_cnt = 0;
@@ -244,47 +250,135 @@ int Imu::setup() {
 bool Imu::update() {
   if(!gizmo) return false;
 
+  // Quaternion correction helper
+  auto applyQuatCorrection = [](float q[4], const float qc[4]) {
+    float w1 = qc[0], x1 = qc[1], y1 = qc[2], z1 = qc[3];
+    float w2 = q[0],  x2 = q[1],  y2 = q[2],  z2 = q[3];
+    q[0] = w1*w2 - x1*x2 - y1*y2 - z1*z2;
+    q[1] = w1*x2 + x1*w2 + y1*z2 - z1*y2;
+    q[2] = w1*y2 - x1*z2 + y1*w2 + z1*x2;
+    q[3] = w1*z2 + x1*y2 - y1*x2 + z1*w2;
+  };
+
   //start of update timestamp
   uint32_t update_ts = micros();
 
   //get sensor data and update timestamps, count
   if(gizmo->has_mag) {
-    gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    if (gizmo->has_sensor_fusion) {
+      gizmo->get9DOF(&q[0], &q[1], &q[2], &q[3]);
+      // Also get raw sensor data for AHRS compatibility
+      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    } else {
+      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    }
   }else{
-    gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+    if (gizmo->has_sensor_fusion)
+      gizmo->get6DOF(&q[0], &q[1], &q[2], &q[3]);
+    else
+      gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
   }
 
   //handle rotation for different mounting positions
   switch((Cfg::imu_align_enum)cfg.imu_align) {
     case Cfg::imu_align_enum::mf_CW0 :
+      // Input quaternion q[] is assumed to be in RH NED frame already
+      // No correction needed.
       break;
     case Cfg::imu_align_enum::mf_CW90 :
-      { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp;   tmp=mx; mx=-my; my=tmp; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.7071f, 0.0f, 0.0f, 0.7071f }; // +90° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = -ay; ay = tmp;
+        tmp = gx; gx = -gy; gy = tmp;
+        tmp = mx; mx = -my; my = tmp;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW180 :
-      { ax=-ax; ay=-ay;   gx=-gx; gy=-gy;   mx=-mx; my=-my; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 180° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        ax = -ax; ay = -ay;
+        gx = -gx; gy = -gy;
+        mx = -mx; my = -my;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW270 :
-      { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp;   tmp=mx; mx=my; my=-tmp; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.7071f, 0.0f, 0.0f, -0.7071f }; // -90° about Z
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = ay; ay = -tmp;
+        tmp = gx; gx = gy; gy = -tmp;
+        tmp = mx; mx = my; my = -tmp;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW0FLIP :
-      { ay=-ay; az=-az;   gy=-gy; gz=-gz;   my=-my; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.0f, 1.0f, 0.0f, 0.0f }; // flip about X (Z up to Z down)
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        az = -az;
+        gz = -gz;
+        mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW90FLIP :
-      { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;   tmp=mx; mx=my; my=tmp; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.0f, 0.7071f, -0.7071f, 0.0f }; // +90° about Z then flip about X (Z up to down)
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = -ay; ay = tmp; az = -az;
+        tmp = gx; gx = -gy; gy = tmp; gz = -gz;
+        tmp = mx; mx = -my; my = tmp; mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW180FLIP :
-      { ax=-ax; az=-az;   gx=-gx; gz=-gz;   mx=-mx; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.0f, 0.0f, 1.0f, 0.0f }; // flip about Y
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        ax = -ax; ay = -ay; az = -az;
+        gx = -gx; gy = -gy; gz = -gz;
+        mx = -mx; my = -my; mz = -mz;
+      }
       break;
     case Cfg::imu_align_enum::mf_CW270FLIP :
-      { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz;   tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+      if (gizmo->has_sensor_fusion) {
+        // Input quaternion q[] is assumed to be in RH NED frame already
+        const float qc[4] = { 0.5f, 0.5f, -0.5f, 0.5f }; // -90° about Z then flip about X
+        applyQuatCorrection(q, qc);
+      }
+      else {
+        float tmp;
+        tmp = ax; ax = ay; ay = -tmp; az = -az;
+        tmp = gx; gx = gy; gy = -tmp; gz = -gz;
+        tmp = mx; mx = my; my = -tmp; mz = -mz;
+      }
       break;
   }
 
   this->dt = (update_ts - this->ts) / 1000000.0;
   this->ts = update_ts;
   this->update_cnt++;
-  
+
   return true; //FIXME: should only return true if new sample was retrieved
 }
 
@@ -331,8 +425,8 @@ void Imu::_interrupt_handler() {
 //========================================================================================================================//
 // _IMU_LL_ IMU Low Level Interrrupt Handler
 //========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with IMU_EXEC_FREERTOS the 
-// IMU update is not executed directly in the interrupt handler, but a high priority task is used. This prevents FreeRTOS 
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with IMU_EXEC_FREERTOS the
+// IMU update is not executed directly in the interrupt handler, but a high priority task is used. This prevents FreeRTOS
 // watchdog resets. The delay (latency) from rising edge INT pin to handler is approx. 10 us on ESP32 and 50 us on RP2040.
 
 void _imu_ll_interrupt_handler();
@@ -349,13 +443,13 @@ void _imu_ll_interrupt_handler();
     }
   }
 
-  void _imu_ll_interrupt_setup(int interrupt_pin) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus mode) {
     if(!_imu_ll_task_handle) {
       //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
         int callcore = hal_get_core_num();
         int othercore = (callcore+1)%2;
-        
+
         //TODO move this to hal
         #if defined ARDUINO_ARCH_ESP32
           //note: probably don't what to use this because of single FPU context switching issues...
@@ -373,9 +467,10 @@ void _imu_ll_interrupt_handler();
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING); 
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, mode);
+    Serial.printf("Attached interrupt to pin %d with mode %d\n", interrupt_pin, mode);
   }
-  
+
   inline void _imu_ll_interrupt_handler2() {
     //let RTOS task _imu_ll_task handle the interrupt
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
