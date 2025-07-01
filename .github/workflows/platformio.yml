@@ -25,6 +25,6 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
       - name: Run PlatformIO
-        run: pio ci --verbose --lib="." --project-conf="extras/PlatformIO_madflight/platformio.ini"
+        run: pio ci --verbose --lib="." --lib="examples/00.HelloWorld" --project-conf="extras/PlatformIO_madflight/platformio.ini"
         env:
           PLATFORMIO_CI_SRC: ${{ matrix.example }}
