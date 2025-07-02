@@ -1,3 +1,5 @@
+#See also: https://github.com/bblanchon/ArduinoJson/blob/7.x/.github/workflows/ci.yml
+
 name: PlatformIO CI
 
 on: [push, pull_request]
@@ -9,22 +11,36 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        example: [examples/00.HelloWorld/00.HelloWorld.ino]
+###     example: [examples/00.HelloWorld/00.HelloWorld.ino, examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced.ino]
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up cache for pip
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.x"
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-      - name: Run PlatformIO
-        run: pio ci --verbose --lib="." --lib="examples/00.HelloWorld" --project-conf="extras/PlatformIO_madflight/platformio.ini"
-        env:
-          PLATFORMIO_CI_SRC: ${{ matrix.example }}
+
+      - name: Build 00.HelloWorld
+        run: pio ci "examples/00.HelloWorld.ino" --lib="examples/00.HelloWorld" --lib="."
+      - name: Build 02.QuadcopterAdvanced
+        run: pio ci "examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced.ino" --lib="examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced" --lib="."
+
+###   - name: Run PlatformIO
+###     # NOTE: --lib="examples/00.HelloWorld" to get #include "madflight_config.h" to work...
+###     run: pio ci --verbose --lib="." --lib="examples/00.HelloWorld" --project-conf="examples/platformio.ini"
+###     env:
+###       PLATFORMIO_CI_SRC: ${{ matrix.example }}
+
+      - name: PlatformIO prune
+        if: ${{ always() }}
+        run: pio system prune -f
