@@ -66,6 +66,17 @@ static void cli_print_imu_MagData() {
   Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahr.mx, ahr.my, ahr.mz); 
 }
 
+static void cli_print_ahr_RollPitchYaw_verbose() {
+    // from ahr.h:
+  // roll in degrees: -180 to 180, roll right is +
+  // pitch in degrees: -90 to 90, pitch up is +
+  // yaw in degrees: -180 to 180, yaw right is positive
+  const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left"; // roll right is clockwise, is it?
+  const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
+  const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
+  Serial.printf("roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
+}
+
 static void cli_print_ahr_RollPitchYaw() {
   Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
@@ -164,10 +175,10 @@ struct cli_print_s {
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 15
+#define CLI_PRINT_FLAG_COUNT 16
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
-static const struct cli_print_s cli_print_options[] = {
+static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"po",     "Overview", cli_print_overview},
   {"ppwm",   "Radio pwm (expected: 1000 to 2000)", cli_print_rcl_RadioPWM},
   {"prcl",   "Scaled radio (expected: -1 to 1)", cli_print_rcl_RadioScaled},
@@ -175,7 +186,8 @@ static const struct cli_print_s cli_print_options[] = {
   {"pgyr",   "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_print_imu_GyroData},
   {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_print_imu_AccData},
   {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
-  {"pahr",   "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw},
+  {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw_verbose},
+  {"pah",    "AHRS roll, pitch, and yaw in less verbose format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw},
   {"ppid",   "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
