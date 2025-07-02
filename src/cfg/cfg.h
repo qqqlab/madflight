@@ -222,7 +222,7 @@ SOFTWARE.
   MF_PARAM( mag_lp,         1e10, float, 'f') /*Magnetometer Gyro Low Pass Filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering) */ \
 \
   /*RCL - Remote Control Link*/ \
-  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM) \
+  MF_PARAM( rcl_gizmo,         0, int32_t, 'e', mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS) \
   MF_PARAM( rcl_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rcl_baud,          0, int32_t, 'i') \
   MF_PARAM( rcl_num_ch,        8, int32_t, 'i') /*max 20*/ \
