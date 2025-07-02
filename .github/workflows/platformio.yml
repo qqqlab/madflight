@@ -32,9 +32,9 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build 00.HelloWorld
-        run: pio ci "examples/00.HelloWorld/00.HelloWorld.ino" --lib="examples/00.HelloWorld" --lib="." --project-conf="examples/platformio.ini" --project-option="lib_ignore=qqqlab/madflight"
+        run: pio ci "examples/00.HelloWorld/00.HelloWorld.ino" --lib="examples/00.HelloWorld" --lib="." --project-option="lib_ignore=qqqlab/madflight" --project-conf="examples/platformio.ini" 
       - name: Build 02.QuadcopterAdvanced
-        run: pio ci "examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced.ino" --lib="examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced" --lib="." --project-conf="examples/platformio.ini" --project-option="lib_ignore=qqqlab/madflight"
+        run: pio ci "examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced.ino" --lib="examples/02.QuadcopterAdvanced" --lib="." --project-option="lib_ignore=qqqlab/madflight" --project-conf="examples/platformio.ini"
 
 ###   - name: Run PlatformIO
 ###     # NOTE: --lib="examples/00.HelloWorld" to get #include "madflight_config.h" to work...
