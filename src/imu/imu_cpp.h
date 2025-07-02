@@ -81,7 +81,7 @@ Limitations:
 //global module class instance
 Imu imu;
 
-void _imu_ll_interrupt_setup(int interrupt_pin, InterruptMode mode); //prototype
+void _imu_ll_interrupt_setup(int interrupt_pin, bool rising_edge); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
@@ -240,7 +240,7 @@ int Imu::setup() {
   dt = 0;
   ts = micros();
   statReset();
-  _imu_ll_interrupt_setup(config.pin_int, gizmo->int_mode);
+  _imu_ll_interrupt_setup(config.pin_int, gizmo->interrupt_has_rising_edge);
   _imu_ll_interrupt_enabled = true;
   interrupt_cnt = 0;
   update_cnt = 0;
@@ -443,7 +443,7 @@ void _imu_ll_interrupt_handler();
     }
   }
 
-  void _imu_ll_interrupt_setup(int interrupt_pin, InterruptMode interrupt_mode) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, bool rising_edge) {
     if(!_imu_ll_task_handle) {
       //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
@@ -467,8 +467,12 @@ void _imu_ll_interrupt_handler();
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, interrupt_mode);
-    Serial.printf("Attached interrupt to pin %d with mode %d\n", interrupt_pin, interrupt_mode);
+    if (rising_edge) {
+      attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
+    } else {
+      attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, FALLING);
+    }
+    Serial.printf("Attached interrupt to pin %d with %s edge\n", interrupt_pin, rising_edge ? "RISING" : "FALLING");
   }
 
   inline void _imu_ll_interrupt_handler2() {
@@ -480,9 +484,13 @@ void _imu_ll_interrupt_handler();
 //-------------------------------------------------------------------------------------------------------------------------
 #elif IMU_EXEC == IMU_EXEC_IRQ
 
-  void _imu_ll_interrupt_setup(int interrupt_pin, InterruptMode interrupt_mode) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, bool rising_edge) {
     Serial.println(MF_MOD ": IMU_EXEC_IRQ");
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, interrupt_mode);
+    if (rising_edge) {
+      attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
+    } else {
+      attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, FALLING);
+    }
   }
 
   inline void _imu_ll_interrupt_handler2() {

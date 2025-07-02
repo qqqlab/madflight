@@ -24,17 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-#include <Arduino.h>
-#ifndef IMU_INTERRUPT_MODE_TYPEDEF
-#define IMU_INTERRUPT_MODE_TYPEDEF
-
-#if defined(ARDUINO_ARCH_MBED) || defined(ARDUINO_ARCH_RP2040)
-  typedef PinStatus InterruptMode;
-#else
-  typedef int InterruptMode;
-#endif
-
-#endif
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"
@@ -87,7 +76,7 @@ public:
   bool has_mag = false;
   bool uses_i2c = false;
   bool has_sensor_fusion = false;
-  InterruptMode int_mode = static_cast<InterruptMode>(RISING);
+  bool interrupt_has_rising_edge = true;
 };
 
 class Imu : public ImuState {
