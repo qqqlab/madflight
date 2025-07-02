@@ -175,10 +175,10 @@ struct cli_print_s {
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 15
+#define CLI_PRINT_FLAG_COUNT 16
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
-static const struct cli_print_s cli_print_options[] = {
+static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"po",     "Overview", cli_print_overview},
   {"ppwm",   "Radio pwm (expected: 1000 to 2000)", cli_print_rcl_RadioPWM},
   {"prcl",   "Scaled radio (expected: -1 to 1)", cli_print_rcl_RadioScaled},
