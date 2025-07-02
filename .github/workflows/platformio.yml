@@ -32,7 +32,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build 00.HelloWorld
-        run: pio ci "examples/00.HelloWorld/00.HelloWorld.ino" --lib="examples/00.HelloWorld" --lib="." --project-option="lib_ignore=madflight" --project-conf="examples/platformio.ini" 
+        run: pio ci "examples/00.HelloWorld/00.HelloWorld.ino" --lib="examples/00.HelloWorld" --lib="." --project-conf="examples/platformio.ini" 
       - name: Build 02.QuadcopterAdvanced
         run: pio ci "examples/02.QuadcopterAdvanced/02.QuadcopterAdvanced.ino" --lib="examples/02.QuadcopterAdvanced" --lib="." --project-option="lib_ignore=qqqlab/madflight" --project-conf="examples/platformio.ini"
 
