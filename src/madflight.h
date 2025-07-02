@@ -101,12 +101,12 @@ void madflight_setup() {
   // 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
-    #ifndef MF_DEBUG 
+    #ifndef MF_DEBUG
       delay(500);
     #else
       delay(100);
     #endif
-  } 
+  }
 
   Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
 
@@ -119,7 +119,7 @@ void madflight_setup() {
   #endif
 
   // CFG - Configuration parameters
-  cfg.begin(); 
+  cfg.begin();
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.writeToEeprom();
@@ -157,7 +157,7 @@ void madflight_setup() {
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
   bar.config.i2c_bus = hal_get_i2c_bus(cfg.bar_i2c_bus); //i2c bus
-  bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address  
+  bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address
   bar.config.sampleRate = 100; //sample rate [Hz]
   bar.setup();
 
@@ -166,7 +166,7 @@ void madflight_setup() {
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
   mag.config.sampleRate = 100; //sample rate [Hz]
-  mag.setup(); 
+  mag.setup();
 
   // BAT - Battery Monitor
   bat.config.gizmo = (Cfg::bat_gizmo_enum)cfg.bat_gizmo; //the gizmo to use
@@ -204,7 +204,7 @@ void madflight_setup() {
   bbx.setup();
 
   // ALT - Altitude Estimator
-  alt.setup(bar.alt); 
+  alt.setup(bar.alt);
 
   // AHR - setup low pass filters for AHRS filters
   ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
@@ -222,6 +222,7 @@ void madflight_setup() {
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
+  imu.config.int_mode = ((Cfg::imu_int_mode_enum)cfg.imu_int_mode == Cfg::imu_int_mode_enum::mf_RISING) ? RISING : FALLING;
   imu.config.gizmo = (Cfg::imu_gizmo_enum)cfg.imu_gizmo; //the gizmo to use
   imu.config.spi_bus = hal_get_spi_bus(cfg.imu_spi_bus); //SPI bus
   imu.config.spi_cs = cfg.pin_imu_cs; //SPI select pin
@@ -261,7 +262,7 @@ void madflight_setup() {
   cli.begin();
 
   // Enable LED, and switch it off signal end of startup.
-  led.enabled = true; 
+  led.enabled = true;
   led.off();
 }
 
@@ -280,11 +281,11 @@ void madflight_die(String msg) {
       while(millis() - ts < 50) {
         if(cli.update()) do_print = false; //process CLI commands, stop error output after first command
         rcl.update(); //keep rcl (mavlink?) running
-      } 
+      }
     }
   }
 }
-void madflight_warn(String msg) { 
+void madflight_warn(String msg) {
   Serial.print("WARNING: " + msg + "\n");
   //flash LED for 1 second
   for(int i=0;i<20;i++) {

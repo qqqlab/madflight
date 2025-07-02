@@ -443,7 +443,7 @@ void _imu_ll_interrupt_handler();
     }
   }
 
-  void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus mode) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus interrupt_mode) {
     if(!_imu_ll_task_handle) {
       //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
@@ -467,8 +467,8 @@ void _imu_ll_interrupt_handler();
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, mode);
-    Serial.printf("Attached interrupt to pin %d with mode %d\n", interrupt_pin, mode);
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, interrupt_mode);
+    Serial.printf("Attached interrupt to pin %d with mode %d\n", interrupt_pin, interrupt_mode);
   }
 
   inline void _imu_ll_interrupt_handler2() {
@@ -480,9 +480,9 @@ void _imu_ll_interrupt_handler();
 //-------------------------------------------------------------------------------------------------------------------------
 #elif IMU_EXEC == IMU_EXEC_IRQ
 
-  void _imu_ll_interrupt_setup(int interrupt_pin) {
+  void _imu_ll_interrupt_setup(int interrupt_pin, PinStatus interrupt_mode) {
     Serial.println(MF_MOD ": IMU_EXEC_IRQ");
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, interrupt_mode);
   }
 
   inline void _imu_ll_interrupt_handler2() {

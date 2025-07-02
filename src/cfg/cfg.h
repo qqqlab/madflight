@@ -237,6 +237,8 @@ SOFTWARE.
   MF_PARAM( pin_rdr_trig,     -1, int32_t, 'p') \
   MF_PARAM( pin_rdr_echo,     -1, int32_t, 'p') \
   MF_PARAM( imu_bus_type,      0, int32_t, 'e', mf_SPI,mf_I2C) \
+  /*Interrupt mode for IMUs that need falling edge for interrupts, default RISING */ \
+  MF_PARAM( imu_int_mode,      0, uint8_t, 'e', mf_RISING,mf_FALLING) \
 //end MF_PARAM_LIST
 
 

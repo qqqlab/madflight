@@ -24,6 +24,7 @@ SOFTWARE.
 
 #pragma once
 
+#include <Arduino.h>
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"
