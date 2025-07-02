@@ -1,7 +1,7 @@
 #include "ICM_20948.h"
 
-#include "util/ICM_20948_REGISTERS.h"
-#include "util/AK09916_REGISTERS.h"
+#include "ICM_20948_REGISTERS.h"
+#include "AK09916_REGISTERS.h"
 
 // Forward Declarations
 ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len, void *user);
@@ -1518,7 +1518,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
   // You can see by monitoring the Aux I2C pins that the next three lines reduce the bus traffic (magnetometer reads) from 1125Hz to the chosen rate: 68.75Hz in this case.
   result = setBank(3); if (result > worstResult) worstResult = result; // Select Bank 3
   uint8_t mstODRconfig = 0x04; // Set the ODR configuration to 1100/2^4 = 68.75Hz
-  result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1); if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register  
+  result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1); if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register
 
   // Configure clock source through PWR_MGMT_1
   // ICM_20948_Clock_Auto selects the best available clock source – PLL if ready, else use the Internal oscillator
