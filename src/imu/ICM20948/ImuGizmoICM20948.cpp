@@ -36,6 +36,7 @@ ImuGizmoICM20948::ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uin
     has_mag = true;
     uses_i2c = false;
     has_sensor_fusion = true;
+    int_mode = static_cast<InterruptMode>(FALLING);
     ImuGizmoICM20948::instance = this;
 }
 

@@ -240,7 +240,7 @@ int Imu::setup() {
   dt = 0;
   ts = micros();
   statReset();
-  _imu_ll_interrupt_setup(config.pin_int, config.int_mode);
+  _imu_ll_interrupt_setup(config.pin_int, gizmo->int_mode);
   _imu_ll_interrupt_enabled = true;
   interrupt_cnt = 0;
   update_cnt = 0;

@@ -222,8 +222,6 @@ void madflight_setup() {
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
-  imu.config.int_mode = static_cast<InterruptMode>(
-    ((Cfg::imu_int_mode_enum)cfg.imu_int_mode == Cfg::imu_int_mode_enum::mf_RISING) ? RISING : FALLING);
   imu.config.gizmo = (Cfg::imu_gizmo_enum)cfg.imu_gizmo; //the gizmo to use
   imu.config.spi_bus = hal_get_spi_bus(cfg.imu_spi_bus); //SPI bus
   imu.config.spi_cs = cfg.pin_imu_cs; //SPI select pin
