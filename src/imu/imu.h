@@ -25,6 +25,16 @@ SOFTWARE.
 #pragma once
 
 #include <Arduino.h>
+#ifndef IMU_INTERRUPT_MODE_TYPEDEF
+#define IMU_INTERRUPT_MODE_TYPEDEF
+
+#if defined(ARDUINO_ARCH_MBED) || defined(ARDUINO_ARCH_RP2040)
+  typedef PinStatus InterruptMode;
+#else
+  typedef int InterruptMode;
+#endif
+
+#endif
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"
@@ -33,7 +43,7 @@ struct ImuConfig {
   public:
     uint32_t sampleRate = 1000; //sample rate [Hz]
     int pin_int = -1; //IMU data ready interrupt pin
-    uint8_t int_mode = (uint8_t)RISING; // default (RISING) or FALLING
+    InterruptMode int_mode = static_cast<InterruptMode>(RISING);
     Cfg::imu_gizmo_enum gizmo = Cfg::imu_gizmo_enum::mf_NONE; //the gizmo to use
     SPIClass *spi_bus = nullptr; //SPI bus
     int spi_cs = -1; //SPI select pin
