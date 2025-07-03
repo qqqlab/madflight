@@ -149,7 +149,7 @@ void Ahr::getQFromMag(float *q) {
     q[3] = 0;
     Serial.println("AHR: No Magnetometer, yaw:0.00");
   }else{
-    float yaw_rad = -atan2(my, mx);
+    float yaw_rad = atan2(my, mx);
     yaw = yaw_rad * rad_to_deg;
     pitch = 0;
     roll = 0;

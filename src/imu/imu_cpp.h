@@ -250,7 +250,15 @@ int Imu::setup() {
 bool Imu::update() {
   if(!gizmo) return false;
 
-  // Quaternion correction helper
+  // In quaternion math, to rotate an orientation q by another rotation qc, you compute:
+  //
+  //   q_corrected = qc * q
+  //
+  // applyQuatCorrection rotates q by a fixed angle and is used
+  // to correct for IMU board mounting orientation. We use it when the
+  // IMU is returning quaternions directly when it has sensor fusion implemented
+  // on the chip. Assumes that the get9DOF() or get6DOF() are returning
+  // quaternions in the RH NED frame.
   auto applyQuatCorrection = [](float q[4], const float qc[4]) {
     float w1 = qc[0], x1 = qc[1], y1 = qc[2], z1 = qc[3];
     float w2 = q[0],  x2 = q[1],  y2 = q[2],  z2 = q[3];
@@ -267,16 +275,14 @@ bool Imu::update() {
   if(gizmo->has_mag) {
     if (gizmo->has_sensor_fusion) {
       gizmo->get9DOF(&q[0], &q[1], &q[2], &q[3]);
-      // Also get raw sensor data for AHRS compatibility
-      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-    } else {
-      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
     }
-  }else{
-    if (gizmo->has_sensor_fusion)
+    gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+  }
+  else {
+    if (gizmo->has_sensor_fusion) {
       gizmo->get6DOF(&q[0], &q[1], &q[2], &q[3]);
-    else
-      gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
+    }
+    gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
   }
 
   //handle rotation for different mounting positions
