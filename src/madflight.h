@@ -246,7 +246,9 @@ void madflight_setup() {
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
-    if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
+    // some IMUs take a while to start sending interrupts, ICM20948 for example...just loop until it works,
+    // effectively the same thing, but lets us recover if the IMU is slow to start generating interrupts.
+    while(!imu.waitNewSample()) madflight_warn("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
       //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
