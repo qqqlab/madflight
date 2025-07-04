@@ -32,6 +32,7 @@ class RclGizmoIbus : public RclGizmo {
         for (uint8_t i=0; i<IBus::MAX_CHANNELS; i++) {
           pwm[i] = ibus.get_channel_value(i);
         }
+        ibus.done_reading_data();
         count++;
         return true;
       }
