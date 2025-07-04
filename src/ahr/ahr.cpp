@@ -25,6 +25,7 @@ SOFTWARE.
 #define MF_MOD "AHR"
 
 #include <Arduino.h> //Serial
+#include <math.h>
 #include "ahr.h"
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
@@ -43,9 +44,20 @@ int Ahr::setup() {
   cfg.printModule(MF_MOD);
 
   B_gyr = lowpass_to_beta(config.gyrLpFreq, config.pimu->getSampleRate());
+  if (isnan(B_gyr)) {
+    // imu might not be set up yet
+    B_gyr = 1.0;
+  }
   B_acc = lowpass_to_beta(config.accLpFreq, config.pimu->getSampleRate());
+  if (isnan(B_acc)) {
+    // imu might not be set up yet
+    B_acc = 1.0;
+  }
   B_mag = lowpass_to_beta(config.magLpFreq, config.pimu->getSampleRate());
-
+  if (isnan(B_mag)) {
+    // imu might not be set up yet
+    B_mag = 1.0;
+  }
   //create gizmo
   delete gizmo;
   switch(config.gizmo) {
