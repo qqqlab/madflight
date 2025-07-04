@@ -227,6 +227,10 @@ int Imu::setup() {
   //exit if no interrupt pin specified
   if(config.pin_int < 0) return 0;
 
+  return 0;
+}
+
+int Imu::setup_interrupt() {
   //==============================================================
   //setup low-level interrupt stuff
   //==============================================================

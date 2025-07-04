@@ -87,6 +87,7 @@ class Imu : public ImuState {
     ImuGizmo *gizmo = nullptr;
 
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
+    int setup_interrupt(); // set up the low level interrupt handler
     bool update(); // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } //returns true if a gizmo is installed
 

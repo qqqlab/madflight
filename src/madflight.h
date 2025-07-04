@@ -206,19 +206,6 @@ void madflight_setup() {
   // ALT - Altitude Estimator
   alt.setup(bar.alt);
 
-  // AHR - setup low pass filters for AHRS filters
-  ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
-  ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
-  ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
-  ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
-  ahr.config.pimu = &imu; //pointer to Imu to use
-  ahr.config.pmag = &mag; //pointer to Mag to use
-  ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
-  ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
-  ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
-  ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
-  ahr.setup();
-
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
@@ -242,6 +229,22 @@ void madflight_setup() {
   }
   // start IMU update handler
   if(imu.installed()) {
+    // AHR - setup low pass filters for AHRS filters after IMU is set up and installed
+    ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
+    ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
+    ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
+    ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
+    ahr.config.pimu = &imu; //pointer to Imu to use
+    ahr.config.pmag = &mag; //pointer to Mag to use
+    ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
+    ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
+    ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
+    ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
+    ahr.setup();
+
+    // now set up the interrupt handler after IMU and AHR are set up
+    imu.setup_interrupt();
+
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
