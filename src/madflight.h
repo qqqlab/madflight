@@ -240,7 +240,9 @@ void madflight_setup() {
     ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
     ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
     ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
-    ahr.setup();
+    if (ahr.setup() < 0) {
+      madflight_die("AHR setup failed.");
+    }
 
     // now set up the interrupt handler after IMU and AHR are set up
     imu.setup_interrupt();

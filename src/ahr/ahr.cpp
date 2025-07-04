@@ -64,6 +64,10 @@ int Ahr::setup() {
       break;
     case Cfg::ahr_gizmo_enum::mf_IMU :
       gizmo = new AhrGizmoImu(this);
+      if (!config.pimu->hasSensorFusion()) {
+        Serial.printf("Cannot use mf_IMU for AHR with an IMU that does not support sensor fusion!\n");
+        return -1;
+      }
       break;
     default:
       gizmo = new AhrGizmoMahony(this, false);
