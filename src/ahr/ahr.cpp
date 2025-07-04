@@ -29,6 +29,7 @@ SOFTWARE.
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
+#include "AhrGizmoImu.h"
 
 #include "../mag/mag.h"
 #include "../imu/imu.h"
@@ -59,6 +60,9 @@ int Ahr::setup() {
       break;
     case Cfg::ahr_gizmo_enum::mf_VQF :
       gizmo = new AhrGizmoVqf(this);
+      break;
+    case Cfg::ahr_gizmo_enum::mf_IMU :
+      gizmo = new AhrGizmoImu(this);
       break;
     default:
       gizmo = new AhrGizmoMahony(this, false);
@@ -149,7 +153,7 @@ void Ahr::getQFromMag(float *q) {
     q[3] = 0;
     Serial.println("AHR: No Magnetometer, yaw:0.00");
   }else{
-    float yaw_rad = atan2(my, mx);
+    float yaw_rad = -atan2(my, mx);
     yaw = yaw_rad * rad_to_deg;
     pitch = 0;
     roll = 0;

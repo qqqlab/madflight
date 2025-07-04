@@ -180,7 +180,7 @@ SOFTWARE.
   MF_PARAM( pin_rcl_ppm,      -1, int32_t, 'p') \
 \
   /*AHR - AHRS*/ \
-  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF) \
+  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF,mf_IMU) \
 \
   /*BAR - Barometer*/ \
   MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B) \
