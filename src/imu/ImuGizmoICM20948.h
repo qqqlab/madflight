@@ -50,7 +50,7 @@ private:
     }
 
 public:
-    ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uint8_t intPin, const bool has_mag);
+    ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uint8_t intPin, const bool use_mag);
     ~ImuGizmoICM20948();
 
     int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz);

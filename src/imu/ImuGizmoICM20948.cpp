@@ -30,10 +30,10 @@ uint16_t ImuGizmoICM20948::_convertGyroScale(uint16_t range) {
     return ret;
 }
 
-ImuGizmoICM20948::ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uint8_t intPin, const bool has_mag)
+ImuGizmoICM20948::ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uint8_t intPin, const bool use_mag)
     : _spi(spi), _csPin(csPin), _interrupt_pin(intPin) {
     _wrapped_imu = new ICM_20948_SPI();
-    this->has_mag = has_mag;
+    this->has_mag = use_mag; // even though we have a magnetometer, use it based on use_mag
     uses_i2c = false;
     has_sensor_fusion = true;
     interrupt_has_rising_edge = false;

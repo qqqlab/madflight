@@ -118,43 +118,42 @@ int Imu::setup() {
         auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
         gizmo = new MPUXXXX(MPUXXXX::MPU9250, mpu_iface);
         gizmo->uses_i2c = false;
-        gizmo->has_mag = true || config.has_mag;
+        gizmo->has_mag = true;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_MPU6500 : {
         auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
         gizmo = new MPUXXXX(MPUXXXX::MPU6500, mpu_iface);
         gizmo->uses_i2c = false;
-        gizmo->has_mag = false || config.has_mag;
+        gizmo->has_mag = false;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_MPU6000 : {
         auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
         gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
         gizmo->uses_i2c = false;
-        gizmo->has_mag = false || config.has_mag;
+        gizmo->has_mag = false;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_BMI270 : {
         gizmo = new ImuGizmoBMI270(config.spi_bus, config.spi_cs);
         gizmo->uses_i2c = false;
-        gizmo->has_mag = false || config.has_mag;
+        gizmo->has_mag = false;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_ICM45686 : {
         auto icm_iface = new Invensensev3_InterfaceSPI(config.spi_bus, config.spi_cs);
         gizmo = new ImuGizmoICM45686( (uint8_t)config.pin_int, icm_iface );
         gizmo->uses_i2c = false;
-        gizmo->has_mag = false || config.has_mag;
+        gizmo->has_mag = false;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_ICM42688 : {
         gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
-        gizmo->has_mag = gizmo->has_mag || config.has_mag;
         break;
       }
       case Cfg::imu_gizmo_enum::mf_ICM20948 : {
-        gizmo = new ImuGizmoICM20948(config.spi_bus, config.spi_cs, config.pin_int, config.has_mag);
+        gizmo = new ImuGizmoICM20948(config.spi_bus, config.spi_cs, config.pin_int, config.use_mag);
         break;
       }
       default: {
