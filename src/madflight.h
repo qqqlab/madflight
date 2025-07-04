@@ -246,8 +246,7 @@ void madflight_setup() {
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
-    // some IMUs take a while to start sending interrupts, ICM20948 for example...just loop until it works,
-    // effectively the same thing, but lets us recover if the IMU is slow to start generating interrupts.
+    // some IMUs take a while to start sending interrupts, ICM20948 for example...just loop here
     while(!imu.waitNewSample()) madflight_warn("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
