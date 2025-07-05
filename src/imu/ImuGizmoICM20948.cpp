@@ -533,14 +533,15 @@ void ImuGizmoICM20948::get6DOF(float *q0, float *q1, float *q2, float *q3) {
 
             // Convert from Android LH ENU to RH NED
             float w = *q0;
-            float x = -(*q1);
-            float y = -(*q2);
-            float z = -(*q3);
+            float x = *q1;
+            float y = *q2;
+            float z = *q3;
 
+            // Android LH ENU (x=East, y=North, z=Up) → RH NED (x=North, y=East, z=Down)
             *q0 = w;
-            *q1 = -y;    // +X_NED = North
-            *q2 = -x;    // +Y_NED = East
-            *q3 = z;     // +Z_NED = Down
+            *q1 = y;
+            *q2 = x;
+            *q3 = z;
         }
     }
 }
@@ -582,14 +583,15 @@ void ImuGizmoICM20948::get9DOF(float *q0, float *q1, float *q2, float *q3) {
 
             // Convert from Android LH ENU to RH NED
             float w = *q0;
-            float x = -(*q1);
-            float y = -(*q2);
-            float z = -(*q3);
+            float x = *q1;
+            float y = *q2;
+            float z = *q3;
 
+            // Android LH ENU (x=East, y=North, z=Up) → RH NED (x=North, y=East, z=Down)
             *q0 = w;
-            *q1 = -y;    // +X_NED = North
-            *q2 = -x;    // +Y_NED = East
-            *q3 = z;     // +Z_NED = Down
+            *q1 = y;
+            *q2 = x;
+            *q3 = z;
         }
     }
 }

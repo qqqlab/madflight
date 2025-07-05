@@ -458,12 +458,12 @@ void Cli::print_i2cScan() {
 //========================================================================================================================//
 
 void Cli::calibrate_gyro() {
-  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
+  Serial.println("Calibrating gyro, don't move vehicle, this takes a few seconds...");
   calibrate_IMU2(true);
 }
 
 void Cli::calibrate_IMU() {
-  Serial.println("Calibrating IMU, don't move vehicle, this takes a couple of seconds...");
+  Serial.println("Calibrating IMU, don't move vehicle, this takes a few seconds...");
   calibrate_IMU2(false);
 }
 
@@ -534,15 +534,20 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   }
 
   if (imu.hasSensorFusion()) {
+    Serial.println("Calibrating IMU sensor fusion, don't move vehicle, this takes a few seconds...");
+
     // Wait for a fresh sample to ensure imu.q[] is up-to-date
     imu.waitNewSample(); // Ensure fresh sample from ISR before using imu.q[]
 
     // Compute quaternion bias from IMU fusion quaternion
-    float q_dmp[4];
-    q_dmp[0] = imu.q[0];
-    q_dmp[1] = imu.q[1];
-    q_dmp[2] = imu.q[2];
-    q_dmp[3] = imu.q[3];
+    float q_dmp[4] = {0};
+    const int q_cnt = 3000;
+    for (int i = 0; i < q_cnt; i++) {
+      imu.waitNewSample();
+      for (int j = 0; j < 4; j++) {
+        q_dmp[j] += imu.q[j];
+      }
+    }
 
     // Normalize the quaternion
     float norm = sqrt(q_dmp[0]*q_dmp[0] + q_dmp[1]*q_dmp[1] + q_dmp[2]*q_dmp[2] + q_dmp[3]*q_dmp[3]);

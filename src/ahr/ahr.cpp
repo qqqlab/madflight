@@ -195,9 +195,15 @@ void Ahr::getQFromMag(float *q) {
 
 //compute euler angles from q
 void Ahr::computeAngles() {
-  roll = atan2(q[0]*q[1] + q[2]*q[3], 0.5f - q[1]*q[1] - q[2]*q[2]) * rad_to_deg; //degrees - roll right is positive
-  pitch = asin(constrain(-2.0f * (q[1]*q[3] - q[0]*q[2]), -1.0, 1.0)) * rad_to_deg; //degrees - pitch up is positive - use constrain() to prevent NaN due to rounding
-  yaw = atan2(q[1]*q[2] + q[0]*q[3], 0.5f - q[2]*q[2] - q[3]*q[3]) * rad_to_deg; //degrees - yaw right is positive
+  // standard ZYX (yaw-pitch-roll) from quaternion
+  roll  = atan2(2.0f * (q[0]*q[1] + q[2]*q[3]), 1.0f - 2.0f * (q[1]*q[1] + q[2]*q[2])) * rad_to_deg;
+  pitch = asin (constrain(2.0f * (q[0]*q[2] - q[3]*q[1]), -1.0f, 1.0f)) * rad_to_deg;
+  // Flip yaw only for ICM20948 IMU (it uses Android LH and our align doesn't get it quite right)
+  if (config.pimu->gizmo->flipYaw()) {
+    yaw = -atan2(2.0f * (q[0]*q[3] + q[1]*q[2]), 1.0f - 2.0f * (q[2]*q[2] + q[3]*q[3])) * rad_to_deg;
+  } else {
+    yaw = atan2(2.0f * (q[0]*q[3] + q[1]*q[2]), 1.0f - 2.0f * (q[2]*q[2] + q[3]*q[3])) * rad_to_deg;
+  }
 }
 
 //get acceleration in earth-frame up direction in [m/s^2]
