@@ -53,9 +53,8 @@ public:
     ImuGizmoICM20948(SPIClass *spi, const uint8_t csPin, const uint8_t intPin, const bool use_mag);
     ~ImuGizmoICM20948();
 
-    int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz);
-    int get_rate();
-    void set_rate(int rate);
+    int begin(int gyro_scale_dps, int acc_scale_g, int spi_rate_hz = 5000000);
+    int get_rate() { return 225; /* Sparkfun driver sets 225 Hz sample rate */};
 
     void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz);
     void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz);

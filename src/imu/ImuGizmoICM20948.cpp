@@ -48,11 +48,10 @@ ImuGizmoICM20948::~ImuGizmoICM20948() {
     instance = nullptr;
 }
 
-int ImuGizmoICM20948::begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
+int ImuGizmoICM20948::begin(int gyro_scale_dps, int acc_scale_g, int spi_rate_hz) {
     Serial.println("IMU: ICM20948 - initializing wrapped IMU ...");
     Serial.flush();
-    _rate_hz = rate_hz;
-    int status =  _wrapped_imu->begin(_csPin, *_spi, _rate_hz);
+    int status =  _wrapped_imu->begin(_csPin, *_spi, spi_rate_hz);
     Serial.println("MU: ICM20948 - begin done");
     Serial.flush();
     if (status != 0) {
@@ -393,13 +392,6 @@ int ImuGizmoICM20948::begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
     //_wrapped_imu->clearInterrupts();
 
     return status;
-}
-
-int ImuGizmoICM20948::get_rate() {
-    return _rate_hz;
-}
-void ImuGizmoICM20948::set_rate(int rate) {
-    _rate_hz = rate;
 }
 
 //Get sensor data in NED frame
