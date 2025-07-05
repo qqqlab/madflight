@@ -32,7 +32,11 @@ private:
   }
 
   bool update() {
-    // nothing to do - the imu update already updated state->q quaternions
+    // just copy the quaternions from the IMU
+    state->q[0] = config->pimu->q[0];
+    state->q[1] = config->pimu->q[1];
+    state->q[2] = config->pimu->q[2];
+    state->q[3] = config->pimu->q[3];
     return true;
   }
 };

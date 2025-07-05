@@ -66,6 +66,14 @@ static void cli_print_imu_MagData() {
   Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahr.mx, ahr.my, ahr.mz); 
 }
 
+static void cli_print_imu_Quaternion() {
+  if (imu.hasSensorFusion()) {
+    Serial.printf("w:%+.2f\tq1:%+.2f\tq2:%+.2f\tq3:%+.2f\t", imu.q[0], imu.q[1], imu.q[2], imu.q[3]);
+  } else {
+    Serial.printf("IMU does not have sensor fusion.");
+  }
+}
+
 static void cli_print_ahr_RollPitchYaw_verbose() {
     // from ahr.h:
   // roll in degrees: -180 to 180, roll right is +
@@ -79,6 +87,10 @@ static void cli_print_ahr_RollPitchYaw_verbose() {
 
 static void cli_print_ahr_RollPitchYaw() {
   Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
+}
+
+static void cli_print_ahr_Quaternion() {
+  Serial.printf("w:%+.2f\tq1:%+.2f\tq2:%+.2f\tq3:%+.2f", ahr.q[0], ahr.q[1], ahr.q[2], ahr.q[3]);
 }
 
 static void cli_print_control_PIDoutput() {
@@ -175,7 +187,7 @@ struct cli_print_s {
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 16
+#define CLI_PRINT_FLAG_COUNT 18
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
@@ -186,8 +198,10 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"pgyr",   "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_print_imu_GyroData},
   {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_print_imu_AccData},
   {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
+  {"pquat",  "IMU quaternion data", cli_print_imu_Quaternion},
   {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw_verbose},
   {"pah",    "AHRS roll, pitch, and yaw in less verbose format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw},
+  {"pahq",   "AHRS quaternion data", cli_print_ahr_Quaternion},
   {"ppid",   "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
@@ -518,7 +532,34 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     cfg.imu_cal_ay = ayerr;
     cfg.imu_cal_az = azerr;
   }
-  
+
+  if (imu.hasSensorFusion()) {
+    // Wait for a fresh sample to ensure imu.q[] is up-to-date
+    imu.waitNewSample(); // Ensure fresh sample from ISR before using imu.q[]
+
+    // Compute quaternion bias from IMU fusion quaternion
+    float q_dmp[4];
+    q_dmp[0] = imu.q[0];
+    q_dmp[1] = imu.q[1];
+    q_dmp[2] = imu.q[2];
+    q_dmp[3] = imu.q[3];
+
+    // Normalize the quaternion
+    float norm = sqrt(q_dmp[0]*q_dmp[0] + q_dmp[1]*q_dmp[1] + q_dmp[2]*q_dmp[2] + q_dmp[3]*q_dmp[3]);
+    for (int i = 0; i < 4; i++) q_dmp[i] /= norm;
+
+    // Store inverse as q_bias
+    cfg.imu_cal_q0_bias =  q_dmp[0];
+    cfg.imu_cal_q1_bias = -q_dmp[1];
+    cfg.imu_cal_q2_bias = -q_dmp[2];
+    cfg.imu_cal_q3_bias = -q_dmp[3];
+
+    Serial.printf("set imu_cal_q0_bias %+f\n", cfg.imu_cal_q0_bias);
+    Serial.printf("set imu_cal_q1_bias %+f\n", cfg.imu_cal_q1_bias);
+    Serial.printf("set imu_cal_q2_bias %+f\n", cfg.imu_cal_q2_bias);
+    Serial.printf("set imu_cal_q3_bias %+f\n", cfg.imu_cal_q3_bias);
+  }
+
   Serial.println("Use 'save' to save these values to flash");
 }
 

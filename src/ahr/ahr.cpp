@@ -130,9 +130,28 @@ bool Ahr::update() {
   //call gizmo to update q
   gizmo->update();
 
+  // Apply q_bias to correct the IMU quaternion if using sensor fusion
+  if (config.pimu->hasSensorFusion()) {
+    // Apply q_bias to correct the IMU quaternion
+    float qb0 = cfg.imu_cal_q0_bias;
+    float qb1 = cfg.imu_cal_q1_bias;
+    float qb2 = cfg.imu_cal_q2_bias;
+    float qb3 = cfg.imu_cal_q3_bias;
+
+    float q0 = q[0];
+    float q1 = q[1];
+    float q2 = q[2];
+    float q3 = q[3];
+
+    // q = q_bias * q
+    q[0] = qb0*q0 - qb1*q1 - qb2*q2 - qb3*q3;
+    q[1] = qb0*q1 + qb1*q0 + qb2*q3 - qb3*q2;
+    q[2] = qb0*q2 - qb1*q3 + qb2*q0 + qb3*q1;
+    q[3] = qb0*q3 + qb1*q2 - qb2*q1 + qb3*q0;
+  }
+
   //update euler angles
   computeAngles();
-
   return true;
 }
 

@@ -239,6 +239,10 @@ SOFTWARE.
   MF_PARAM( imu_bus_type,      0, int32_t, 'e', mf_SPI,mf_I2C) \
   /*IMU should use its magnetometer*/ \
   MF_PARAM( imu_use_mag,       1, int32_t, 'i') /*whether the IMU has/should use its magnetometer, 0: no, 1: yes*/ \
+  MF_PARAM( imu_cal_q0_bias,   0, float, 'f') /*imu q0 bias*/ \
+  MF_PARAM( imu_cal_q1_bias,   0, float, 'f') /*imu q1 bias*/ \
+  MF_PARAM( imu_cal_q2_bias,   0, float, 'f') /*imu q2 bias*/ \
+  MF_PARAM( imu_cal_q3_bias,   0, float, 'f') /*imu q3 bias*/ \
 //end MF_PARAM_LIST
 
 

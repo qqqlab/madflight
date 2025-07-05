@@ -523,10 +523,13 @@ void ImuGizmoICM20948::get6DOF(float *q0, float *q1, float *q2, float *q3) {
             //Serial.printf("Quat6 data is: Q1:%ld Q2:%ld Q3:%ld\r\n", data.Quat6.Data.Q1, data.Quat6.Data.Q2, data.Quat6.Data.Q3);
 
             // Scale to +/- 1
-            *q1 = (float)((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-            *q2 = (float)((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-            *q3 = (float)((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            *q1 = (float)((double)data.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+            *q2 = (float)((double)data.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+            *q3 = (float)((double)data.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
             *q0 = (float)sqrt(1.0 - ((*q1 * *q1) + (*q2 * *q2) + (*q3 * *q3)));
+            float sum = (*q1 * *q1) + (*q2 * *q2) + (*q3 * *q3);
+            if (sum > 1.0f) sum = 1.0f;
+            *q0 = sqrtf(1.0f - sum);
 
             // Convert from Android LH ENU to RH NED
             float w = *q0;
@@ -570,10 +573,12 @@ void ImuGizmoICM20948::get9DOF(float *q0, float *q1, float *q2, float *q3) {
             //Serial.printf("Quat9 data is: Q1:%ld Q2:%ld Q3:%ld Accuracy:%d\r\n", data.Quat9.Data.Q1, data.Quat9.Data.Q2, data.Quat9.Data.Q3, data.Quat9.Data.Accuracy);
 
             // Scale to +/- 1
-            *q1 = (float)((double)data.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-            *q2 = (float)((double)data.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-            *q3 = (float)((double)data.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-            *q0 = (float)sqrt(1.0 - ((*q1 * *q1) + (*q2 * *q2) + (*q3 * *q3)));
+            *q1 = (float)((double)data.Quat9.Data.Q1) / 1073741824.0f; // Convert to double. Divide by 2^30
+            *q2 = (float)((double)data.Quat9.Data.Q2) / 1073741824.0f; // Convert to double. Divide by 2^30
+            *q3 = (float)((double)data.Quat9.Data.Q3) / 1073741824.0f; // Convert to double. Divide by 2^30
+            float sum = (*q1 * *q1) + (*q2 * *q2) + (*q3 * *q3);
+            if (sum > 1.0f) sum = 1.0f;
+            *q0 = sqrtf(1.0f - sum);
 
             // Convert from Android LH ENU to RH NED
             float w = *q0;
