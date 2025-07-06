@@ -60,8 +60,6 @@ public:
     void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz);
     void get6DOF(float *q0, float *q1, float *q2, float *q3);
     void get9DOF(float *q0, float *q1, float *q2, float *q3);
-
-    bool flipYaw() override { return true; }
 };
 
 #endif // MF_ICM20948_H

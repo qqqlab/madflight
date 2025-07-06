@@ -77,11 +77,6 @@ public:
   bool has_mag = false;
   bool uses_i2c = false;
   bool has_sensor_fusion = false;
-  // some IMUs are in LH Android ENU and impossible to get to fully RH NED
-  // without getting their yaw sign flipped. Since computeAngles uses all
-  // the q, we can't just flip q3 without messing up roll and pitch and so
-  // instead just flip yaw after computingAngles for these IMUs (ICM20948 specifically)
-  virtual bool flipYaw() { return false; }
   bool interrupt_has_rising_edge = true;
 };
 
