@@ -24,6 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================
 
+Official CRSF Documentation:
+https://github.com/tbs-fpv/tbs-crsf-spec/blob/main/crsf.md
+
 CRSF/ELRS receiver uses two wire full duplex uart connection.
 
 420000 baud
