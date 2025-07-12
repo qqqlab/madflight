@@ -1551,7 +1551,7 @@ AP_GPS_UBLOX::_parse_gps(void)
         state->have_veld = true;
         state->veln = _buffer.pvt.velN; //mm
         state->vele = _buffer.pvt.velE; //mm
-        state->vele = _buffer.pvt.velD; //mm
+        state->veld = _buffer.pvt.velD; //mm
         state->have_vel_acc = true;
         state->vel_acc = _buffer.pvt.s_acc; //mm/s
         _new_speed = true;
