@@ -101,12 +101,12 @@ void madflight_setup() {
   // 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
-    #ifndef MF_DEBUG 
+    #ifndef MF_DEBUG
       delay(500);
     #else
       delay(100);
     #endif
-  } 
+  }
 
   Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
 
@@ -119,7 +119,7 @@ void madflight_setup() {
   #endif
 
   // CFG - Configuration parameters
-  cfg.begin(); 
+  cfg.begin();
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.writeToEeprom();
@@ -157,7 +157,7 @@ void madflight_setup() {
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
   bar.config.i2c_bus = hal_get_i2c_bus(cfg.bar_i2c_bus); //i2c bus
-  bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address  
+  bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address
   bar.config.sampleRate = 100; //sample rate [Hz]
   bar.setup();
 
@@ -166,7 +166,7 @@ void madflight_setup() {
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
   mag.config.sampleRate = 100; //sample rate [Hz]
-  mag.setup(); 
+  mag.setup();
 
   // BAT - Battery Monitor
   bat.config.gizmo = (Cfg::bat_gizmo_enum)cfg.bat_gizmo; //the gizmo to use
@@ -204,20 +204,7 @@ void madflight_setup() {
   bbx.setup();
 
   // ALT - Altitude Estimator
-  alt.setup(bar.alt); 
-
-  // AHR - setup low pass filters for AHRS filters
-  ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
-  ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
-  ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
-  ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
-  ahr.config.pimu = &imu; //pointer to Imu to use
-  ahr.config.pmag = &mag; //pointer to Mag to use
-  ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
-  ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
-  ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
-  ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
-  ahr.setup();
+  alt.setup(bar.alt);
 
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
@@ -228,7 +215,7 @@ void madflight_setup() {
   imu.config.i2c_bus = hal_get_i2c_bus(cfg.imu_i2c_bus); //I2C bus (only used if spi_bus==nullptr)
   imu.config.i2c_adr = cfg.imu_i2c_adr; //i2c address. 0=default address
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
-
+  imu.config.use_mag = cfg.imu_use_mag == 1;
   // Some sensors need a couple of tries...
   int tries = 10;
   while(true) {
@@ -242,11 +229,30 @@ void madflight_setup() {
   }
   // start IMU update handler
   if(imu.installed()) {
+    // AHR - setup low pass filters for AHRS filters after IMU is set up and installed
+    ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
+    ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
+    ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
+    ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
+    ahr.config.pimu = &imu; //pointer to Imu to use
+    ahr.config.pmag = &mag; //pointer to Mag to use
+    ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
+    ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
+    ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
+    ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
+    if (ahr.setup() < 0) {
+      madflight_die("AHR setup failed.");
+    }
+
+    // now set up the interrupt handler after IMU and AHR are set up
+    imu.setup_interrupt();
+
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
-    if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
+    // some IMUs take a while to start sending interrupts, ICM20948 for example...just loop here
+    while(!imu.waitNewSample()) madflight_warn("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
       //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
@@ -261,7 +267,7 @@ void madflight_setup() {
   cli.begin();
 
   // Enable LED, and switch it off signal end of startup.
-  led.enabled = true; 
+  led.enabled = true;
   led.off();
 }
 
@@ -280,11 +286,11 @@ void madflight_die(String msg) {
       while(millis() - ts < 50) {
         if(cli.update()) do_print = false; //process CLI commands, stop error output after first command
         rcl.update(); //keep rcl (mavlink?) running
-      } 
+      }
     }
   }
 }
-void madflight_warn(String msg) { 
+void madflight_warn(String msg) {
   Serial.print("WARNING: " + msg + "\n");
   //flash LED for 1 second
   for(int i=0;i<20;i++) {

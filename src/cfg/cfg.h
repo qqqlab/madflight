@@ -180,7 +180,7 @@ SOFTWARE.
   MF_PARAM( pin_rcl_ppm,      -1, int32_t, 'p') \
 \
   /*AHR - AHRS*/ \
-  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF) \
+  MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF,mf_IMU) \
 \
   /*BAR - Barometer*/ \
   MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B) \
@@ -203,7 +203,7 @@ SOFTWARE.
   MF_PARAM( gps_baud,          0, int32_t, 'i') \
 \
   /*IMU - Inertial Measurement Unit (acc/gyro)*/ \
-  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688) \
+  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688,mf_ICM20948) \
   MF_PARAM( imu_spi_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_adr,       0, int32_t, 'i') \
@@ -237,6 +237,12 @@ SOFTWARE.
   MF_PARAM( pin_rdr_trig,     -1, int32_t, 'p') \
   MF_PARAM( pin_rdr_echo,     -1, int32_t, 'p') \
   MF_PARAM( imu_bus_type,      0, int32_t, 'e', mf_SPI,mf_I2C) \
+  /*IMU should use its magnetometer*/ \
+  MF_PARAM( imu_use_mag,       1, int32_t, 'i') /*whether the IMU has/should use its magnetometer, 0: no, 1: yes*/ \
+  MF_PARAM( imu_cal_q0_bias,   0, float, 'f') /*imu q0 bias*/ \
+  MF_PARAM( imu_cal_q1_bias,   0, float, 'f') /*imu q1 bias*/ \
+  MF_PARAM( imu_cal_q2_bias,   0, float, 'f') /*imu q2 bias*/ \
+  MF_PARAM( imu_cal_q3_bias,   0, float, 'f') /*imu q3 bias*/ \
 //end MF_PARAM_LIST
 
 
