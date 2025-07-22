@@ -237,6 +237,9 @@ SOFTWARE.
   MF_PARAM( pin_rdr_trig,     -1, int32_t, 'p') \
   MF_PARAM( pin_rdr_echo,     -1, int32_t, 'p') \
   MF_PARAM( imu_bus_type,      0, int32_t, 'e', mf_SPI,mf_I2C) \
+\
+  /*v2.1.1 additions */ \
+  MF_PARAM( mag_align,         0, int32_t, 'e', mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP) \
 //end MF_PARAM_LIST
 
 
