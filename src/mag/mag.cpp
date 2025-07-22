@@ -81,6 +81,34 @@ bool Mag::update() {
   if(!schedule.interval(_samplePeriod)) return false;
 
   if(!gizmo->update(&x, &y, &z)) return false;
+
+  //handle rotation for different mounting positions
+  switch((Cfg::mag_align_enum)cfg.mag_align) {
+    case Cfg::mag_align_enum::mf_CW0 :
+      break;
+    case Cfg::mag_align_enum::mf_CW90 :
+      { float tmp; tmp=x; x=-y; y=tmp; }
+      break;
+    case Cfg::mag_align_enum::mf_CW180 :
+      { x=-x; y=-y; }
+      break;
+    case Cfg::mag_align_enum::mf_CW270 :
+      { float tmp; tmp=x; x=y; y=-tmp; }
+      break;
+    case Cfg::mag_align_enum::mf_CW0FLIP :
+      { y=-y; z=-z; }
+      break;
+    case Cfg::mag_align_enum::mf_CW90FLIP :
+      { float tmp; tmp=x; x=y; y=tmp; z=-z; }
+      break;
+    case Cfg::mag_align_enum::mf_CW180FLIP :
+      { x=-x; z=-z; }
+      break;
+    case Cfg::mag_align_enum::mf_CW270FLIP :
+      { float tmp; tmp=x; x=-y; y=-tmp; z=-z; }
+      break;
+  }
+
   ts = micros();
   return true;
 }
