@@ -24,33 +24,58 @@ SOFTWARE.
 
 #define MF_MOD "LED"
 
-#include <Arduino.h> //Serial
 #include "led.h"
 #include "../cfg/cfg.h"
 #include "LedGizmoSingle.h"
+#include "LedGizmoRgb.h"
 
 int Led::setup() {
   cfg.printModule(MF_MOD);
+  
+  is_on = false;
+  last_color = 0xffffff; //white
 
   //create gizmo
   delete gizmo;
-  if(config.pin >= 0) {
-    gizmo = new LedGizmoSingle(config.pin, config.on_value);
-  }else{
-    gizmo = nullptr;
+  switch(config.gizmo) {
+    case Cfg::led_gizmo_enum::mf_NONE :
+      gizmo = nullptr;
+      break;
+    case Cfg::led_gizmo_enum::mf_HIGH_IS_ON :
+      gizmo = new LedGizmoSingle(config.pin, 1);
+      break;
+    case Cfg::led_gizmo_enum::mf_LOW_IS_ON :
+      gizmo = new LedGizmoSingle(config.pin, 0);
+      break;
+    case Cfg::led_gizmo_enum::mf_RGB :
+      gizmo = new LedGizmoRgb(config.pin);
+      break;
   }
 
   return 0;
 }
 
-inline void Led::set(bool set_on) {
+void Led::color(uint32_t rgb) {
   if(!gizmo || !enabled) return;
-  gizmo->set(set_on);
+  if(rgb) {
+    last_color = rgb;
+    is_on = true;
+  }else{
+    is_on = false;
+  }
+  gizmo->color(rgb);
+}
+
+inline void Led::set(bool set_on) {
+  if(set_on) {
+    color(last_color);
+  }else{
+    color(0);
+  }
 }
 
 void Led::toggle() {
-  if(!gizmo || !enabled) return;
-  gizmo->toggle();
+  set(!is_on);
 }
 
 void Led::on() {

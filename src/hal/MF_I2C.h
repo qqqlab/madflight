@@ -51,45 +51,65 @@ class MF_I2CDevice {
       this->adr = adr;
     }
 
+    //write data to register, returns number of bytes written (including reg byte)
     uint32_t writeReg(uint8_t reg, uint8_t *data, uint32_t len) {
       i2c->beginTransmission(adr);
       uint32_t rv = i2c->write(&reg, 1);
       if(len > 0) {
         rv += i2c->write(data, len);
       }
+      i2c->endTransmission();
       return rv;
     }
 
+    //write one byte to register, returns number of bytes written (including reg byte)
     uint32_t writeReg(uint8_t reg, uint8_t data) {
       return writeReg(reg, &data, 1);
     }
 
+    //write register byte, returns number of bytes written (including reg byte)
+    uint32_t writeReg(uint8_t reg) {
+      return writeReg(reg, nullptr, 0);
+    }
+
+    //read bytes from register, returns number of bytes read
     uint32_t readReg(uint8_t reg, uint8_t *data, uint32_t len) {
-      uint32_t rv = 0;
+      uint32_t bytesReceived = 0;
       i2c->beginTransmission(adr);
       i2c->write(&reg, 1);
       if(len > 0) {
-        i2c->endTransmission(false);
-        i2c->requestFrom(adr, len);
-        rv = i2c->read(data, len);
+        i2c->endTransmission(false); //false = repeated start
+        bytesReceived = i2c->requestFrom(adr, len); //this also calls endTransmission(), don't call again
+        if(bytesReceived > 0) {
+          i2c->readBytes(data, bytesReceived);
+        }
+      }else{
+        i2c->endTransmission();
       }
-      return rv;
+      return bytesReceived;
     }
 
+    //read byte from register, returns byte read
     uint8_t readReg(uint8_t reg) {
       uint8_t data;
       readReg(reg, &data, 1);
       return data;
     }
 
+    //write/read bytes, returns number of bytes read (or written for write only transaction)
     uint32_t transceive(uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {
+      if(wlen == 0 && rlen == 0) return 0; //nothing to do
       uint32_t rv = 0;
       i2c->beginTransmission(adr);
       if(wlen > 0) rv = i2c->write(wbuf, wlen);
-      if(wlen > 0 && rlen > 0) i2c->endTransmission(false);
+      if(wlen > 0 && rlen > 0) i2c->endTransmission(false); //false = repeated start
       if(rlen > 0) {
-        i2c->requestFrom(adr, rlen);
-        rv = i2c->read(rbuf, rlen);
+        rv = i2c->requestFrom(adr, rlen); //this also calls endTransmission(), don't call again
+        if(rv > 0) {
+          i2c->readBytes(rbuf, rv);
+        }
+      }else{
+        i2c->endTransmission();
       }
       return rv;
     }

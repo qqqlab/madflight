@@ -60,21 +60,37 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("===================\nI2C Chip Scanner\n===================");
+  uint8_t num_adr_found = 0;
+  uint8_t adr_found[128];
+  String adr_msg[128];
 
-  Serial.printf("I2C: Scanning ...\n");
-  int num_adr_found = 0;
+  Serial.printf("===========================\n");
+  Serial.printf("I2C Chip Scanner 2025-08-08\n");
+  Serial.printf("===========================\n");
+
+  //scan addresses to find devices
+  Serial.printf("Step 1: Scanning Adressses ... ");
   for (uint8_t adr = 1; adr < 128; adr++) {
-    i2c->beginTransmission(adr);       // Begin I2C transmission Address (i)
-    if (i2c->endTransmission() == 0) { // Receive 0 = success (ACK response) 
-      Serial.printf("I2C: Found address: 0x%02X (decimal %d)\n",adr,adr);
+    if (i2c_TestAddress(adr)) {
+      Serial.printf("0x%02X(%d) ",adr,adr);
+      adr_found[num_adr_found] = adr;
       num_adr_found++;
-      i2c_identify_chip(adr);
     }
-    delay(10);
   }
-  Serial.printf("I2C: Found %d device(s)\n", num_adr_found);
-  delay(100);
+  Serial.printf(" - Found %d devices\n", num_adr_found);
+
+  //try to identify the devices
+  Serial.printf("Step 2: Identifying Devices ...\n");
+  for (uint8_t i = 0; i < num_adr_found; i++) {
+    i2c_identify_chip(adr_found[i], adr_msg[i]);
+  }
+
+  Serial.printf("\nStep 3: Summary\n\n");
+  for (uint8_t i = 0; i < num_adr_found; i++) {
+    Serial.printf("address 0x%02X (decimal %3d) %s\n", adr_found[i], adr_found[i], adr_msg[i].c_str());
+  }
+
+  delay(1000);
 }
 
 struct test_struct{
@@ -101,25 +117,25 @@ test_struct tests[] = {
   {0x68, 0x69, 0x75, 1, 0x19, "MPU6886 6DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x47, "ICM42688P 6DOF motion"},  
   {0x68, 0x69, 0x75, 1, 0x68, "MPU6000, MPU6050, or MPU9150 6/9DOF motion"}, 
-  {0x68, 0x69, 0x75, 1, 0x69, "FAKE MPU6050, got WHO_AM_I=0x69, real chip returns 0x68"},   
+  {0x68, 0x69, 0x75, 1, 0x69, "FAKE MPU6050, got WHO_AM_I=0x69, real chip returns 0x68"},
   {0x68, 0x69, 0x75, 1, 0x70, "MPU6500 6DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x71, "MPU9250 9DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x72, "FAKE MPU6050, got WHO_AM_I=0x72, real chip returns 0x68"},
-  {0x68, 0x69, 0x75, 1, 0x73, "MPU9255 9DOF motion"},  
+  {0x68, 0x69, 0x75, 1, 0x73, "MPU9255 9DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x74, "MPU9515 motion"},
   {0x68, 0x69, 0x75, 1, 0x75, "FAKE MPU9250, got WHO_AM_I=0x75, real chip returns 0x71"}, 
   {0x68, 0x69, 0x75, 1, 0x78, "FAKE MPU9250, got WHO_AM_I=0x78, real chip returns 0x71"},  
   {0x68, 0x69, 0x75, 1, 0x98, "ICM20689 6DOF motion"},
-  {0x76, 0x77, 0x8F, 1, 0x80, "HP203B pressure"}, //needs to be first 0x76 sensor, otherwise this sensor will lock up
   {0x76, 0x77, 0x00, 1, 0x50, "BMP388 pressure"},
-  {0x76, 0x77, 0x00, 1, 0x60, "BMP390 pressure"},  
+  {0x76, 0x77, 0x00, 1, 0x60, "BMP390 pressure"},
   {0x76, 0x77, 0x0D, 1, 0x10, "DPS310, HP303B, or SPL06 pressure"},
+  {0x76, 0x77, 0x8F, 1, 0x80, "HP203B pressure"},
   {0x76, 0x77, 0xD0, 1, 0x55, "BMP180 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x56, "BMP280 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x57, "BMP280 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x58, "BMP280 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x60, "BME280 pressure, temperature, humidity"},
-  {0x76, 0x77, 0xD0, 1, 0x61, "BME680 pressure, temperature, humidity, gas sensor"},
+  {0x76, 0x77, 0xD0, 1, 0x61, "BME680 pressure, temperature, humidity, gas"},
   {0x7C, 0x7C, 0x00, 1, 0x90, "QMC6309 magnetometer"},
 
   {0,0,0,0,0,""} //end
@@ -139,11 +155,7 @@ adrtest_struct adrtests[] = {
   {0,0,""} //end
 };  
 
-void i2c_identify_chip(uint8_t adr) {
-  bool found = false;
-  
-  uint32_t tried[256] = {0};
-
+void i2c_identify_chip(uint8_t adr, String &msg) {
   //try adr,reg,result match
   int i = 0;
   while(tests[i].adr1) {
@@ -155,58 +167,96 @@ void i2c_identify_chip(uint8_t adr) {
     uint32_t received = 0;
     if(adr1<=adr && adr<=adr2) {
       uint8_t data[4];
-      i2c_ReadRegs(adr, reg, data, len);
+      Serial.printf("try: %s --> read adr:0x%02X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
+      i2c_ReadRegs(adr, reg, data, len, true);
       for(int i=0;i<len;i++) received = (received<<8) + data[i];
-      tried[reg] = received;      
+      Serial.printf("received:0x%02X ", (int)received);
       if(received == expected) {
-        Serial.printf("      MATCH: reg=0x%02X result=0x%02X -> %s\n", reg, (int)received, tests[i].descr.c_str());
-        found = true;
-      }
+        msg = tests[i].descr;
+        Serial.printf("--> %s\n",msg.c_str());
+        return;
+      } 
+      Serial.printf("\n");
     }
     i++;
   }
   
-  if(!found) {
-    //show tries
-    for(int i=0;i<256;i++) if(tried[i]!=0) {
-      Serial.printf("      tried: reg=0x%02X result=0x%02X\n", i, (int)tried[i]); 
+  //try address only match
+  i = 0;  
+  while(adrtests[i].adr1) {
+    int adr1 = adrtests[i].adr1;
+    int adr2 = adrtests[i].adr2;    
+    if(adr1<=adr && adr<=adr2) {
+      msg = adrtests[i].descr + String(" - ADDRESS MATCH ONLY");
+      return;
     }
-
-    //try address only match
-    int i = 0;    
-    while(adrtests[i].adr1) {
-      int adr1 = adrtests[i].adr1;
-      int adr2 = adrtests[i].adr2;    
-      if(adr1<=adr && adr<=adr2) {
-        Serial.printf("      POTENTIAL MATCH (address 0x%02X match only) -> %s\n", adr, adrtests[i].descr);
-      }
-      i++;
-    }
+    i++;
   }
+
+  msg = "UNKNOWN";
 }
 
-void WriteReg( uint8_t adr, uint8_t reg, uint8_t data ) {
-  i2c->beginTransmission(adr); 
-  i2c->write(reg);       
-  i2c->write(data);              
-  i2c->endTransmission();
+bool i2c_TestAddress(uint8_t adr) {
+  i2c->beginTransmission(adr);       // Begin I2C transmission Address (i)
+  return (i2c->endTransmission() == 0); // Receive 0 = success (ACK response) 
 }
 
-unsigned int i2c_ReadReg( uint8_t adr, uint8_t reg ) {
-    uint8_t data = 0;
-    i2c_ReadRegs(adr, reg, &data, 1);
-    return data;
-}
-
-void i2c_ReadRegs( uint8_t adr, uint8_t reg, uint8_t *data, uint8_t n ) {
+void i2c_WriteByte( uint8_t adr, uint8_t reg ) {
   i2c->beginTransmission(adr); 
   i2c->write(reg);
-  i2c->endTransmission(false); //false = repeated start
-  uint8_t bytesReceived = i2c->requestFrom(adr, n);
-  if(bytesReceived == n) {
+  i2c->endTransmission();
+}
+
+//returns -1 on fail
+int i2c_ReadByte( uint8_t adr ) {
+  int rv = -1;
+  uint8_t data;
+  uint8_t bytesReceived = i2c->requestFrom(adr, 1);
+  if(bytesReceived == 1) {
+    i2c->readBytes(&data, 1);
+    rv = data;
+  }
+  //i2c->endTransmission(); -- don't do this
+  return rv;
+}
+
+void i2c_WriteReg( uint8_t adr, uint8_t reg, uint8_t data ) {
+  i2c->beginTransmission(adr); 
+  i2c->write(reg);
+  i2c->write(data);
+  i2c->endTransmission();
+}
+
+
+
+int i2c_ReadRegs( uint8_t adr, uint8_t reg, uint8_t *data, uint8_t n, bool stop ) {
+  i2c->beginTransmission(adr); 
+  i2c->write(reg);
+  i2c->endTransmission(stop); //false = repeated start, true = stop + start
+  int bytesReceived = i2c->requestFrom(adr, n);
+  if(bytesReceived > 0) {
     i2c->readBytes(data, bytesReceived);
   }
-  i2c->endTransmission();
+  //i2c->endTransmission(); -- don't do this
+  return bytesReceived;
+}
+
+int i2c_ReadRegs( uint8_t adr, uint8_t reg, uint8_t *data, uint8_t n) {
+  return i2c_ReadRegs( adr, reg, data, n, false);
+}
+
+//returns -1 on fail
+int i2c_ReadReg( uint8_t adr, uint8_t reg, bool stop ) {
+    uint8_t data = 0;
+    int bytesReceived = i2c_ReadRegs(adr, reg, &data, 1);
+    if(bytesReceived == 1) {
+      return data;
+    }
+    return -1;
+}
+
+int i2c_ReadReg( uint8_t adr, uint8_t reg) {
+  return i2c_ReadReg( adr, reg, false );
 }
 
 void i2c_scan() {

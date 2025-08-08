@@ -213,7 +213,7 @@ SOFTWARE.
   MF_PARAM( imu_gyr_lp,       60, float, 'f') /*Gyro Low Pass Filter cutoff frequency in Hz */ \
 \
   /*LED*/ \
-  MF_PARAM( led_on,            0, int32_t, 'e', mf_LOW_IS_ON,mf_HIGH_IS_ON) \
+  MF_PARAM( led_gizmo,         0, int32_t, 'e', mf_NONE,mf_HIGH_IS_ON,mf_LOW_IS_ON,mf_RGB) \
 \
   /*MAG - Magnetometer*/ \
   MF_PARAM( mag_gizmo,         0, int32_t, 'e', mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100) \

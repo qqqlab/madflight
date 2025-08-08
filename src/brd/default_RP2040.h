@@ -87,7 +87,7 @@ pin_bbx_cs     13 // spi1: 9, 13(default)
 pin_imu_cs     17 // spi0: 1, 5, 17(default)
 pin_imu_int    22
 pin_led        25
-led_on      HIGH_IS_ON
+led_gizmo     HIGH_IS_ON // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 pin_mmc_dat    -1
 pin_mmc_clk    -1
 pin_mmc_cmd    -1

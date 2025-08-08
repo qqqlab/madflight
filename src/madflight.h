@@ -136,10 +136,10 @@ void madflight_setup() {
   cfg.printPins();
 
   // LED - Setup LED
+  led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
   led.config.pin = cfg.pin_led;
-  led.config.on_value = cfg.led_on;
   led.setup();
-  led.on(); //turn on to signal startup
+  led.color(0x0000ff); //turn on blue to signal startup
   led.enabled = false; //do not change state until setup compled
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
@@ -261,7 +261,8 @@ void madflight_setup() {
   cli.begin();
 
   // Enable LED, and switch it off signal end of startup.
-  led.enabled = true; 
+  led.enabled = true;
+  led.color(0x00ff00); //switch color to green
   led.off();
 }
 

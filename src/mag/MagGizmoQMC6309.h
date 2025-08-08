@@ -122,9 +122,12 @@ public:
 
     int tries = 20;
     uint8_t wai = 0;
+    uint8_t stat = 0;
+    uint8_t ctrl1 = 0;
+    uint8_t ctrl2 = 0;
     while(tries) {
-      uint8_t ctrl1 = dev->readReg(QMC6309_CTRL1_REG);
-      uint8_t ctrl2 = dev->readReg(QMC6309_CTRL2_REG);
+      ctrl1 = dev->readReg(QMC6309_CTRL1_REG);
+      ctrl2 = dev->readReg(QMC6309_CTRL2_REG);
       wai = dev->readReg(QMC6309_WAI_REG);
 
       //setup
@@ -132,16 +135,16 @@ public:
       if(ctrl1 != ctrl1_val) dev->writeReg(QMC6309_CTRL1_REG, ctrl1_val);
       delay(1);
 
-      uint8_t stat = dev->readReg(QMC6309_STAT_REG);
+      stat = dev->readReg(QMC6309_STAT_REG);
       if(stat & QMC6309_STAT_DRDY) {
         break;
       }
 
       tries--;
-
-      //Serial.printf("try wai=%02X stat=%02X ctrl2=%02X(%02X) ctrl1=%02X(%02X)\n", wai, stat, ctrl2, ctrl2_val, ctrl1, ctrl1_val);
     }
-    if(!tries) Serial.printf("MAG: ERROR could not configure QMC6309. wai:0x%02X, expected 0x%02X\n", wai, QMC6309_WAI_VALUE);
+    if(!tries) {
+      Serial.printf("MAG: ERROR could not configure QMC6309. wai:0x%02X(expected 0x%02X), status:0x%02X(0x%02X), ctrl2:0x%02X(0x%02X), ctrl1:0x%02X(0x%02X)\n", wai, QMC6309_WAI_VALUE, stat, QMC6309_STAT_DRDY, ctrl2, ctrl2_val, ctrl1, ctrl1_val);
+    }
 
     /* //DEBUG 
     while(1) {

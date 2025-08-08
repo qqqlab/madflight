@@ -149,16 +149,16 @@ void imu_loop() {
   out_Mixer(); //Mixes PID outputs and sends command pulses to the motors, if mot.arm == true
 }
 
-//========================================================================================================================//
-//                      IMU UPDATE LOOP FUNCTIONS - in same order as they are called from imu_loop()                           //
-//========================================================================================================================//
+//========================================================================================================================
+//                      IMU UPDATE LOOP FUNCTIONS - in same order as they are called from imu_loop()
+//========================================================================================================================
 
 void led_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use CLI 'pimu' to investigate.
-  //DISARMED: long off, short on, ARMED: long on, short off
+  //DISARMED: green long off, short on, ARMED: red long on, short off
   uint32_t modulus = imu.update_cnt % imu.getSampleRate();
-  if( modulus == 0) led.set(!out.armed); //start of pulse
-  if( modulus == imu.getSampleRate() / 10)  led.set(out.armed); //end of pulse
+  if( modulus == 0) led.color( (out.armed ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
+  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
 //returns angle in range -180 to 180

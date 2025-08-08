@@ -126,7 +126,7 @@ pin_bbx_cs     -1
 pin_imu_cs     PA4
 pin_imu_int    PB2
 pin_led        PC13
-led_on      LOW_IS_ON
+led_gizmo     LOW_IS_ON // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 pin_mmc_dat    -1
 pin_mmc_clk    -1
 pin_mmc_cmd    -1

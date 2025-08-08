@@ -19,7 +19,7 @@ const char madflight_board[] = R""(
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 imu_gizmo     ICM42688    // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250, ICM45686, ICM42688
 imu_bus_type  SPI     // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
-imu_align     CW0     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
+imu_align     CW180   //board edge with pins is forward direction - options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 imu_spi_bus   1 //spi
 pin_imu_cs    29 //spi
 pin_imu_int   27 //spi and i2c
@@ -44,6 +44,7 @@ bar_rate      100
 
 //--- MAG --- Magnetometer
 mag_gizmo     QMC6309  // options: NONE, QMC5883, QMC6309, RM3100
+mag_align     CW90   //board edge with pins is forward direction
 mag_i2c_adr   124 //0x7C
 mag_i2c_bus   0 //sample rate [Hz]
 
@@ -77,7 +78,7 @@ pin_rdr_trig  -1
 pin_rdr_echo  -1
 
 //--- LED ---
-led_on        LOW_IS_ON // options: LOW_IS_ON, HIGH_IS_ON
+led_gizmo     NONE // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 pin_led       -1
 
 //--- AHR --- AHRS (keep MAHONY, unless you want to experiment)

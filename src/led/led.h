@@ -28,15 +28,14 @@ SOFTWARE.
 
 struct LedConfig {
   public:
+    Cfg::led_gizmo_enum gizmo = Cfg::led_gizmo_enum::mf_NONE; //the gizmo to use
     int pin = -1;
-    uint8_t on_value = 0;
 };
 
 class LedGizmo {
   public:
     virtual ~LedGizmo() {}
-    virtual void set(bool set_on) = 0;
-    virtual void toggle() = 0;
+    virtual void color(uint32_t rgb) = 0; //set color
 };
 
 class Led {
@@ -49,11 +48,16 @@ class Led {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
     bool enabled = true; //enable changes to led state
+    void color(uint32_t rgb); //set color
     void set(bool set_on);
     void on();
     void off();
     void toggle();
-    void blink(int times);
+    void blink(int times); //blocking blink
+
+  private:
+    uint32_t last_color = 0xffffff; //white
+    bool is_on = false;
 };
 
 extern Led led;

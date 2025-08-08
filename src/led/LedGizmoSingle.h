@@ -8,20 +8,18 @@ class LedGizmoSingle : public LedGizmo {
       this->pin = pin;
       this->led_on_value = led_on_value;
       pinMode(pin, OUTPUT);
-      set(false);
+      color(0); //switch off
     }
 
-    void set(bool set_on) override {
-      state = set_on;
-      digitalWrite( pin, (set_on ? led_on_value : !led_on_value) );
-    }
-
-    void toggle() override {
-      set(!state);
+    void color(uint32_t rgb) override {
+      if(rgb) {
+        digitalWrite( pin, led_on_value);
+      }else{
+        digitalWrite( pin, !led_on_value);
+      }
     }
 
 private:
     int pin = -1;
     uint8_t led_on_value = 0;
-    bool state = false;
 };
