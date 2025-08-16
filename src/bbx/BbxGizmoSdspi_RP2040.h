@@ -6,11 +6,12 @@
 
 class BbxGizmoSdspi : public BbxGizmo {
 private:
+  BbxConfig *config;
   SPIClass *spi;
   int pin_cs;
 
 public:
-  BbxGizmoSdspi(SPIClass *spi, int pin_cs);
+  BbxGizmoSdspi(BbxConfig *config);
 
 private:
   const char* BB_LOG_DIR_NAME = "/log";

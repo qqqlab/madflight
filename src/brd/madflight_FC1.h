@@ -63,12 +63,12 @@ gps_baud      0   // use 0 for auto baud
 gps_ser_bus   1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-bbx_gizmo     SDSPI  // options: NONE, SDSPI, SDMMC
-pin_bbx_cs    39  // spi
-bbx_spi_bus   0  // spi
-pin_mmc_dat   -1  // mmc
-pin_mmc_clk   -1  // mmc
-pin_mmc_cmd   -1  // mmc
+bbx_gizmo     SDMMC  // options: NONE, SDSPI, SDMMC
+pin_bbx_cs    -1  // spi
+bbx_spi_bus   -1  // spi
+pin_mmc_dat   36  // mmc (uses 4-bit sdio mode on data pins 36,37,38,39)
+pin_mmc_clk   34  // mmc
+pin_mmc_cmd   35  // mmc
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
 rdr_gizmo     NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
@@ -93,9 +93,9 @@ pin_ser1_rx   5
 pin_ser1_tx   4 
 
 //--- SPI bus 0 ---
-pin_spi0_miso 36
-pin_spi0_mosi 35
-pin_spi0_sclk 34
+pin_spi0_miso -1
+pin_spi0_mosi -1
+pin_spi0_sclk -1
 
 //--- SPI bus 1 ---
 pin_spi1_miso 28

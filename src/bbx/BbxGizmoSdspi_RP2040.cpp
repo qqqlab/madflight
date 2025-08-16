@@ -3,9 +3,8 @@
 #include "BbxGizmoSdspi_RP2040.h"
 #include <Arduino.h> //Serial
 
-  BbxGizmoSdspi::BbxGizmoSdspi(SPIClass *spi, int pin_cs) {
-    this->spi = spi;
-    this->pin_cs = pin_cs;
+  BbxGizmoSdspi::BbxGizmoSdspi(BbxConfig *config) {
+    this->config = config;
   }
 
   //setup the file system
@@ -247,13 +246,28 @@
     }
 */
 
-    if (!SD.begin(pin_cs, *spi)) {
-      Serial.println("BBX: Card Mount Failed");
-      setup_done = false;
-      return setup_done;
+    //create gizmo
+    setup_done = false;
+    switch(config->gizmo) {
+      case Cfg::bbx_gizmo_enum::mf_NONE :
+        break;
+      case Cfg::bbx_gizmo_enum::mf_SDSPI :
+        if (SD.begin(config->spi_cs, *(config->spi_bus))) {
+          setup_done = true;
+        }else{
+          Serial.println("BBX: ERROR - SPI Card Mount Failed");
+        }
+        break;
+      case Cfg::bbx_gizmo_enum::mf_SDMMC :
+        if (SD.begin((uint8_t)config->pin_mmc_clk, (uint8_t)config->pin_mmc_cmd, (uint8_t)config->pin_mmc_dat)) {
+          setup_done = true;
+        }else{
+          Serial.println("BBX: ERROR - MMC Card Mount Failed");
+        }
+        break;
+        
     }
 
-    setup_done = true;
     return setup_done;
   }
 

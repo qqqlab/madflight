@@ -38,11 +38,10 @@ Bbx bbx;
       case Cfg::bbx_gizmo_enum::mf_NONE :
         break;
       case Cfg::bbx_gizmo_enum::mf_SDSPI :
-        gizmo = new BbxGizmoSdspi(config.spi_bus, config.spi_cs);
+        gizmo = new BbxGizmoSdspi(&config);
         break;
       case Cfg::bbx_gizmo_enum::mf_SDMMC :
-        Serial.println("\n" MF_MOD ": ERROR SDMMX not available for this processor\n");
-      return -1001;
+        gizmo = new BbxGizmoSdspi(&config);
         break;
     }
     return 0;
