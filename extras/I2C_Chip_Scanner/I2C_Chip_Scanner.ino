@@ -1,3 +1,5 @@
+#define APP_DATE "2025-08-18"
+
 /*====================================================================
  I2C Chip Scanner - scan I2C bus and try to identify chips
 
@@ -65,7 +67,7 @@ void loop() {
   String adr_msg[128];
 
   Serial.printf("===========================\n");
-  Serial.printf("I2C Chip Scanner 2025-08-08\n");
+  Serial.printf("I2C Chip Scanner " APP_DATE "\n");
   Serial.printf("===========================\n");
 
   //scan addresses to find devices
@@ -96,7 +98,7 @@ void loop() {
 struct test_struct{
     uint8_t adr1;
     uint8_t adr2;    
-    uint8_t reg;
+    uint16_t reg;
     uint8_t len;
     uint32_t expected;
     String descr;
@@ -107,16 +109,26 @@ test_struct tests[] = {
 // adr1  adr2  reg  len exp       descr
   {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L magnetometer"},
   {0x1E, 0x1E, 0x0A, 3, 0x483433, "HMC5883L magnetometer"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
+  {0x30, 0x30, 0x00, 2, 0x01B0, "HM01B0 camera"},
+  {0x30, 0x30, 0x0A, 1, 0x26, "OV2460 camera"},
+  {0x30, 0x30, 0x0A, 2, 0x9711, "OV9712 / OV9211 camera"},
+  {0x3C, 0x3C, 0x300A, 2, 0x3660, "OV3660 camera"},
+  {0x3C, 0x3C, 0x300A, 2, 0x5640, "OV5640 camera"},  
   {0x40, 0x4F, 0x00, 2, 0x399F, "INA219 current sensor"},
   {0x40, 0x4F, 0x00, 2, 0x4127, "INA226 current sensor"},
-  {0x48, 0x4F, 0x01, 2, 0x8583, "ADS1113, ADS1114, or ADS1115 ADC"},
+  {0x48, 0x4F, 0x01, 2, 0x8583, "ADS1113 / ADS1114 / ADS1115 ADC"},  
+  {0x42, 0x42, 0x00, 1, 0x9B, "GC0308 camera"},
+  {0x42, 0x42, 0x0A, 1, 0x76, "OV7670 camera"},
+  {0x42, 0x42, 0x0A, 1, 0x77, "OV7725 camera"},
+  {0x46, 0x47, 0x01, 1, 0x50, "BMP580 / BMP581 barometer"},
+  {0x46, 0x47, 0x01, 1, 0x51, "BMP585 barometer"},  
   {0x68, 0x69, 0x00, 1, 0xEA, "ICM20948 9DOF motion"},
   {0x68, 0x69, 0x00, 1, 0x68, "MPU3050 motion"},
   {0x68, 0x69, 0x00, 1, 0x69, "MPU3050 motion"},
   {0x68, 0x69, 0x75, 1, 0x12, "ICM20602 6DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x19, "MPU6886 6DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x47, "ICM42688P 6DOF motion"},  
-  {0x68, 0x69, 0x75, 1, 0x68, "MPU6000, MPU6050, or MPU9150 6/9DOF motion"}, 
+  {0x68, 0x69, 0x75, 1, 0x68, "MPU6000 / MPU6050 / MPU9150 6/9DOF motion"}, 
   {0x68, 0x69, 0x75, 1, 0x69, "FAKE MPU6050, got WHO_AM_I=0x69, real chip returns 0x68"},
   {0x68, 0x69, 0x75, 1, 0x70, "MPU6500 6DOF motion"},
   {0x68, 0x69, 0x75, 1, 0x71, "MPU9250 9DOF motion"},
@@ -128,7 +140,7 @@ test_struct tests[] = {
   {0x68, 0x69, 0x75, 1, 0x98, "ICM20689 6DOF motion"},
   {0x76, 0x77, 0x00, 1, 0x50, "BMP388 pressure"},
   {0x76, 0x77, 0x00, 1, 0x60, "BMP390 pressure"},
-  {0x76, 0x77, 0x0D, 1, 0x10, "DPS310, HP303B, or SPL06 pressure"},
+  {0x76, 0x77, 0x0D, 1, 0x10, "DPS310 / HP303B / SPL06 pressure"},
   {0x76, 0x77, 0x8F, 1, 0x80, "HP203B pressure"},
   {0x76, 0x77, 0xD0, 1, 0x55, "BMP180 pressure"},
   {0x76, 0x77, 0xD0, 1, 0x56, "BMP280 pressure"},
@@ -161,7 +173,7 @@ void i2c_identify_chip(uint8_t adr, String &msg) {
   while(tests[i].adr1) {
     uint8_t adr1 = tests[i].adr1;
     uint8_t adr2 = tests[i].adr2;    
-    uint8_t reg = tests[i].reg;
+    uint16_t reg = tests[i].reg;
     uint8_t len = tests[i].len;    
     uint32_t expected = tests[i].expected;
     uint32_t received = 0;
@@ -169,7 +181,7 @@ void i2c_identify_chip(uint8_t adr, String &msg) {
       uint8_t data[4];
       Serial.printf("try: %s --> read adr:0x%02X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
       i2c_ReadRegs(adr, reg, data, len, true);
-      for(int i=0;i<len;i++) received = (received<<8) + data[i];
+      for(int i=0;i<len;i++) received = (received<<8) + data[i];   
       Serial.printf("received:0x%02X ", (int)received);
       if(received == expected) {
         msg = tests[i].descr;
@@ -229,8 +241,9 @@ void i2c_WriteReg( uint8_t adr, uint8_t reg, uint8_t data ) {
 
 
 
-int i2c_ReadRegs( uint8_t adr, uint8_t reg, uint8_t *data, uint8_t n, bool stop ) {
-  i2c->beginTransmission(adr); 
+int i2c_ReadRegs( uint8_t adr, uint16_t reg, uint8_t *data, uint8_t n, bool stop ) {
+  i2c->beginTransmission(adr);
+  if(reg>0xff) i2c->write(reg>>8);
   i2c->write(reg);
   i2c->endTransmission(stop); //false = repeated start, true = stop + start
   int bytesReceived = i2c->requestFrom(adr, n);

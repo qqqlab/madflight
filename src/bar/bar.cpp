@@ -30,6 +30,7 @@ SOFTWARE.
 #include "BarGizmoBMP390.h"
 #include "BarGizmoMS5611.h"
 #include "BarGizmoHP203B.h"
+#include "BarGizmoBMP580.h"
 #include <math.h>
 
 //create global module instance
@@ -74,7 +75,11 @@ int Bar::setup() {
         gizmo = new BarGizmoHP203B(config.i2c_bus, config.i2c_adr, config.sampleRate);
       }
       break;
-  }
+    case Cfg::bar_gizmo_enum::mf_BMP580 :
+      if(config.i2c_bus) {
+        gizmo = new BarGizmoBMP580(config.i2c_bus, config.i2c_adr, config.sampleRate);
+      }
+      break;  }
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::bar_gizmo_enum::mf_NONE) {

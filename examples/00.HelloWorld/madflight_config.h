@@ -55,7 +55,7 @@ const char madflight_config[] = R""(
 //pin_rcl_ppm   -1
 
 //--- BAR --- Barometer
-//bar_gizmo      NONE  // options: NONE, BMP390, BMP388, BMP280, MS5611, HP203B
+//bar_gizmo      NONE  // options: NONE, BMP580, BMP390, BMP388, BMP280, MS5611, HP203B
 //bar_i2c_adr    0
 //bar_i2c_bus   -1
 
@@ -95,7 +95,7 @@ const char madflight_config[] = R""(
 //pin_rdr_echo  -1
 
 //--- LED ---
-//led_on         LOW_IS_ON // options: LOW_IS_ON, HIGH_IS_ON
+//led_gizmo     NONE // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 //pin_led       -1
 
 //--- AHR --- AHRS (keep MAHONY, unless you want to experiment)

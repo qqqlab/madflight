@@ -49,7 +49,7 @@ class SoftWire : public Stream {
     bool setPins(int sda, int scl); //call setPins() first, so that begin() can be called without arguments from libraries
     bool begin(int sda, int scl, uint32_t frequency=0); // returns true, if successful init of i2c bus
     inline bool begin() { return begin(-1, -1, static_cast<uint32_t>(0)); } // Explicit Overload for Arduino MainStream API compatibility
-    //TODO bool end();
+    bool end();
     //TODO size_t setBufferSize(size_t bSize);
     //TODO void setTimeOut(uint16_t timeOutMillis); // default timeout of i2c transactions is 50ms
     //TODO uint16_t getTimeOut();
@@ -174,6 +174,12 @@ bool SoftWire::setPins(int sda, int scl) {
 bool SoftWire::begin(int sda, int scl, uint32_t frequency) {
   setPins(sda, scl);
   setClock(frequency);
+  return true;
+}
+
+bool SoftWire::end() {
+  pinMode(_sda, INPUT);
+  pinMode(_scl, INPUT);
   return true;
 }
 

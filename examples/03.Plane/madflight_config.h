@@ -55,7 +55,7 @@ const char madflight_config[] = R""(
 //pin_rcl_ppm   -1
 
 //--- BAR --- Barometer
-//bar_gizmo      NONE  // options: NONE, BMP390, BMP388, BMP280, MS5611, HP203B
+//bar_gizmo      NONE  // options: NONE, BMP580, BMP390, BMP388, BMP280, MS5611, HP203B
 //bar_i2c_adr    0
 //bar_i2c_bus   -1
 

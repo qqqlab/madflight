@@ -40,7 +40,7 @@ class MF_I2C {
     //virtual void onRequest(void(*)(void)) = 0;
 };
 
-
+//MF_I2CDevice: helper class to read/write device registers
 class MF_I2CDevice {
   public:
     MF_I2C *i2c = nullptr;
@@ -182,6 +182,17 @@ Wire.h on different platforms
 
 https://github.com/espressif/arduino-esp32/blob/master/libraries/Wire/src/Wire.h
 class TwoWire : public HardwareI2C
+class HardwareI2C : public Stream
+
+    virtual void begin() = 0;  //--> bool TwoWire::begin()
+    virtual void end() = 0;    //--> bool TwoWire::end()
+    virtual void setClock(uint32_t freq) = 0; //--> bool TwoWire::setClock(uint32_t freq)
+    virtual void beginTransmission(uint8_t address) = 0; //--> void TwoWire::beginTransmission(uint8_t address)
+    virtual uint8_t endTransmission(bool stopBit) = 0; //--> uint8_t TwoWire::endTransmission(bool stopBit)
+    virtual uint32_t TwoWire::requestFrom(uint8_t address, uint32_t len, bool stopBit) = 0; //--> size_t requestFrom(uint8_t address, size_t len, bool stopBit)
+    virtual uint32_t read(uint8_t *buf, uint32_t len) = 0; //--> size_t Stream::readBytes(char *buffer, size_t length)
+    virtual uint32_t write(const uint8_t *buf, uint32_t len) = 0; //--> size_t TwoWire::write(const uint8_t *, size_t)
+
 
 ## RP2040
 
