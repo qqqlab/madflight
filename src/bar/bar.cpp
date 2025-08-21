@@ -39,8 +39,6 @@ Bar bar;
 int Bar::setup() {
   cfg.printModule(MF_MOD);
 
-  _samplePeriod = 1000000 / config.sampleRate;
-
   //clear state
   press = 0;
   temp = 0;
@@ -79,7 +77,8 @@ int Bar::setup() {
       if(config.i2c_bus) {
         gizmo = new BarGizmoBMP580(config.i2c_bus, config.i2c_adr, config.sampleRate);
       }
-      break;  }
+      break;
+  }
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::bar_gizmo_enum::mf_NONE) {
@@ -93,10 +92,8 @@ int Bar::setup() {
 bool Bar::update() {
   if(!gizmo) return false;
 
-  //wait for next sample interval
-  if(!schedule.interval(_samplePeriod)) return false;
+  if(!gizmo->update(&press, &temp)) return false; //exit if no new sample available
 
-  gizmo->update(&press, &temp);
   float P = press;
   //float T = temp;
   //alt = 153.84348f * (1 - pow(P / 101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C

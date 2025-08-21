@@ -9,10 +9,11 @@ protected:
   bfs::Bmp3 bmp;
 public:
   BarGizmoBMP390(MF_I2C *i2c, int8_t i2c_adr, uint32_t sampleRate) {
-    Serial.printf("BAR: BBMP390/BMP388 I2C_ADR=0x%02X\n", i2c_adr);
+    if(i2c_adr==0) i2c_adr = 0x77; //BMP390 is 0x76 or 0x77
+    Serial.printf("BAR: BBMP390/BMP388 I2C_ADR=0x%02X ", i2c_adr);
     bmp.Config(i2c, (bfs::Bmp3::I2cAddr)i2c_adr);
     if (!bmp.Begin()) {
-      Serial.println("BAR: BMP390/BMP388 gizmo not found");
+      Serial.println("\nBAR: BMP390/BMP388 gizmo not found");
       return;
     }
 
@@ -22,18 +23,23 @@ public:
     if(sampleRate > 100) {
       //f = 200;
       bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_1X_TEMP_1X);
+      Serial.printf("PRES_1X_TEMP_1X\n");
     }else if(sampleRate > 50) {
       //f = 100;
       bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_2X_TEMP_1X);
+      Serial.printf("OS_MODE_PRES_2X_TEMP_1X\n");
     }else if(sampleRate > 25) {
       //f = 50;
       bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_8X_TEMP_1X);
+      Serial.printf("OS_MODE_PRES_8X_TEMP_1X\n");
     }else if(sampleRate > 12) {
       //f = 25;
       bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_16X_TEMP_2X);
+      Serial.printf("OS_MODE_PRES_16X_TEMP_2X\n");
     }else {
       //f = 12.5;
       bmp.ConfigOsMode(bfs::Bmp3::OS_MODE_PRES_32X_TEMP_2X); //12.5Hz
+      Serial.printf("OS_MODE_PRES_32X_TEMP_2X\n");
     }
   }
 

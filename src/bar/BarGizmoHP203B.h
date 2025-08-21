@@ -28,6 +28,7 @@ Driver for HP203B pressure sensor
 class BarGizmoHP203B: public BarGizmo {
 private:
   MF_I2CDevice *dev;
+  uint32_t sample_ts = 0;
 
   bool is_pa_ready() {
     uint8_t status = dev->readReg(HP203B_INT_SRC);
@@ -73,6 +74,8 @@ public:
       dev->writeReg(HP203B_ADC_CVT_256, nullptr, 0); //start conversion: ADC_CVT = 010, 100 OSR=256 (8.2ms), 00 press+temp
       break;
     }
+
+    sample_ts = micros();
   }
 
   ~BarGizmoHP203B() {
@@ -80,10 +83,15 @@ public:
   }
 
   bool update(float *press, float *temp) override {
+    uint32_t now = micros();
+    if(now - sample_ts < 10000) return false; //NOTE: gets garbage from sensor if polled quicker.... (PA_RDY is not reliable)
+
     //check PA_RDY status
     if(!is_pa_ready()) {
       return false; //bail out, try again later
     }
+
+    sample_ts = now;
 
     //read data
     uint8_t d[6];

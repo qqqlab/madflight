@@ -50,12 +50,12 @@ Now this header can now be included in the main .ino which defines a custom TwoW
 /*!
  *  I2C ADDRESS/BITS/SETTINGS
  */
-#define BMP280_ADDRESS (0x77) /**< The default I2C address for the gizmo. */
-#define BMP280_ADDRESS_ALT (0x76) /**< Alternative I2C address for the gizmo. */
+#define BMP280_ADDRESS (0x77) /**< The default I2C address for the sensor. */
+#define BMP280_ADDRESS_ALT (0x76) /**< Alternative I2C address for the sensor. */
 #define BMP280_CHIPID (0x58) /**< Default chip ID. */
 
 /*!
- * Registers available on the gizmo.
+ * Registers available on the sensor.
  */
 enum {
   BMP280_REGISTER_DIG_T1 = 0x88,
@@ -103,11 +103,11 @@ typedef struct {
 class Adafruit_BMP280;
 
 /**
- * Driver for the Adafruit BMP280 barometric pressure gizmo.
+ * Driver for the Adafruit BMP280 barometric pressure sensor.
  */
 class Adafruit_BMP280 {
 public:
-  /** Oversampling rate for the gizmo. */
+  /** Oversampling rate for the sensor. */
   enum sensor_sampling {
     /** No over-sampling. */
     SAMPLING_NONE = 0x00,
@@ -123,7 +123,7 @@ public:
     SAMPLING_X16 = 0x05
   };
 
-  /** Operating mode for the gizmo. */
+  /** Operating mode for the sensor. */
   enum sensor_mode {
     /** Sleep mode. */
     MODE_SLEEP = 0x00,
@@ -135,7 +135,7 @@ public:
     MODE_SOFT_RESET_CODE = 0xB6
   };
 
-  /** Filtering level for gizmo data. */
+  /** Filtering level for sensor data. */
   enum sensor_filter {
     /** No filtering. */
     FILTER_OFF = 0x00,
@@ -251,7 +251,7 @@ private:
 /*!
  *  @file Adafruit_BMP280.cpp
  *
- *  This is a library for the BMP280 orientation gizmo
+ *  This is a library for the BMP280 orientation sensor
  *
  *  Designed specifically to work with the Adafruit BMP280 Sensor.
  *
@@ -313,7 +313,7 @@ Adafruit_BMP280::~Adafruit_BMP280(void) {
 }
 
 /*!
- *  Initialises the gizmo.
+ *  Initialises the sensor.
  *  @param addr
  *         The I2C address to use (default = 0x77)
  *  @param chipid
@@ -324,22 +324,19 @@ bool Adafruit_BMP280::begin(MF_I2C *i2c, uint8_t addr, uint8_t chipid) {
   if (spi_dev == NULL) {
     _wire = i2c;
     // I2C mode
-    if (i2c_dev)
-      delete i2c_dev;
+    if (i2c_dev) delete i2c_dev;
     if (addr == 0x00) addr = BMP280_ADDRESS_ALT;
     i2c_dev = new Adafruit_I2CDevice(addr, _wire);
-    if (!i2c_dev->begin())
-      return false;
+    if (!i2c_dev->begin()) return false;
   } else {
     // SPI mode
     if (!spi_dev->begin())
       return false;
   }
 
-  // check if gizmo, i.e. the chip ID is correct
+  // check if sensor, i.e. the chip ID is correct
   _sensorID = read8(BMP280_REGISTER_CHIPID);
-  if (_sensorID != chipid)
-    return false;
+  if (_sensorID != chipid) return false;
 
   readCoefficients();
   // write8(BMP280_REGISTER_CONTROL, 0x3F); /* needed? */
@@ -351,7 +348,7 @@ bool Adafruit_BMP280::begin(MF_I2C *i2c, uint8_t addr, uint8_t chipid) {
 /*!
  * Sets the sampling config for the device.
  * @param mode
- *        The operating mode of the gizmo.
+ *        The operating mode of the sensor.
  * @param tempSampling
  *        The sampling scheme for temp readings.
  * @param pressSampling
@@ -594,7 +591,7 @@ float Adafruit_BMP280::waterBoilingPoint(float pressure) {
     @return true if successful, otherwise false
  */
 bool Adafruit_BMP280::takeForcedMeasurement() {
-  // If we are in forced mode, the BME gizmo goes back to sleep after each
+  // If we are in forced mode, the BME sensor goes back to sleep after each
   // measurement and we need to set it to forced mode once at this point, so
   // it will take the next measurement and then return to sleep again.
   // In normal mode simply does new measurements periodically.
@@ -624,7 +621,7 @@ void Adafruit_BMP280::reset(void) {
 uint8_t Adafruit_BMP280::sensorID(void) { return _sensorID; };
 
 /*!
-    @brief  Gets the most recent gizmo event from the hardware status register.
+    @brief  Gets the most recent sensor event from the hardware status register.
     @return Sensor status as a byte.
  */
 uint8_t Adafruit_BMP280::getStatus(void) {

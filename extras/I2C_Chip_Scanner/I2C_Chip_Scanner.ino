@@ -24,8 +24,8 @@ I2C: Found 4 device(s)
 
 TwoWire *i2c = &Wire;
 
-#define ESP32_SDA_PIN 23
-#define ESP32_SCL_PIN 22
+#define ESP32_SDA_PIN 18 //23
+#define ESP32_SCL_PIN 19 //22
 
 #define RP2040_SDA_PIN 32 //RP2040/RP2350A Wire: 0, 4(default), 8, 12, 16, 20   Wire1: 2, 6, 10, 14, 18, 26(default)
 #define RP2040_SCL_PIN 33 //RP2040/RP2350A Wire: 1, 5(default), 9, 13, 17, 21   Wire1: 3, 7, 11, 15, 19, 27(default)

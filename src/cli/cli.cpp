@@ -690,22 +690,22 @@ void Cli::calibrate_info(int seconds) {
     }
   } 
 
-  Serial.println("=== Gyro ===");
+  Serial.printf("=== Gyro - Sample rate: %d Hz===\n", gx.n/seconds );
   gx.print("gx[deg/s]     ");
   gy.print("gy[deg/s]     ");
   gz.print("gz[deg/s]     ");
-  Serial.println("=== Accelerometer ===");
+  Serial.printf("=== Accelerometer - Sample rate: %d Hz===\n", ax.n/seconds );
   ax.print("ax[g]         ");
   ay.print("ay[g]         ");
   az.print("az[g]         ");
   if(bar.installed()) {
-    Serial.println("=== Barometer ===");
+    Serial.printf("=== Barometer - Sample rate: %d Hz===\n", sp.n/seconds );
     sa.print("Altitude[m]   ");
     sp.print("Pressure[Pa]  ");
     st.print("Temperature[C]");
   }
   if(mag.installed()) {
-    Serial.println("=== Magnetometer (external) ===");
+    Serial.printf("=== Magnetometer (external) - Sample rate: %d Hz===\n", mx.n/seconds );
     mx.print("mx[uT]        ");
     my.print("my[uT]        ");
     mz.print("mz[uT]        ");

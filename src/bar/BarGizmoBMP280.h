@@ -7,6 +7,7 @@
 class BarGizmoBMP280: public BarGizmo {
 protected:
   Adafruit_BMP280 bar_BMP280;
+  float press_old = 0;
 public:
   BarGizmoBMP280(MF_I2C *i2c, int8_t i2c_adr, uint32_t sampleRate) {
     (void) sampleRate; //TODO use sampleRate
@@ -24,20 +25,24 @@ public:
       Serial.print("        ID of 0x61 represents a BME 680.\n");
     }
 
+    
+    //"standard resolution": OSR_T=1x, OSR_P=4x -> measurement rate 83.33 Hz in NORMAL mode, 2.1 Pa RMS noise
     bar_BMP280.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                     Adafruit_BMP280::SAMPLING_X1,     /* Temp. oversampling */
-                    Adafruit_BMP280::SAMPLING_X1,    /* Pressure oversampling */
+                    Adafruit_BMP280::SAMPLING_X4,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_OFF,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_1); /* Standby time. */
     //return status;
   }
 
   bool update(float *press, float *temp) override {
-    //driver does not return whether data is fresh, return true if pressure changed
+    //driver does not return whether data is fresh, return false if pressure did not change
     float press_new = bar_BMP280.readPressure();
-    bool rv = (press_new != *press);
+    if(press_new == press_old) return false;
+    
+    press_old = press_new;
     *press = press_new;
     *temp = bar_BMP280.readTemperature();
-    return rv;
+    return true;
   }
 };
