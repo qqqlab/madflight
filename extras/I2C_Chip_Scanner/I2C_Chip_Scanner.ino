@@ -108,6 +108,7 @@ struct test_struct{
 test_struct tests[] = {
 // adr1  adr2  reg  len exp       descr
   {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L magnetometer"},
+  {0x2C, 0x2C, 0x00, 1, 0x80, "QMC5883P magnetometer"},
   {0x1E, 0x1E, 0x0A, 3, 0x483433, "HMC5883L magnetometer"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
   {0x30, 0x30, 0x00, 2, 0x01B0, "HM01B0 camera"},
   {0x30, 0x30, 0x0A, 1, 0x26, "OV2460 camera"},

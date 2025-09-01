@@ -1,6 +1,12 @@
-//Arduino version string
-#define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR 
+//check FreeRTOS enabled in arduino-pico v5
+#if ARDUINO_PICO_MAJOR == 5 && !__FREERTOS
+  #error "FreeRTOS required - Arduino IDE menu: Tools->Operating System = FreeRTOS SMP - PlatformIO add: build_flags = -DPIO_FRAMEWORK_ARDUINO_ENABLE_FREERTOS"
+#endif
 
+//Arduino-pico version string
+#define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR
+
+//get processor type
 #ifndef MF_MCU_NAME
   #ifdef PICO_RP2350
     #if !PICO_RP2350A

@@ -35,7 +35,7 @@ If things do not work as expected, have a good look at the startup messages!
 const char madflight_config[] = R""(
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
-//imu_gizmo      NONE    // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250, ICM45686, ICM42688
+//imu_gizmo      NONE    // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250
 //imu_bus_type   SPI     // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
 //imu_align      CW0     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 //imu_spi_bus    -1 //spi
@@ -55,12 +55,12 @@ const char madflight_config[] = R""(
 //pin_rcl_ppm   -1
 
 //--- BAR --- Barometer
-//bar_gizmo      NONE  // options: NONE, BMP580, BMP390, BMP388, BMP280, MS5611, HP203B
+//bar_gizmo      NONE  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611
 //bar_i2c_adr    0
 //bar_i2c_bus   -1
 
 //--- MAG --- Magnetometer
-//mag_gizmo      NONE  // options: NONE, QMC5883, QMC6309, RM3100
+//mag_gizmo      NONE  // options: NONE, QMC6309, QMC5883L, QMC5883P, RM3100
 //mag_align      CW0   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 //mag_i2c_adr    0
 //mag_i2c_bus   -1
