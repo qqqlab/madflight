@@ -9,4 +9,6 @@ jobs:
           platforms: |
             - name: rp2040:rp2040
               source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
-          fqbn: rp2040:rp2040:rpipico
+          fqbn: rp2040:rp2040:rpipico:os=freertos
+
+# see https://forum.arduino.cc/t/example-of-core-log-level-using-compile-sketch-github-action/1036161
