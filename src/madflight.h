@@ -98,6 +98,23 @@ const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //[6] define flight
 void madflight_setup() {
   Serial.begin(115200); //start console serial
 
+  // CFG - Configuration parameters
+  cfg.begin(); 
+  #ifdef MF_CONFIG_CLEAR
+    cfg.clear();
+    cfg.writeToEeprom();
+    madflight_die("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
+  #endif
+  cfg.loadFromEeprom(); //load parameters from EEPROM
+  cfg.load_madflight(madflight_board, madflight_config); //load config
+
+  // LED - Setup LED
+  led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
+  led.config.pin = cfg.pin_led;
+  led.setup();
+  led.color(0x0000ff); //turn on blue to signal startup
+  led.enabled = false; //do not change state until setup compled
+
   // 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
@@ -118,29 +135,12 @@ void madflight_setup() {
     Serial.println("Processor: " MF_MCU_NAME);
   #endif
 
-  // CFG - Configuration parameters
-  cfg.begin(); 
-  #ifdef MF_CONFIG_CLEAR
-    cfg.clear();
-    cfg.writeToEeprom();
-    madflight_die("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
-  #endif
-  cfg.loadFromEeprom(); //load parameters from EEPROM
-  cfg.load_madflight(madflight_board, madflight_config); //load config
-
   #ifdef MF_DEBUG
     //Serial.println("\nDEBUG: cfg.list() ================\n");
     //cfg.list();
   #endif
 
   cfg.printPins();
-
-  // LED - Setup LED
-  led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
-  led.config.pin = cfg.pin_led;
-  led.setup();
-  led.color(0x0000ff); //turn on blue to signal startup
-  led.enabled = false; //do not change state until setup compled
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
@@ -249,6 +249,11 @@ void madflight_setup() {
     if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
+      // switch off LED to signal calibration
+      led.enabled = true;
+      led.off();
+      led.enabled = false;
+      
       //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
       cli.calibrate_gyro();
     #endif
@@ -260,10 +265,10 @@ void madflight_setup() {
   // CLI - Command Line Interface
   cli.begin();
 
-  // Enable LED, and switch it off signal end of startup.
+  // Enable LED, and switch it to green to signal end of startup.
   led.enabled = true;
   led.color(0x00ff00); //switch color to green
-  led.off();
+  led.on();
 }
 
 //===============================================================================================

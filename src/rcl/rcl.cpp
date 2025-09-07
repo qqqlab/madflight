@@ -160,6 +160,8 @@ bool Rcl::update() { //returns true if channel pwm data was updated
   bool rv = gizmo->update();
 
   if(rv) {
+    _update_count++;
+    
     //throttle: 0.0 in range from stick full back to rcl_cfg_thro_low, 1.0 on full throttle
     float tlow = st[THR].min + RCL_THROTTLE_DEADBAND;
     throttle = constrain( ((float)(pwm[st[THR].ch] - tlow)) / (st[THR].max - tlow), 0.0, 1.0);

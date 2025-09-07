@@ -77,19 +77,20 @@ C8 0C 14 33 00 64 0D 00 04 01 00 00 00 96 --> 0x0c:len 12 bytes (frame len is 14
 
 
 class CRSF {
-public:
+private:
     //need to populate these external vars before use!!!
     uint16_t* channel; //external storage for at least 16 channel data. values: 988-2012
     MF_Serial* ser_bus; //external serial bus
-
+public:
     uint32_t channel_ts; //last channel data received millisecond timestamp
     uint32_t timeout; //lost connection timeout in milliseconds (default 2000)
 
-    CRSF() {
+    CRSF(uint16_t* channel, MF_Serial* ser_bus) {
         buf_i = 0;
         timeout = 2000;
         channel_ts = millis() - timeout;
-        for(int i=0;i<16;i++) channel[i] = 1500;
+        this->channel = channel;
+        this->ser_bus = ser_bus;
     }
 
     bool is_connected() {

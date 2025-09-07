@@ -75,7 +75,9 @@ bool SBUS::parse()
 {
   bool rv = false;
   uint8_t b;
-  while ( serial->read(&b, 1) ) {
+  int n = serial->available();
+  for(int i=0;i<n;i++) { //only process current bytes, not bytes received while processing!
+    serial->read(&b, 1);
     if (_parserState == 0) {
         // find the header
         if ((b == _sbusHeader) && ((_prevByte == _sbusFooter) || ((_prevByte & _sbus2Mask) == _sbus2Footer))) {

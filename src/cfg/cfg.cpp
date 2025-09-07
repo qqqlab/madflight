@@ -473,6 +473,9 @@ void CfgClass::load_madflight(const char *board, const char *config) {
 
 //returns true on success
 bool CfgClass::load_cmdline(String cmdline) {
+  //remove starting and ending whitespace
+  cmdline.trim();
+  
   //remove # comment
   int comment_pos = cmdline.indexOf('#');
   if(comment_pos >= 0) cmdline = cmdline.substring(0, comment_pos);
