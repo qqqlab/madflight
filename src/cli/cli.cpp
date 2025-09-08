@@ -26,9 +26,87 @@
 //create global module instance
 Cli cli;
 
+static void cli_spinmotors() {
+  int mot_cnt = 0;
+  for(int i=0;i<OUT_SIZE;i++) {
+    if(out.getType(i) == 'M') mot_cnt++;
+  }
+  if(mot_cnt==0) {
+     Serial.println("Spin motors - no motors configured, exiting");
+     return;
+  }
+  Serial.println("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.");
+  while(Serial.available()) Serial.read(); //clear input 
+  char c;
+  while(!Serial.available());
+  c = Serial.read();
+  if(c!='g') return;
+  while(!Serial.available());
+  c = Serial.read();
+  if(c!='o') return;
+
+  while(Serial.available()) Serial.read(); //clear input
+
+  //disable IMU interrupt
+  void (*onUpdate_saved)(void) = imu.onUpdate;
+  imu.onUpdate = nullptr;
+
+  out.armed = true;
+  int i = -1;
+  float speed = 0;
+  const float maxspeed = 0.40;
+  const float speedstep = maxspeed/3000; //3 second up / 3 second down
+  int stage = 0;
+  while(!Serial.available()) {
+    switch(stage) {
+    case 0: //next motor
+      do {
+        i++;
+        if(i>=OUT_SIZE) i = 0;
+      } while(out.getType(i) != 'M');
+      Serial.printf("Spinning motor pin_out%d - press enter to exit\n", i);
+      speed = 0;
+      out.set(i, speed);
+      stage = 1;
+      break;
+    case 1: //spin up
+      speed += speedstep;
+      if(speed<maxspeed) {
+        out.set(i, speed);
+      }else{
+        stage = 2;
+      }
+      break;
+    case 2: //spin down
+      speed -= speedstep;
+      if(speed>0) {
+        out.set(i, speed);
+      }else{
+        speed = 0;
+        out.set(i, speed);
+        stage = 0;
+      }
+      break;
+    }
+    delay(1);
+  }
+  out.armed = false;
+
+  Serial.println("Spin motors - DONE");
+
+  //enable IMU interrupt
+  imu.onUpdate = onUpdate_saved;
+
+  while(Serial.available()) Serial.read(); //clear input
+}
+
 static void cli_serial(int bus_id) {
+  //disable IMU interrupt
+  void (*onUpdate_saved)(void) = imu.onUpdate;
+  imu.onUpdate = nullptr;
+  
   Serial.println("Dumping serial data, press enter to exit.");
-  delay(1000);
+
   int cnt = 0;
   MF_Serial *ser = hal_get_ser_bus(bus_id);
   while(Serial.available()) Serial.read(); //clear input 
@@ -44,6 +122,9 @@ static void cli_serial(int bus_id) {
     }
   }
   while(Serial.available()) Serial.read(); //clear input
+
+  //enable IMU interrupt
+  imu.onUpdate = onUpdate_saved;
 }
 
 static void cli_po() {
@@ -260,6 +341,7 @@ void Cli::help() {
   "ps        Task list\n"
   "i2c       I2C scan\n"
   "serial <bus_id>   Print serial data\n"
+  "spinmotors\n"
   "reboot    Reboot flight controller\n"
   "-- PRINT --\n"
   "poff      Printing off\n"
@@ -431,6 +513,8 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     freertos_ps();
   }else if (cmd == "serial") {
     cli_serial(arg1.toInt());
+  }else if (cmd == "spinmotors") {
+    cli_spinmotors();
   }else if (cmd != "") {
     Serial.println("ERROR Unknown command - Type help for help");
   }
