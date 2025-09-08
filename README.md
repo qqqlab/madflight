@@ -40,22 +40,7 @@ Use a [release version](https://github.com/qqqlab/madflight/releases) if you wan
 
 ## Getting Started
 
-1. Connect the required hardware (see below) to your controller board: 
-    - See [RP2350/RP2040 pinout and instructions](https://madflight.com/Board-RP2040/)
-    - -or- [ESP32-S3/ESP32 pinout and instructions](https://madflight.com/Board-ESP32/)
-    - -or- [STM32 pinout and instructions](https://madflight.com/Board-STM32/)
-    - Connect your IMU (gyro/acceleration) sensor as shown [here](https://madflight.com/Getting-Started/).
-    - Connect your radio receiver according to the configured pins.
-2. Install the madflight library in Arduino IDE. (Menu *Tools->Manage Libraries*, then search for _madflight_)
-3. Open *Examples for custom libraries->madflight->Quadcopter.ino* in the Arduino IDE.
-4. Edit the HARDWARE CONFIG section in madflight_config.h to enable the connected peripherals.
-5. If you're not using the default pinout then setup your board pinout in the CUSTOM PINS CONFIG section.
-6. Compile Quadcopter.ino and upload it to your board. Connect the Serial Monitor at 115200 baud and check the messages. Type `help` to see the available CLI commands.
-7. Type `calradio` and follow the prompts to setup your RC radio receiver.
-8. IMPORTANT: Use CLI `calimu` and `calmag` to calibate the sensors.
-9. Use CLI commands `pimu`, `pahr`, `prcl`, `pmot`, etc. and check that IMU sensor, AHRS and RC Receiver are working correctly. 
-10. Connect motors (no props) and battery and check that motors are spinning correctly.
-11. Mount props, go to an wide open space, and FLY!
+See [Getting Started](https://madflight.com/Getting-Started/) 
 
 For additional help see [Discussions](https://github.com/qqqlab/madflight/discussions)
 
