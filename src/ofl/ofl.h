@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,41 @@ SOFTWARE.
 
 #pragma once
 
-#include <Arduino.h> //String
-#include "MF_I2C.h"
-#include "MF_Serial.h"
-#include "MF_Schedule.h"
-#include <SPI.h> //Replace this with MF_SPI - but not really needed as RP2,ESP32,STM32 Arduino implementations are compatible
+#include "../cfg/cfg.h"
 
-//prototypes
-void hal_setup();
-void hal_eeprom_begin();
-uint8_t hal_eeprom_read(uint32_t adr);
-void hal_eeprom_write(uint32_t adr, uint8_t val);
-void hal_eeprom_commit();
-void hal_reboot();
-uint32_t hal_get_core_num();
-int hal_get_pin_number(String val);
-void hal_print_pin_name(int pinnum);
-MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
-SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
-MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
+struct OflState {
+  public:
+    int dx = 0;
+    int dy = 0;
+    uint32_t dt = 0;
+    uint32_t ts = 0;
+};
 
+struct OflConfig {
+  public:
+    Cfg::ofl_gizmo_enum ofl_gizmo = Cfg::ofl_gizmo_enum::mf_NONE;
+    int ofl_spi_bus = -1; //SPI bus id
+    int pin_ofl_cs = -1; //SPI cs pin
+    int ofl_ser_bus = -1; //Serial bus id
+    int ofl_baud = 0; //baud rate. 0=autobaud
+};
 
-#if defined ARDUINO_ARCH_ESP32
-  #include "ESP32/hal_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "RP2040/hal_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "STM32/hal_STM32.h"
-#else 
-  #error "HAL: Unknown hardware architecture, madflight runs on ESP32 / RP2040 / STM32"
-#endif
+class OflGizmo {
+  public:
+    virtual ~OflGizmo() {}
+    virtual bool update() = 0; //returns true if new sample was taken
+};
+
+class Ofl : public OflState {
+  public:
+    OflConfig config;
+
+    OflGizmo *gizmo = nullptr;
+
+    int setup();      // Use config to setup gizmo, returns 0 on success, or error code
+    bool update();    // Returns true if state was updated
+    bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+};
+
+//Global module instance
+extern Ofl ofl;

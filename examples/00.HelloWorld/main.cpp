@@ -26,6 +26,7 @@ void loop() {
   gps.update(); // gps
   bat.update(); // battery consumption
   rdr.update(); // radar
+  ofl.update(); // optical flow
   cli.update(); // process CLI commands
 }
 

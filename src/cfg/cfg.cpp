@@ -110,7 +110,6 @@ bool CfgClass::getOptionString(uint16_t param_idx, int32_t param_val, char out_o
   return true;
 }
 
-
 //print all parameters for module_name on single line
 void CfgClass::printModule(const char* module_name) {
   String n = String(module_name);

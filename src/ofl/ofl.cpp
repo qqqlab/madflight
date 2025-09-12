@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,35 +22,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-#pragma once
+#define MF_MOD "OFL"
 
-#include <Arduino.h> //String
-#include "MF_I2C.h"
-#include "MF_Serial.h"
-#include "MF_Schedule.h"
-#include <SPI.h> //Replace this with MF_SPI - but not really needed as RP2,ESP32,STM32 Arduino implementations are compatible
+#include <Arduino.h> //Serial
+#include "ofl.h"
 
-//prototypes
-void hal_setup();
-void hal_eeprom_begin();
-uint8_t hal_eeprom_read(uint32_t adr);
-void hal_eeprom_write(uint32_t adr, uint8_t val);
-void hal_eeprom_commit();
-void hal_reboot();
-uint32_t hal_get_core_num();
-int hal_get_pin_number(String val);
-void hal_print_pin_name(int pinnum);
-MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
-SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
-MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
+//the gizmos
+#include "OflGizmoPMW3901.h"
 
+//create global module instance
+Ofl ofl;
 
-#if defined ARDUINO_ARCH_ESP32
-  #include "ESP32/hal_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "RP2040/hal_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "STM32/hal_STM32.h"
-#else 
-  #error "HAL: Unknown hardware architecture, madflight runs on ESP32 / RP2040 / STM32"
-#endif
+int Ofl::setup() {
+  cfg.printModule(MF_MOD);
+
+  //create gizmo
+  delete gizmo;
+  switch(config.ofl_gizmo) {
+    case Cfg::ofl_gizmo_enum::mf_NONE :
+      gizmo = nullptr;
+      break;
+    case Cfg::ofl_gizmo_enum::mf_PMW3901 :
+      gizmo = OflGizmoPMW3901::create(&config, this);
+      break;
+  }
+
+  //check gizmo
+  if(!installed() && config.ofl_gizmo != Cfg::ofl_gizmo_enum::mf_NONE) {
+    Serial.println("\n" MF_MOD ": ERROR check pin/bus config\n");
+    return -1001;
+  }
+
+  return 0;
+}
+
+bool Ofl::update() {
+  if(!gizmo) return false;
+  return gizmo->update();
+}
+

@@ -126,7 +126,10 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //update battery, and log if battery was updated.
+  rdr.update(); // radar (not used in this example)
+  ofl.update(); // optical flow (not used in this example)
+  
+  //battery sensor, and log if battery was updated.
   if(bat.update()) { 
     bbx.log_bat();
   } 
@@ -138,7 +141,7 @@ void loop() {
     bbx.log_bar(); //log if pressure updated
   }
 
-  mag.update();
+  mag.update(); //magnetometer
   
   //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
   if(gps.update()) {

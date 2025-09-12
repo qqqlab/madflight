@@ -153,10 +153,13 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //update all I2C sensors
-  if(bat.update()) bbx.log_bat(); //update battery, and log if battery was updated. 
-  if(bar.update()) bbx.log_bar(); //log if pressure updated
-  mag.update();
+  //update sensors
+  rdr.update(); // radar (not used in this example)
+  ofl.update(); // optical flow (not used in this example)
+
+  if(bat.update()) bbx.log_bat(); //battery sensor, and log if battery was updated. 
+  if(bar.update()) bbx.log_bar(); //barometer, and log if pressure updated
+  mag.update(); // magnetometer
 
   if(gps.update()) {bbx.log_gps(); bbx.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
 

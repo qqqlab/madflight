@@ -119,6 +119,13 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
+  bar.update(); // barometer (not used in this example)
+  mag.update(); // magnetometer (not used in this example)
+  gps.update(); // gps (not used in this example)
+  bat.update(); // battery consumption (not used in this example)
+  rdr.update(); // radar (not used in this example)
+  ofl.update(); // optical flow (not used in this example)
+
   cli.update(); //process CLI commands
 }
 

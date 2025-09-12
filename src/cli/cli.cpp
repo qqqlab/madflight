@@ -12,6 +12,7 @@
 #include "../led/led.h"
 #include "../bbx/bbx.h"
 #include "../mag/mag.h"
+#include "../ofl/ofl.h"
 #include "../out/out.h"
 #include "../pid/pid.h"
 #include "../rcl/rcl.h"
@@ -271,13 +272,20 @@ static void cli_prdr() {
   Serial.printf("rdr.dist:%d\t", rdr.dist);
 }
 
+static void cli_pofl() {
+  Serial.printf("ofl.dx:%d\t", ofl.dx);
+  Serial.printf("ofl.dy:%d\t", ofl.dy);
+  Serial.printf("ofl.dt:%d\t", (int)ofl.dt);
+  //Serial.printf("ofl.ts:%d\t", (int)ofl.ts);
+}
+
 struct cli_print_s {
   const char *cmd;
   const char *info;
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 16
+#define CLI_PRINT_FLAG_COUNT 17
 
 static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"po",     "Overview", cli_po},
@@ -296,6 +304,7 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"palt",   "Altitude estimator", cli_palt},
   {"pgps",   "GPS", cli_pgps},
   {"prdr",   "Radar", cli_prdr},
+  {"pofl",   "Optical Flow", cli_pofl},
 };
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 

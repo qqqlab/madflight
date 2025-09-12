@@ -1,4 +1,4 @@
-#define MADFLIGHT_VERSION "madflight v2.1.2"
+#define MADFLIGHT_VERSION "madflight v2.1.3-DEV"
 
 //madflight.h - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
 
@@ -51,21 +51,22 @@ extern const char madflight_config[]; //madflight_config should be defined befor
 #undef MF_ALLOW_INCLUDE_CCP_H
 
 // include all other modules without compile time config options
-#include "ahr/ahr.h"
-#include "cfg/cfg.h"
-#include "cli/cli.h"
-#include "bar/bar.h"
-#include "bat/bat.h"
-#include "bbx/bbx.h"
-#include "gps/gps.h"
-#include "led/led.h"
-#include "lua/lua.h"
-#include "mag/mag.h"
-#include "out/out.h"
-#include "pid/pid.h"
-#include "rcl/rcl.h"
-#include "rdr/rdr.h"
-#include "veh/veh.h"
+#include "ahr/ahr.h" //AHRS
+#include "cfg/cfg.h" //Config
+#include "cli/cli.h" //Command Line Interface
+#include "bar/bar.h" //Barometer sensor
+#include "bat/bat.h" //Battery sensor
+#include "bbx/bbx.h" //Blackbox SDCARD
+#include "gps/gps.h" //GPS
+#include "led/led.h" //LED
+#include "lua/lua.h" //Lua scripting
+#include "mag/mag.h" //Magnetometer sensor
+#include "ofl/ofl.h" //Optical flow sensor
+#include "out/out.h" //Outputs (motor, servo)
+#include "pid/pid.h" //PID control
+#include "rcl/rcl.h" //RC radio link
+#include "rdr/rdr.h" //Radar, lidar, ultrasonic sensors
+#include "veh/veh.h" //Vehicle info
 
 // toolbox
 #include "tbx/RuntimeTrace.h"
@@ -187,6 +188,14 @@ void madflight_setup() {
   rdr.config.pin_trig = cfg.pin_rdr_trig;
   rdr.config.pin_echo = cfg.pin_rdr_echo;
   rdr.setup();
+
+  //OFL
+  ofl.config.ofl_gizmo   = (Cfg::ofl_gizmo_enum)cfg.ofl_gizmo; //the gizmo to use
+  ofl.config.ofl_spi_bus = cfg.ofl_spi_bus; //spi bus
+  ofl.config.pin_ofl_cs  = cfg.pin_ofl_cs; //spi cs pin
+  ofl.config.ofl_ser_bus = cfg.ofl_ser_bus; //serial bus
+  ofl.config.ofl_baud    = cfg.ofl_baud; //baud rate (0 = default)
+  ofl.setup();
 
   // GPS
   gps.config.gizmo = (Cfg::gps_gizmo_enum)cfg.gps_gizmo; //the gizmo to use
