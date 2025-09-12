@@ -28,7 +28,8 @@ SOFTWARE.
 #include "ofl.h"
 
 //the gizmos
-#include "OflGizmoPMW3901.h"
+#include "OflGizmoPMW3901.h" //SPI
+#include "OflGizmoPMW3901U.h" //UART
 
 //create global module instance
 Ofl ofl;
@@ -44,6 +45,9 @@ int Ofl::setup() {
       break;
     case Cfg::ofl_gizmo_enum::mf_PMW3901 :
       gizmo = OflGizmoPMW3901::create(&config, this);
+      break;
+    case Cfg::ofl_gizmo_enum::mf_PMW3901U :
+      gizmo = OflGizmoPMW3901U::create(&config, this);
       break;
   }
 

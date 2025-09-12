@@ -102,14 +102,18 @@ static void cli_spinmotors() {
 }
 
 static void cli_serial(int bus_id) {
+  MF_Serial *ser = hal_get_ser_bus(bus_id);
+  if(!ser) {
+     Serial.printf("serial - Error: serial port %d not configured.\n", bus_id);
+     return;
+  }
+
   //disable IMU interrupt
   void (*onUpdate_saved)(void) = imu.onUpdate;
   imu.onUpdate = nullptr;
-  
-  Serial.println("Dumping serial data, press enter to exit.");
 
   int cnt = 0;
-  MF_Serial *ser = hal_get_ser_bus(bus_id);
+  Serial.println("serial - Dumping serial data, press enter to exit.");
   while(Serial.available()) Serial.read(); //clear input 
   while(!Serial.available()) {
     int d = ser->read();
@@ -123,6 +127,8 @@ static void cli_serial(int bus_id) {
     }
   }
   while(Serial.available()) Serial.read(); //clear input
+
+  Serial.println("\nserial - DONE");
 
   //enable IMU interrupt
   imu.onUpdate = onUpdate_saved;
