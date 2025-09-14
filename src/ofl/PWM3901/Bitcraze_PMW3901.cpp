@@ -31,7 +31,7 @@ Bitcraze_PMW3901::Bitcraze_PMW3901(SPIClass* spi, uint8_t cspin)
   : _spi(spi), _cs(cspin)
 { }
 
-boolean Bitcraze_PMW3901::begin(void) {
+bool Bitcraze_PMW3901::begin(void) {
   // Setup SPI port
   _spi->begin();
   pinMode(_cs, OUTPUT);

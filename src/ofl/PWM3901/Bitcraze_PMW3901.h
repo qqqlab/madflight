@@ -34,7 +34,7 @@ class Bitcraze_PMW3901 {
 public:
   Bitcraze_PMW3901(SPIClass* spi, uint8_t cspin);
 
-  boolean begin(void);
+  bool begin(void);
 
   void readMotionCount(int16_t *deltaX, int16_t *deltaY);
   void enableFrameBuffer();
