@@ -32,7 +32,8 @@ class MF_SerialPtrWrapper : public MF_Serial {
     void begin(int baud)             override { _serial->begin(baud); }
     int available()                  override { return _serial->available(); }
     int availableForWrite()          override { return _serial->availableForWrite(); }
-    int read(uint8_t *buf, int len)  override { return _serial->readBytes(buf, len); }
+    // cast buf to char*, because STM USBSerial doesn't support uint8 for readBytes
+    int read(uint8_t *buf, int len)  override { return _serial->readBytes((char *) buf, len); }
     int write(uint8_t *buf, int len) override { return _serial->write(buf, len); }
 };
 
