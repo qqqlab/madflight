@@ -32,7 +32,7 @@ RclGizmoMavlink::RclGizmoMavlink(MF_Serial *ser_bus, uint32_t baud, uint16_t* pw
 
 //process received mavlink data
 bool RclGizmoMavlink::update() {
-  bool rv = receive(); //do receive first, not to fill up txbuf space with telemetry if we need to send a reply
+  bool rv = receive(); //do receive first, not to fill up txbuf space with telemetry if we need to send a reply to received messages
   telem_update();
   return rv;
 }
@@ -48,6 +48,7 @@ bool RclGizmoMavlink::receive() {
     uint8_t c;
     ser_bus->read(&c, 1);
     if (mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) {
+      //Serial.printf("MAV: %d\n",msg.msgid);
       switch (msg.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT: { //0
           //Serial.println("Received HEARTBEAT");

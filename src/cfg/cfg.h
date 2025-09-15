@@ -240,6 +240,13 @@ SOFTWARE.
 \
   /*v2.1.1 additions */ \
   MF_PARAM( mag_align,         0, int32_t, 'e', mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP) \
+\
+  /*v2.1.3 additions */ \
+  MF_PARAM( ofl_gizmo,         0, int32_t, 'e', mf_NONE,mf_PMW3901,mf_PMW3901U) \
+  MF_PARAM( ofl_spi_bus,      -1, int32_t, 'i') \
+  MF_PARAM( pin_ofl_cs,       -1, int32_t, 'p') \
+  MF_PARAM( ofl_ser_bus,      -1, int32_t, 'i') \
+  MF_PARAM( ofl_baud,          0, int32_t, 'i') \
 //end MF_PARAM_LIST
 
 

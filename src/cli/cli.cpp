@@ -12,6 +12,7 @@
 #include "../led/led.h"
 #include "../bbx/bbx.h"
 #include "../mag/mag.h"
+#include "../ofl/ofl.h"
 #include "../out/out.h"
 #include "../pid/pid.h"
 #include "../rcl/rcl.h"
@@ -26,7 +27,114 @@
 //create global module instance
 Cli cli;
 
-static void cli_print_overview() {
+static void cli_spinmotors() {
+  int mot_cnt = 0;
+  for(int i=0;i<OUT_SIZE;i++) {
+    if(out.getType(i) == 'M') mot_cnt++;
+  }
+  if(mot_cnt==0) {
+     Serial.println("Spin motors - no motors configured, exiting");
+     return;
+  }
+  Serial.println("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.");
+  while(Serial.available()) Serial.read(); //clear input 
+  char c;
+  while(!Serial.available());
+  c = Serial.read();
+  if(c!='g') return;
+  while(!Serial.available());
+  c = Serial.read();
+  if(c!='o') return;
+
+  while(Serial.available()) Serial.read(); //clear input
+
+  //disable IMU interrupt
+  void (*onUpdate_saved)(void) = imu.onUpdate;
+  imu.onUpdate = nullptr;
+
+  out.armed = true;
+  int i = -1;
+  float speed = 0;
+  const float maxspeed = 0.40;
+  const float speedstep = maxspeed/3000; //3 second up / 3 second down
+  int stage = 0;
+  while(!Serial.available()) {
+    switch(stage) {
+    case 0: //next motor
+      do {
+        i++;
+        if(i>=OUT_SIZE) i = 0;
+      } while(out.getType(i) != 'M');
+      Serial.printf("Spinning motor pin_out%d - press enter to exit\n", i);
+      speed = 0;
+      out.set(i, speed);
+      stage = 1;
+      break;
+    case 1: //spin up
+      speed += speedstep;
+      if(speed<maxspeed) {
+        out.set(i, speed);
+      }else{
+        stage = 2;
+      }
+      break;
+    case 2: //spin down
+      speed -= speedstep;
+      if(speed>0) {
+        out.set(i, speed);
+      }else{
+        speed = 0;
+        out.set(i, speed);
+        stage = 0;
+      }
+      break;
+    }
+    delay(1);
+  }
+  out.armed = false;
+
+  Serial.println("Spin motors - DONE");
+
+  //enable IMU interrupt
+  imu.onUpdate = onUpdate_saved;
+
+  while(Serial.available()) Serial.read(); //clear input
+}
+
+static void cli_serial(int bus_id) {
+  MF_Serial *ser = hal_get_ser_bus(bus_id);
+  if(!ser) {
+     Serial.printf("serial - Error: serial port %d not configured.\n", bus_id);
+     return;
+  }
+
+  //disable IMU interrupt
+  void (*onUpdate_saved)(void) = imu.onUpdate;
+  imu.onUpdate = nullptr;
+
+  int cnt = 0;
+  Serial.println("serial - Dumping serial data, press enter to exit.");
+  while(Serial.available()) Serial.read(); //clear input 
+  while(!Serial.available()) {
+    int d = ser->read();
+    if(d>=0) {
+      Serial.printf("%02X ",d);
+      cnt++;
+      if(cnt==32) {
+        Serial.println();
+        cnt=0;
+      }
+    }
+  }
+  while(Serial.available()) Serial.read(); //clear input
+
+  Serial.println("\nserial - DONE");
+
+  //enable IMU interrupt
+  imu.onUpdate = onUpdate_saved;
+}
+
+static void cli_po() {
   Serial.printf("rcl.pwm%d:%d\t", 1, rcl.pwm[0]);
   Serial.printf("rcl.roll:%+.2f\t", rcl.roll);
   Serial.printf("ahr.gx:%+.2f\t", ahr.gx);
@@ -40,33 +148,34 @@ static void cli_print_overview() {
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
 }
 
-static void cli_print_rcl_RadioPWM() {
-  Serial.printf("rcl_con:%d\t",rcl.connected());
+static void cli_ppwm() {
   for(int i=0;i<cfg.rcl_num_ch;i++) Serial.printf("pwm%d:%d\t",i+1,rcl.pwm[i]);
 }
 
-static void cli_print_rcl_RadioScaled() {
+static void cli_prcl() {
   Serial.printf("rcl.throttle:%.2f\t", rcl.throttle);
   Serial.printf("roll:%+.2f\t", rcl.roll);
   Serial.printf("pitch:%+.2f\t", rcl.pitch);
   Serial.printf("yaw:%+.2f\t", rcl.yaw);
   Serial.printf("armed:%d\t", rcl.armed);
   Serial.printf("flightmode:%d\t", rcl.flightmode);
+  Serial.printf("upd_count:%d\t", rcl.update_count());
+  Serial.printf("connected:%d\t",rcl.connected());
 }
 
-static void cli_print_imu_GyroData() {
+static void cli_pgyr() {
   Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahr.gx, ahr.gy, ahr.gz);
 }
 
-static void cli_print_imu_AccData() {
+static void cli_pacc() {
   Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahr.ax, ahr.ay, ahr.az);
 }
 
-static void cli_print_imu_MagData() {
+static void cli_pmag() {
   Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahr.mx, ahr.my, ahr.mz); 
 }
 
-static void cli_print_ahr_RollPitchYaw_verbose() {
+static void cli_pahr() {
     // from ahr.h:
   // roll in degrees: -180 to 180, roll right is +
   // pitch in degrees: -90 to 90, pitch up is +
@@ -77,17 +186,17 @@ static void cli_print_ahr_RollPitchYaw_verbose() {
   Serial.printf("roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
 }
 
-static void cli_print_ahr_RollPitchYaw() {
+static void cli_pah() {
   Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
 
-static void cli_print_control_PIDoutput() {
+static void cli_ppid() {
   Serial.printf("PID.roll:%+.3f\t",PIDroll.PID);
   Serial.printf("pitch:%+.3f\t",PIDpitch.PID);
   Serial.printf("yaw:%+.3f\t",PIDyaw.PID);
 }
 
-static void cli_print_out_Command() {
+static void cli_pout() {
   Serial.printf("out.armed:%d\t", out.armed);
   for(int i=0;i<OUT_SIZE;i++) {
     if(out.getType(i)) {
@@ -96,7 +205,7 @@ static void cli_print_out_Command() {
   }
 }
 
-static void cli_print_imu_Rate() {
+static void cli_pimu() {
   static uint32_t interrupt_cnt_last = 0;
   static uint32_t update_cnt_last = 0;
   static uint32_t ts_last = 0;
@@ -134,20 +243,20 @@ static void cli_print_imu_Rate() {
   imu.statReset();
 }
 
-static void cli_print_bat() {
+static void cli_pbat() {
   Serial.printf("bat.v:%.2f\t",bat.v);
   Serial.printf("bat.i:%+.2f\t",bat.i);
   Serial.printf("bat.mah:%+.2f\t",bat.mah);
   Serial.printf("bat.wh:%+.2f\t",bat.wh); 
 }
 
-static void cli_print_bar() {
+static void cli_pbar() {
   Serial.printf("bar.alt:%.2f\t", bar.alt);
   Serial.printf("press:%.1f\t", bar.press);
   Serial.printf("temp:%.2f\t", bar.temp);
 }
 
-static void cli_print_gps() {
+static void cli_pgps() {
   Serial.printf("gps.time:%d\t", (int)gps.time);
   Serial.printf("fix:%d\t", (int)gps.fix);
   //Serial.printf("date:%d\t", (int)gps.date);
@@ -157,7 +266,7 @@ static void cli_print_gps() {
   Serial.printf("alt:%.3f\t", (float)gps.alt/1000.0);
 }
 
-static void cli_print_alt() {
+static void cli_palt() {
   char s[100];
   alt.toString(s);
   Serial.print(s);
@@ -165,8 +274,15 @@ static void cli_print_alt() {
   Serial.printf("ahr.aup:%.2f\t", ahr.getAccelUp());
 }
 
-static void cli_print_rdr() {
+static void cli_prdr() {
   Serial.printf("rdr.dist:%d\t", rdr.dist);
+}
+
+static void cli_pofl() {
+  Serial.printf("ofl.dx:%d\t", ofl.dx);
+  Serial.printf("ofl.dy:%d\t", ofl.dy);
+  Serial.printf("ofl.dt:%d\t", (int)ofl.dt);
+  //Serial.printf("ofl.ts:%d\t", (int)ofl.ts);
 }
 
 struct cli_print_s {
@@ -175,28 +291,28 @@ struct cli_print_s {
   void (*function)(void);
 };
 
-#define CLI_PRINT_FLAG_COUNT 16
-bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
+#define CLI_PRINT_FLAG_COUNT 17
 
 static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
-  {"po",     "Overview", cli_print_overview},
-  {"ppwm",   "Radio pwm (expected: 1000 to 2000)", cli_print_rcl_RadioPWM},
-  {"prcl",   "Scaled radio (expected: -1 to 1)", cli_print_rcl_RadioScaled},
-  {"pimu",   "IMU loop timing (expected: miss% <= 1)", cli_print_imu_Rate},
-  {"pgyr",   "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_print_imu_GyroData},
-  {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_print_imu_AccData},
-  {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_print_imu_MagData},
-  {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw_verbose},
-  {"pah",    "AHRS roll, pitch, and yaw in less verbose format (expected: degrees, 0 when level)", cli_print_ahr_RollPitchYaw},
-  {"ppid",   "PID output (expected: -1 to 1)", cli_print_control_PIDoutput},
-  {"pout",   "Motor/servo output (expected: 0 to 1)", cli_print_out_Command},
-  {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_print_bat},
-  {"pbar",   "Barometer", cli_print_bar},
-  {"palt",   "Altitude estimator", cli_print_alt},
-  {"pgps",   "GPS", cli_print_gps},
-  {"prdr",   "Radar", cli_print_rdr},
+  {"po",     "Overview", cli_po},
+  {"ppwm",   "Radio pwm (expected: 1000 to 2000)", cli_ppwm},
+  {"prcl",   "Scaled radio (expected: -1 to 1)", cli_prcl},
+  {"pimu",   "IMU loop timing (expected: miss% <= 1)", cli_pimu},
+  {"pgyr",   "Filtered gyro (expected: -250 to 250, 0 at rest)", cli_pgyr},
+  {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_pacc},
+  {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_pmag},
+  {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_pahr},
+  {"pah",    "AHRS roll, pitch, and yaw in less verbose format (expected: degrees, 0 when level)", cli_pah},
+  {"ppid",   "PID output (expected: -1 to 1)", cli_ppid},
+  {"pout",   "Motor/servo output (expected: 0 to 1)", cli_pout},
+  {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_pbat},
+  {"pbar",   "Barometer", cli_pbar},
+  {"palt",   "Altitude estimator", cli_palt},
+  {"pgps",   "GPS", cli_pgps},
+  {"prdr",   "Radar", cli_prdr},
+  {"pofl",   "Optical Flow", cli_pofl},
 };
-
+bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
 
 
@@ -213,12 +329,14 @@ bool Cli::update() {
     bool rv = false;
     while(Serial.available()) {
       uint8_t c = Serial.read();
+#ifndef ARDUINO_ARCH_STM32
       if(c == 0xFD || c == 0xFE) { //mavlink v1,v2 protocol header byte
         auto ser = &Serial;
         MF_Serial *ser_bus = new MF_SerialPtrWrapper<decltype(ser)>( ser );
         mavlink = new RclGizmoMavlink(ser_bus, 115200, nullptr);
         return false;
       }
+#endif
       if(cmd_process_char(c)) rv = true;
     }
 
@@ -235,10 +353,12 @@ void Cli::begin() {
 
 void Cli::help() {
   Serial.printf(
-  "-- INFO & TOOLS --\n"
+  "-- TOOLS --\n"
   "help or ? This info\n"
   "ps        Task list\n"
   "i2c       I2C scan\n"
+  "serial <bus_id>   Print serial data\n"
+  "spinmotors\n"
   "reboot    Reboot flight controller\n"
   "-- PRINT --\n"
   "poff      Printing off\n"
@@ -408,6 +528,10 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     RclCalibrate::calibrate();
   }else if (cmd == "ps") {
     freertos_ps();
+  }else if (cmd == "serial") {
+    cli_serial(arg1.toInt());
+  }else if (cmd == "spinmotors") {
+    cli_spinmotors();
   }else if (cmd != "") {
     Serial.println("ERROR Unknown command - Type help for help");
   }

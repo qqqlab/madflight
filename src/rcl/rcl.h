@@ -55,6 +55,7 @@ class Rcl {
     int setup();   // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if channel pwm data was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+    int update_count() {return _update_count;} //Returns the number of channel packets the gizmo received
 
     bool connected();
     void calibrate(); //interactive calibration
@@ -90,6 +91,7 @@ class Rcl {
     uint16_t st_flt_spacing;
     bool _arm_sw_prev = true; //default to true, to require arm switch first off, then on to enter armed state!
     uint32_t _arm_ts = 0;
+    int _update_count = 0;
 };
 
 extern Rcl rcl;
