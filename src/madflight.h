@@ -63,7 +63,7 @@ extern const char madflight_config[]; //madflight_config should be defined befor
 #include "mag/mag.h" //Magnetometer sensor
 #include "ofl/ofl.h" //Optical flow sensor
 #include "out/out.h" //Outputs (motor, servo)
-#include "pid/pid.h" //PID control
+#include "pid/pid.h" //PIDController control
 #include "rcl/rcl.h" //RC radio link
 #include "rdr/rdr.h" //Radar, lidar, ultrasonic sensors
 #include "veh/veh.h" //Vehicle info

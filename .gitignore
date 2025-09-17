@@ -1,7 +1,4 @@
-examples/.pio
-examples/.vscode
 .pio
 .vscode
-platformio.ini
 src/main.cpp
 src/madflight_config.h

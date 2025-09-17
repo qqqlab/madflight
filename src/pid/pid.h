@@ -24,9 +24,18 @@ SOFTWARE.
 
 #pragma once
 
-class PID {
+class Pid {
   public:
-    float PID = 0; //PID output value
+    //PIDController outputs for CLI
+    float roll = 0;
+    float pitch = 0;
+    float yaw = 0;
+};
+extern Pid pid;
+
+class PIDController {
+  public:
+    float output = 0; //PIDController output value
 
     float err_i = 0; //integral error
     float err_prev = 0; //previous error
@@ -36,10 +45,25 @@ class PID {
     float kd = 0; //Kd
     float kscale = 1; //scale factor
     float klimit_i = 0; //err_i is limited to -limit_i to +limit_i
-    
-    float control(float actual, float desired, float dt);
+
+    PIDController(float kp, float ki, float kd, float kscale, float klimit_i) {
+      this->kp = kp;
+      this->ki = ki;
+      this->kd = kd;
+      this->kscale = kscale;
+      this->klimit_i = klimit_i;
+    }
+
+    float control(float desired, float actual, float dt);
+    float control(float desired, float actual, float dt, float err_d);
+
+    // Control a 360 degree value (wraps around correctly)
+    float controlDegrees(float desired, float actual, float dt);
+    float controlDegrees(float desired, float actual, float dt, float err_d);
+
+    void reset(); //reset err_i and err_prev
+
+    static float degreeModulus(float v); //returns angle in range -180 to 180
 };
 
-extern PID PIDroll;
-extern PID PIDpitch;
-extern PID PIDyaw;
+

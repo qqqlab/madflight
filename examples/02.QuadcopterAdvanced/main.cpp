@@ -34,11 +34,11 @@ Arming/disarming with sticks (when no arm switch is defined, i.e. cfg.rcl_arm_ch
 LED State                              Meaning
 ---------                              -------
 OFF                                    Not powered
-ON                                     Startup (don't move, running gyro calibration)
-Blinking long OFF short ON             DISARMED
-Blinking long ON short OFF             ARMED
+ON (blue)                              Startup (don't move, running gyro calibration)
+Blinking long OFF short ON (green)     DISARMED
+Blinking long ON short OFF (red)       ARMED
 Blink interval longer than 1 second    imu_loop() is taking too much time
-fast blinking                          Something is wrong, connect USB serial for info
+Fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
 Copyright (c) 2023-2025 https://madflight.com
@@ -49,16 +49,15 @@ Copyright (c) 2023-2025 https://madflight.com
 #define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_ACRO, AP_COPTER_FLIGHTMODE_STABILIZE} //mapping of fightmode index to ArduPilot code for logging and mavlink
 #define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
 enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
-flightmode_enum rcin_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}; //flightmode mapping from 2/3/6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+flightmode_enum rcl_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}; //flightmode mapping from 2/3/6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
 //prototypes (for PlatformIO, not needed for Arduino IDE)
 void led_Blink();
-float degreeModulus(float v);
-void control_Angle(bool zero_integrators);
-void control_Rate(bool zero_integrators);
+void control_Angle();
+void control_Rate();
 void out_KillSwitchAndFailsafe();
 void out_Mixer();
 
@@ -66,31 +65,28 @@ void out_Mixer();
 //                                               USER-SPECIFIED VARIABLES                                                 //
 //========================================================================================================================//
 
-//IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
+// IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
 const float armed_min_throttle = 0.20; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
 
-//Controller parameters (take note of defaults before modifying!): 
-const float i_limit        = 25.0;      //Integrator saturation level, mostly for safety (default 25.0)
+// Controller parameters (take note of defaults before modifying!): 
 const float maxRoll        = 30.0;      //Max roll angle in degrees for angle mode (maximum ~70 degrees)
 const float maxPitch       = 30.0;      //Max pitch angle in degrees for angle mode (maximum ~70 degrees)
 const float maxRollRate    = 60.0;      //Max roll rate in deg/sec for rate mode 
 const float maxPitchRate   = 60.0;      //Max pitch rate in deg/sec for rate mode
 const float maxYawRate     = 160.0;     //Max yaw rate in deg/sec for angle and rate mode
 
-//PID Angle Mode 
-const float Kp_ro_pi_angle  = 0.2;      //Roll/Pitch P-gain
-const float Ki_ro_pi_angle  = 0.1;      //Roll/Pitch I-gain
-const float Kd_ro_pi_angle  = 0.05;     //Roll/Pitch D-gain
-const float Kp_yaw_angle    = 0.6;      //Yaw P-gain
-const float Kd_yaw_angle    = 0.1;      //Yaw D-gain
+// PID controllers for ANGLE Mode - Kp, Ki, Kd, scale_factor, i_limit
+PIDController pidRol(2.0, 1.0, 0.5, 0.001, 250); //Roll (deg)
+PIDController pidPit(2.0, 1.0, 0.5, 0.001, 250); //Pitch (deg)
+PIDController pidYaw(6.0, 0.0, 1.0, 0.001, 250); //Yaw (deg)
 
-//PID Rate Mode 
-const float Kp_ro_pi_rate   = 0.15;     //Roll/Pitch rate P-gain
-const float Ki_ro_pi_rate   = 0.2;      //Roll/Pitch rate I-gain
-const float Kd_ro_pi_rate   = 0.0002;   //Roll/Pitch rate D-gain (be careful when increasing too high, motors will begin to overheat!)
-const float Kp_yaw_rate     = 0.3;       //Yaw rate P-gain
-const float Ki_yaw_rate     = 0.05;      //Yaw rate I-gain
-const float Kd_yaw_rate     = 0.00015;   //Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
+// PID controllers for RATE Mode - Kp, Ki, Kd, scale_factor, i_limit
+PIDController pidRolRate(1.5, 2.0, 0.0020, 0.001, 250); //Roll Rate (deg/s)
+PIDController pidPitRate(1.5, 2.0, 0.0020, 0.001, 250); //Pitch Rate (deg/s)
+PIDController pidYawRate(3.0, 0.5, 0.0015, 0.001, 250); //Yaw Rate (deg/s)
+
+// Be careful when increasing Kd too high, motors will begin to overheat!
+// PIDController scale_factor is 0.001 to bring PID output to -1.0 to +1.0 range
 
 //Yaw to keep in ANGLE mode when yaw stick is centered
 float yaw_desired = 0;
@@ -100,8 +96,7 @@ float yaw_desired = 0;
 //========================================================================================================================//
 
 void setup() {
-  // Setup madflight modules: cli Serial.begin(115200), imu, radio link, led, etc.
-  madflight_setup();
+  madflight_setup(); //setup madflight modules
 
   // STOP if imu is not installed
   if(!imu.installed()) madflight_die("This program needs an IMU.");
@@ -129,27 +124,29 @@ void loop() {
   rdr.update(); // radar (not used in this example)
   ofl.update(); // optical flow (not used in this example)
   
-  //battery sensor, and log if battery was updated.
+  //update battery sensor, log if updated (except for logging, not used in this example)
   if(bat.update()) { 
     bbx.log_bat();
   } 
   
+  //update altitude estimator (not used in this example)
   alt.updateAccelUp(ahr.getAccelUp(), ahr.ts); //NOTE: do this here and not in imu_loop() because `alt` object is not thread safe. - Update altitude estimator with current earth-frame up acceleration measurement
   
+  //update barometer sensor, log if updated (except for logging, not used in this example)
   if(bar.update()) {
     alt.updateBarAlt(bar.alt, bar.ts); //update altitude estimator with current altitude measurement
     bbx.log_bar(); //log if pressure updated
   }
 
-  mag.update(); //magnetometer
+  mag.update(); //magnetometer (used to calculate yaw heading)
   
-  //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
+  //update gps, and log GPS and ATT for plot.ardupilot.org visualization  (except for logging, not used in this example)
   if(gps.update()) {
     bbx.log_gps(); 
     bbx.log_att();
   } 
 
-  //logging
+  //log system status
   static uint32_t log_ts = 0;
   if(millis() - log_ts > 100) {
     log_ts = millis();
@@ -173,17 +170,29 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcl.update();
-  if(rcl.connected() && veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] )) { //map rcl.flightmode (0 to 5) to vehicle flightmode
+  if(rcl.connected() && veh.setFlightmode( rcl_to_flightmode_map[rcl.flightmode] )) { //map rcl.flightmode (0 to 5) to vehicle flightmode
     Serial.printf("Flightmode:%s\n",veh.flightmode_name());
   }
 
-  //PID Controller
+  //Zero the PID integrators if throttle is zero (don't let integrator build if throttle is too low, or to re-start the controller)
+  if(rcl.throttle == 0) {
+    pidRol.reset();
+    pidPit.reset();
+    pidYaw.reset();
+    pidRolRate.reset();
+    pidPitRate.reset();
+    pidYawRate.reset();
+    //on reset, set desired yaw to current yaw
+    yaw_desired = ahr.yaw; 
+  }
+
+  //Select PID controller based on flight mode switch
   switch( veh.getFlightmode() ) {
     case ANGLE: 
-      control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
+      control_Angle(); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;
     default: //RATE 
-      control_Rate(rcl.throttle == 0); //Stabilize on rate setpoint
+      control_Rate(); //Stabilize on rate setpoint
   }
 
   //Updates out.arm, the output armed flag
@@ -207,139 +216,35 @@ void led_Blink() {
   if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
-//returns angle in range -180 to 180
-float degreeModulus(float v) {
-  if(v >= 180) {
-    return fmod(v + 180, 360) - 180;
-  }else if(v < -180.0) {
-    return fmod(v - 180, 360) + 180;
-  }
-  return v;
+void control_Rate() {
+  //Computes control commands based on radio control (RCL) inputs and actual gyro rates
+
+  //Roll rate, pitch rate, yaw rate PID control - get desired rate from radio controller and stablize on rate from gyro
+  pid.roll = pidRol.control(rcl.roll  * maxRollRate,  ahr.gx, imu.dt);
+  pid.pitch = pidPit.control(rcl.pitch * maxPitchRate, ahr.gy, imu.dt); 
+  pid.yaw = pidPit.control(rcl.yaw   * maxYawRate,   ahr.gz, imu.dt);
 }
 
-void control_Angle(bool zero_integrators) {
-  //DESCRIPTION: Computes control commands based on angle error
-  /*
-   * Basic PID control to stablize on angle setpoint based on desired states roll_des, pitch_des, and yaw_des. Error
-   * is simply the desired state minus the actual state (ex. roll_des - ahr.roll). Two safety features
-   * are implimented here regarding the I terms. The I terms are saturated within specified limits on startup to prevent 
-   * excessive buildup. This can be seen by holding the vehicle at an angle and seeing the motors ramp up on one side until
-   * they've maxed out throttle... saturating I to a specified limit fixes this. The second feature defaults the I terms to 0
-   * if the throttle is at the minimum setting. This means the motors will not start spooling up on the ground, and the I 
-   * terms will always start from 0 on takeoff. This function updates the variables PIDroll.PID, PIDpitch.PID, and PIDyaw.PID which
-   * can be thought of as 1-D stablized signals. They are mixed to the configuration of the vehicle in out_Mixer().
-   */ 
+void control_Angle() {
+  //Computes control commands based on radio control (RCL) inputs and actual roll, pitch, yaw angles
 
-  //inputs: roll_des, pitch_des, yawRate_des
-  //outputs: PIDroll.PID, PIDpitch.PID, PIDyaw.PID
+  //Roll PID - use actual gyro roll rate (ahr.gx) instead of derivative error
+  pid.roll = pidRol.controlDegrees(rcl.roll * maxRoll, ahr.roll, imu.dt, ahr.gx);
 
-  //desired values
-  float roll_des = rcl.roll * maxRoll; //Between -maxRoll and +maxRoll
-  float pitch_des = rcl.pitch * maxPitch; //Between -maxPitch and +maxPitch
-  float yawRate_des = rcl.yaw * maxYawRate; //Between -maxYawRate roll_PIDand +maxYawRate
-
-  //state vars
-  static float integral_roll, integral_pitch, error_yawRate_prev, integral_yawRate;
-
-  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
-  if(zero_integrators) {
-    integral_roll = 0;
-    integral_pitch = 0;
-    integral_yawRate = 0;
-  }
-
-  //Roll PID
-  float error_roll = roll_des - ahr.roll;
-  integral_roll += error_roll * imu.dt;
-  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = ahr.gx;
-  PIDroll.PID = 0.01 * (Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll - Kd_ro_pi_angle*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
-
-  //Pitch PID
-  float error_pitch = pitch_des - ahr.pitch;
-  integral_pitch += error_pitch * imu.dt;
-  integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = ahr.gy; 
-  PIDpitch.PID = 0.01 * (Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch - Kd_ro_pi_angle*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
+  //Pitch PID - use actual gyro pitch rate (ahr.gy) instead of derivative error
+  pid.pitch = pidPit.controlDegrees(rcl.pitch * maxPitch, ahr.pitch, imu.dt, ahr.gy);
 
   //Yaw PID
   if(-0.02 < rcl.yaw && rcl.yaw < 0.02) {
-    //on reset, set desired yaw to current yaw
-    if(zero_integrators) yaw_desired = ahr.yaw; 
-
     //Yaw stick centered: hold yaw_desired
-    float error_yaw = degreeModulus(yaw_desired - ahr.yaw);
-    float desired_yawRate = error_yaw / 0.5; //set desired yawRate such that it gets us to desired yaw in 0.5 second
-    float derivative_yaw = desired_yawRate - ahr.gz;
-    PIDyaw.PID = 0.01 * (Kp_yaw_angle*error_yaw + Kd_yaw_angle*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
-
-    //update yaw rate controller
-    error_yawRate_prev = 0;
+    pid.yaw = pidYaw.controlDegrees(yaw_desired, ahr.yaw, imu.dt, ahr.gz);
   }else{
     //Yaw stick not centered: stablize on rate from GyroZ
-    float error_yawRate = yawRate_des - ahr.gz;
-    integral_yawRate += error_yawRate * imu.dt;
-    integral_yawRate = constrain(integral_yawRate, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-    float derivative_yawRate = (error_yawRate - error_yawRate_prev) / imu.dt; 
-    PIDyaw.PID = 0.01 * (Kp_yaw_rate*error_yawRate + Ki_yaw_rate*integral_yawRate + Kd_yaw_rate*derivative_yawRate); //Scaled by .01 to bring within -1 to 1 range
+    pid.yaw = pidYawRate.controlDegrees(rcl.yaw * maxYawRate, ahr.gz, imu.dt);
 
-    //Update derivative variables
-    error_yawRate_prev = error_yawRate;
-
-    //update yaw controller: 
-    yaw_desired = ahr.yaw; //set desired yaw to current yaw, the yaw angle controller will hold this value
+    //set desired yaw to current yaw, the yaw angle controller will hold this value
+    yaw_desired = ahr.yaw; 
   }
-}
-
-void control_Rate(bool zero_integrators) {
-  //Computes control commands based on state error (rate)
-  //See explanation for control_Angle(). Everything is the same here except the error is now: desired rate - raw gyro reading.
-
-  //inputs: roll_des, pitch_des, yawRate_des
-  //outputs: PIDroll.PID, PIDpitch.PID, PIDyaw.PID
-
-  //desired values
-  float rollRate_des = rcl.roll * maxRollRate; //Between -maxRoll and +maxRoll
-  float pitchRate_des = rcl.pitch * maxPitchRate; //Between -maxPitch and +maxPitch
-  float yawRate_des = rcl.yaw * maxYawRate; //Between -maxYawRate and +maxYawRate 
-  
-  //state vars
-  static float integral_roll, error_roll_prev;
-  static float integral_pitch, error_pitch_prev;
-  static float integral_yaw, error_yaw_prev;
-
-  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
-  if(zero_integrators) {
-    integral_roll = 0;
-    integral_pitch = 0;
-    integral_yaw = 0;
-  }
-
-  //Roll
-  float error_roll = rollRate_des - ahr.gx;
-  integral_roll += error_roll * imu.dt;
-  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = (error_roll - error_roll_prev) / imu.dt;
-  PIDroll.PID = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
-
-  //Pitch
-  float error_pitch = pitchRate_des - ahr.gy;
-  integral_pitch += error_pitch * imu.dt;
-  integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt;   
-  PIDpitch.PID = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
-
-  //Yaw, stablize on rate from GyroZ
-  float error_yaw = yawRate_des - ahr.gz;
-  integral_yaw += error_yaw * imu.dt;
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
-  PIDyaw.PID = 0.01 * (Kp_yaw_rate*error_yaw + Ki_yaw_rate*integral_yaw + Kd_yaw_rate*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
-
-  //Update derivative variables
-  error_roll_prev = error_roll;
-  error_pitch_prev = error_pitch;
-  error_yaw_prev = error_yaw;
 }
 
 void out_KillSwitchAndFailsafe() {
@@ -366,17 +271,17 @@ void out_KillSwitchAndFailsafe() {
 void out_Mixer() {
   //DESCRIPTION: Mixes scaled commands from PID controller to actuator outputs based on vehicle configuration
   /*
-   * Takes PIDroll.PID, PIDpitch.PID, and PIDyaw.PID computed from the PID controller and appropriately mixes them for the desired
-   * vehicle configuration. For example on a quadcopter, the left two motors should have +PIDroll.PID while the right two motors
-   * should have -PIDroll.PID. Front two should have +PIDpitch.PID and the back two should have -PIDpitch.PID etc... every motor has
-   * normalized (0 to 1) rcl.throttle command for throttle control. Can also apply direct unstabilized commands from the transmitter with 
-   * rcl.xxx variables are to be sent to the motor ESCs and servos.
+   * Takes pid.roll, pid.pitch, and pid.yaw computed from the PID controller and appropriately mixes them for the desired
+   * vehicle configuration. For example on a quadcopter, the left two motors should have +pid.roll while the right two motors
+   * should have -pid.roll. Front two should have +pid.pitch and the back two should have -pid.pitch etc... every motor has
+   * normalized (0 to 1) rcl.throttle command for throttle control. You can also apply direct unstabilized commands from the 
+   * transmitter with rcl.xxx variables are to be sent to the motor ESCs and servos.
    * 
-   *Relevant variables:
-   *rcl.throtle - direct thottle control
-   *PIDroll.PID, PIDpitch.PID, PIDyaw.PID - stabilized axis variables
-   *rcl.roll, rcl.pitch, rcl.yaw - direct unstabilized command passthrough
-   *rcl.flight_mode - can be used to toggle things with an 'if' statement
+   * Relevant variables:
+   *   rcl.throtle - direct thottle control
+   *   pid.roll, pid.pitch, pid.yaw - stabilized axis variables
+   *   rcl.roll, rcl.pitch, rcl.yaw - direct unstabilized command passthrough
+   *   rcl.flight_mode - can be used to toggle things with an 'if' statement
    */
 /*
 Motor order diagram (Betaflight order)
@@ -408,9 +313,9 @@ Yaw right               (CCW+ CW-)       -++-
     out.set(3, thr);
   }else{
     // Quad mixing
-    out.set(0, thr - PIDpitch.PID - PIDroll.PID - PIDyaw.PID); //M1 Back Right CW
-    out.set(1, thr + PIDpitch.PID - PIDroll.PID + PIDyaw.PID); //M2 Front Right CCW
-    out.set(2, thr - PIDpitch.PID + PIDroll.PID + PIDyaw.PID); //M3 Back Left CCW
-    out.set(3, thr + PIDpitch.PID + PIDroll.PID - PIDyaw.PID); //M4 Front Left CW
+    out.set(0, thr - pid.pitch - pid.roll - pid.yaw); //OUT0 Motor1 Back Right CW
+    out.set(1, thr + pid.pitch - pid.roll + pid.yaw); //OUT1 Motor2 Front Right CCW
+    out.set(2, thr - pid.pitch + pid.roll + pid.yaw); //OUT2 Motor3 Back Left CCW
+    out.set(3, thr + pid.pitch + pid.roll - pid.yaw); //OUT3 Motor4 Front Left CW
   }
 }

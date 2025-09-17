@@ -141,7 +141,7 @@ static void cli_po() {
   Serial.printf("ahr.ax:%+.2f\t", ahr.ax);
   Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
-  Serial.printf("PID.roll:%+.3f\t", PIDroll.PID);
+  Serial.printf("pid.roll:%+.3f\t", pid.roll);
   Serial.printf("out.%c%d%%:%1.0f\t", out.getType(0), 0, 100*out.get(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
@@ -191,9 +191,9 @@ static void cli_pah() {
 }
 
 static void cli_ppid() {
-  Serial.printf("PID.roll:%+.3f\t",PIDroll.PID);
-  Serial.printf("pitch:%+.3f\t",PIDpitch.PID);
-  Serial.printf("yaw:%+.3f\t",PIDyaw.PID);
+  Serial.printf("pid.roll:%+.3f\t",pid.roll);
+  Serial.printf("pitch:%+.3f\t",pid.pitch);
+  Serial.printf("yaw:%+.3f\t",pid.yaw);
 }
 
 static void cli_pout() {
