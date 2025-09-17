@@ -186,4 +186,8 @@ public:
   size_t readBytes(uint8_t *buf, size_t len) {
     return read(buf, len);
   }
+
+  int readBytes(char *buf, int len) {
+    return read((uint8_t*)buf, len);
+  }
 };

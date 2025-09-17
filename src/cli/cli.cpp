@@ -329,14 +329,12 @@ bool Cli::update() {
     bool rv = false;
     while(Serial.available()) {
       uint8_t c = Serial.read();
-#ifndef ARDUINO_ARCH_STM32
       if(c == 0xFD || c == 0xFE) { //mavlink v1,v2 protocol header byte
         auto ser = &Serial;
         MF_Serial *ser_bus = new MF_SerialPtrWrapper<decltype(ser)>( ser );
         mavlink = new RclGizmoMavlink(ser_bus, 115200, nullptr);
         return false;
       }
-#endif
       if(cmd_process_char(c)) rv = true;
     }
 
