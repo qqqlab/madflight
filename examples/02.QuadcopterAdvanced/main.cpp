@@ -229,15 +229,15 @@ void control_Angle() {
   //Computes control commands based on radio control (RCL) inputs and actual roll, pitch, yaw angles
 
   //Roll PID - use actual gyro roll rate (ahr.gx) instead of derivative error
-  pid.roll = pidRol.controlDegrees(rcl.roll * maxRoll, ahr.roll, imu.dt, ahr.gx);
+  pid.roll = pidRol.controlDegreesActualDerivative(rcl.roll * maxRoll, ahr.roll, imu.dt, ahr.gx);
 
   //Pitch PID - use actual gyro pitch rate (ahr.gy) instead of derivative error
-  pid.pitch = pidPit.controlDegrees(rcl.pitch * maxPitch, ahr.pitch, imu.dt, ahr.gy);
+  pid.pitch = pidPit.controlDegreesActualDerivative(rcl.pitch * maxPitch, ahr.pitch, imu.dt, ahr.gy);
 
   //Yaw PID
   if(-0.02 < rcl.yaw && rcl.yaw < 0.02) {
     //Yaw stick centered: hold yaw_desired
-    pid.yaw = pidYaw.controlDegrees(yaw_desired, ahr.yaw, imu.dt, ahr.gz);
+    pid.yaw = pidYaw.controlDegreesActualDerivative(yaw_desired, ahr.yaw, imu.dt, ahr.gz);
   }else{
     //Yaw stick not centered: stablize on rate from GyroZ
     pid.yaw = pidYawRate.controlDegrees(rcl.yaw * maxYawRate, ahr.gz, imu.dt);

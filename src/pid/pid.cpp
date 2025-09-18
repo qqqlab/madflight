@@ -40,7 +40,7 @@ float PIDController::control(float desired, float actual, float dt) {
 }
 
 // With user provided actual_derivative (velocity)
-float PIDController::control(float desired, float actual, float dt, float actual_derivative) {
+float PIDController::controlActualDerivative(float desired, float actual, float dt, float actual_derivative) {
   float err = desired - actual;
   err_i += err * dt;
   //Saturate integrator to prevent unsafe buildup
@@ -66,7 +66,7 @@ float PIDController::controlDegrees(float desired, float actual, float dt) {
 }
 
 // Control a 360 degree value, with user provided actual_derivative (velocity)
-float PIDController::controlDegrees(float desired, float actual, float dt, float actual_derivative) {
+float PIDController::controlDegreesActualDerivative(float desired, float actual, float dt, float actual_derivative) {
   float err = degreeModulus(desired - actual);
   err_i += err * dt;
   //Saturate integrator to prevent unsafe buildup

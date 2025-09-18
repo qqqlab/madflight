@@ -229,7 +229,7 @@ SOFTWARE.
   MF_PARAM( rcl_deadband,      0, int32_t, 'i') \
 \
   /*RDR - Radar*/ \
-  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04) \
+  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04,mf_DTS6012M) \
   MF_PARAM( rdr_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rdr_baud,          0, int32_t, 'i') \
 \

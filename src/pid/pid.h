@@ -55,11 +55,11 @@ class PIDController {
     }
 
     float control(float desired, float actual, float dt);
-    float control(float desired, float actual, float dt, float err_d);
+    float controlActualDerivative(float desired, float actual, float dt, float actual_derivative);
 
     // Control a 360 degree value (wraps around correctly)
     float controlDegrees(float desired, float actual, float dt);
-    float controlDegrees(float desired, float actual, float dt, float err_d);
+    float controlDegreesActualDerivative(float desired, float actual, float dt, float actual_derivative);
 
     void reset(); //reset err_i and err_prev
 

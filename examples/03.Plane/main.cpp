@@ -239,10 +239,10 @@ In FBWA mode the rudder is under manual control.
   float pitch_des = rcl.pitch * maxPitch + fbwa_pitch_offset; //Between fbwa_pitch_offset-maxPitch and fbwa_pitch_offset+maxPitch
 
   //Roll PID - stabilize desired roll angle
-  pid.roll = pidRol.controlDegrees(roll_des, ahr.roll, imu.dt, ahr.gx);
+  pid.roll = pidRol.controlDegreesActualDerivative(roll_des, ahr.roll, imu.dt, ahr.gx);
 
   //Pitch PID - stabilize desired pitch angle
-  pid.pitch = pidPit.controlDegrees(pitch_des, ahr.pitch, imu.dt, ahr.gy);
+  pid.pitch = pidPit.controlDegreesActualDerivative(pitch_des, ahr.pitch, imu.dt, ahr.gy);
 
   //Yaw PID - passthru rcl
   pid.yaw = rcl.yaw;
@@ -266,7 +266,7 @@ void control_ROLL() {
   float roll_des = rcl.roll * maxRoll; //Between -maxRoll and +maxRoll
 
   //Roll PID - stabilize desired roll angle
-  pid.roll = pidRol.controlDegrees(roll_des, ahr.roll, imu.dt, ahr.gx);
+  pid.roll = pidRol.controlDegreesActualDerivative(roll_des, ahr.roll, imu.dt, ahr.gx);
 
   //Pitch PID - passthru rcl
   pid.pitch = rcl.pitch;
