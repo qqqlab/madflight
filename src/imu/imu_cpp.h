@@ -388,6 +388,11 @@ void _imu_ll_interrupt_handler();
   void _imu_ll_interrupt_setup(int interrupt_pin) {
     Serial.println(MF_MOD ": IMU_EXEC_IRQ");
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
+    #ifdef ARDUINO_ARCH_STM32
+      // (#79) on stm32, increase the interrupt priority, otherwise it does not get called
+      // configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY is the maximum priority allowed for interrupts that needs to call FreeRTOS api
+      HAL_NVIC_SetPriority(hal_get_irqn_from_pin(interrupt_pin), 0, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    #endif
   }
 
   inline void _imu_ll_interrupt_handler2() {

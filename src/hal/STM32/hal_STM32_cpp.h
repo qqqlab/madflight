@@ -204,6 +204,30 @@ void hal_print_pin_name(int pinnum) {
   }
 }
 
+IRQn_Type hal_get_irqn_from_pin(int pin) {
+  // converts an arduino pin number to a STM32 HAL interrupt id
+  // taken from https://github.com/stm32duino/Arduino_Core_STM32/blob/main/libraries/SrcWrapper/src/stm32/interrupt.cpp#L158
+  PinName pinName = digitalPinToPinName(pin);
+  uint16_t gpioPin = STM_GPIO_PIN(pinName);
+  uint8_t id = 0;
+
+  while (gpioPin != 0x0001) {
+    gpioPin = gpioPin >> 1;
+    id++;
+  }
+
+  switch (id) {
+    case 0: return EXTI0_IRQn;
+    case 1: return EXTI1_IRQn;
+    case 2: return EXTI2_IRQn;
+    case 3: return EXTI3_IRQn;
+    case 4: return EXTI4_IRQn;
+    case 5: case 6: case 7: case 8: case 9:
+      return EXTI9_5_IRQn;
+    default:
+      return EXTI15_10_IRQn;
+  }
+}
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
