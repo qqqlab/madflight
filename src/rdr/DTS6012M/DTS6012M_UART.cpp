@@ -1,4 +1,4 @@
-//modified for madflight: MF_Serial
+//modified for madflight: MF_Serial, retry on init, stricter parser
 
 #include "DTS6012M_UART.h"
 
@@ -10,15 +10,13 @@ DTS6012M_UART::DTS6012M_UART()
 {
   // Initialize private member variables
   _rxBufferIndex = 0;
-  _distancePrimary_mm = 0xFFFF; // Initialize distance to invalid value
+  _distancePrimary_mm = -1; // Initialize distance to 'no distance' value
   _intensityPrimary = 0;
   _correctionPrimary = 0;
-  _distanceSecondary_mm = 0xFFFF; // Initialize distance to invalid value
+  _distanceSecondary_mm = -1; // Initialize distance to 'no distance' value
   _intensitySecondary = 0;
   _correctionSecondary = 0;
   _sunlightBase = 0;
-  _newDataAvailable = false;
-  _lastUpdateTime = 0;
   _crcCheckEnabled = true; // Enable CRC check by default
 }
 
@@ -33,10 +31,22 @@ bool DTS6012M_UART::begin(MF_Serial *serialPort, unsigned long baudRate)
   _serial->begin(baudRate);
   delay(10); // Short delay to allow serial port to stabilize
 
+  //start stream, and check data received
+  int tries = 5;
+  do {
+    uint32_t ts = millis();
+    startStream();
+    while(millis() - ts <= 100) {
+      if(update()) return true;
+    }
+    tries--;
+  }while(tries);
+  return false;
+}
+
+void DTS6012M_UART::startStream() {
   // Send the "Start Measurement Stream" command (0x01) to the sensor
   sendCommand(DTS_CMD_START_STREAM, NULL, 0);
-  _lastUpdateTime = millis(); // Initialize timeout timer
-  return true;
 }
 
 /**
@@ -45,75 +55,56 @@ bool DTS6012M_UART::begin(MF_Serial *serialPort, unsigned long baudRate)
  */
 bool DTS6012M_UART::update()
 {
+  static uint8_t datalen = 0;
   bool frameReceivedAndParsed = false;
-  _newDataAvailable = false; // Reset the flag at the beginning of each update cycle
 
   int n = _serial->available(); //get available once, then process (prevents hanging in endless while)
 
-  // Process all available bytes in the serial buffer
-  for(int i=0;i<n;i++)
+  for(int i = 0; i < n; i++)
   {
     byte incomingByte = _serial->read();
-    _lastUpdateTime = millis(); // Update timestamp on receiving any byte
 
-    // --- Simple State Machine for Frame Parsing ---
-
-    // State 1: Waiting for Header Byte (0xA5)
-    if (_rxBufferIndex == 0)
-    {
-      if (incomingByte == DTS_HEADER)
-      {
-        _rxBuffer[_rxBufferIndex++] = incomingByte; // Store header and advance index
-      }
-      // If not header, ignore the byte and stay in state 1
+    if (_rxBufferIndex >= DTS_RESPONSE_FRAME_LENGTH) {
+      _rxBufferIndex = 0;
     }
-    // State 2: Receiving Frame Content
-    else
-    {
-      // Store the byte if buffer is not full
-      if (_rxBufferIndex < DTS_RESPONSE_FRAME_LENGTH)
-      {
-        _rxBuffer[_rxBufferIndex++] = incomingByte;
-      }
-      else
-      {
-        // Buffer overflow condition - Should ideally not happen if FRAME_LENGTH is correct
-        // Reset buffer to recover
+    _rxBuffer[_rxBufferIndex++] = incomingByte;
+
+    /* frame format: A5 03 20 CMD 00 00 LEN DATA[LEN] CRCH CRCL*/
+
+    switch(_rxBufferIndex - 1) { 
+    case 0: //header0 0xA5
+      if (incomingByte != DTS_HEADER) _rxBufferIndex = 0;
+      break;
+    case 1:  //header1 0x03
+      if (incomingByte != DTS_DEVICE_NO) _rxBufferIndex = 0;
+      break;
+    case 2: //header2 0x20
+      if (incomingByte != DTS_DEVICE_TYPE) _rxBufferIndex = 0;
+      break;
+    case 3: //cmd
+      //do nothing
+      break;
+    case 4: //0x00
+      if (incomingByte != 0x00) _rxBufferIndex = 0;
+      break;
+    case 5: //0x00
+      if (incomingByte != 0x00) _rxBufferIndex = 0;
+      break;
+    case 6: //datalen
+      datalen = incomingByte;
+      if(datalen > 0x0e) _rxBufferIndex = 0;
+      break;
+    default:
+      if (_rxBufferIndex == datalen + 9) {
+        if (parseFrame()) {
+          frameReceivedAndParsed = true;
+        }
         _rxBufferIndex = 0;
-        // Consider logging an error: Serial.println("Error: RX Buffer Overflow!");
-        continue; // Skip to next byte
       }
-
-      // Check if the buffer is now full (received expected number of bytes)
-      if (_rxBufferIndex >= DTS_RESPONSE_FRAME_LENGTH)
-      {
-        // Attempt to parse the complete frame
-        if (parseFrame())
-        {
-          frameReceivedAndParsed = true; // Frame was valid
-          _newDataAvailable = true;      // Set flag
-        }
-        else
-        {
-          // Frame was invalid (bad header, length, or CRC)
-          // parseFrame already logged errors if debugging enabled
-        }
-        _rxBufferIndex = 0; // Reset buffer index to wait for the next frame's header
-        // If a valid frame was found, we can exit the update early
-        if (frameReceivedAndParsed)
-          return true;
-      }
-    } // End of State 2
-  } // End while (_serial->available())
-
-  if (millis() - _lastUpdateTime > 1000)
-  { // Example: 1 second timeout
-    // Serial.println("Warning: Sensor communication timeout?"); // Keep this commented unless debugging
-    _lastUpdateTime = millis(); // Reset timer to avoid continuous warnings
-    _rxBufferIndex = 0;         // Reset buffer state
+    } 
   }
 
-  return frameReceivedAndParsed; // Return true only if a valid frame was processed in *this* call
+  return frameReceivedAndParsed;
 }
 
 /**
@@ -164,10 +155,10 @@ bool DTS6012M_UART::parseFrame()
   const int dataPayloadOffset = 7;
 
   // Extract values (remembering datasheet specifies LSB first for data fields)
-  _distanceSecondary_mm = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_SEC_DIST + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_SEC_DIST];
+  _distanceSecondary_mm = ((int16_t)(_rxBuffer[dataPayloadOffset + DTS_IDX_SEC_DIST + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_SEC_DIST]);
   _correctionSecondary = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_SEC_CORR + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_SEC_CORR];
   _intensitySecondary = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_SEC_INT + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_SEC_INT];
-  _distancePrimary_mm = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_PRI_DIST + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_PRI_DIST];
+  _distancePrimary_mm = ((int16_t)(_rxBuffer[dataPayloadOffset + DTS_IDX_PRI_DIST + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_PRI_DIST]);
   _correctionPrimary = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_PRI_CORR + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_PRI_CORR];
   _intensityPrimary = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_PRI_INT + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_PRI_INT];
   _sunlightBase = ((uint16_t)_rxBuffer[dataPayloadOffset + DTS_IDX_SUN_BASE + 1] << 8) | _rxBuffer[dataPayloadOffset + DTS_IDX_SUN_BASE];
@@ -177,7 +168,7 @@ bool DTS6012M_UART::parseFrame()
 
 // --- Data Getter Methods ---
 
-uint16_t DTS6012M_UART::getDistance()
+int16_t DTS6012M_UART::getDistance()
 {
   return _distancePrimary_mm;
 }
@@ -197,7 +188,7 @@ uint16_t DTS6012M_UART::getCorrection()
   return _correctionPrimary;
 }
 
-uint16_t DTS6012M_UART::getSecondaryDistance()
+int16_t DTS6012M_UART::getSecondaryDistance()
 {
   return _distanceSecondary_mm;
 }

@@ -29,6 +29,8 @@ SOFTWARE.
 struct RdrState {
   public:
     int dist = -1; //distance in mm
+    uint32_t update_ts = 0;
+    uint32_t update_cnt = 0;
 };
 
 struct RdrConfig {

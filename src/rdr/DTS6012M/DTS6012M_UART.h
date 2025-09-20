@@ -15,14 +15,13 @@ const byte DTS_DEVICE_TYPE = 0x20; // Example type from datasheet
 // Command codes
 const byte DTS_CMD_START_STREAM = 0x01;
 const byte DTS_CMD_STOP_STREAM = 0x02;
-// Add other command codes if needed (e.g., 0x0A, 0x10, 0x1A, etc.)
-// const byte DTS_CMD_GET_VERSION = 0x0A;
-// const byte DTS_CMD_SET_BAUD = 0x10;
-// const byte DTS_CMD_GET_BAUD = 0x11;
-// const byte DTS_CMD_SET_I2C_ADDR = 0x12;
-// const byte DTS_CMD_GET_I2C_ADDR = 0x13;
-// const byte DTS_CMD_SET_FRAME_RATE = 0x1A;
-// const byte DTS_CMD_GET_FRAME_RATE = 0x1B;
+const byte DTS_CMD_GET_VERSION = 0x0A;
+const byte DTS_CMD_SET_BAUD = 0x10;  //write 1 byte: 0:9600, 1:14400, 2:19200, 3:38400, 4:43000, 5:57600, 6:76800, 7:115200, 8:12800, 9:230400, 0x0A:256000, 0x0B:460800, 0x0E:921600
+const byte DTS_CMD_GET_BAUD = 0x11;
+const byte DTS_CMD_SET_I2C_ADDR = 0x12;
+const byte DTS_CMD_GET_I2C_ADDR = 0x13;
+const byte DTS_CMD_SET_FRAME_RATE = 0x1A; //write 1 byte: 0:50, 1:100, 2:250 fps (default 100 fps)
+const byte DTS_CMD_GET_FRAME_RATE = 0x1B;
 
 
 // Response frame structure constants for start_stream command (0x01)
@@ -49,7 +48,7 @@ public:
   // Sends the 'Start Stream' command automatically.
   // Returns true on success, false if the serial port failed to start.
   bool begin(MF_Serial *serialPort, unsigned long baudRate = 921600); // Default baud rate from datasheet
-
+  void startStream();
   // Update: Processes incoming serial data. Call this frequently in your loop().
   // Returns true if a new, valid measurement frame was received and parsed, false otherwise.
   bool update();
@@ -57,11 +56,11 @@ public:
   // --- Data Getters ---
   // These return the values from the last successfully parsed measurement frame.
 
-  uint16_t getDistance();           // Primary target distance (mm). Returns 0xFFFF if no target detected or invalid.
+  int16_t getDistance();           // Primary target distance (mm). Returns -1 if no target detected or invalid.
   uint16_t getIntensity();          // Primary target intensity/signal strength.
   uint16_t getSunlightBase();       // Ambient sunlight base level.
   uint16_t getCorrection();         // Primary target correction value (meaning may vary).
-  uint16_t getSecondaryDistance();  // Secondary target distance (mm). Returns 0xFFFF if no target detected or invalid.
+  int16_t getSecondaryDistance();  // Secondary target distance (mm). Returns -1 if no target detected or invalid.
   uint16_t getSecondaryIntensity(); // Secondary target intensity/signal strength.
   uint16_t getSecondaryCorrection();// Secondary target correction value.
 
@@ -89,17 +88,15 @@ private:
 
   byte _rxBuffer[DTS_RESPONSE_FRAME_LENGTH]; // Buffer to hold incoming frame bytes
   int _rxBufferIndex;                        // Current position in the rx buffer
-  unsigned long _lastUpdateTime;             // Timestamp of the last byte received (for potential timeout logic)
 
   // Variables to store the latest valid measurement data
-  uint16_t _distancePrimary_mm;
+  int16_t _distancePrimary_mm;
   uint16_t _intensityPrimary;
   uint16_t _correctionPrimary;
-  uint16_t _distanceSecondary_mm;
+  int16_t _distanceSecondary_mm;
   uint16_t _intensitySecondary;
   uint16_t _correctionSecondary;
   uint16_t _sunlightBase;
-  bool _newDataAvailable; // Flag used internally (could be made public if needed)
   bool _crcCheckEnabled;  // Flag to control CRC validation
 
 

@@ -74,6 +74,9 @@ int Rdr::setup() {
 
 bool Rdr::update() {
   if(!gizmo) return false;
-  return gizmo->update();
+  if(!gizmo->update()) return false;
+  update_ts = micros();
+  update_cnt++;
+  return true;
 }
 

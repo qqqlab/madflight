@@ -276,6 +276,7 @@ static void cli_palt() {
 
 static void cli_prdr() {
   Serial.printf("rdr.dist:%d\t", rdr.dist);
+  Serial.printf("upd_cnt:%d\t", rdr.update_cnt);  
 }
 
 static void cli_pofl() {
