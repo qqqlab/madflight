@@ -1,5 +1,14 @@
 //modified for madflight: MF_Serial
 
+/* DTS6012M UART wiring
+1 3.3V
+2 3.3V
+3 TX
+4 RX
+5 GND (UART selection)
+6 GND
+*/
+
 #ifndef DTS6012M_UART_H
 #define DTS6012M_UART_H
 
@@ -40,8 +49,6 @@ const int DTS_IDX_SUN_BASE = 12;// Sunlight Base (2 bytes)
 
 class DTS6012M_UART {
 public:
-  // --- Public Methods ---
-
   DTS6012M_UART();
 
   // Initialization: Starts serial communication at the specified baud rate

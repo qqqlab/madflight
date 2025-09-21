@@ -1,3 +1,27 @@
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2025 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
 /* Gizmo for DTS6012M
 
 Max Range: 20 meter
@@ -13,33 +37,64 @@ Returns -1 mm on bad measurement (sensor blocked)
 #include "rdr.h"
 #include "../hal/hal.h"
 #include "DTS6012M/DTS6012M_UART.h"
+#include "DTS6012M/DTS6012M_I2C.h"
 
 class RdrGizmoDTS6012M: public RdrGizmo {
 private:
   int *dist = nullptr;
-  DTS6012M_UART sensor;
+  DTS6012M_UART *dts6012m_uart = nullptr;
+  DTS6012M_I2C *dts6012m_i2c = nullptr;
 
   RdrGizmoDTS6012M() {} //private constructor
 
 public:
-  static RdrGizmoDTS6012M* create(int* dist, int ser_bus_id, int baud) {
-      //get serial bus
-      if(baud == 0) baud = 921600; //baud rate is fixed (i.e. need this baud rate to change baud rate?)
-      MF_Serial* ser_bus = hal_get_ser_bus(ser_bus_id, baud);
-      if(!ser_bus) return nullptr;
+  static RdrGizmoDTS6012M* create(int *dist, RdrConfig *conf) {
+      if(conf->rdr_ser_bus >= 0) {
+        //get serial bus
+        if(conf->rdr_baud == 0) conf->rdr_baud = 921600; //baud rate is fixed (i.e. need this baud rate to change baud rate?)
+        MF_Serial* ser_bus = hal_get_ser_bus(conf->rdr_ser_bus, conf->rdr_baud);
+        if(!ser_bus) return nullptr;
 
-      //setup gizmo
-      auto gizmo = new RdrGizmoDTS6012M();
-      gizmo->dist = dist;
-      if(!gizmo->sensor.begin(ser_bus, baud)) {
-        Serial.println("RDR: ERROR: DTS6012M init failed.");
+        //setup gizmo
+        auto gizmo = new RdrGizmoDTS6012M();
+        gizmo->dist = dist;
+        gizmo->dts6012m_uart = new DTS6012M_UART();
+        if(!gizmo->dts6012m_uart->begin(ser_bus, conf->rdr_baud)) {
+          Serial.println("RDR: ERROR: DTS6012M init failed.");
+          delete gizmo->dts6012m_uart;
+          delete gizmo;
+          return nullptr;
+        }
+        return gizmo;
+      }else{
+        //get i2c bus
+        MF_I2C* i2c_bus = hal_get_i2c_bus(conf->rdr_i2c_bus);
+        if(!i2c_bus) return nullptr;
+
+        //setup gizmo
+        auto gizmo = new RdrGizmoDTS6012M();
+        gizmo->dist = dist;
+        gizmo->dts6012m_i2c = new DTS6012M_I2C();
+        if(!gizmo->dts6012m_i2c->begin(i2c_bus, conf->rdr_i2c_adr)) {
+          Serial.println("RDR: ERROR: DTS6012M init failed.");
+          delete gizmo->dts6012m_i2c;
+          delete gizmo;
+          return nullptr;
+        }
+        return gizmo;
       }
-      return gizmo;
     }
 
   bool update() override {
-    if(!sensor.update()) return false;
-    *dist = sensor.getDistance(); // in mm
-    return true;
+    if(dts6012m_uart) {
+      if(!dts6012m_uart->update()) return false;
+      *dist = dts6012m_uart->getDistance(); // in mm
+      return true;
+    }else if(dts6012m_i2c) {
+      if(!dts6012m_i2c->update()) return false;
+      *dist = dts6012m_i2c->distance; // in mm
+      return true;
+    }
+    return false;
   }
 };

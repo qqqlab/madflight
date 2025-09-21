@@ -183,18 +183,20 @@ void madflight_setup() {
 
   //RDR
   rdr.config.gizmo = (Cfg::rdr_gizmo_enum)cfg.rdr_gizmo; //the gizmo to use
-  rdr.config.ser_bus_id = cfg.rdr_ser_bus; //serial bus
-  rdr.config.baud = cfg.rdr_baud; //baud rate
-  rdr.config.pin_trig = cfg.pin_rdr_trig;
-  rdr.config.pin_echo = cfg.pin_rdr_echo;
+  rdr.config.rdr_ser_bus  = cfg.rdr_ser_bus; //serial bus
+  rdr.config.rdr_baud     = cfg.rdr_baud; //baud rate
+  rdr.config.pin_rdr_trig = cfg.pin_rdr_trig;
+  rdr.config.pin_rdr_echo = cfg.pin_rdr_echo;
+  rdr.config.rdr_i2c_bus  = cfg.rdr_i2c_bus;
+  rdr.config.rdr_i2c_adr  = cfg.rdr_i2c_adr;
   rdr.setup();
 
   //OFL
-  ofl.config.ofl_gizmo   = (Cfg::ofl_gizmo_enum)cfg.ofl_gizmo; //the gizmo to use
-  ofl.config.ofl_spi_bus = cfg.ofl_spi_bus; //spi bus
-  ofl.config.pin_ofl_cs  = cfg.pin_ofl_cs; //spi cs pin
-  ofl.config.ofl_ser_bus = cfg.ofl_ser_bus; //serial bus
-  ofl.config.ofl_baud    = cfg.ofl_baud; //baud rate (0 = default)
+  ofl.config.ofl_gizmo    = (Cfg::ofl_gizmo_enum)cfg.ofl_gizmo; //the gizmo to use
+  ofl.config.ofl_spi_bus  = cfg.ofl_spi_bus; //spi bus
+  ofl.config.pin_ofl_cs   = cfg.pin_ofl_cs; //spi cs pin
+  ofl.config.ofl_ser_bus  = cfg.ofl_ser_bus; //serial bus
+  ofl.config.ofl_baud     = cfg.ofl_baud; //baud rate (0 = default)
   ofl.setup();
 
   // GPS

@@ -112,21 +112,33 @@ bool CfgClass::getOptionString(uint16_t param_idx, int32_t param_val, char out_o
 
 //print all parameters for module_name on single line
 void CfgClass::printModule(const char* module_name) {
-  String n = String(module_name);
-  n.toUpperCase();
-  Serial.printf("%s: ", n.c_str());
-  n.toLowerCase();
-  n += '_';
-  
-  String type_name = n + "gizmo";
+  String modname = String(module_name);
+  modname.toUpperCase();
+  Serial.printf("%s: ", modname.c_str());
+  modname.toLowerCase();
+  modname += '_';
+
+  //print gizmo
+  String type_name = modname + "gizmo";
   int type_i = getIndex(type_name);
   if(type_i >= 0) {
     printValue(type_i);
     Serial.print(" - ");
   }
-  for(int i=0;i<paramCount();i++) {
-    if(strncmp(Cfg::param_list[i].name, n.c_str(), n.length()) == 0 && i != type_i) { //starts with module_name + '_'
-      Serial.print(Cfg::param_list[i].name + n.length()); //remove module_name + '_'
+  //print config
+  for(int i = 0; i < paramCount(); i++) {
+    if(strncmp(Cfg::param_list[i].name, modname.c_str(), modname.length()) == 0 && i != type_i) { //starts with module_name + '_'
+      Serial.print(Cfg::param_list[i].name + modname.length()); //remove module_name + '_'
+      Serial.print(':');
+      printValue(i);
+      Serial.print(' ');
+    }
+  }
+  //print module pins
+  String pinname = "pin_" + modname; 
+  for(int i = 0; i < paramCount(); i++) {
+    if(strncmp(Cfg::param_list[i].name, pinname.c_str(), pinname.length()) == 0 && i != type_i) { //starts with 'pin_' + module_name + '_'
+      Serial.print(Cfg::param_list[i].name);
       Serial.print(':');
       printValue(i);
       Serial.print(' ');

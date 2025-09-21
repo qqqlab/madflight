@@ -247,6 +247,8 @@ SOFTWARE.
   MF_PARAM( pin_ofl_cs,       -1, int32_t, 'p') \
   MF_PARAM( ofl_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( ofl_baud,          0, int32_t, 'i') \
+  MF_PARAM( rdr_i2c_bus,      -1, int32_t, 'i') \
+  MF_PARAM( rdr_i2c_adr,       0, int32_t, 'i') \
 //end MF_PARAM_LIST
 
 
