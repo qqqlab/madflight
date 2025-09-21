@@ -1,7 +1,3 @@
-#define MADFLIGHT_VERSION "madflight v2.1.3-DEV"
-
-//madflight.h - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
-
 /*==========================================================================================
 MIT License
 
@@ -26,11 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+//madflight.h - Flight Controller for ESP32 / ESP32-S3 / RP2350 / RP2040 / STM32
+
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
-#include <Arduino.h> //keep PlatformIO happy
-
-extern const char madflight_config[]; //madflight_config should be defined before including this file
+extern const char madflight_config[];
 
 #ifdef MF_BOARD
   //the board header file must define const char madflight_board[] and should define MF_BOARD_NAME, MF_MCU_NAME
@@ -38,6 +34,9 @@ extern const char madflight_config[]; //madflight_config should be defined befor
 #else
   const char madflight_board[] = "";
 #endif
+
+#include <Arduino.h> //keep PlatformIO happy
+#include "madflight_version.h"
 
 // bus abstraction
 #include "hal/MF_Serial.h"

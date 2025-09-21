@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "../madflight_version.h"
 
 //include all module interfaces
 #include "../ahr/ahr.h"
@@ -303,7 +304,7 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"pacc",   "Filtered accelerometer (expected: -2 to 2; when level: x=0,y=0,z=1)", cli_pacc},
   {"pmag",   "Filtered magnetometer (expected: -300 to 300)", cli_pmag},
   {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_pahr},
-  {"pah",    "AHRS roll, pitch, and yaw in less verbose format (expected: degrees, 0 when level)", cli_pah},
+  {"pah",    "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_pah},
   {"ppid",   "PID output (expected: -1 to 1)", cli_ppid},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_pout},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_pbat},
@@ -351,21 +352,23 @@ void Cli::begin() {
 }
 
 void Cli::help() {
+  Serial.println(MADFLIGHT_VERSION " on " HAL_ARDUINO_STR);
+
   Serial.printf(
   "-- TOOLS --\n"
-  "help or ? This info\n"
-  "ps        Task list\n"
-  "i2c       I2C scan\n"
-  "serial <bus_id>   Print serial data\n"
-  "spinmotors\n"
-  "reboot    Reboot flight controller\n"
+  "help or ?           This info\n"
+  "ps                  Task list\n"
+  "i2c                 I2C scan\n"
+  "serial <bus_id>     Dump serial data\n"
+  "spinmotors          Spin each motor\n"
+  "reboot              Reboot flight controller\n"
   "-- PRINT --\n"
-  "poff      Printing off\n"
-  "pall      Print all\n"
+  "poff                Printing off\n"
+  "pall                Print all\n"
   );
   for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
     Serial.print(cli_print_options[i].cmd);
-    for(int j = strlen(cli_print_options[i].cmd); j < 9; j++) {
+    for(int j = strlen(cli_print_options[i].cmd); j < 19; j++) {
       Serial.print(' ');
     }
     Serial.print(' ');
@@ -374,23 +377,23 @@ void Cli::help() {
   }
   Serial.printf(
   "-- BLACK BOX --\n"
-  "bbstart   Start logging\n"
-  "bbstop    Stop logging\n"
-  "bbls      List files\n"
-  "bberase   Erase bb device\n"
-  "bbbench   Benchmark\n"
-  "bbinfo    Info\n"
+  "bbstart             Start logging\n"
+  "bbstop              Stop logging\n"
+  "bbls                List files\n"
+  "bberase             Erase bb device\n"
+  "bbbench             Benchmark\n"
+  "bbinfo              Info\n"
   "-- CONFIG --\n"
   "set <name> <value>  Set config parameter\n"
   "dump <filter>       List config\n"
-  "diff <filter>       List config changes from default d\n"
+  "diff <filter>       List config changes from default\n"
   "save                Save config and reboot\n"
   "defaults            Reset to defaults and reboot\n"
   "-- CALIBRATE --\n"
-  "calinfo   Sensor info\n"
-  "calimu    Calibrate IMU error\n"
-  "calmag    Calibrate magnetometer\n"
-  "calradio  Calibrate RC Radio\n"
+  "calinfo             Sensor info\n"
+  "calimu              Calibrate IMU error\n"
+  "calmag              Calibrate magnetometer\n"
+  "calradio            Calibrate RC Radio\n"
   );
 }
 
