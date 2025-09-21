@@ -29,30 +29,30 @@ If things do not work as expected, have a good look at the startup messages!
 
 ========================================================================================================================*/
 
-//define the board header to use, or comment out for none
+// define the board header to use, or comment out for none
 #define MF_BOARD "brd/default.h"
 
 const char madflight_config[] = R""(
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
-//imu_gizmo      NONE    // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250
-//imu_bus_type   SPI     // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
-//imu_align      CW0     // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
-//imu_spi_bus    -1 //spi
-//pin_imu_cs     -1 //spi
-//pin_imu_int    -1 //spi and i2c
-//imu_i2c_bus    -1 //i2c
-//imu_i2c_adr     0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
+//imu_gizmo      NONE  // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250
+//imu_bus_type   SPI   // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
+//imu_align      CW0   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
+//imu_spi_bus    -1    // spi
+//pin_imu_cs     -1    // spi
+//pin_imu_int    -1    // spi and i2c
+//imu_i2c_bus    -1    // i2c
+//imu_i2c_adr     0    // i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
-// IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
+// IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus, interrupt pin is required
 
 
 //--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
 //rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-//rcl_num_ch     8     // number of channels
-//rcl_deadband   0     // center stick deadband
-//rcl_ser_bus   -1
-//pin_rcl_ppm   -1
+//rcl_ser_bus   -1     // serial
+//pin_rcl_ppm   -1     // ppm
+//rcl_num_ch     8     // serial and ppm: number of channels
+//rcl_deadband   0     // serial and ppm: center stick deadband
 
 //--- BAR --- Barometer
 //bar_gizmo      NONE  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611
@@ -67,39 +67,46 @@ const char madflight_config[] = R""(
 
 //--- BAT --- Battery Monitor  (use i2c bus -OR- adc pins)
 //bat_gizmo      NONE  // options: NONE, ADC, INA226, INA228
-//bat_i2c_adr    0
-//bat_i2c_bus   -1
-//pin_bat_i     -1
-//pin_bat_v     -1
-//bat_cal_v      1 //adc voltage scale, value is: actual_voltage_in_v / adc_reading
-//bat_cal_i,     1 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
+//bat_i2c_adr    0     // i2c
+//bat_i2c_bus   -1     // i2c
+//pin_bat_i     -1     // adc
+//pin_bat_v     -1     // adc
+//bat_cal_v      1     // for ADC: voltage scale, value is: actual_voltage_in_v / adc_reading; for INA226/228: not used
+//bat_cal_i,     1     // for ADC: current scale, value is: actual_current_in_a / adc_reading; for INA226/228: rshunt value in ohm
 
 //--- GPS ---
 //gps_gizmo      NONE  // options: NONE, UBLOX
-//gps_baud       0   // use 0 for auto baud
+//gps_baud       0     // use 0 for auto baud
 //gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
 //bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC
-//pin_bbx_cs    -1  // spi
-//bbx_spi_bus   -1  // spi
-//pin_mmc_dat   -1  // mmc
-//pin_mmc_clk   -1  // mmc
-//pin_mmc_cmd   -1  // mmc
+//pin_bbx_cs    -1     // spi
+//bbx_spi_bus   -1     // spi
+//pin_mmc_dat   -1     // mmc
+//pin_mmc_clk   -1     // mmc
+//pin_mmc_cmd   -1     // mmc
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
-//rdr_gizmo      NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
-//rdr_baud       0
-//rdr_ser_bus   -1
-//pin_rdr_trig  -1
-//pin_rdr_echo  -1
+//rdr_gizmo      NONE  // options: NONE, DTS6012M, LD2411S, LD2413, SR04, USD1
+//rdr_ser_bus   -1     // serial
+//rdr_baud       0     // serial, use 0 for default baud
+//pin_rdr_trig  -1     // trig+echo
+//pin_rdr_echo  -1     // trig+echo
+
+//--- OFL --- Optical FLow (use serial bus -OR- spi bus)
+//ofl_gizmo      NONE  // options: NONE, PMW3901, PMW3901U
+//ofl_ser_bus   -1     // serial
+//ofl_baud       0     // serial, use 0 for default baud
+//ofl_spi_bus   -1     // spi
+//pin_ofl_cs    -1     // spi
 
 //--- LED ---
-//led_gizmo     NONE // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
+//led_gizmo     NONE   // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 //pin_led       -1
 
 //--- AHR --- AHRS (keep MAHONY, unless you want to experiment)
-//ahr_gizmo      MAHONY  // options: MAHONY, MAHONY_BF, MADGWICK, VQF
+//ahr_gizmo      MAHONY // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 
 //--- Serial bus 0 ---
 //pin_ser0_rx   -1

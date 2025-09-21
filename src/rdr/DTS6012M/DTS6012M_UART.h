@@ -47,8 +47,10 @@ public:
   // Initialization: Starts serial communication at the specified baud rate
   // Sends the 'Start Stream' command automatically.
   // Returns true on success, false if the serial port failed to start.
-  bool begin(MF_Serial *serialPort, unsigned long baudRate = 921600); // Default baud rate from datasheet
+  bool begin(MF_Serial *serialPort, int baudRate = 921600); // Default baud rate from datasheet
   void startStream();
+  bool sendCommandBaud(int baudRate);
+  int sendCommandFrameRate(int framerate);
   // Update: Processes incoming serial data. Call this frequently in your loop().
   // Returns true if a new, valid measurement frame was received and parsed, false otherwise.
   bool update();
