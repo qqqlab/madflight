@@ -22,6 +22,14 @@ S1-S4 (GPIO1-4) as ESC outputs
 
 */
 
+#if !ARDUINO_ARCH_ESP32
+  #error "Invalid Arduino Architecture: Select ESP32-Arduino"
+#endif
+
+#if !CONFIG_IDF_TARGET_ESP32S3
+  #error "Invalid board: Select board ESP32S3 Dev Kit"
+#endif
+
 #define MF_BOARD_NAME "madflight FC2"
 #define MF_MCU_NAME "ESP32-S3"
 
