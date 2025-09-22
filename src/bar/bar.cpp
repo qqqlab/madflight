@@ -81,7 +81,7 @@ int Bar::setup() {
       break;
     case Cfg::bar_gizmo_enum::mf_DPS310 :
       if(config.i2c_bus) {
-        gizmo = new BarGizmoDPS310(config.i2c_bus, config.i2c_adr, config.sampleRate);
+        gizmo = BarGizmoDPS310::create(config.i2c_bus, config.i2c_adr, config.sampleRate);
       }
       break;
   }
