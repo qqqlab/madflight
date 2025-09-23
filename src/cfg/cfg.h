@@ -203,7 +203,7 @@ SOFTWARE.
   MF_PARAM( gps_baud,          0, int32_t, 'i') \
 \
   /*IMU - Inertial Measurement Unit (acc/gyro)*/ \
-  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688) \
+  MF_PARAM( imu_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688,mf_ICM42688P) \
   MF_PARAM( imu_spi_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( imu_i2c_adr,       0, int32_t, 'i') \
@@ -229,7 +229,7 @@ SOFTWARE.
   MF_PARAM( rcl_deadband,      0, int32_t, 'i') \
 \
   /*RDR - Radar*/ \
-  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04) \
+  MF_PARAM( rdr_gizmo,         0, int32_t, 'e', mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04,mf_DTS6012M) \
   MF_PARAM( rdr_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( rdr_baud,          0, int32_t, 'i') \
 \
@@ -240,6 +240,15 @@ SOFTWARE.
 \
   /*v2.1.1 additions */ \
   MF_PARAM( mag_align,         0, int32_t, 'e', mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP) \
+\
+  /*v2.1.3 additions */ \
+  MF_PARAM( ofl_gizmo,         0, int32_t, 'e', mf_NONE,mf_PMW3901,mf_PMW3901U) \
+  MF_PARAM( ofl_spi_bus,      -1, int32_t, 'i') \
+  MF_PARAM( pin_ofl_cs,       -1, int32_t, 'p') \
+  MF_PARAM( ofl_ser_bus,      -1, int32_t, 'i') \
+  MF_PARAM( ofl_baud,          0, int32_t, 'i') \
+  MF_PARAM( rdr_i2c_bus,      -1, int32_t, 'i') \
+  MF_PARAM( rdr_i2c_adr,       0, int32_t, 'i') \
 //end MF_PARAM_LIST
 
 

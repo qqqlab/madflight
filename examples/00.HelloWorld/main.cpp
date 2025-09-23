@@ -15,8 +15,7 @@ Copyright (c) 2023-2025 https://madflight.com
 #include <madflight.h>
 
 void setup() {
-  //setup madflight components: Serial.begin(115200), imu, rcin, led, etc. See src/madflight/interface.h for full interface description of each component. 
-  madflight_setup();
+  madflight_setup(); //setup madflight modules
 }
 
 void loop() {
@@ -26,6 +25,7 @@ void loop() {
   gps.update(); // gps
   bat.update(); // battery consumption
   rdr.update(); // radar
+  ofl.update(); // optical flow
   cli.update(); // process CLI commands
 }
 

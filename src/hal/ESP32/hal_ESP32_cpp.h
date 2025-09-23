@@ -1,17 +1,4 @@
 
-//Arduino version string
-#ifndef ESP_ARDUINO_VERSION_MAJOR
-  #define ESP_ARDUINO_VERSION_MAJOR 0
-#endif
-#ifndef ESP_ARDUINO_VERSION_MINOR
-  #define ESP_ARDUINO_VERSION_MINOR 0
-#endif
-#ifndef ESP_ARDUINO_VERSION_PATCH
-  #define ESP_ARDUINO_VERSION_PATCH 0
-#endif
-#define mf_df2xstr(s)              #s
-#define mf_df2str(s)               mf_df2xstr(s)
-#define HAL_ARDUINO_STR "Arduino-ESP32 v" mf_df2str(ESP_ARDUINO_VERSION_MAJOR) "." mf_df2str(ESP_ARDUINO_VERSION_MINOR) "." mf_df2str(ESP_ARDUINO_VERSION_PATCH)
 
 #ifndef MF_MCU_NAME
   #ifdef CONFIG_IDF_TARGET_ESP32S3

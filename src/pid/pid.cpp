@@ -23,20 +23,72 @@ SOFTWARE.
 ===========================================================================================*/
 
 #include "pid.h"
+#include <math.h> //for fmod()
 
-PID PIDroll;
-PID PIDpitch;
-PID PIDyaw;
+Pid pid;
 
-
-float PID::control(float actual, float desired, float dt) {
+float PIDController::control(float desired, float actual, float dt) {
   float err = desired - actual;
   err_i += err * dt;
   //Saturate integrator to prevent unsafe buildup
   if(err_i < -klimit_i) err_i = -klimit_i;
   if(err_i > klimit_i) err_i = klimit_i;
   float err_d = (err - err_prev) / dt;
-  PID = kscale * (kp * err + ki * err_i + kd * err_d);
+  output = kscale * (kp * err + ki * err_i + kd * err_d);
   err_prev = err;
-  return PID;
+  return output;
+}
+
+// With user provided actual_derivative (velocity)
+float PIDController::controlActualDerivative(float desired, float actual, float dt, float actual_derivative) {
+  float err = desired - actual;
+  err_i += err * dt;
+  //Saturate integrator to prevent unsafe buildup
+  if(err_i < -klimit_i) err_i = -klimit_i;
+  if(err_i > klimit_i) err_i = klimit_i;
+  float err_d = -actual_derivative; //negate actual_derivative -> PIDController output opposes the change in actual value
+  output = kscale * (kp * err + ki * err_i + kd * err_d);
+  err_prev = err;
+  return output;
+}
+
+// Control a 360 degree value
+float PIDController::controlDegrees(float desired, float actual, float dt) {
+  float err = degreeModulus(desired - actual);
+  err_i += err * dt;
+  //Saturate integrator to prevent unsafe buildup
+  if(err_i < -klimit_i) err_i = -klimit_i;
+  if(err_i > klimit_i) err_i = klimit_i;
+  float err_d = (err - err_prev) / dt;
+  output = kscale * (kp * err + ki * err_i + kd * err_d);
+  err_prev = err;
+  return output;
+}
+
+// Control a 360 degree value, with user provided actual_derivative (velocity)
+float PIDController::controlDegreesActualDerivative(float desired, float actual, float dt, float actual_derivative) {
+  float err = degreeModulus(desired - actual);
+  err_i += err * dt;
+  //Saturate integrator to prevent unsafe buildup
+  if(err_i < -klimit_i) err_i = -klimit_i;
+  if(err_i > klimit_i) err_i = klimit_i;
+  float err_d = -actual_derivative; //negate actual_derivative -> PIDController output opposes the change in actual value
+  output = kscale * (kp * err + ki * err_i + kd * err_d);
+  err_prev = err;
+  return output;
+}
+
+void PIDController::reset() {
+  err_i = 0;
+  err_prev = 0;
+}
+
+//returns angle in range -180 to 180
+float PIDController::degreeModulus(float v) {
+  if(v >= 180) {
+    return fmod(v + 180, 360) - 180;
+  }else if(v < -180.0) {
+    return fmod(v - 180, 360) + 180;
+  }
+  return v;
 }

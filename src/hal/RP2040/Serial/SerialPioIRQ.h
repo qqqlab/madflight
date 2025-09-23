@@ -53,6 +53,10 @@ public:
     return rx.read(buf, len);
   }
 
+  int readBytes(char *buf, int len) {
+    return readBytes((uint8_t*)buf, len);
+  }
+
   int write(uint8_t *buf, int len) {
     return tx.write(buf, len);
   }

@@ -29,15 +29,19 @@ SOFTWARE.
 struct RdrState {
   public:
     int dist = -1; //distance in mm
+    uint32_t update_ts = 0;
+    uint32_t update_cnt = 0;
 };
 
 struct RdrConfig {
   public:
     Cfg::rdr_gizmo_enum gizmo = Cfg::rdr_gizmo_enum::mf_NONE;
-    int ser_bus_id = -1; //Serial bus id
-    int baud = 0; //baud rate. 0=autobaud
-    int pin_trig = -1; //trigger pulse output pin
-    int pin_echo = -1; //echo pulse input pin
+    int rdr_ser_bus = -1; //Serial bus id
+    int rdr_baud = 0; //baud rate. 0=autobaud
+    int pin_rdr_trig = -1; //trigger pulse output pin
+    int pin_rdr_echo = -1; //echo pulse input pin
+    int rdr_i2c_bus = -1; //I2C bus id
+    int rdr_i2c_adr = 0; //I2C address
 };
 
 class RdrGizmo {
