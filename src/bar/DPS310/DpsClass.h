@@ -26,7 +26,7 @@
 #endif
 #include <Wire.h>
 #include "util/dps_config.h"
-#include "../../../hal/MF_I2C.h"
+#include "../../hal/MF_I2C.h"
 
 class DpsClass
 {

@@ -2,7 +2,7 @@
 
 #include "bar.h"
 #include "../hal/MF_I2C.h"
-#include "dps3/src/Dps3xx.h"
+#include "DPS310/Dps3xx.h"
 
 class BarGizmoDPS310: public BarGizmo {
 protected:
@@ -21,7 +21,7 @@ public:
     );
 
     if (ret != 0) {
-      Serial.println("DPS310 init failed");
+      delete pres;
       return nullptr;
     }
     
