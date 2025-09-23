@@ -146,7 +146,8 @@ int Imu::setup() {
         gizmo->has_mag = false;
         break;
       }
-      case Cfg::imu_gizmo_enum::mf_ICM42688 : {
+      case Cfg::imu_gizmo_enum::mf_ICM42688 :
+      case Cfg::imu_gizmo_enum::mf_ICM42688P : {
         gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
         break;
       }

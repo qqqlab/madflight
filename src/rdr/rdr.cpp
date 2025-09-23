@@ -32,6 +32,7 @@ SOFTWARE.
 #include "RdrGizmoLD2413.h"
 #include "RdrGizmoUSD1.h"
 #include "RdrGizmoSR04.h"
+#include "RdrGizmoDTS6012M.h"
 
 //create global module instance
 Rdr rdr;
@@ -46,16 +47,19 @@ int Rdr::setup() {
       gizmo = nullptr;
       break;
     case Cfg::rdr_gizmo_enum::mf_LD2411S :
-      gizmo = RdrGizmoLD2411S::create(&dist, config.ser_bus_id, config.baud);
+      gizmo = RdrGizmoLD2411S::create(&dist, config.rdr_ser_bus, config.rdr_baud);
       break;
     case Cfg::rdr_gizmo_enum::mf_LD2413 :
-      gizmo = RdrGizmoLD2413::create(&dist, config.ser_bus_id, config.baud);
+      gizmo = RdrGizmoLD2413::create(&dist, config.rdr_ser_bus, config.rdr_baud);
       break;
     case Cfg::rdr_gizmo_enum::mf_USD1 :
-      gizmo = RdrGizmoUSD1::create(&dist, config.ser_bus_id, config.baud);
+      gizmo = RdrGizmoUSD1::create(&dist, config.rdr_ser_bus, config.rdr_baud);
       break;
     case Cfg::rdr_gizmo_enum::mf_SR04 :
-      gizmo = RdrGizmoSR04::create(&dist, config.pin_trig, config.pin_echo);
+      gizmo = RdrGizmoSR04::create(&dist, config.pin_rdr_trig, config.pin_rdr_echo);
+      break;
+    case Cfg::rdr_gizmo_enum::mf_DTS6012M :
+      gizmo = RdrGizmoDTS6012M::create(&dist, &config);
       break;
   }
 
@@ -70,6 +74,9 @@ int Rdr::setup() {
 
 bool Rdr::update() {
   if(!gizmo) return false;
-  return gizmo->update();
+  if(!gizmo->update()) return false;
+  update_ts = micros();
+  update_cnt++;
+  return true;
 }
 

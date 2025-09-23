@@ -32,7 +32,7 @@ class MF_SerialPtrWrapper : public MF_Serial {
     void begin(int baud)             override { _serial->begin(baud); }
     int available()                  override { return _serial->available(); }
     int availableForWrite()          override { return _serial->availableForWrite(); }
-    int read(uint8_t *buf, int len)  override { return _serial->readBytes(buf, len); }
+    int read(uint8_t *buf, int len)  override { return _serial->readBytes((char*)buf, len); }  //Note: cast to (char*) because STM32duino 2.11.0 does not have readBytes(uint8_t *buf) overload for USBSerial
     int write(uint8_t *buf, int len) override { return _serial->write(buf, len); }
 };
 

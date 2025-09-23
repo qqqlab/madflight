@@ -117,6 +117,7 @@ static jmp_buf luawrap_panic_jump;
 /* custom panic handler */
 static int luawrap_panic(lua_State *L)
 {
+  (void) L;
   longjmp(luawrap_panic_jump, 1);
   /* will never return */
   return 0;

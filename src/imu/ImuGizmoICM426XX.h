@@ -73,6 +73,9 @@ ICM42688 has NWU orientation
   }
 
   int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
+    (void) gyro_scale_dps;
+    (void) acc_scale_g;
+    (void) rate_hz;
     return 0;
   }
 

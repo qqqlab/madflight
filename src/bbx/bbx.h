@@ -53,7 +53,7 @@ public:
   virtual void bench() = 0; //benchmark read/write
   virtual void info() = 0; //card info
   
-  virtual int read(const char* filename, uint8_t **data) {return 0;}
+  virtual int read(const char* filename, uint8_t **data) {(void) filename; (void) data; return 0;}
 };
 
 class Bbx {
