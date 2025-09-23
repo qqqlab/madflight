@@ -32,7 +32,8 @@ SOFTWARE.
 #include "RdrGizmoLD2413.h"
 #include "RdrGizmoUSD1.h"
 #include "RdrGizmoSR04.h"
-#include "RdrGizmoDTS6012M.h"
+#include "RdrGizmoDTS6012M_UART.h"
+#include "RdrGizmoDTS6012M_I2C.h"
 
 //create global module instance
 Rdr rdr;
@@ -59,7 +60,11 @@ int Rdr::setup() {
       gizmo = RdrGizmoSR04::create(&dist, config.pin_rdr_trig, config.pin_rdr_echo);
       break;
     case Cfg::rdr_gizmo_enum::mf_DTS6012M :
-      gizmo = RdrGizmoDTS6012M::create(&dist, &config);
+      if(config.rdr_ser_bus >= 0) {
+        gizmo = RdrGizmoDTS6012M_UART::create(&dist, &config);
+      }else{
+        gizmo = RdrGizmoDTS6012M_I2C::create(&dist, &config);
+      }
       break;
   }
 

@@ -145,8 +145,8 @@ public:
 
     if(!got_data) return false;
 
-    state->dx = dx_sum;
-    state->dy = dy_sum;
+    state->dx_raw = dx_sum;
+    state->dy_raw = dy_sum;
     state->dt = now - state->ts;
     state->ts = now;
 

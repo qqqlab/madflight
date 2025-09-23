@@ -28,10 +28,15 @@ SOFTWARE.
 
 struct OflState {
   public:
-    int dx = 0;
-    int dy = 0;
-    uint32_t dt = 0;
-    uint32_t ts = 0;
+    // Sensor state vars
+    int dx_raw = 0;  // raw sensor reading (sensor frame x-axis)
+    int dy_raw = 0;  // raw sensor reading (sensor frame y-axis)
+    uint32_t dt = 0; // update timestamp [us]
+    uint32_t ts = 0; // time since last update [us]
+        
+    // Ofl state vars
+    int dx = 0;      // movement in N direction of vehicle NED frame (dx_raw,dy_raw rotated by ofl_align)
+    int dy = 0;      // movement in E direction of vehicle NED frame (dx_raw,dy_raw rotated by ofl_align)
 };
 
 struct OflConfig {
@@ -41,6 +46,7 @@ struct OflConfig {
     int pin_ofl_cs = -1; //SPI cs pin
     int ofl_ser_bus = -1; //Serial bus id
     int ofl_baud = 0; //baud rate. 0=autobaud
+    Cfg::ofl_align_enum ofl_align = Cfg::ofl_align_enum::mf_NE; //orientation of mounted sensor in relation to vehicle NED fram
 };
 
 class OflGizmo {

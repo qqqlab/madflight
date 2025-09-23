@@ -82,8 +82,8 @@ public:
     int16_t dy;
     sensor->readMotionCount(&dx, &dy);
 
-    state->dx = dx;
-    state->dy = dy;
+    state->dx_raw = dx;
+    state->dy_raw = dy;
     state->dt = now - state->ts;
     state->ts = now;
 

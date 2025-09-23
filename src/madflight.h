@@ -192,10 +192,11 @@ void madflight_setup() {
 
   //OFL
   ofl.config.ofl_gizmo    = (Cfg::ofl_gizmo_enum)cfg.ofl_gizmo; //the gizmo to use
-  ofl.config.ofl_spi_bus  = cfg.ofl_spi_bus; //spi bus
-  ofl.config.pin_ofl_cs   = cfg.pin_ofl_cs; //spi cs pin
-  ofl.config.ofl_ser_bus  = cfg.ofl_ser_bus; //serial bus
-  ofl.config.ofl_baud     = cfg.ofl_baud; //baud rate (0 = default)
+  ofl.config.ofl_spi_bus  = cfg.ofl_spi_bus; // spi bus
+  ofl.config.pin_ofl_cs   = cfg.pin_ofl_cs;  // spi cs pin
+  ofl.config.ofl_ser_bus  = cfg.ofl_ser_bus; // serial bus
+  ofl.config.ofl_baud     = cfg.ofl_baud;    // baud rate (0 = default)
+  ofl.config.ofl_align    = (Cfg::ofl_align_enum)cfg.ofl_align;  // xy-axis orientation. Example: ES means positive x-axis points East (right) and positive y-axis points South (back)
   ofl.setup();
 
   // GPS
