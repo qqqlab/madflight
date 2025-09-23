@@ -183,7 +183,7 @@ SOFTWARE.
   MF_PARAM( ahr_gizmo,         0, int32_t, 'e', mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF) \
 \
   /*BAR - Barometer*/ \
-  MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B,mf_BMP580) \
+  MF_PARAM( bar_gizmo,         0, int32_t, 'e', mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B,mf_BMP580,mf_DPS310) \
   MF_PARAM( bar_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( bar_i2c_adr,       0, int32_t, 'i') \
   MF_PARAM( bar_rate,        100, float, 'f') /*Barometer sample rate in Hz (default 100)*/ \
