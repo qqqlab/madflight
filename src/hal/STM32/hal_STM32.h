@@ -1,5 +1,12 @@
 #pragma once
 
+//This hack bumps the interrupt priority of the IMU interrupt. Without this hack the IMU interrupt 
+//does not fire, it aparently gets masked by FreeRTOS
+//see https://github.com/qqqlab/madflight/issues/79 and https://github.com/qqqlab/madflight/pull/81
+#ifndef MF_HACK_STM32_INTERRUPT_PRIORITY
+  #define MF_HACK_STM32_INTERRUPT_PRIORITY 1
+#endif
+
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
 #include "STM32_PWM.h" //Servo and oneshot

@@ -63,7 +63,19 @@ uint8_t ser1_txbuf[256];
 uint8_t ser1_rxbuf[256];
 
 void hal_setup() {
-  //Serial BUS on demand
+  //print bus config
+  Serial.printf("HAL: SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("HAL: SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+  Serial.printf("HAL: SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
+  Serial.printf("HAL: SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
+  Serial.printf("HAL: SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
+  Serial.printf("HAL: SER bus 5 is pio uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
+  Serial.printf("HAL: I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+  Serial.printf("HAL: I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+  Serial.printf("HAL: SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+  Serial.printf("HAL: SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+
+  //SER BUS is configured on demand
 
   //I2C BUS
   if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {

@@ -284,17 +284,9 @@ namespace Cfg {
 //struct CfgParam for parameters, generated from MF_PARAM_LIST
 #define MF_PARAM(name, defval, datatype, type, ...) datatype name = defval;
 struct CfgParam {
-  union {
-    struct {
-      MF_PARAM_LIST
-    };
-    float param_float[Cfg::param_cnt];
-    int32_t param_int32_t[Cfg::param_cnt];
-  };
+  MF_PARAM_LIST
 };
 #undef MF_PARAM
-
-
 
 
 
@@ -323,26 +315,29 @@ private:
 public:
   CfgClass();
   void begin();
+
+  //indexed parameter manipulation
   uint16_t paramCount(); //get number of parameters
+  int getIndex(String namestr); //get parameter index for a parameter name
   bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
 
+  //named parameter manipulation
   bool setParam(String namestr, String val); //CLI set a parameter value, returns true on success
   bool setParamMavlink(String namestr, float val); //set a parameter value, returns true on success
-  int getIndex(String namestr); //get parameter index for a parameter name
+  float getValue(String namestr, float default_value); //get parameter as float
+
+  //loading and saving
   void clear(); //load defaults from param_list
   void loadFromEeprom(); //read parameters from eeprom/flash
   void loadFromString(const char *batch); //load text unconditional
   void load_madflight(const char *board, const char *config); //load board+config if crc is different
   void writeToEeprom(); //write config to flash
-  float getValue(String namestr, float default_value); //get parameter as float
-  float getValue(int i); //get parameter as float
 
   //CLI commands
   void cli_dump(const char* filter = nullptr); //CLI dump: print all config values
   void cli_diff(const char* filter = nullptr); //CLI diff: print all modified config values
 
   //print
-  void printParamOption(const int32_t* param);
   bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
   void printPins();
   void printModule(const char* module_name);
@@ -353,6 +348,8 @@ private:
   bool load_cmdline(String cmdline);
   int get_enum_index(const char* k, const char* values);
   void print_options(const char *str); //print option list without "mf_"
+  float getValue(int i); //get parameter as float
+  bool setValue(int i, float val); //set parameter value
 };
 
 extern CfgClass cfg;

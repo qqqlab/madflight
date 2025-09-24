@@ -32,6 +32,7 @@ CfgClass cfg;
 CfgClass::CfgClass() {}
 
 void CfgClass::begin() {
+  clear();
   hal_eeprom_begin();
 }
 
@@ -42,14 +43,9 @@ uint16_t CfgClass::paramCount() {
 
 //get parameter name and value for index
 bool CfgClass::getNameAndValue(uint16_t index, String* name, float* value) {
-  if(index>=paramCount()) return false;
+  if(index >= paramCount()) return false;
   *name = Cfg::param_list[index].name;
-  if(Cfg::param_list[index].type =='f') {
-    *value = param_float[index]; 
-  }else{
-    int32_t v = param_int32_t[index];
-    *value = v;
-  }
+  *value = getValue(index);
   return true;
 }
 
@@ -58,30 +54,6 @@ float CfgClass::getValue(String namestr, float default_value) {
   int i = getIndex(namestr);
   if(i<0) return default_value;
   return getValue(i);
-}
-
-//get parameter value as float
-float CfgClass::getValue(int i) {
-  if(i<0 || i>paramCount()) return 0;
-  if(Cfg::param_list[i].type == 'f') {
-    return param_float[i];
-  }else{
-    return param_int32_t[i];
-  }
-}
-
-
-//print enum option name for parameter pointer
-void CfgClass::printParamOption(const int32_t* param) {
-  uint32_t i = ( (uint32_t)param - (uint32_t)(param_int32_t) ) / 4;
-  if(i < paramCount()) {
-    char option[20];
-    if(getOptionString(i, *param, option)) {
-      Serial.print(option);
-      return;
-    }
-  }
-  Serial.print("***INVALID***");
 }
 
 //get enum option name for param_idx and param_val
@@ -116,19 +88,20 @@ void CfgClass::printModule(const char* module_name) {
   modname.toUpperCase();
   Serial.printf("%s: ", modname.c_str());
   modname.toLowerCase();
-  modname += '_';
+  String modname_ = modname + '_';
 
   //print gizmo
-  String type_name = modname + "gizmo";
-  int type_i = getIndex(type_name);
-  if(type_i >= 0) {
-    printValue(type_i);
+  String type_name = modname_ + "gizmo";
+  int gizmo_i = getIndex(type_name);
+  if(gizmo_i >= 0) {
+    printValue(gizmo_i);
     Serial.print(" - ");
   }
   //print config
+  Serial.print("config - ");
   for(int i = 0; i < paramCount(); i++) {
-    if(strncmp(Cfg::param_list[i].name, modname.c_str(), modname.length()) == 0 && i != type_i) { //starts with module_name + '_'
-      Serial.print(Cfg::param_list[i].name + modname.length()); //remove module_name + '_'
+    if(strncmp(Cfg::param_list[i].name, modname_.c_str(), modname_.length()) == 0 && i != gizmo_i) { //starts with module_name + '_', omit gizmo
+      Serial.print(Cfg::param_list[i].name);
       Serial.print(':');
       printValue(i);
       Serial.print(' ');
@@ -137,7 +110,7 @@ void CfgClass::printModule(const char* module_name) {
   //print module pins
   String pinname = "pin_" + modname; 
   for(int i = 0; i < paramCount(); i++) {
-    if(strncmp(Cfg::param_list[i].name, pinname.c_str(), pinname.length()) == 0 && i != type_i) { //starts with 'pin_' + module_name + '_'
+    if(strncmp(Cfg::param_list[i].name, pinname.c_str(), pinname.length()) == 0) { //starts with 'pin_' + module_name
       Serial.print(Cfg::param_list[i].name);
       Serial.print(':');
       printValue(i);
@@ -165,24 +138,25 @@ void CfgClass::printNameAndValue(uint16_t i, const char* comment) {
 //print param value
 void CfgClass::printValue(uint16_t i) {
   if(i >= paramCount()) return;
+  float val = getValue(i);
   switch(Cfg::param_list[i].type) {
     case 'e': { //enum
       char option[20];
-      if(getOptionString(i, param_int32_t[i], option)) {
+      if(getOptionString(i, val, option)) {
         Serial.print(option);
       }else{
-        Serial.printf("%d", (int)param_int32_t[i]); //option lookup failed, print numeric value
+        Serial.printf("%d", (int)val); //option lookup failed, print numeric value
       }
       break;
     }
     case 'f': //float
-      Serial.printf("%f", param_float[i]);
+      Serial.printf("%f", val);
       break;
     case 'i': //integer
-      Serial.printf("%d", (int)param_int32_t[i]);
+      Serial.printf("%d", (int)val);
       break;
     case 'p': //pinnumber/pinname
-      hal_print_pin_name(param_int32_t[i]);
+      hal_print_pin_name(val);
       break;
     default:
       Serial.printf("ERROR invalid type '%c'", Cfg::param_list[i].type);
@@ -222,24 +196,12 @@ void CfgClass::cli_diff(const char* filter) {
   }
 }
 
-
-/* non-sorted version
-void CfgClass::printPins() {
-  for(int i=0;i<paramCount();i++) {
-    if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && param_int32_t[i] >= 0) {
-      Serial.print("PIN: ");
-      printNameAndValue(i);
-    }
-  }
-}
-*/
-
-//(primitive) sort by pin number
+//sort by pin number (using inefficient sort)
 void CfgClass::printPins() {
   for(int pinno = 0; pinno<128; pinno++) {
     int cnt = 0;
-    for(int i=0;i<paramCount();i++) {
-      if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && param_int32_t[i] == pinno) {
+    for(int i = 0; i < paramCount(); i++) {
+      if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && getValue(i) == pinno) {
         Serial.print("PIN: ");
         if(cnt==0) {
           printNameAndValue(i);
@@ -271,7 +233,7 @@ bool CfgClass::setParam(String namestr, String val) {
     case 'e': { //enum
       int enum_idx = get_enum_index(val.c_str(), Cfg::param_list[i].options);
       if(enum_idx >= 0) {
-        param_int32_t[i] = enum_idx;
+        setValue(i, enum_idx);
         return true;
       }else{
         Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: ", namestr.c_str(), val.c_str());
@@ -282,16 +244,61 @@ bool CfgClass::setParam(String namestr, String val) {
       break;
     }
     case 'f': //float
-      param_float[i] = val.toFloat();
+      setValue(i, val.toFloat());
       break;
     case 'i': //integer
-      param_int32_t[i] = val.toInt();
+      setValue(i, val.toInt());
       break;
     case 'p': //pinnumber/pinname
-      param_int32_t[i] = hal_get_pin_number(val);
+      setValue(i, hal_get_pin_number(val));
       break;
   }
   return true;
+}
+
+//Set a parameter value, returns true on success
+bool CfgClass::setValue(int i, float val) {
+  if(i < 0 || i >= paramCount()) return false;
+
+  CfgParam* param = (CfgParam*) this;
+  float* param_float = (float*) param;
+  int32_t* param_int32_t = (int32_t*) param;
+
+  switch(Cfg::param_list[i].type) {
+    case 'f': //float
+      param_float[i] = val;
+      break;
+    case 'e': //enum
+    case 'i': //integer
+    case 'p': //pinnumber/pinname
+      param_int32_t[i] = val;
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+//get parameter value as float
+float CfgClass::getValue(int i) {
+  if(i < 0 || i >= paramCount()) return 0;
+
+  CfgParam* param = (CfgParam*) this;
+  float* param_float = (float*) param;
+  int32_t* param_int32_t = (int32_t*) param;
+
+  switch(Cfg::param_list[i].type) {
+    case 'f': //float
+      return param_float[i];
+      break;
+    case 'e': //enum
+    case 'i': //integer
+    case 'p': //pinnumber/pinname
+      return (float)param_int32_t[i];
+      break;
+    default:
+      return 0;
+  }
 }
 
 //for mavlink
@@ -300,12 +307,7 @@ bool CfgClass::setParamMavlink(String namestr, float val) {
   if(namestr == "") return false;
   int i = getIndex(namestr);
   if(i < 0) return false;
-  if(Cfg::param_list[i].type == 'f') {
-    param_float[i] = val;
-  }else{
-    param_int32_t[i] = val;
-  }
-  return true;
+  return setValue(i, val);
 }
 
 //get parameter index for a parameter name
@@ -323,9 +325,10 @@ int CfgClass::getIndex(String namestr) {
 
 //load defaults
 void CfgClass::clear() {
-  CfgParam cfg_clear;
   CfgParam *param = this;
-  memcpy(param, &cfg_clear, sizeof(CfgParam));
+  for(int i = 0; i < paramCount(); i++) {
+    setValue(i, Cfg::param_list[i].defval);
+  }
   CfgHeader hdr_clear;
   memcpy(&hdr, &hdr_clear, sizeof(CfgHeader));
 }
@@ -352,7 +355,7 @@ void CfgClass::loadFromEeprom() {
   || hdr_new.header3 != CFG_HDR3 
   || hdr_new.len<sizeof(CfgHeader)+8 
   || hdr_new.len>4096) {
-    Serial.println("Header invalid, using defaults");
+    Serial.println("EEPROM Header invalid, using defaults");
     return;
   }
   uint32_t datalen = hdr_new.len - 4; //length of header+param (4=crc)
@@ -370,7 +373,7 @@ void CfgClass::loadFromEeprom() {
     crc_eeprom_buf[i] = hal_eeprom_read(datalen + i);
   }
   if(crc != crc_eeprom) {
-    Serial.println("CRC invalid, using defaults");
+    Serial.println("EEPROM CRC invalid, using defaults");
     return;
   }
 
@@ -462,20 +465,20 @@ void CfgClass::load_madflight(const char *board, const char *config) {
   //check board+config crc against board+config crc stored in eeprom
   if(hdr.madflight_param_crc == crc) {
     //the board+config parameters were already applied (and potentially modified since, so do not re-apply)
-    Serial.println("Skipping madflight_board + madflight_config (EEPROM is newer)");
+    Serial.println("Skipping madflight_board and madflight_config (EEPROM is newer)");
     return;
   }
 
   //load board + config
   if(board && board[0]) {
     loadFromString(board);
-    Serial.print("madflight_board OK, ");
+    Serial.print("madflight_board loaded OK, ");
   }else{
     Serial.print("madflight_board is empty, ");
   }
   if(config && config[0]) {
     loadFromString(config);
-    Serial.println("madflight_config OK");
+    Serial.println("madflight_config loaded OK");
   }else{
     Serial.println("madflight_config is empty");
   }
@@ -507,7 +510,6 @@ bool CfgClass::load_cmdline(String cmdline) {
   //process parameter (prints error message)
   return setParam(name, value);
 }
-
 
 //get enum index from key string, return -1 if not found
 int CfgClass::get_enum_index(const char* key, const char* options) {

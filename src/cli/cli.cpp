@@ -429,6 +429,10 @@ bool Cli::cmd_process_char(char c) {
   }else if ( (c=='\r' || c=='\n') ) {
     processCmd();
     rv = true;
+  }else if (c == 0x08) { //backspace
+    if(cmdline.length() > 0) {
+      cmdline = cmdline.substring(0, cmdline.length() - 1);
+    }
   }else{
     cmdline += c;
   }

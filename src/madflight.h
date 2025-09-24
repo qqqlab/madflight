@@ -79,8 +79,6 @@ void madflight_warn_or_die(String msg, bool die);
 // madflight_setup()
 //===============================================================================================
 
-
-
 // vehicle setup by defines VEH_TYPE, VEH_FLIGHTMODE_AP_IDS, VEH_FLIGHTMODE_NAMES
 #ifndef VEH_TYPE
   #define VEH_TYPE VEH_TYPE_GENERIC
@@ -93,13 +91,13 @@ void madflight_warn_or_die(String msg, bool die);
 #endif
 const uint8_t Veh::mav_type = VEH_TYPE; //mavlink vehicle type
 const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
-const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //[6] define flightmode name strings for telemetry
+const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 void madflight_setup() {
   Serial.begin(115200); //start console serial
-
-  // CFG - Configuration parameters
-  cfg.begin(); 
+  
+  // CFG - Configuration parameters (execute before delay to start LED)
+  cfg.begin();
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.writeToEeprom();
@@ -135,11 +133,12 @@ void madflight_setup() {
     Serial.println("Processor: " MF_MCU_NAME);
   #endif
 
-  #ifdef MF_DEBUG
-    //Serial.println("\nDEBUG: cfg.list() ================\n");
-    //cfg.list();
-  #endif
+  // Rerun CFG to show output after startup delay
+  cfg.clear();
+  cfg.loadFromEeprom(); //load parameters from EEPROM
+  cfg.load_madflight(madflight_board, madflight_config); //load config
 
+  // Pins sorted by GPIO number
   cfg.printPins();
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
