@@ -68,6 +68,12 @@ public:
       gizmo->state = state;
       gizmo->sensor = sensor;
       state->ts = micros();
+
+      //set default calibration
+      if(config->ofl_cal_rad == 0) {
+        config->ofl_cal_rad = (1.0/385.0); //385 pixels/rad
+      }
+
       return gizmo;
     }
 

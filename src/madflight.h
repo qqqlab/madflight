@@ -196,6 +196,7 @@ void madflight_setup() {
   ofl.config.ofl_ser_bus  = cfg.ofl_ser_bus; // serial bus
   ofl.config.ofl_baud     = cfg.ofl_baud;    // baud rate (0 = default)
   ofl.config.ofl_align    = (Cfg::ofl_align_enum)cfg.ofl_align;  // xy-axis orientation. Example: ES means positive x-axis points East (right) and positive y-axis points South (back)
+  ofl.config.ofl_cal_rad  = cfg.ofl_cal_rad; // manual calibration factor from pixels to radians, leave at 0 to use calibration from gizmo
   ofl.setup();
 
   // GPS

@@ -250,6 +250,9 @@ SOFTWARE.
   MF_PARAM( rdr_i2c_bus,      -1, int32_t, 'i') \
   MF_PARAM( rdr_i2c_adr,       0, int32_t, 'i') \
   MF_PARAM( ofl_align,         0, int32_t, 'e', mf_NE,mf_NW,mf_ES,mf_EN,mf_SW,mf_SE,mf_WN,mf_WS) /* xy-axis orientation. Example: ES means positive x-axis points East (right) and positive y-axis points South (back) */ \
+\
+  /*v2.1.4 additions */ \
+  MF_PARAM( ofl_cal_rad,       0, float, 'f') /*manual calibration factor from pixels to radians, leave at 0 to use calibration from gizmo*/ \
 //end MF_PARAM_LIST
 
 

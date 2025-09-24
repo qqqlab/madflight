@@ -29,14 +29,14 @@ SOFTWARE.
 struct OflState {
   public:
     // Sensor state vars
-    int dx_raw = 0;  // raw sensor reading (sensor frame x-axis)
-    int dy_raw = 0;  // raw sensor reading (sensor frame y-axis)
+    int dx_raw = 0;  // raw sensor reading in pixels (x-axis of sensor frame)
+    int dy_raw = 0;  // raw sensor reading in pixels (y-axis of sensor frame)
     uint32_t dt = 0; // update timestamp [us]
     uint32_t ts = 0; // time since last update [us]
         
     // Ofl state vars
-    int dx = 0;      // movement in N direction of vehicle NED frame (dx_raw,dy_raw rotated by ofl_align)
-    int dy = 0;      // movement in E direction of vehicle NED frame (dx_raw,dy_raw rotated by ofl_align)
+    float dx = 0;      // movement in N direction of vehicle NED frame in radians (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
+    float dy = 0;      // movement in E direction of vehicle NED frame in radians (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
 };
 
 struct OflConfig {
@@ -46,7 +46,8 @@ struct OflConfig {
     int pin_ofl_cs = -1; //SPI cs pin
     int ofl_ser_bus = -1; //Serial bus id
     int ofl_baud = 0; //baud rate. 0=autobaud
-    Cfg::ofl_align_enum ofl_align = Cfg::ofl_align_enum::mf_NE; //orientation of mounted sensor in relation to vehicle NED fram
+    Cfg::ofl_align_enum ofl_align = Cfg::ofl_align_enum::mf_NE; //orientation of mounted sensor in relation to vehicle NED frame
+    float ofl_cal_rad = 0; // manual calibration factor from pixels to radians, leave at 0 to use calibration from gizmo (updated by gizmo when 0)
 };
 
 class OflGizmo {

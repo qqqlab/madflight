@@ -75,6 +75,12 @@ public:
       gizmo->ser_bus = ser_bus;
       gizmo->_parserState = 0;
       state->ts = micros();
+
+      //set default calibration
+      if(config->ofl_cal_rad == 0) {
+        config->ofl_cal_rad = (1.0/385.0); //385 pixels/rad
+      }
+
       return gizmo;
     }
 

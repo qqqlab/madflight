@@ -57,6 +57,11 @@ int Ofl::setup() {
     return -1001;
   }
 
+  //set calibration factor to one if not set by gizmo
+  if(config.ofl_cal_rad == 0) {
+    config.ofl_cal_rad == 1.0;
+  }
+
   return 0;
 }
 
@@ -65,41 +70,46 @@ bool Ofl::update() {
   if(!gizmo->update()) return false;
 
   //rotate sensor axis to NE(D) frame
+  float dxnew, dynew;
   switch(config.ofl_align) {
     case Cfg::ofl_align_enum::mf_NW:
-      dx = dx_raw;
-      dy = -dy_raw;
+      dxnew = dx_raw;
+      dynew = -dy_raw;
       break;
     case Cfg::ofl_align_enum::mf_SW:
-      dx = -dx_raw;
-      dy = -dy_raw;
+      dxnew = -dx_raw;
+      dynew = -dy_raw;
       break;
     case Cfg::ofl_align_enum::mf_SE:
-      dx = -dx_raw;
-      dy = dy_raw;
+      dxnew = -dx_raw;
+      dynew = dy_raw;
       break;
     case Cfg::ofl_align_enum::mf_ES:
-      dx = -dy_raw;
-      dy = dx_raw;
+      dxnew = -dy_raw;
+      dynew = dx_raw;
       break;
     case Cfg::ofl_align_enum::mf_EN:
-      dx = dy_raw;
-      dy = dx_raw;
+      dxnew = dy_raw;
+      dynew = dx_raw;
       break;
     case Cfg::ofl_align_enum::mf_WS:
-      dx = -dy_raw;
-      dy = -dx_raw;
+      dxnew = -dy_raw;
+      dynew = -dx_raw;
       break;
     case Cfg::ofl_align_enum::mf_WN:
-      dx = dy_raw;
-      dy = -dx_raw;
+      dxnew = dy_raw;
+      dynew = -dx_raw;
       break;
     default:
     case Cfg::ofl_align_enum::mf_NE:
-      dx = dx_raw;
-      dy = dy_raw;
+      dxnew = dx_raw;
+      dynew = dy_raw;
       break;
   }
+
+  //convert from pixels to radians
+  dx = dxnew * config.ofl_cal_rad;
+  dy = dxnew * config.ofl_cal_rad;
 
   return true;
 }
