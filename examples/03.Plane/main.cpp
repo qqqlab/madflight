@@ -75,18 +75,18 @@ Copyright (c) 2024-2025 https://madflight.com
 
 //Vehicle specific madflight configuration
 #define VEH_TYPE VEH_TYPE_PLANE //set the vehicle type for logging and mavlink
-#define VEH_FLIGHTMODE_AP_IDS {AP_PLANE_FLIGHTMODE_MANUAL, AP_PLANE_FLIGHTMODE_STABILIZE, AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A} //(approximate) mapping of flightmode index to ArduPilot code for logging and mavlink
-#define VEH_FLIGHTMODE_NAMES {"MANUAL", "ROLL", "FBWA"} //flightmode names for telemetry
-enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flightmodes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
-flightmode_enum rcl_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 3/6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
+#define VEH_FLIGHTMODE_AP_IDS {AP_PLANE_FLIGHTMODE_MANUAL, AP_PLANE_FLIGHTMODE_STABILIZE, AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A} //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_NAMES {"MANUAL", "ROLL", "FBWA"} //fightmode names for telemetry
+enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
+flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 3/6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
 //prototypes (for PlatformIO, not needed for Arduino IDE)
 void led_Blink();
-void control_FBWA();
-void control_ROLL();
+void control_FBWA(bool zero_integrators);
+void control_ROLL(bool zero_integrators);
 void control_MANUAL();
 void out_KillSwitchAndFailsafe();
 void out_Mixer();
@@ -110,23 +110,31 @@ void out_Mixer();
 //========================================================================================================================//
 
 //Controller parameters (take note of defaults before modifying!): 
+float i_limit        = 25;        //PID Integrator saturation level, mostly for safety
 float maxRoll        = 45;        //Max roll angle in degrees for ROLL, FBWA modes
 float maxPitch       = 30;        //Max pitch angle in degrees for FBWA mode
 float fbwa_pitch_offset = 3;      //FBWA pitch up angle for neutral stick
 
-// PID controllers - Kp, Ki, Kd, scale_factor, i_limit
-PIDController pidRol(1.0/90, 0.0, 1.0/180, 1, 0); //Roll (deg) apply full aileron on 90 degree roll error, apply full opposite aileron when roll rate is 180 degrees/sec towards desired setpoint
-PIDController pidPit(1.0/30, 0.0, 1.0/90, 0.001, 0); //Pitch (deg) apply full elevator on 30 degree pitch error, apply full opposite elevator when pitch rate is 90 degrees/sec towards desired setpoint
+//roll PID constants
+float Kp_roll        = (1.0/90);  //Roll P-gain - apply full aileron on 90 degree roll error
+float Ki_roll        = 0;         //Roll I-gain
+float Kd_roll        = (1.0/180); //Roll D-gain - apply full opposite aileron when roll rate is 180 degrees/sec towards desired setpoint
+
+//pitch PID constants
+float Kp_pitch       = (1.0/30);  //Pitch P-gain - apply full elevator on 30 degree pitch error
+float Ki_pitch       = 0;         //Pitch I-gain
+float Kd_pitch       = (1.0/90);  //Pitch D-gain - apply full opposite elevator when pitch rate is 90 degrees/sec towards desired setpoint
 
 //Radio communication:
-float rcl_flaps; //flaps 0.0:up, 1.0:full down
+float rcin_flaps; //flaps 0.0:up, 1.0:full down
 
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
 
 void setup() {
-  madflight_setup(); //setup madflight modules
+  //setup madflight components: Serial.begin(115200), imu, rcin, led, etc. See src/madflight/interface.h for full interface description of each component. 
+  madflight_setup();
 
   //Standard servo at 50Hz (set servos first just in case motors overwrite frequency of shared timers)
   out.setupServo(1, cfg.pin_out1, 50, 1000, 2000); //Aileron
@@ -145,13 +153,10 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //update sensors
-  rdr.update(); // radar (not used in this example)
-  ofl.update(); // optical flow (not used in this example)
-
-  if(bat.update()) bbx.log_bat(); //battery sensor, and log if battery was updated. 
-  if(bar.update()) bbx.log_bar(); //barometer, and log if pressure updated
-  mag.update(); // magnetometer
+  //update all I2C sensors
+  if(bat.update()) bbx.log_bat(); //update battery, and log if battery was updated. 
+  if(bar.update()) bbx.log_bar(); //log if pressure updated
+  mag.update();
 
   if(gps.update()) {bbx.log_gps(); bbx.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
 
@@ -179,21 +184,15 @@ void imu_loop() {
 
   //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
   rcl.update();
-  veh.setFlightmode( rcl_to_flightmode_map[rcl.flightmode] ); //map rcl.flightmode (0 to 5) to vehicle flightmode
-
-  //Zero the PID integrators if throttle is zero (don't let integrator build if throttle is too low, or to re-start the controller)
-  if(rcl.throttle == 0) {
-    pidRol.reset();
-    pidPit.reset();
-  }
+  veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] ); //map rcl.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
   switch( veh.getFlightmode() ) {
     case ROLL:
-      control_ROLL(); //Stabilize on roll angle setpoints
+      control_ROLL(rcl.throttle == 0); //Stabilize on roll angle setpoints
       break;    
     case FBWA:
-      control_FBWA(); //Stabilize on pitch/roll angle setpoints
+      control_FBWA(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoints
       break;
     default:
       control_MANUAL();
@@ -220,7 +219,7 @@ void led_Blink() {
   if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
-void control_FBWA() {
+void control_FBWA(bool zero_integrators) {
 /* FBWA Fly By Wire A Mode (inspired by ArduPilot)
 This is the most popular mode for assisted flying, and is the best mode for inexperienced flyers. In this mode the
 plane will hold the roll and pitch specified by the control sticks. So if you hold the aileron stick hard right then the 
@@ -234,22 +233,44 @@ the throttle, and to lose altitude you should lower the throttle.
 In FBWA mode the rudder is under manual control.
 */
 
+  //inputs: roll_des, pitch_des, yawRate_des
+  //outputs: pid.roll, pid.pitch, pid.yaw
+
   //desired values
   float roll_des = rcl.roll * maxRoll; //Between -maxRoll and +maxRoll
   float pitch_des = rcl.pitch * maxPitch + fbwa_pitch_offset; //Between fbwa_pitch_offset-maxPitch and fbwa_pitch_offset+maxPitch
 
+  //state vars
+  static float integral_roll, integral_pitch, error_yaw_prev, integral_yaw;
+
+  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
+  if(zero_integrators) {
+    integral_roll = 0;
+    integral_pitch = 0;
+    integral_yaw = 0;
+  }
+
   //Roll PID - stabilize desired roll angle
-  pid.roll = pidRol.controlDegreesActualDerivative(roll_des, ahr.roll, imu.dt, ahr.gx);
+  float error_roll = roll_des - ahr.roll;
+  integral_roll += error_roll * imu.dt;
+  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
+  float derivative_roll = ahr.gx;
+  pid.roll = Kp_roll*error_roll + Ki_roll*integral_roll - Kd_roll*derivative_roll; //nominal output -1 to 1 (can be larger)
 
   //Pitch PID - stabilize desired pitch angle
-  pid.pitch = pidPit.controlDegreesActualDerivative(pitch_des, ahr.pitch, imu.dt, ahr.gy);
+  float error_pitch = pitch_des - ahr.pitch;
+  integral_pitch += error_pitch * imu.dt;
+  integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
+  float derivative_pitch = ahr.gy; 
+  pid.pitch = Kp_pitch*error_pitch + Ki_pitch*integral_pitch - Kd_pitch*derivative_pitch; //nominal output -1 to 1 (can be larger)
 
-  //Yaw PID - passthru rcl
+  //Yaw PID - passthru rcin
   pid.yaw = rcl.yaw;
+  (void) integral_yaw;
+  (void) error_yaw_prev;
 
   /*
   //TODO Yaw PID - Stabilize on zero slip, i.e. keep gravity Y component zero
-  static float error_yaw_prev, integral_yaw;
   float error_yaw = 0 - ahr.ay;
   integral_yaw += error_yaw * imu.dt;
   integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
@@ -261,17 +282,32 @@ In FBWA mode the rudder is under manual control.
   */  
 }
 
-void control_ROLL() {
+void control_ROLL(bool zero_integrators) {
+  //inputs: roll_des, pitch_des, yawRate_des
+  //outputs: pid.roll, pid.pitch, pid.yaw
+
   //desired values
   float roll_des = rcl.roll * maxRoll; //Between -maxRoll and +maxRoll
 
-  //Roll PID - stabilize desired roll angle
-  pid.roll = pidRol.controlDegreesActualDerivative(roll_des, ahr.roll, imu.dt, ahr.gx);
+  //state vars
+  static float integral_roll;
 
-  //Pitch PID - passthru rcl
+  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
+  if(zero_integrators) {
+    integral_roll = 0;
+  }
+
+  //Roll PID - stabilize desired roll angle
+  float error_roll = roll_des - ahr.roll;
+  integral_roll += error_roll * imu.dt;
+  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
+  float derivative_roll = ahr.gx;
+  pid.roll = Kp_roll*error_roll + Ki_roll*integral_roll - Kd_roll*derivative_roll; //nominal output -1 to 1 (can be larger)
+
+  //Pitch PID - passthru rcin
   pid.pitch = rcl.pitch;
 
-  //Yaw PID - passthru rcl
+  //Yaw PID - passthru rcin
   pid.yaw = rcl.yaw; 
 }
 
@@ -280,7 +316,7 @@ void control_MANUAL() {
 /* MANUAL Mode
 Regular RC control, no stabilization. All RC inputs are passed through to the servo outputs.
 */  
-  //pass rcl through to PID - PID values are -1 to +1, rcl values are -1 to +1
+  //pass rcin through to PID - PID values are -1 to +1, rcin values are -1 to +1
   pid.roll = rcl.roll;  //-1 = left, 1 = right
   pid.pitch = rcl.pitch; //-1 = pitch up/stick back, 1 = pitch down/stick forward
   pid.yaw = rcl.yaw; //-1 = left, 1 = right
@@ -314,17 +350,17 @@ void out_Mixer() {
    * vehicle configuration. For example on a quadcopter, the left two motors should have +pid.roll while the right two motors
    * should have -pid.roll. Front two should have +pid.pitch and the back two should have -pid.pitch etc... every motor has
    * normalized (0 to 1) rcl.throttle command for throttle control. Can also apply direct unstabilized commands from the transmitter with 
-   * rcl_xxx variables are to be sent to the motor ESCs and servos.
+   * rcin_xxx variables are to be sent to the motor ESCs and servos.
    * 
-   * Relevant variables:
-   *   rcl.throttle - direct thottle control
-   *   pid.roll, pid.pitch, pid.yaw - stabilized axis variables
-   *   rcl.roll, rcl.pitch, rcl.yaw - direct unstabilized command passthrough
-   *
-   *   rcl.throttle    0: idle throttle/stick back   1: full throttle/stick forward
-   *   pid.roll       -1: roll left/stick left       1: roll right/stick right
-   *   pid.pitch      -1: pitch up/stick back        1: pitch down/stick forward
-   *   pid.yaw        -1: yaw left/stick left        1: yaw right/stick right
+   *Relevant variables:
+   *rcl.throttle - direct thottle control
+   *pid.roll, pid.pitch, pid.yaw - stabilized axis variables
+   *rcl.roll, rcl.pitch, rcl.yaw - direct unstabilized command passthrough
+
+    rcl.throttle   0: idle throttle/stick back  1: full throttle/stick forward
+    pid.roll   -1: roll left/stick left      1: roll right/stick right
+    pid.pitch  -1: pitch up/stick back       1: pitch down/stick forward
+    pid.yaw    -1: yaw left/stick left       1: yaw right/stick right
    */
 
   //Plane mixing - PID values are -1 to +1 (nominal), SERVO values are 0 to 1 (clipped by pwm class)
@@ -373,22 +409,22 @@ void out_Mixer() {
     out.set(OUT_RUDDER_LEFT-1, -pid.yaw/2.0 + 0.5);
   #endif
 
-  //flaps: (rcl_flaps 0.0:up, 1.0:full down)
+  //flaps: (rcin_flaps 0.0:up, 1.0:full down)
   #ifdef OUT_FLAPS_DOWN //flaps deflect down on high pwm (flaps use full servo range 0.0 to 1.0)
-    float rcl_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_DOWN-1, +rcl_flaps);
+    float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
+    out.set(OUT_FLAPS_DOWN-1, +rcin_flaps);
   #endif
   #ifdef OUT_FLAPS_DOWN_HALF //flaps deflect down on high pwm (flaps only use servo range 0.5 to 1.0)
-    float rcl_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_DOWN_HALF-1, 0.5 + rcl_flaps/2.0);
+    float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
+    out.set(OUT_FLAPS_DOWN_HALF-1, 0.5 + rcin_flaps/2.0);
   #endif  
   #ifdef OUT_FLAPS_UP //reversed: flaps deflect up on high pwm (flaps use full servo range 0.0 to 1.0)
-    float rcl_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_UP-1, -rcl_flaps);
+    float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
+    out.set(OUT_FLAPS_UP-1, -rcin_flaps);
   #endif
   #ifdef OUT_FLAPS_UP_HALF //reversed: flaps deflect up on high pwm (flaps only use servo range 0.5 to 1.0)
-    float rcl_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_UP_HALF-1, 0.5 - rcl_flaps/2.0);
+    float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
+    out.set(OUT_FLAPS_UP_HALF-1, 0.5 - rcin_flaps/2.0);
   #endif 
 
   //delta wing:

@@ -28,9 +28,12 @@ SOFTWARE.
 
 struct RdrState {
   public:
-    int dist = -1; //distance in mm
-    uint32_t update_ts = 0;
-    uint32_t update_cnt = 0;
+    // Sensor state vars
+    float dist = -1; //distance in m, or negative error code (-1: no data, -2: invalid data)
+
+    // Rdr state vars
+    uint32_t update_ts = 0; //timestamp last successful update() call
+    uint32_t update_cnt = 0; //number of updates since start
 };
 
 struct RdrConfig {

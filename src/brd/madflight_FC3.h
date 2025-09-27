@@ -11,6 +11,7 @@ BBX: SDCARD (4-bit SDIO or 1-bit SPI)
 LED: WS2812B
 
 */
+#include <Arduino.h> //needed for ARDUINO_PICO_MAJOR etc
 
 #if !ARDUINO_ARCH_RP2040
   #error "Invalid Arduino Architecture: Select Arduino Pico"

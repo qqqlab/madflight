@@ -10,6 +10,7 @@ MAG: QMC6309
 BBX: SDCARD (1-bit SPI or 4-bit SDIO)
 
 */
+#include <Arduino.h> //needed for ARDUINO_PICO_MAJOR etc
 
 #if !ARDUINO_ARCH_RP2040
   #error "Invalid Arduino Architecture: Select Arduino Pico"

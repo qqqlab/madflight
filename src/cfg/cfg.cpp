@@ -95,10 +95,10 @@ void CfgClass::printModule(const char* module_name) {
   int gizmo_i = getIndex(type_name);
   if(gizmo_i >= 0) {
     printValue(gizmo_i);
-    Serial.print(" - ");
+    Serial.print(" ");
   }
   //print config
-  Serial.print("config - ");
+  Serial.print("setup - ");
   for(int i = 0; i < paramCount(); i++) {
     if(strncmp(Cfg::param_list[i].name, modname_.c_str(), modname_.length()) == 0 && i != gizmo_i) { //starts with module_name + '_', omit gizmo
       Serial.print(Cfg::param_list[i].name);

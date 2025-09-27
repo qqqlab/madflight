@@ -4,7 +4,7 @@ class KalmanFilter {
 
 public :
 
-  KalmanFilter();
+  KalmanFilter() {};
 
   void setup(float altCov, float accCov, float biasCov = 0);
 

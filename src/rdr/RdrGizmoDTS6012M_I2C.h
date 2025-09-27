@@ -40,22 +40,22 @@ Returns -1 mm on bad measurement (sensor blocked)
 
 class RdrGizmoDTS6012M_I2C: public RdrGizmo {
 private:
-  int *dist = nullptr;
+  RdrState *state;
   DTS6012M_I2C *dts6012m_i2c = nullptr;
 
   RdrGizmoDTS6012M_I2C() {} //private constructor
 
 public:
-  static RdrGizmoDTS6012M_I2C* create(int *dist, RdrConfig *conf) {
+  static RdrGizmoDTS6012M_I2C* create(RdrConfig *config, RdrState *state) {
       //get i2c bus
-      MF_I2C* i2c_bus = hal_get_i2c_bus(conf->rdr_i2c_bus);
+      MF_I2C* i2c_bus = hal_get_i2c_bus(config->rdr_i2c_bus);
       if(!i2c_bus) return nullptr;
 
       //setup gizmo
       auto gizmo = new RdrGizmoDTS6012M_I2C();
-      gizmo->dist = dist;
+      gizmo->state = state;
       gizmo->dts6012m_i2c = new DTS6012M_I2C();
-      if(!gizmo->dts6012m_i2c->begin(i2c_bus, conf->rdr_i2c_adr)) {
+      if(!gizmo->dts6012m_i2c->begin(i2c_bus, config->rdr_i2c_adr)) {
         Serial.println("RDR: ERROR: DTS6012M_I2C init failed.");
         delete gizmo->dts6012m_i2c;
         delete gizmo;
@@ -66,7 +66,15 @@ public:
 
   bool update() override {
     if(!dts6012m_i2c->update()) return false;
-    *dist = dts6012m_i2c->distance; // in mm
+    //sensor reports in [mm], or returns -1 on fail
+    uint16_t dist = dts6012m_i2c->distance;
+    if(dist == -1) {
+      state->dist = -1; //no data
+    }else if(dist < -1 || dist > 20000) {
+      state->dist = -2; //invalid data
+    }else{
+      state->dist = (float)dist * 0.001f; //dist in [m]
+    }
     return true;
   }
 };

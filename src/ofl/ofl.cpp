@@ -110,7 +110,12 @@ bool Ofl::update() {
   //convert from pixels to radians
   dx = dxnew * config.ofl_cal_rad;
   dy = dxnew * config.ofl_cal_rad;
+  x += dx;
+  y += dy;
+  update_ts = micros();
+  update_cnt++;
 
+  updated = true;
   return true;
 }
 

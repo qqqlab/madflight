@@ -28,12 +28,17 @@ SOFTWARE.
 
 #include "ofl.h"
 #include "../hal/hal.h"
+#include "../tbx/ScheduleFreq.h"
 #include "PWM3901/Bitcraze_PMW3901.h"
 
 class OflGizmoPMW3901: public OflGizmo {
 private:
   OflState *state;
   Bitcraze_PMW3901 *sensor = nullptr;
+
+  // sensor update rate is approx 6ms (166Hz) but no status flag/interrupt to know when a measurement took place. Sensor returns 0,0 when busy, but 0,0 could also mean "new measurement, but no movement".
+  // we measure at a 100Hz schedule to have least 1 new measurement
+  ScheduleFreq schedule_100Hz = ScheduleFreq(100);
 
   OflGizmoPMW3901() {} //private constructor
 
@@ -67,7 +72,6 @@ public:
       auto gizmo = new OflGizmoPMW3901();
       gizmo->state = state;
       gizmo->sensor = sensor;
-      state->ts = micros();
 
       //set default calibration
       if(config->ofl_cal_rad == 0) {
@@ -78,11 +82,7 @@ public:
     }
 
   bool update() override {
-    uint32_t now = micros();
-
-    // update rate approx 6ms (166Hz) but no status flag/interrupt to know when a measurement took place. Sensor returns 0,0 when busy, but 0,0 could also mean "new measurement, but no movement".
-    // --> so, 8000 us after the last measurement we should have at least 1 new measurement
-    if(now - state->ts < 8000) return false;
+    if(!schedule_100Hz.expired()) return false;
 
     int16_t dx;
     int16_t dy;
@@ -90,8 +90,6 @@ public:
 
     state->dx_raw = dx;
     state->dy_raw = dy;
-    state->dt = now - state->ts;
-    state->ts = now;
 
     return true;
   }

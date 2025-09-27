@@ -35,6 +35,7 @@ struct BarState {
     float temp = 0;   // Temperature in [Celcius]
     uint32_t ts = 0;  // Sample timestamp in [us]
     float dt = 0;     // Time since last sample in [seconds]
+    float ground_level; // Ground level in [m]
 };
 
 struct BarConfig {

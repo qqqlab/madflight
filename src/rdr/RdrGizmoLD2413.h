@@ -37,7 +37,7 @@ SOFTWARE.
 
 class RdrGizmoLD2413: public RdrGizmo {
 private:
-  int *dist = nullptr;
+  RdrState *state;
   MF_Serial* ser_bus = nullptr;
   
   int pos = 0;
@@ -49,16 +49,16 @@ private:
   RdrGizmoLD2413() {} //private constructor
 
 public:
-  static RdrGizmoLD2413* create(int* dist, int ser_bus_id, int baud) {
+  static RdrGizmoLD2413* create(RdrConfig *config, RdrState *state) {
       //get serial bus
-      if(baud == 0) baud = 115200;
-      MF_Serial* ser_bus = hal_get_ser_bus(ser_bus_id, baud);
+      if(config->rdr_baud == 0) config->rdr_baud = 115200;
+      MF_Serial* ser_bus = hal_get_ser_bus(config->rdr_ser_bus, config->rdr_baud);
       if(!ser_bus) return nullptr;
 
       //setup gizmo
       auto gizmo = new RdrGizmoLD2413();
       gizmo->ser_bus = ser_bus;
-      gizmo->dist = dist;
+      gizmo->state = state;
       gizmo->pos = 0;
       return gizmo;
     }
@@ -106,7 +106,7 @@ public:
           break;
         case 13:
           if(b==0xF5) {
-            *dist = data.f;
+            state->dist = data.f * 0.001f; //sensor reports distance in [mm]
             //Serial.println(data.f);
             rv = true;
           }

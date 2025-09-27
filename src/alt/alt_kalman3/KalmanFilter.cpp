@@ -8,10 +8,6 @@
 // as an initialization parameter.
 
 
-KalmanFilter::KalmanFilter() {
-  setup(1.0, 0.5); //default covariance: 1.0m altitude, 0.5m/s^2 accel
-}
-
 void KalmanFilter::setup(float altCov, float accCov, float biasCov) {
   this->altCov = altCov;
   this->accCov = accCov;

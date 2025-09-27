@@ -48,22 +48,25 @@ int Rdr::setup() {
       gizmo = nullptr;
       break;
     case Cfg::rdr_gizmo_enum::mf_LD2411S :
-      gizmo = RdrGizmoLD2411S::create(&dist, config.rdr_ser_bus, config.rdr_baud);
+      gizmo = RdrGizmoLD2411S::create(&config, (RdrState*)this);
       break;
     case Cfg::rdr_gizmo_enum::mf_LD2413 :
-      gizmo = RdrGizmoLD2413::create(&dist, config.rdr_ser_bus, config.rdr_baud);
+      gizmo = RdrGizmoLD2413::create(&config, (RdrState*)this);
       break;
     case Cfg::rdr_gizmo_enum::mf_USD1 :
-      gizmo = RdrGizmoUSD1::create(&dist, config.rdr_ser_bus, config.rdr_baud);
+      gizmo = RdrGizmoUSD1::create(&config, (RdrState*)this);
       break;
     case Cfg::rdr_gizmo_enum::mf_SR04 :
-      gizmo = RdrGizmoSR04::create(&dist, config.pin_rdr_trig, config.pin_rdr_echo);
+      gizmo = RdrGizmoSR04::create(&config, (RdrState*)this);
       break;
     case Cfg::rdr_gizmo_enum::mf_DTS6012M :
       if(config.rdr_ser_bus >= 0) {
-        gizmo = RdrGizmoDTS6012M_UART::create(&dist, &config);
+        if(config.rdr_i2c_bus >= 0) {
+          Serial.println("RDR: WARNING - DTS6012M both RDR_SER_BUS and RDR_I2C_BUS configured, using SER_BUS");
+        }
+        gizmo = RdrGizmoDTS6012M_UART::create(&config, (RdrState*)this);
       }else{
-        gizmo = RdrGizmoDTS6012M_I2C::create(&dist, &config);
+        gizmo = RdrGizmoDTS6012M_I2C::create(&config, (RdrState*)this);
       }
       break;
   }

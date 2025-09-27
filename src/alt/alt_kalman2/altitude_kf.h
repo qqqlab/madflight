@@ -57,35 +57,15 @@ public:
     update(altitude);
   };
 
-  /**
-   * Estimated vertical height or altitude in Earth frame (positive in the zenith direction) [m].
-   */
-  float h;
-
-  /**
-   * Estimated vertical velocity (positive in the zenith direction) [m/s].
-   */
-  float v;
-
-  /**
-   * Accelerometer covariance.
-   */
-  float accCov;
-
-  /**
-   * Altitude measurement covariance.
-   */
-  float altCov;
+  float h; //Estimated vertical height or altitude in Earth frame (positive in the zenith direction) [m].
+  float v; //Estimated vertical velocity (positive in the zenith direction) [m/s].
+  float accCov; //Accelerometer covariance
+  float altCov; //Altitude measurement covariance
 
   private:
-
-  /**
-   * Predicted covariance matrix 'P'.
-   */
-  float P[2][2] =
-  {
-    { 1.0f,     0.0f },
-    { 0.0f,     1.0f }
-  };
-
+    //Predicted covariance matrix 'P'
+    float P00 = 1;
+    float P01 = 0;
+    float P10 = 0;
+    float P11 = 1;
 };

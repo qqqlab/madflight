@@ -1,5 +1,58 @@
 //modified for madflight - add: SPIClass *_spi
 
+/*from esp-drone 
+https://github.com/espressif/esp-drone/blob/527ee2e09cb446d414926562260de31403fb943e/components/drivers/spi_devices/pmw3901/pmw3901.c
+
+typedef struct motionBurst_s {
+    union {
+        uint8_t motion;
+        struct {
+            uint8_t frameFrom0    : 1;
+            uint8_t runMode       : 2;
+            uint8_t reserved1     : 1;
+            uint8_t rawFrom0      : 1;
+            uint8_t reserved2     : 2;
+            uint8_t motionOccured : 1;
+        };
+    };
+
+    uint8_t observation;
+    int16_t deltaX;
+    int16_t deltaY;
+
+    uint8_t squal;
+
+    uint8_t rawDataSum;
+    uint8_t maxRawData;
+    uint8_t minRawData;
+
+    uint16_t shutter;
+} __attribute__((packed)) motionBurst_t;
+
+
+void pmw3901ReadMotion(uint32_t csPin, motionBurst_t *motion)
+{
+    uint8_t address = 0x16;
+
+    spiBeginTransaction(SPI_BAUDRATE_2MHZ);
+    digitalWrite(csPin, LOW);
+    sleepus(50);
+    spiExchange(1, 1, &address, &address);
+    sleepus(50);
+    spiExchange(sizeof(motionBurst_t), 0, (uint8_t *)motion, (uint8_t *)motion);
+    sleepus(50);
+    digitalWrite(csPin, HIGH);
+    spiEndTransaction();
+    sleepus(50);
+
+    uint16_t realShutter = (motion->shutter >> 8) & 0x0FF;
+    realShutter |= (motion->shutter & 0x0ff) << 8;
+    motion->shutter = realShutter;
+}
+
+*/
+
+
 /* PMW3901 Arduino driver
  * Copyright (c) 2017 Bitcraze AB
  *
@@ -251,6 +304,7 @@ void Bitcraze_PMW3901::initRegisters()
   registerWrite(0x70, 0x00);
 
   delay(100);
+
   registerWrite(0x32, 0x44);
   registerWrite(0x7F, 0x07);
   registerWrite(0x40, 0x40);
@@ -265,6 +319,10 @@ void Bitcraze_PMW3901::initRegisters()
   registerWrite(0x4E, 0xA8);
   registerWrite(0x5A, 0x50);
   registerWrite(0x40, 0x80);
+
+  //registerWrite(0x7F, 0x00); //from esp-drone
+  //registerWrite(0x5A, 0x10); //from esp-drone
+  //registerWrite(0x54, 0x00); //from esp-drone
 }
 
 void Bitcraze_PMW3901::setLed(bool ledOn)

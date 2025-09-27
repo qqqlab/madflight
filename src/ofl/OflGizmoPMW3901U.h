@@ -74,7 +74,6 @@ public:
       gizmo->state = state;
       gizmo->ser_bus = ser_bus;
       gizmo->_parserState = 0;
-      state->ts = micros();
 
       //set default calibration
       if(config->ofl_cal_rad == 0) {
@@ -153,8 +152,6 @@ public:
 
     state->dx_raw = dx_sum;
     state->dy_raw = dy_sum;
-    state->dt = now - state->ts;
-    state->ts = now;
 
     return true;
   }

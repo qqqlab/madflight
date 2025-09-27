@@ -40,23 +40,23 @@ Returns -1 mm on bad measurement (sensor blocked)
 
 class RdrGizmoDTS6012M_UART: public RdrGizmo {
 private:
-  int *dist = nullptr;
+  RdrState *state;
   DTS6012M_UART *dts6012m_uart = nullptr;
 
   RdrGizmoDTS6012M_UART() {} //private constructor
 
 public:
-  static RdrGizmoDTS6012M_UART* create(int *dist, RdrConfig *conf) {
+  static RdrGizmoDTS6012M_UART* create(RdrConfig *config, RdrState *state) {
       //get serial bus
-      if(conf->rdr_baud == 0) conf->rdr_baud = 921600; //baud rate is fixed (i.e. need this baud rate to change baud rate?)
-      MF_Serial* ser_bus = hal_get_ser_bus(conf->rdr_ser_bus, conf->rdr_baud);
+      if(config->rdr_baud == 0) config->rdr_baud = 921600; //baud rate is fixed (i.e. need this baud rate to change baud rate?)
+      MF_Serial* ser_bus = hal_get_ser_bus(config->rdr_ser_bus, config->rdr_baud);
       if(!ser_bus) return nullptr;
 
       //setup gizmo
       auto gizmo = new RdrGizmoDTS6012M_UART();
-      gizmo->dist = dist;
+      gizmo->state = state;
       gizmo->dts6012m_uart = new DTS6012M_UART();
-      if(!gizmo->dts6012m_uart->begin(ser_bus, conf->rdr_baud)) {
+      if(!gizmo->dts6012m_uart->begin(ser_bus, config->rdr_baud)) {
         Serial.println("RDR: ERROR: DTS6012M_UART init failed.");
         delete gizmo->dts6012m_uart;
         delete gizmo;
@@ -67,7 +67,15 @@ public:
 
   bool update() override {
     if(!dts6012m_uart->update()) return false;
-    *dist = dts6012m_uart->getDistance(); // in mm
+    //sensor reports in [mm], or returns -1 on fail
+    uint16_t dist = dts6012m_uart->getDistance();
+    if(dist == -1) {
+      state->dist = -1; //no data
+    }else if(dist < -1 || dist > 20000) {
+      state->dist = -2; //invalid data
+    }else{
+      state->dist = (float)dist * 0.001f; //dist in [m]
+    }
     return true;
   }
 };

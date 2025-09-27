@@ -29,14 +29,17 @@ SOFTWARE.
 struct OflState {
   public:
     // Sensor state vars
-    int dx_raw = 0;  // raw sensor reading in pixels (x-axis of sensor frame)
-    int dy_raw = 0;  // raw sensor reading in pixels (y-axis of sensor frame)
-    uint32_t dt = 0; // update timestamp [us]
-    uint32_t ts = 0; // time since last update [us]
+    int dx_raw = 0;  // raw sensor reading in [pixels] (x-axis of sensor frame)
+    int dy_raw = 0;  // raw sensor reading in [pixels] (y-axis of sensor frame)
+
         
     // Ofl state vars
-    float dx = 0;      // movement in N direction of vehicle NED frame in radians (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
-    float dy = 0;      // movement in E direction of vehicle NED frame in radians (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
+    float dx = 0;      // movement in N direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
+    float dy = 0;      // movement in E direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
+    float x = 0;       // position in N direction of vehicle NED frame in [radians]
+    float y = 0;       // position in E direction of vehicle NED frame in [radians]
+    uint32_t update_ts = 0; // update timestamp [us]
+    uint32_t update_cnt = 0; // number of updates since start
 };
 
 struct OflConfig {
@@ -57,6 +60,9 @@ class OflGizmo {
 };
 
 class Ofl : public OflState {
+  private:
+    volatile bool updated = false;
+
   public:
     OflConfig config;
 
@@ -65,6 +71,11 @@ class Ofl : public OflState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+    bool is_updated() { // Returns true if gizmo was updated in another task
+      if(!updated) return false;
+      updated = false;
+      return true;
+    }
 };
 
 //Global module instance

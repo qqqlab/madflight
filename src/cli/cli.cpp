@@ -276,21 +276,35 @@ static void cli_palt() {
 }
 
 static void cli_prdr() {
-  Serial.printf("rdr.dist:%d\t", rdr.dist);
+  Serial.printf("rdr.dist:%.3f\t", rdr.dist);
   Serial.printf("upd_cnt:%d\t", rdr.update_cnt);  
 }
 
 static void cli_pofl() {
-  Serial.printf("ofl.dx:%d\t", ofl.dx);
-  Serial.printf("ofl.dy:%d\t", ofl.dy);
-  Serial.printf("ofl.dt:%d\t", (int)ofl.dt);
-  //Serial.printf("ofl.ts:%d\t", (int)ofl.ts);
+  Serial.printf("ofl.dx:%.3f\t", ofl.dx);
+  Serial.printf("dy:%.3f\t", ofl.dy);
+  Serial.printf("x:%.3f\t", ofl.x);
+  Serial.printf("y:%.3f\t", ofl.y);
+  Serial.printf("upd_cnt:%d\t", ofl.update_cnt);
 }
 
 struct cli_print_s {
   const char *cmd;
   const char *info;
   void (*function)(void);
+};
+
+#define CLI_PRINT_EXTERN_SIZE 10
+uint8_t cli_print_extern_count = 0;
+cli_print_s cli_print_extern[CLI_PRINT_EXTERN_SIZE] = {};
+bool cli_print_flag_extern[CLI_PRINT_EXTERN_SIZE] = {false};
+bool Cli::add_print_command(const char *cmd, const char *info, void (*function)(void)){
+  if(cli_print_extern_count >= CLI_PRINT_EXTERN_SIZE) return false;
+  cli_print_extern[cli_print_extern_count].cmd = cmd;
+  cli_print_extern[cli_print_extern_count].info = info;
+  cli_print_extern[cli_print_extern_count].function = function;
+  cli_print_extern_count++;
+  return true;
 };
 
 #define CLI_PRINT_FLAG_COUNT 17
@@ -375,6 +389,15 @@ void Cli::help() {
     Serial.print(cli_print_options[i].info);
     Serial.println();
   }
+  for(int i=0;i<cli_print_extern_count;i++) {
+    Serial.print(cli_print_extern[i].cmd);
+    for(int j = strlen(cli_print_extern[i].cmd); j < 19; j++) {
+      Serial.print(' ');
+    }
+    Serial.print(' ');
+    Serial.print(cli_print_extern[i].info);
+    Serial.println();
+  }  
   Serial.printf(
   "-- BLACK BOX --\n"
   "bbstart             Start logging\n"
@@ -469,6 +492,14 @@ void Cli::processCmd() {
 
 
 void Cli::executeCmd(String cmd, String arg1, String arg2) {
+  //process external print commands
+  for (int i=0;i<cli_print_extern_count;i++) {
+    if (strcmp(cmd.c_str(), cli_print_extern[i].cmd) == 0) {
+      cli_print_flag_extern[i] = !cli_print_flag_extern[i];
+      return;
+    }
+  }
+
   //process print commands
   for (int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
     if (strcmp(cmd.c_str(), cli_print_options[i].cmd) == 0) {
@@ -593,7 +624,13 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   float gxerr = 0;
   float gyerr = 0;
   float gzerr = 0;
+  int bar_cnt = 0;
+  float bar_alt = 0;
   for(int i=0; i<cnt; i++) {
+    if(bar.update()) {
+      bar_cnt++;
+      bar_alt += bar.alt;
+    }
     imu.waitNewSample();
     axerr += imu.ax;
     ayerr += imu.ay;
@@ -612,6 +649,11 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   //remove gravitation
   azerr -= 1.0;
 
+  //save ground level
+  if(bar_cnt > 0) {
+    bar.ground_level = bar_alt / bar_cnt;
+    Serial.printf("BAR: Ground level: %f m (%d samples)\n", bar.ground_level, bar_cnt);
+  }
 
   Serial.printf("set imu_cal_gx %+f #config was %+f\n", gxerr, cfg.imu_cal_gx);
   Serial.printf("set imu_cal_gy %+f #config was %+f\n", gyerr, cfg.imu_cal_gy);
@@ -847,6 +889,7 @@ void Cli::calibrate_info(int seconds) {
 //========================================================================================================================//
 
 void Cli::cli_print_all(bool val) {
+  for(int i=0;i<cli_print_extern_count;i++) cli_print_flag_extern[i] = val;
   for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) cli_print_flag[i] = val;
 }
 
@@ -856,6 +899,12 @@ void Cli::cli_print_loop() {
     cli_print_time = micros();
     bool cli_print_need_newline = false;
     //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
+    for(int i=0;i<cli_print_extern_count;i++) {
+      if(cli_print_flag_extern[i]) {
+        cli_print_extern[i].function();
+        cli_print_need_newline = true;
+      }
+    }
     for (int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
       if (cli_print_flag[i]) {
         cli_print_options[i].function();

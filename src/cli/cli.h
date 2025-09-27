@@ -40,7 +40,6 @@ bool cli_execute(String cmd, String arg1, String arg2) {
 }
 */
 
-
 class Cli {
 public:
   void setup();
@@ -92,6 +91,9 @@ private:
 //========================================================================================================================//
 //                                                PRINT FUNCTIONS                                                         //
 //========================================================================================================================//
+public:
+  //add custom print command, returns true if added
+  bool add_print_command(const char *cmd, const char *info, void (*function)(void));
 
 private:
   uint32_t cli_print_time = 0;

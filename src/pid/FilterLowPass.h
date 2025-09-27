@@ -1,6 +1,4 @@
 /*==========================================================================================
-alt_kalman2.h - madflight altitude estimator interface
-
 MIT License
 
 Copyright (c) 2025 https://madflight.com
@@ -23,50 +21,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
+
 #pragma once
 
-#include "altitude_kf.h"
+#include <math.h>
 
-class AltEst_Kalman2 : public AltEst {
-public:
-  void setup(float alt) {
-    //default parameters
-    float altCov = 0.2;  //measured stdev BME280 = 0.4 [m]
-    float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G]
+#ifndef constrain
+  #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
+#endif
 
-    Serial.printf("ALT: KALMAN2  altCov=%f accCov=%f\n", altCov, accCov);
+class FilterLowPass {
+  public:
+    float output = 0;      // Filter output value
+    float alpha = 0;       // Filter alpha constant for sample frequency
+    float cutoff_freq = 0; // Cutoff frequency [Hz]
 
-    filter.setup(altCov, accCov);
-    filter.h = alt;
-    filter.v = 0;
+    FilterLowPass() {}
 
-    tsa = 0;
-  }
-
-  //a: accel up in [m/s^2], ts: timestamp in [us]
-  void updateAccelUp(float a, uint32_t ts) {
-    if(tsa!=0) {
-      float dt = 1e-6 * (ts - tsa);
-      filter.propagate(a, dt);
+    FilterLowPass(float sample_freq, float cutoff_freq, float input = 0) {
+        begin(sample_freq, cutoff_freq, input);
     }
-    tsa = ts;
-  };
-  
-  //altitude: barometric altitude in [m], ts: timestamp in [us]
-  void updateBarAlt(float alt, uint32_t ts) {
-    filter.update(alt);
-  }
-  
-  float getH() {return filter.h;} //altitude estimate in [m]
-  float getV() {return filter.v;} //vertical up speed (climb rate) estimate in [m/s]
 
-  void toString(char *s) {
-    int n = 0;
-    n += sprintf(s+n, "alt.h:%.2f\t", filter.h);
-    n += sprintf(s+n, "alt.v:%+.2f\t", filter.v);
-  }
+    void begin(float sample_freq, float cutoff_freq, float input = 0) {
+        this->cutoff_freq = cutoff_freq;
+        alpha = freq_to_alpha(cutoff_freq, sample_freq);
+        output = input;
+    }
 
-protected:
-  Altitude_KF filter;
-  uint32_t tsa = 0;
+    float update(float input) {
+        output += alpha * (input - output);
+        return output;
+    }
+
+    float update(float input, float dt) {
+        float rc = 1.0f / (M_2_PI * cutoff_freq);
+        float alpha_dt = dt / (dt + rc);
+        output += alpha_dt * (input - output);
+        return output;
+    }
+
+    static float freq_to_alpha(float cutoff_freq, float sample_freq) {
+        float dt = 1.0f / sample_freq;
+        float rc = 1.0f / (M_2_PI * cutoff_freq);
+        return dt / (dt + rc);
+    }
 };

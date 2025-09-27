@@ -52,10 +52,10 @@ void Altitude_KF::propagate(float acceleration, const float dt) {
   // Repeated arithmetics
   float _Q_accel_dtdt = accCov * _dtdt;
   //
-  P[0][0] = P[0][0] + (P[1][0] + P[0][1] + (P[1][1] + 0.25f*_Q_accel_dtdt) * dt) * dt;
-  P[0][1] = P[0][1] + (P[1][1] + 0.5f*_Q_accel_dtdt) * dt;
-  P[1][0] = P[1][0] + (P[1][1] + 0.5f*_Q_accel_dtdt) * dt;
-  P[1][1] = P[1][1] + _Q_accel_dtdt;
+  P00 = P00 + (P10 + P01 + (P11 + 0.25f*_Q_accel_dtdt) * dt) * dt;
+  P01 = P01 + (P11 + 0.5f*_Q_accel_dtdt) * dt;
+  P10 = P10 + (P11 + 0.5f*_Q_accel_dtdt) * dt;
+  P11 = P11 + _Q_accel_dtdt;
 }
 
 void Altitude_KF::update(float altitude) {
@@ -83,14 +83,15 @@ void Altitude_KF::update(float altitude) {
   // and 'S_k^-1' equals '1/S_k' since 'S_k^-1' is being a scalar (that is a good thing!).
 
   // Calculate the inverse of the innovation covariance
-  float Sinv = 1.0f / (P[0][0] + altCov);
+  float Sinv = 1.0f / (P00 + altCov);
 
   // Calculate the Kalman gain
-  float K[2] = { P[0][0] * Sinv, P[1][0] * Sinv };
+  float K0 =  P00 * Sinv;
+  float K1 =  P10 * Sinv;
 
   // Update the state estimate
-  h += K[0] * y;
-  v += K[1] * y;
+  h += K0 * y;
+  v += K1 * y;
 
   // The "a posteriori" state estimate error covariance equals 'P_k|k = (I - K_k * H_k) * P_k|k-1', where
   //
@@ -101,8 +102,8 @@ void Altitude_KF::update(float altitude) {
   //					[ -K_1    1 ]   [ P_10 P_11 ]   [ (-K_1*P_00 + P_10) (-K_1*P_01 + P_11) ]
 
   // Calculate the state estimate covariance
-  P[0][0] = P[0][0] - K[0] * P[0][0];
-  P[0][1] = P[0][1] - K[0] * P[0][1];
-  P[1][0] = P[1][0] - (K[1] * P[0][0]);
-  P[1][1] = P[1][1] - (K[1] * P[0][1]);
+  P00 = P00 - K0 * P00;
+  P01 = P01 - K0 * P01;
+  P10 = P10 - K1 * P00;
+  P11 = P11 - K1 * P01;
 }
