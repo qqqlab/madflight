@@ -33,16 +33,10 @@ jobs:
         run: pip install --upgrade platformio
 
 #      - name: Build 00.HelloWorld
-#        run: pio ci --project-conf="extras/ci/ci_platformio.ini" --lib="." --lib="examples/00.HelloWorld" "examples/00.HelloWorld/main.cpp"
+#        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --lib="examples/00.HelloWorld" "examples/00.HelloWorld/main.cpp"
 
-      - name: Build 01.Quadcopter
-        run: pio ci --project-conf="extras/ci/ci_platformio.ini" --lib="." --lib="examples/01.Quadcopter" "examples/01.Quadcopter/main.cpp"
-
-#      - name: Build 02.QuadcopterAdvanced
-#        run: pio ci --project-conf="extras/ci/ci_platformio.ini" --lib="." --lib="examples/02.QuadcopterAdvanced" "examples/02.QuadcopterAdvanced/main.cpp"
-
-#      - name: Build 03.Plane
-#        run: pio ci --project-conf="extras/ci/ci_platformio.ini" --lib="." --lib="examples/03.Plane" "examples/03.Plane/main.cpp"
+      - name: Build 10.Quadcopter
+        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --lib="examples/10.Quadcopter" "examples/10.Quadcopter/main.cpp"
 
       - name: PlatformIO prune
         if: ${{ always() }}
