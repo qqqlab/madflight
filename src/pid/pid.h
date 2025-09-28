@@ -29,10 +29,11 @@ SOFTWARE.
 
 class Pid {
   public:
-    //PIDController outputs for CLI
+    //PIDController outputs
     float roll = 0;
     float pitch = 0;
     float yaw = 0;
+    float throttle = 0;
 };
 
 extern Pid pid;

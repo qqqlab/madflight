@@ -108,6 +108,7 @@ void setup() {
   //bool success = out.setupMotors(4, motor_idxs, motor_pins, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
   //bool success = out.setupDshot(4, motor_idxs, motor_pins, 300);             // Dshot300
   //bool success = out.setupDshotBidir(4, motor_idxs, motor_pins, 300);        // Dshot300 Bi-Directional
+  //bool success = out.setupMotors(4, motor_idxs, motor_pins, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
   if(!success) madflight_die("Motor init failed.");
 
   //set initial desired yaw

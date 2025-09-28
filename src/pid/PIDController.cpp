@@ -43,24 +43,22 @@ void PIDController::begin(float kp, float ki, float kd, float imax, float kscale
 // (private) Standard PID
 float PIDController::controlErr(float err, float dt) {
   out_p = kp * err;
-  out_i += ki * err * dt;
-  out_i = constrain(out_i, -imax, imax);
+  float out_i_nolimit = out_i + ki * err * dt;
+  out_i = constrain(out_i_nolimit, -imax, imax);
   out_d = kd * (err - err_prev) / dt;
   err_prev = err;
-  output = out_p + out_i + out_d;
-  return output;
+  out = out_p + out_i + out_d;
+  return out;
 }
 
 // (private) With user provided actual_derivative (velocity)
 float PIDController::controlErrActualDerivative(float err, float dt, float actual_derivative) {
   out_p = kp * err;
-  out_i += ki * err * dt;
-  //Saturate integrator to prevent unsafe buildup
-  if(out_i < -imax) out_i = -imax;
-  if(out_i > imax) out_i = imax;
-  out_d = -kd * actual_derivative / dt; //negate actual_derivative -> PIDController output opposes the change in actual value
-  output = out_p + out_i + out_d;
-  return output;
+  float out_i_nolimit = out_i + ki * err * dt;
+  out_i = constrain(out_i_nolimit, -imax, imax);
+  out_d = -kd * actual_derivative; //negate actual_derivative -> PIDController output opposes the change in actual value
+  out = out_p + out_i + out_d;
+  return out;
 }
 
 // Standard PID

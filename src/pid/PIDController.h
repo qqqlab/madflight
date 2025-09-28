@@ -25,7 +25,7 @@ SOFTWARE.
 
 class PIDController {
   public:
-    float output = 0; //PIDController output value (= out_p + out_i + out_d)
+    float out = 0; //PIDController output value (= out_p + out_i + out_d)
 
     float out_p = 0; //proporional output
     float out_i = 0; //integral output, limited to -imax to +imax
