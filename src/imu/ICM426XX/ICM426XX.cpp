@@ -215,8 +215,11 @@ const char* ICM426XX::type_name() {
    return "UNKNOWN";
 }
 
-ICM426XX* ICM426XX::detect(MPU_Interface *dev)
+
+ICM426XX* ICM426XX::detect(MPU_Interface *dev, int pin_clkin)
 {
+icm456xxSpiDetect(dev);
+
     dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
 
     //dev->writeReg(ICM426XX_RA_PWR_MGMT0, 0x00);
@@ -233,7 +236,7 @@ ICM426XX* ICM426XX::detect(MPU_Interface *dev)
         case ICM42688P_WHO_AM_I_CONST:
         case IIM42653_WHO_AM_I_CONST: {
           //Serial.printf("WhoAmI=0x%02X\n", whoAmI);
-          auto icm = new ICM426XX(dev, whoAmI);
+          auto icm = new ICM426XX(dev, whoAmI, pin_clkin);
           return icm;
         }
         delay(150);
@@ -244,7 +247,7 @@ ICM426XX* ICM426XX::detect(MPU_Interface *dev)
 }
 
 
-ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI) {
+ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI, int pin_clkin) {
     this->dev = dev;
     this->whoAmI = whoAmI;
 
@@ -331,7 +334,27 @@ ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI) {
     delay(15);
     
     // Select little-endian data mode
-    dev->writeReg(ICM426XX_RA_INTF_CONFIG0, ICM426XX_INTF_CONFIG0_LITTLE_ENDIAN); 
+    dev->writeReg(ICM426XX_RA_INTF_CONFIG0, ICM426XX_INTF_CONFIG0_LITTLE_ENDIAN);
+
+    //enable CLKIN on ICM_42688P
+    if(pin_clkin >= 0 && whoAmI == ICM_42688P_SPI) {
+        //setup 32kHz output on clkin_pin
+        float freq = 32000;
+        clkin.begin(pin_clkin, freq, 0, 1e6 / freq); //32kHz pulse 0-31.25 us
+        clkin.writeMicroseconds(1e6 / freq / 2);
+
+        // Switch to Bank 1 and set bits 2:1 in INTF_CONFIG5 (0x7B) to enable CLKIN on PIN9
+        setUserBank(ICM426XX_BANK_SELECT1);
+        uint8_t intf_config5 = dev->readReg(ICM426XX_INTF_CONFIG5);
+        intf_config5 = (intf_config5 & ~ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_MASK) | ICM426XX_INTF_CONFIG5_PIN9_FUNCTION_CLKIN;  // Clear & set bits 2:1 to 0b10 for CLKIN
+        dev->writeReg(ICM426XX_INTF_CONFIG5, intf_config5);
+
+        // Switch to Bank 0 and set bit 2 in RTC_MODE (0x4D) to enable external CLK signal
+        setUserBank(ICM426XX_BANK_SELECT0);
+        uint8_t rtc_mode = dev->readReg(ICM426XX_INTF_CONFIG1);
+        rtc_mode |= ICM426XX_INTF_CONFIG1_CLKIN; // Enable external CLK signal
+        dev->writeReg(ICM426XX_INTF_CONFIG1, rtc_mode);
+    }
 }
 
 void ICM426XX::read(int16_t *accgyr) {

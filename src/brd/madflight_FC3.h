@@ -31,14 +31,15 @@ LED: WS2812B
 const char madflight_board[] = R""(
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
-imu_gizmo     ICM42688    // options: NONE, BMI270, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250, ICM45686, ICM42688
-imu_bus_type  SPI     // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
-imu_align     CW180   //board edge with pins is forward direction - options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
-imu_spi_bus   1 //spi
-pin_imu_cs    29 //spi
-pin_imu_int   27 //spi and i2c
-imu_i2c_bus   -1 //i2c
-imu_i2c_adr   0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
+imu_gizmo     ICM42688
+imu_bus_type  SPI
+imu_align     CW180
+imu_spi_bus   1
+pin_imu_cs    29
+pin_imu_int   27
+pin_imu_clkin 26
+imu_i2c_bus   -1
+imu_i2c_adr   0
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 

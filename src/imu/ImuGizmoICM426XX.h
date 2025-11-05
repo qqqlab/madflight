@@ -23,7 +23,7 @@ class ImuGizmoICM426XX : public ImuGizmo {
       }else if(config->i2c_bus) {
         dev = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
       }
-      ICM426XX *icm = ICM426XX::detect(dev);
+      ICM426XX *icm = ICM426XX::detect(dev, config->pin_clkin);
       if(!icm) {
         delete dev;
         return nullptr;

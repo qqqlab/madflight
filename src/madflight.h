@@ -248,6 +248,7 @@ void madflight_setup() {
   imu.config.i2c_bus = hal_get_i2c_bus(cfg.imu_i2c_bus); //I2C bus (only used if spi_bus==nullptr)
   imu.config.i2c_adr = cfg.imu_i2c_adr; //i2c address. 0=default address
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
+  imu.config.pin_clkin = cfg.pin_imu_clkin; //CLKIN pin for ICM-42866-P - only tested for RP2 targets
 
   // Some sensors need a couple of tries...
   int tries = 10;

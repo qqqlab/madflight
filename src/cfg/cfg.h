@@ -253,6 +253,9 @@ SOFTWARE.
 \
   /*v2.1.4 additions */ \
   MF_PARAM( ofl_cal_rad,       0, float, 'f') /*manual calibration factor from pixels to radians, leave at 0 to use calibration from gizmo*/ \
+\
+  /*v2.2.0 additions */ \
+  MF_PARAM( pin_imu_clkin,    -1, int32_t, 'p') /*CLKIN pin for ICM-42866-P - only tested for RP2 targets*/ \
 //end MF_PARAM_LIST
 
 
