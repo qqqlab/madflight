@@ -1,3 +1,5 @@
+//modified for madflight - remove interrupt handler, add hires_en
+
 /*
  *
  * Copyright (c) [2020] by InvenSense, Inc.
@@ -166,7 +168,8 @@ int ICM456xx::getDataFromRegisters(inv_imu_sensor_data_t& data) {
     return inv_imu_get_register_data(&icm_driver, &data);
 }
 
-int ICM456xx::setup_irq(uint8_t intpin, ICM456xx_irq_handler handler)
+//modified for madflight - remove interrupt handler
+int ICM456xx::setup_irq()
 {
   int rc = 0;
   inv_imu_int_state_t it_conf;
@@ -178,30 +181,27 @@ int ICM456xx::setup_irq(uint8_t intpin, ICM456xx_irq_handler handler)
   memset(&it_conf, INV_IMU_DISABLE, sizeof(it_conf));
   it_conf.INV_FIFO_THS = INV_IMU_ENABLE;
 //  it_conf.INV_UI_DRDY  = INV_IMU_ENABLE;
-  pinMode(intpin,INPUT);
   rc |= inv_imu_set_pin_config_int(&icm_driver, INV_IMU_INT1, &it_pins);
   rc |= inv_imu_set_config_int(&icm_driver, INV_IMU_INT1, &it_conf);
-  attachInterrupt(intpin,handler,HIGH);
   return rc;
 }
 
-int ICM456xx::enableFifoInterrupt(uint8_t intpin, ICM456xx_irq_handler handler, uint8_t fifo_watermark) {
+
+//modified for madflight - remove interrupt handler, add hires_en
+int ICM456xx::enableFifoInterrupt(uint8_t fifo_watermark) {
   int rc = 0;
   const inv_imu_fifo_config_t fifo_config = {
     .gyro_en=true,
     .accel_en=true,
-    . hires_en=false,
+    .hires_en=true,
     .fifo_wm_th=fifo_watermark,
     .fifo_mode=FIFO_CONFIG0_FIFO_MODE_SNAPSHOT,
     .fifo_depth=FIFO_CONFIG0_FIFO_DEPTH_MAX
   };
-  if(handler == NULL) {
-    return -1;
-  }
 
   rc |= inv_imu_set_fifo_config(&icm_driver, &fifo_config);
 
-  rc |= setup_irq(intpin, handler);
+  rc |= setup_irq();
   return rc;
 }
 

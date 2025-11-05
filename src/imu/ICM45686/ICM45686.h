@@ -1,3 +1,5 @@
+//modified for madflight - remove interrupt handler, add hires_en
+
 /*
  *
  * Copyright (c) [2020] by InvenSense, Inc.
@@ -55,7 +57,7 @@ class ICM456xx {
     int startAccel(uint16_t odr, uint16_t fsr);
     int startGyro(uint16_t odr, uint16_t fsr);
     int getDataFromRegisters(inv_imu_sensor_data_t& data);
-    int enableFifoInterrupt(uint8_t intpin, ICM456xx_irq_handler handler, uint8_t fifo_watermark);
+    int enableFifoInterrupt(uint8_t fifo_watermark);
     int getDataFromFifo(inv_imu_fifo_data_t& data);
 #if defined(ICM45686S) || defined(ICM45605S)
     int startGaf(uint8_t intpin, ICM456xx_irq_handler handler);
@@ -83,7 +85,7 @@ class ICM456xx {
     gyro_config0_gyro_odr_t gyro_freq_to_param(uint16_t gyro_freq_hz);
     accel_config0_accel_ui_fs_sel_t accel_fsr_g_to_param(uint16_t accel_fsr_g);
     gyro_config0_gyro_ui_fs_sel_t gyro_fsr_dps_to_param(uint16_t gyro_fsr_dps);
-    int setup_irq(uint8_t intpin, ICM456xx_irq_handler handler);
+    int setup_irq();
     int startAPEX(dmp_ext_sen_odr_cfg_apex_odr_t edmp_odr, accel_config0_accel_odr_t accel_odr);
     uint32_t step_cnt_ovflw;
     bool apex_enable[ICM456XX_APEX_NB];
