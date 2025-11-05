@@ -218,8 +218,6 @@ const char* ICM426XX::type_name() {
 
 ICM426XX* ICM426XX::detect(MPU_Interface *dev, int pin_clkin)
 {
-icm456xxSpiDetect(dev);
-
     dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
 
     //dev->writeReg(ICM426XX_RA_PWR_MGMT0, 0x00);
