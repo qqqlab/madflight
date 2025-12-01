@@ -30,6 +30,7 @@ SOFTWARE.
 #include "MagGizmoQMC6309.h"
 #include "MagGizmoRM3100.h"
 #include "MagGizmoQMC5883P.h"
+#include "MagGizmoMMC5603.h"
 
 //create global module instance
 Mag mag;
@@ -68,6 +69,11 @@ int Mag::setup() {
     case Cfg::mag_gizmo_enum::mf_QMC5883P :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC5883P(config.i2c_bus); //i2c address is always 0x2C
+      }
+      break;
+    case Cfg::mag_gizmo_enum::mf_MMC5603 :
+      if(config.i2c_bus) {
+        gizmo = new MagGizmoMMC5603(config.i2c_bus); //i2c address is always 0x30
       }
       break;
   }

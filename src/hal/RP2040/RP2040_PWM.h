@@ -49,11 +49,15 @@ class PWM
         this->min_us = min_us;
         this->max_us = max_us;
 
-        //find divider so that full 16bit count results in freq
+        //find divider so that full 16bit count results in freq, or find max_duty if full 16bit count not possible
         this->max_duty = (1<<16) - 1;
-        float divider = clock_get_hz(clk_sys) / (max_duty+1) / freq;
+        float divider = clock_get_hz(clk_sys) / (max_duty + 1) / freq;
+        if(divider < 1) {
+          divider = 1;
+          this->max_duty =  clock_get_hz(clk_sys) / freq - 1;
+        }
         this->act_freq = freq;
-        this->inv_duty_resolution_us = 1.0e-6 * act_freq * (max_duty+1);
+        this->inv_duty_resolution_us = 1.0e-6 * act_freq * (max_duty + 1);
 
         // get slice number
         this->slicenum = pwm_gpio_to_slice_num(pin);
