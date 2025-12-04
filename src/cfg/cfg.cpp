@@ -325,7 +325,6 @@ int CfgClass::getIndex(String namestr) {
 
 //load defaults
 void CfgClass::clear() {
-  CfgParam *param = this;
   for(int i = 0; i < paramCount(); i++) {
     setValue(i, Cfg::param_list[i].defval);
   }

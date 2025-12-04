@@ -57,6 +57,8 @@ SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 //prototype
 void hal_eeprom_begin();
 
+//void hal_usb_setup() --> defined in bbx/BbxGizmoSdcard_RP2.cpp
+
 uint8_t ser0_txbuf[256];
 uint8_t ser0_rxbuf[256];
 uint8_t ser1_txbuf[256];

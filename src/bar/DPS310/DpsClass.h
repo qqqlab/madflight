@@ -34,7 +34,7 @@ public:
     // constructor
     DpsClass(void);
     // destructor
-    ~DpsClass(void);
+    virtual ~DpsClass(void);
 
     /**
      * I2C begin function with standard address

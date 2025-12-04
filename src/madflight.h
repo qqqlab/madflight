@@ -99,7 +99,8 @@ const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from 
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 void madflight_setup() {
-  //Serial.begin(115200); //start console serial
+  hal_usb_setup(); //setup USB CDC/MSC
+  Serial.begin(115200); //start console serial
   
   // CFG - Configuration parameters (execute before delay to start LED)
   cfg.begin();
@@ -111,15 +112,14 @@ void madflight_setup() {
   cfg.loadFromEeprom(); //load parameters from EEPROM
   cfg.load_madflight(madflight_board, madflight_config); //load config
 
-  // LED - Setup LED
+  // LED - Setup LED (execute before delay)
   led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
   led.config.pin = cfg.pin_led;
   led.setup();
   led.color(0x0000ff); //turn on blue to signal startup
   led.enabled = false; //do not change state until setup compled
 
-  Serial.begin(115200); //start console serial
-  // BBX - Black Box
+  // BBX - Black Box (execute before delay to start USB-MSC)
   bbx.config.gizmo = (Cfg::bbx_gizmo_enum)cfg.bbx_gizmo; //the gizmo to use
   bbx.config.spi_bus = hal_get_spi_bus(cfg.bbx_spi_bus); //SPI bus
   bbx.config.spi_cs = cfg.pin_bbx_cs; //SPI select pin
@@ -141,10 +141,6 @@ void madflight_setup() {
 
   Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
 
-  #ifdef USE_TINYUSB
-    Serial.println("Lib: TinyUSB");
-  #endif
-
   #ifdef MF_BOARD_NAME
     Serial.println("Board: " MF_BOARD_NAME);
   #endif
@@ -165,6 +161,10 @@ void madflight_setup() {
   hal_setup();
 
   cli.print_i2cScan(); //print i2c scan
+
+  // LED and BBX summary
+  cfg.printModule("led");
+  cfg.printModule("bbx");
 
   // RCL - Radio Control Link
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use

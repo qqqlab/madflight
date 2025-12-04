@@ -43,7 +43,7 @@ void hal_print_pin_name(int pinnum);
 MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
 SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
 MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
-
+void hal_usb_setup(); //call this to setup USB CDC/MSC before calling Serial.begin() - see bbx/BbxGizmoSdcard_RP2.cpp
 
 #if defined ARDUINO_ARCH_ESP32
   #include "ESP32/hal_ESP32.h"

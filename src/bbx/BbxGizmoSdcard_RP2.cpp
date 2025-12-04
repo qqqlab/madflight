@@ -41,8 +41,11 @@ static void msc_flush_cb (void) {
 }
 
 
-static void sdcard_setup() {
-  //Serial.begin(115200); //needed??
+void hal_usb_setup() {
+  //make sure this function is called only once
+  static bool called = false;
+  if(called) return;
+  called = true;
 
   // Set disk vendor id, product id and revision with string up to 8, 16, 4 characters respectively
   usb_msc.setID("madfligh", "SD Card", "1.0");
@@ -111,8 +114,7 @@ BbxGizmoSdcard* BbxGizmoSdcard::create(BbxConfig *config) {
   //create gizmo
   BbxGizmoSdcard* gizmo = new BbxGizmoSdcard(config);
 
-  //start sdcard and tinyusb-msc
-  sdcard_setup();
+  //start sdcard
   gizmo->sd_setup();
 
   return gizmo;
@@ -120,6 +122,7 @@ BbxGizmoSdcard* BbxGizmoSdcard::create(BbxConfig *config) {
 
 bool BbxGizmoSdcard::sd_setup() {
   if(setup_done) return true;
+  hal_usb_setup(); //start tinyusb if not started yet
   setup_done = sdcard_begin(config);
   //if(!setup_done) Serial.println("BBX: ERROR - Sdcard Mount Failed");
   return setup_done;
