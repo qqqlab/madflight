@@ -357,6 +357,9 @@ bool Cli::update() {
     //handle output for pxxx commands
     cli_print_loop();
 
+    //for TinyUSB
+    Serial.flush();
+
     return rv;
   }
 }

@@ -1,27 +1,29 @@
+#ifdef ARDUINO_ARCH_RP2040
+
 #pragma once
 
-#include "bbx.h"
-#include <SPI.h>
-#include <SD.h>
+#ifndef USE_TINYUSB
+  #error Enable "Adafruit TinyUSB" - Use Arduino IDE menu: Tools -> USB Stack -> Adafruit TinyUSB
+#endif
 
-class BbxGizmoSdspi : public BbxGizmo {
+#include "bbx.h"
+#include <SdFat.h> //FsFile
+
+class BbxGizmoSdcard : public BbxGizmo {
 private:
   BbxConfig *config;
-  SPIClass *spi;
-  int pin_cs;
-
-public:
-  BbxGizmoSdspi(BbxConfig *config);
-
-private:
   const char* BB_LOG_DIR_NAME = "/log";
   bool setup_done = false;
   uint8_t wbuf[512];
   uint32_t wbuf_len = 0;
   String filename;
-  File file = {};
+  FsFile file = {}; //current log file
+
+  BbxGizmoSdcard(BbxConfig *_config) : config{_config} {}; //private constructor
 
 public:
+  static BbxGizmoSdcard* create(BbxConfig *config);
+
   //setup the file system
   void setup() override;
   bool writeOpen() override;
@@ -44,3 +46,5 @@ private:
   void sd_deleteFilesFromDir(const char * dirname);
   void sd_logOpen(const char * dirname);
 };
+
+#endif //#ifdef ARDUINO_ARCH_RP2040

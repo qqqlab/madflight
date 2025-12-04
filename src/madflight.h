@@ -99,7 +99,7 @@ const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from 
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 void madflight_setup() {
-  Serial.begin(115200); //start console serial
+  //Serial.begin(115200); //start console serial
   
   // CFG - Configuration parameters (execute before delay to start LED)
   cfg.begin();
@@ -118,9 +118,20 @@ void madflight_setup() {
   led.color(0x0000ff); //turn on blue to signal startup
   led.enabled = false; //do not change state until setup compled
 
+  Serial.begin(115200); //start console serial
+  // BBX - Black Box
+  bbx.config.gizmo = (Cfg::bbx_gizmo_enum)cfg.bbx_gizmo; //the gizmo to use
+  bbx.config.spi_bus = hal_get_spi_bus(cfg.bbx_spi_bus); //SPI bus
+  bbx.config.spi_cs = cfg.pin_bbx_cs; //SPI select pin
+  bbx.config.pin_mmc_dat = cfg.pin_mmc_dat;
+  bbx.config.pin_mmc_clk = cfg.pin_mmc_clk;
+  bbx.config.pin_mmc_cmd = cfg.pin_mmc_cmd;
+  bbx.setup();
+
   // 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
+    Serial.flush();
     #ifndef MF_DEBUG 
       delay(500);
     #else
@@ -129,6 +140,10 @@ void madflight_setup() {
   } 
 
   Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
+
+  #ifdef USE_TINYUSB
+    Serial.println("Lib: TinyUSB");
+  #endif
 
   #ifdef MF_BOARD_NAME
     Serial.println("Board: " MF_BOARD_NAME);
@@ -209,15 +224,6 @@ void madflight_setup() {
   gps.config.ser_bus_id = cfg.gps_ser_bus; //serial bus id
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
-
-  // BBX - Black Box
-  bbx.config.gizmo = (Cfg::bbx_gizmo_enum)cfg.bbx_gizmo; //the gizmo to use
-  bbx.config.spi_bus = hal_get_spi_bus(cfg.bbx_spi_bus); //SPI bus
-  bbx.config.spi_cs = cfg.pin_bbx_cs; //SPI select pin
-  bbx.config.pin_mmc_dat = cfg.pin_mmc_dat;
-  bbx.config.pin_mmc_clk = cfg.pin_mmc_clk;
-  bbx.config.pin_mmc_cmd = cfg.pin_mmc_cmd;
-  bbx.setup();
 
   // ALT - Altitude Estimator
   if(rdr.installed()) {

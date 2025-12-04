@@ -1,1 +1,0 @@
-PlatformIO examples moved to: /examples/platformio.ini
