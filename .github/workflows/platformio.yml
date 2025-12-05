@@ -36,7 +36,7 @@ jobs:
 #        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --lib="examples/00.HelloWorld" "examples/00.HelloWorld/main.cpp"
 
       - name: Build 10.Quadcopter
-        run: pio ci -v --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter" "examples/10.Quadcopter/main.cpp"
+        run: pio ci -v --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter/madflight_config.h" "examples/10.Quadcopter/main.cpp"
 
       - name: PlatformIO prune
         if: ${{ always() }}
