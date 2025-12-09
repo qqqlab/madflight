@@ -214,6 +214,8 @@ static void cli_pimu() {
   interrupt_cnt_last = imu.interrupt_cnt;
   uint32_t delta_upd = imu.update_cnt - update_cnt_last;
   update_cnt_last = imu.update_cnt;
+  int miss_cnt = (int)imu.interrupt_cnt - imu.update_cnt;
+  if(miss_cnt == 1) miss_cnt = 0; //ignore first miss, probably caused by imu_loop still running
   uint32_t now = micros();
   uint32_t dt = now - ts_last;
   ts_last = now;
@@ -223,12 +225,8 @@ static void cli_pimu() {
   Serial.printf("samp_hz:%d\t", hz);
 
   if(dt == 0) dt = 1;
-  Serial.printf("intr_hz:%.0f\t", (float)delta_int/(dt*1e-6));
-  Serial.printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
-
-  int miss = 0;
-  if(delta_int > 0) miss = (100 - (100 * delta_upd) / delta_int);
-  Serial.printf("miss%%:%d\t", (miss<0?0:miss));
+  //Serial.printf("intr_hz:%.0f\t", (float)delta_int/(dt*1e-6));
+  Serial.printf("imu_loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
 
   int stat_cnt = 1;
   if(imu.stat_cnt > 0) stat_cnt = imu.stat_cnt;
@@ -237,10 +235,12 @@ static void cli_pimu() {
   Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime / stat_cnt));
   Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime) / stat_cnt));
   Serial.printf("rt_us:%d\t", (int)(imu.stat_runtime / stat_cnt));
+  Serial.printf("rt%%:%d\t", (int)(imu.stat_runtime / stat_cnt) * hz / 10000);
   Serial.printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
+  Serial.printf("rt_max%%:%d\t", (int)imu.stat_runtime_max * hz / 10000);
   Serial.printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
-  Serial.printf("upd_cnt:%d\t", (int)imu.update_cnt);
-  Serial.printf("miss_cnt:%d\t", (int)(imu.interrupt_cnt - imu.update_cnt));
+  //Serial.printf("upd_cnt:%d\t", (int)imu.update_cnt);
+  Serial.printf("miss_cnt:%d\t", (int)miss_cnt);
   imu.statReset();
 }
 

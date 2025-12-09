@@ -92,6 +92,7 @@ void hal_usb_setup() {
 
     // MSC is ready for read/write
     usb_msc.setUnitReady(true);
+
     unit_ready = true;
   }
 }
