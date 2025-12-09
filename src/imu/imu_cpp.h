@@ -140,10 +140,7 @@ int Imu::setup() {
         break;
       }
       case Cfg::imu_gizmo_enum::mf_ICM45686 : {
-        auto icm_iface = new Invensensev3_InterfaceSPI(config.spi_bus, config.spi_cs);
-        gizmo = new ImuGizmoICM45686(icm_iface);
-        gizmo->uses_i2c = false;
-        gizmo->has_mag = false;
+        gizmo = ImuGizmoICM45686::create(&config, (ImuState*)this);
         break;
       }
       case Cfg::imu_gizmo_enum::mf_ICM42688 :

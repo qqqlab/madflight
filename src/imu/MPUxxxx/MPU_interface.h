@@ -18,7 +18,7 @@ class MPU_Interface {
       return writeRegs(reg, &data, 1);
     }
 
-    uint32_t readReg(uint8_t reg) {
+    uint8_t readReg(uint8_t reg) {
       uint8_t data = 0;
       readRegs(reg, &data, 1);
       //Serial.printf("MPU.readReg(0x%02X)=0x%02X\n", reg, data);

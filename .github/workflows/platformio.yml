@@ -32,11 +32,9 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-#      - name: Build 00.HelloWorld
-#        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --lib="examples/00.HelloWorld" "examples/00.HelloWorld/main.cpp"
-
       - name: Build 10.Quadcopter
-        run: pio ci -v --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter/madflight_config.h" "examples/10.Quadcopter/main.cpp"
+        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter/madflight_config.h" "examples/10.Quadcopter/main.cpp"
+#Note: add -v for verbose: pio ci -v ...
 
       - name: PlatformIO prune
         if: ${{ always() }}

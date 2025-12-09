@@ -1,96 +1,71 @@
-//modified for madflight - remove interrupt handler, add hires_en
+/*==========================================================================================
+Driver for ICM-45686 gyroscope/accelometer
 
-/*
- *
- * Copyright (c) [2020] by InvenSense, Inc.
- * 
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- */
- 
-#ifndef ICM456xx_H
-#define ICM456xx_H
+MIT License
 
-#include "Arduino.h"
-#include "SPI.h"
-#include "Wire.h"
+Copyright (c) 2025 https://madflight.com
 
-#define ICM45686
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-extern "C" {
-#include "./imu/inv_imu_driver_advanced.h"
-#include "./imu/inv_imu_edmp.h"
-#if defined(ICM45686S) || defined(ICM45605S)
-#include "./imu/inv_imu_edmp_gaf.h"
-#endif
-}
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-enum {
-  ICM456XX_APEX_TILT=0,
-  ICM456XX_APEX_PEDOMETER,
-  ICM456XX_APEX_TAP,
-  ICM456XX_APEX_R2W,
-  ICM456XX_APEX_NB,
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
+#pragma once
+
+#include <SPI.h>
+#include "../MPUxxxx/MPU_interface.h"
+
+class ICM45686 {
+public:
+  int sampleRateActual = 0;
+  volatile float gyr[3] = {};
+  volatile float acc[3] = {};
+  const float tmp_scale = 1.0 / 128.0;
+  const float acc_scale = 32.0 / 524288.0; //Accel scale +/-32g, 20bit, 16384 LSB/g (actual resolution 19bit, i.e. 8192 LSB/g)
+  const float gyr_scale = 4000.0 / 524288.0; //Gyro scale +/-4000dps, 20bit
+
+  int begin(SPIClass *spi, int cs_pin, int sampleRate, bool use_clkin); //returns negative error code, positive warning code, or 0 on success
+  int read(); //returns number of samples, or -1 on error
+
+  ~ICM45686() {
+    delete dev;
+  }
+private:
+  MPU_Interface* dev = nullptr;
+  int error_code = -2; //default to "not initalized error"
+
+  //packet to read from address ICM45686_REG_FIFO_COUNTH
+  struct __packed ICM45686_FIFOData {
+      uint8_t tx_reg;   // transmit buffer starts here, preserves this byte between calls thus saves a couple nanoseconds
+      uint8_t rx_start; // receive buffer starts here, first byte is dummy byte returned when sending reg address
+      uint16_t n_samples;
+      uint8_t header;
+      uint8_t acc[6];
+      uint8_t gyr[6];
+      int16_t temperature;
+      uint16_t timestamp;
+      uint8_t gx : 4, ax : 4;
+      uint8_t gy : 4, ay : 4;
+      uint8_t gz : 4, az : 4;
+  };
+
+  ICM45686_FIFOData fifobuf;
+
+  bool write_reg(uint16_t reg, uint8_t mask, uint8_t value);
+  uint8_t read_bank(uint16_t addr);
+  void write_bank(uint16_t addr, uint8_t val);
 };
-
-// This defines the handler called when retrieving a sample from the FIFO
-//typedef void (*ICM456xx_sensor_event_cb)(inv_imu_sensor_data_t *event);
-// This defines the handler called when receiving an irq
-typedef void (*ICM456xx_irq_handler)(void);
-
-class ICM456xx {
-  public:
-    ICM456xx(MF_I2C &i2c,bool address_lsb, uint32_t freq);
-    ICM456xx(MF_I2C &i2c,bool address_lsb);
-    ICM456xx(SPIClass &spi,uint8_t chip_select_id, uint32_t freq);
-    ICM456xx(SPIClass &spi,uint8_t chip_select_id);
-    int begin();
-    int startAccel(uint16_t odr, uint16_t fsr);
-    int startGyro(uint16_t odr, uint16_t fsr);
-    int getDataFromRegisters(inv_imu_sensor_data_t& data);
-    int enableFifoInterrupt(uint8_t fifo_watermark);
-    int getDataFromFifo(inv_imu_fifo_data_t& data);
-#if defined(ICM45686S) || defined(ICM45605S)
-    int startGaf(uint8_t intpin, ICM456xx_irq_handler handler);
-    int getGafData(inv_imu_edmp_gaf_outputs_t& gaf_outputs);
-    int getGafData(float& quatW,float& quatX,float& quatY,float& quatZ);
-#endif
-    int stopAccel(void);
-    int stopGyro(void);
-    int startTiltDetection(uint8_t intpin=2, ICM456xx_irq_handler handler=NULL);
-    int startPedometer(uint8_t intpin=2, ICM456xx_irq_handler handler=NULL);
-    int getPedometer(uint32_t& step_count, float& step_cadence, char*& activity);
-    int startWakeOnMotion(uint8_t intpin, ICM456xx_irq_handler handler);
-    int startTap(uint8_t intpin=2, ICM456xx_irq_handler handler=NULL);
-    bool getTilt(void);
-    int getTap(uint8_t& tap_count, uint8_t& axis, uint8_t& direction);
-    int startRaiseToWake(uint8_t intpin=2, ICM456xx_irq_handler handler=NULL);
-    int getRaiseToWake(void);
-    int updateApex(void);
-    int setApexInterrupt(uint8_t intpin, ICM456xx_irq_handler handler);
-    inv_imu_edmp_int_state_t apex_status;
-
-  protected:
-    inv_imu_device_t icm_driver;
-    accel_config0_accel_odr_t accel_freq_to_param(uint16_t accel_freq_hz);
-    gyro_config0_gyro_odr_t gyro_freq_to_param(uint16_t gyro_freq_hz);
-    accel_config0_accel_ui_fs_sel_t accel_fsr_g_to_param(uint16_t accel_fsr_g);
-    gyro_config0_gyro_ui_fs_sel_t gyro_fsr_dps_to_param(uint16_t gyro_fsr_dps);
-    int setup_irq();
-    int startAPEX(dmp_ext_sen_odr_cfg_apex_odr_t edmp_odr, accel_config0_accel_odr_t accel_odr);
-    uint32_t step_cnt_ovflw;
-    bool apex_enable[ICM456XX_APEX_NB];
-    dmp_ext_sen_odr_cfg_apex_odr_t apex_edmp_odr;
-    accel_config0_accel_odr_t apex_accel_odr;
-};
-
-#endif // ICM456xx_H
