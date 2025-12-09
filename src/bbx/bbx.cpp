@@ -134,6 +134,11 @@ int Bbx::read(const char* filename, uint8_t **data) {
   return gizmo->read(filename, data);
 }
 
+void Bbx::printSummary() {
+  if(!gizmo) return;
+  gizmo->printSummary();
+}
+
 //-------------------------------
 // Loggers
 //-------------------------------

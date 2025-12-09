@@ -54,6 +54,7 @@ public:
   virtual void info() = 0; //card info
   
   virtual int read(const char* filename, uint8_t **data) {(void) filename; (void) data; return 0;}
+  virtual void printSummary() {}
 };
 
 class Bbx {
@@ -75,6 +76,7 @@ class Bbx {
     void bench(); //benchmark read/write to blackbox
     void info();  //blackbox info (memory size, free space, etc.)
     int read(const char* filename, uint8_t **data); //read file into data (malloc), returns file size.
+    void printSummary();
   
     //loggers
     void log_bar();

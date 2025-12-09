@@ -5,14 +5,33 @@
 #include <Arduino.h> //Serial
 #include <SPI.h>
 #include <SdFat.h> //pico-arduino bundled version, alternative: #include "SdFat_Adafruit_Fork.h" //use adafruit lib
-#include <Adafruit_TinyUSB.h>
+
+// FsFile system on SD Card
+SdFat sd;
+// returns true if card was found
+static bool sdcard_begin(BbxConfig *config) {
+  sd.end(); //force begin() to re-initialize SD
+
+  //begin sdcard
+  switch(config->gizmo) {
+    case Cfg::bbx_gizmo_enum::mf_SDSPI :
+       if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
+       break;
+    case Cfg::bbx_gizmo_enum::mf_SDMMC :
+       if (!sd.begin( SdioConfig(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat) )) return false;
+      break;
+    default:
+      return false;
+  }
+
+  return true;
+}
 
 //--------------------------------------------------------------------+
 // TinyUSB SDCard Config
 //--------------------------------------------------------------------+
-
-// FsFile system on SD Card
-SdFat sd;
+#ifdef USE_TINYUSB
+#include <Adafruit_TinyUSB.h>
 
 // USB Mass Storage object
 Adafruit_USBD_MSC usb_msc;
@@ -42,54 +61,44 @@ static void msc_flush_cb (void) {
 
 
 void hal_usb_setup() {
-  //make sure this function is called only once
-  static bool called = false;
-  if(called) return;
-  called = true;
+  //make sure usb setup runs only once
+  static bool usb_setup_done = false;
+  if(!usb_setup_done) {
+    usb_setup_done = true;
 
-  // Set disk vendor id, product id and revision with string up to 8, 16, 4 characters respectively
-  usb_msc.setID("madfligh", "SD Card", "1.0");
+    // Set disk vendor id, product id and revision with string up to 8, 16, 4 characters respectively
+    usb_msc.setID("madfligh", "SD Card", "1.0");
 
-  // Set read write callback
-  usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);
+    // Set read write callback
+    usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);
 
-  // Still initialize MSC but tell usb stack that MSC is not ready to read/write
-  // If we don't initialize, board will be enumerated as CDC only
-  usb_msc.setUnitReady(false);
-  usb_msc.begin();
+    // Still initialize MSC but tell usb stack that MSC is not ready to read/write
+    // If we don't initialize, board will be enumerated as CDC only
+    usb_msc.setUnitReady(false);
+    usb_msc.begin();
 
-  // If already enumerated, additional class driver begin() e.g msc, hid, midi won't take effect until re-enumeration
-  if (TinyUSBDevice.mounted()) {
-    TinyUSBDevice.detach();
-    delay(10);
-    TinyUSBDevice.attach();
-  }
-}
-
-// returns true if card was found
-static bool sdcard_begin(BbxConfig *config) {
-  sd.end(); //force begin() to re-initialize SD
-
-  //begin sdcard
-  switch(config->gizmo) {
-    case Cfg::bbx_gizmo_enum::mf_SDSPI :
-       if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
-       break;
-    case Cfg::bbx_gizmo_enum::mf_SDMMC :
-       if (!sd.begin( SdioConfig(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat) )) return false;
-      break;
-    default:
-      return false;
+    // If already enumerated, additional class driver begin() e.g msc, hid, midi won't take effect until re-enumeration
+    if (TinyUSBDevice.mounted()) {
+      TinyUSBDevice.detach();
+      delay(10);
+      TinyUSBDevice.attach();
+    }
   }
 
-  // Set disk size, SD block size is always 512
-  usb_msc.setCapacity(sd.card()->sectorCount(), 512);
+  static bool unit_ready = false;
+  if(sd.clusterCount() > 0 && !unit_ready) {
+    // Set disk size, SD block size is always 512
+    usb_msc.setCapacity(sd.card()->sectorCount(), 512);
 
-  // MSC is ready for read/write
-  usb_msc.setUnitReady(true);
-
-  return true;
+    // MSC is ready for read/write
+    usb_msc.setUnitReady(true);
+    unit_ready = true;
+  }
 }
+#else //USE_TINYUSB
+void hal_usb_setup() {}
+#endif //USE_TINYUSB
+
 
 //--------------------------------------------------------------------+
 // BbxGizmoSdcard
@@ -122,9 +131,10 @@ BbxGizmoSdcard* BbxGizmoSdcard::create(BbxConfig *config) {
 
 bool BbxGizmoSdcard::sd_setup() {
   if(setup_done) return true;
-  hal_usb_setup(); //start tinyusb if not started yet
+  hal_usb_setup(); //start tinyusb if not started yet (need to do this before sdcard_begin())
   setup_done = sdcard_begin(config);
-  //if(!setup_done) Serial.println("BBX: ERROR - Sdcard Mount Failed");
+  hal_usb_setup(); //connect card if inserted
+
   return setup_done;
 }
 
@@ -391,6 +401,21 @@ int BbxGizmoSdcard::read(const char* filename, uint8_t **data) {
   file.close();
   *data = buf;
   return len;
+}
+
+void BbxGizmoSdcard::printSummary() {
+  Serial.printf("BBX: SDCARD - ");
+  if(sd.clusterCount() > 0) {
+    Serial.printf("Size: %d MB, ", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000));
+    Serial.printf("Free: %d MB, ", (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
+  } else {
+    Serial.printf("No card inserted, ");
+  }
+  #ifdef USE_TINYUSB
+    Serial.printf("TinyUSB Mass Storage available\n");
+  #else
+    Serial.printf("No TinyUSB Mass Storage\n");
+  #endif
 }
 
 #endif //#ifdef ARDUINO_ARCH_RP2040

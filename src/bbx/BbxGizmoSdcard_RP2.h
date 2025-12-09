@@ -2,10 +2,6 @@
 
 #pragma once
 
-#ifndef USE_TINYUSB
-  #error Enable "Adafruit TinyUSB" - Use Arduino IDE menu: Tools -> USB Stack -> Adafruit TinyUSB
-#endif
-
 #include "bbx.h"
 #include <SdFat.h> //FsFile
 
@@ -39,7 +35,8 @@ public:
   void bench() override;
   void info() override;
   int read(const char* filename, uint8_t **data) override;
-
+  void printSummary() override;
+  
 private:
   bool sd_setup();
   bool sd_listDir(const char * dirname, uint8_t levels=0);

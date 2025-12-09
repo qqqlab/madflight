@@ -164,7 +164,7 @@ void madflight_setup() {
 
   // LED and BBX summary
   cfg.printModule("led");
-  cfg.printModule("bbx");
+  bbx.printSummary();
 
   // RCL - Radio Control Link
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use
