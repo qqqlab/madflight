@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../../hal/MF_I2C.h"
+#include <Arduino.h>
 #include <SPI.h>
 
 class MPU_Interface {

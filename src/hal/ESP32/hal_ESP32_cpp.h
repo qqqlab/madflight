@@ -77,12 +77,12 @@ void hal_usb_setup() {} // USB MSC not implemented for ESP32
 void hal_setup()
 {
   //print bus config
-  Serial.printf("HAL: SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
-  Serial.printf("HAL: I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-  Serial.printf("HAL: I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-  Serial.printf("HAL: SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-  Serial.printf("HAL: SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+  Serial.printf("HAL: SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", (int)cfg.pin_ser0_tx, (int)cfg.pin_ser0_rx);
+  Serial.printf("HAL: SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", (int)cfg.pin_ser1_tx, (int)cfg.pin_ser1_rx);
+  Serial.printf("HAL: I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c0_sda, (int)cfg.pin_i2c0_scl);
+  Serial.printf("HAL: I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c1_sda, (int)cfg.pin_i2c1_scl);
+  Serial.printf("HAL: SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi0_miso, (int)cfg.pin_spi0_sclk, (int)cfg.pin_spi0_mosi);
+  Serial.printf("HAL: SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
 
   //Serial BUS uses late binding (i.e. gets created when used)
 

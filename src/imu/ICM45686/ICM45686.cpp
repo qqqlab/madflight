@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 #include "ICM45686.h"
+#include <Arduino.h> //delayMicroseconds
 
 #define ICM45686_REG_WHOAMI           0x72
 #define ICM45686_REG_PWR_MGMT0        0x10

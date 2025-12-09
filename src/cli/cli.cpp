@@ -277,7 +277,7 @@ static void cli_palt() {
 
 static void cli_prdr() {
   Serial.printf("rdr.dist:%.3f\t", rdr.dist);
-  Serial.printf("upd_cnt:%d\t", rdr.update_cnt);  
+  Serial.printf("upd_cnt:%d\t", (int)rdr.update_cnt);  
 }
 
 static void cli_pofl() {
@@ -285,7 +285,7 @@ static void cli_pofl() {
   Serial.printf("dy:%.3f\t", ofl.dy);
   Serial.printf("x:%.3f\t", ofl.x);
   Serial.printf("y:%.3f\t", ofl.y);
-  Serial.printf("upd_cnt:%d\t", ofl.update_cnt);
+  Serial.printf("upd_cnt:%d\t", (int)ofl.update_cnt);
 }
 
 struct cli_print_s {
