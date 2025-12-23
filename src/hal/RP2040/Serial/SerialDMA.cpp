@@ -24,6 +24,8 @@ SOFTWARE.
 
 //based on: https://github.com/rossihwang/pico_dma_uart
 
+#ifdef ARDUINO_ARCH_RP2040
+
 #include <hardware/dma.h>
 #include <hardware/gpio.h>
 #include <hardware/irq.h>
@@ -220,3 +222,5 @@ uint16_t SerialDMA::read(uint8_t* data, uint16_t length) {
 
   return length;
 }
+
+#endif //#ifdef ARDUINO_ARCH_RP2040
