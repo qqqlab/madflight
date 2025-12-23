@@ -118,12 +118,9 @@ public:
     gpio_set_inover(rpin, (invert ? 1 : 0));
     gpio_set_outover(tpin, (invert ? 1 : 0));
 
-    //mode
-    uart_set_format(uart_inst, bits, stop, (parity=='E' ? UART_PARITY_EVEN : ( parity=='O' ? UART_PARITY_ODD : UART_PARITY_NONE)) );
-
     //properties
     baud_actual = uart_init(uart_inst, baud); //The call will return the actual baud rate selected
-    uart_set_format(uart_inst, 8, 1, UART_PARITY_NONE); //data format
+    uart_set_format(uart_inst, bits, stop, (parity=='E' ? UART_PARITY_EVEN : ( parity=='O' ? UART_PARITY_ODD : UART_PARITY_NONE)) );
     uart_set_hw_flow(uart_inst, false, false); //no hardware flow
     uart_set_fifo_enabled(uart_inst, true); //enable FIFOs
 

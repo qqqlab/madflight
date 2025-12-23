@@ -16,6 +16,11 @@
   #endif
 #endif
 
+//serial driver selection
+#ifndef MF_SERIAL_DMA
+  #define MF_SERIAL_DMA 1
+#endif
+
 //======================================================================================================================//
 //                    IMU
 //======================================================================================================================//
@@ -34,13 +39,17 @@
 //-------------------------------------
 //Include Libraries
 //-------------------------------------
-#include <Wire.h> //I2C communication
-#include <SPI.h> //SPI communication
-#include "RP2040_PWM.h"  //Servo and oneshot
-#include "../MF_I2C.h"
-#include "../MF_Serial.h"
-#include "Serial/SerialIRQ.h"  //Replacement high performance hardware serial driver
-#include "Serial/SerialPioIRQ.h"  //Replacement high performance PIO serial driver
+#include <Wire.h>                 // I2C communication
+#include <SPI.h>                  // SPI communication
+#include "RP2040_PWM.h"           // Servo and oneshot
+#include "../MF_I2C.h"            // madflight I2C wrapper
+#include "../MF_Serial.h"         // madflight Serial wrapper
+#include "Serial/SerialPioIRQ.h"  // Replacement high performance PIO serial driver
+#if MF_SERIAL_DMA
+  #include "Serial/SerialDMA.h"     // Replacement high performance hardware DMA serial driver
+#else
+  #include "Serial/SerialIRQ.h"     // Replacement high performance hardware serial driver
+#endif
 
 //-------------------------------------
 //Bus Setup
@@ -59,15 +68,22 @@ void hal_eeprom_begin();
 
 //void hal_usb_setup() --> defined in bbx/BbxGizmoSdcard_RP2.cpp
 
-uint8_t ser0_txbuf[256];
-uint8_t ser0_rxbuf[256];
-uint8_t ser1_txbuf[256];
-uint8_t ser1_rxbuf[256];
+#if !MF_SERIAL_DMA
+  uint8_t ser0_txbuf[256];
+  uint8_t ser0_rxbuf[256];
+  uint8_t ser1_txbuf[256];
+  uint8_t ser1_rxbuf[256];
+#endif
 
 void hal_setup() {
   //print bus config
+#if MF_SERIAL_DMA  
+  Serial.printf("HAL: SER bus 0 is hardware DMA uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("HAL: SER bus 1 is hardware DMA uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+#else
   Serial.printf("HAL: SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
   Serial.printf("HAL: SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+#endif
   Serial.printf("HAL: SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
   Serial.printf("HAL: SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
   Serial.printf("HAL: SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
@@ -214,26 +230,49 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 
   switch(bus_id) {
     //Hardware UARTs
+#if MF_SERIAL_DMA
     case 0: {
       int pin_tx = cfg.pin_ser0_tx;
       int pin_rx = cfg.pin_ser0_rx;
-      auto *ser = new SerialIRQ(uart0, pin_tx, ser0_txbuf, sizeof(ser0_txbuf), pin_rx, ser0_rxbuf, sizeof(ser0_rxbuf));
       if(pin_tx >= 0 || pin_rx >= 0) {
-        ser->begin(baud, bits, parity, stop, invert);
-        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+        auto *ser = new SerialDMA();
+        ser->begin(0, baud, pin_tx, pin_rx, 256, 256, bits, parity, stop, invert);
+        hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
       }
       break;
     }
     case 1: {
       int pin_tx = cfg.pin_ser1_tx;
       int pin_rx = cfg.pin_ser1_rx;
-      auto *ser = new SerialIRQ(uart1, pin_tx, ser1_txbuf, sizeof(ser1_txbuf), pin_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
       if(pin_tx >= 0 || pin_rx >= 0) {
-        ser->begin(baud, bits, parity, stop, invert);
-        if(!hal_ser[bus_id]) hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+        auto *ser = new SerialDMA();
+        ser->begin(1, baud, pin_tx, pin_rx, 256, 256, bits, parity, stop, invert);
+        hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
       }
       break;
     }
+#else //!MF_SERIAL_DMA
+    case 0: {
+      int pin_tx = cfg.pin_ser0_tx;
+      int pin_rx = cfg.pin_ser0_rx;
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialIRQ(uart0, pin_tx, ser0_txbuf, sizeof(ser0_txbuf), pin_rx, ser0_rxbuf, sizeof(ser0_rxbuf));
+        ser->begin(baud, bits, parity, stop, invert);
+        hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+    case 1: {
+      int pin_tx = cfg.pin_ser1_tx;
+      int pin_rx = cfg.pin_ser1_rx;
+      if(pin_tx >= 0 || pin_rx >= 0) {
+        auto *ser = new SerialIRQ(uart1, pin_tx, ser1_txbuf, sizeof(ser1_txbuf), pin_rx, ser1_rxbuf, sizeof(ser1_rxbuf));
+        ser->begin(baud, bits, parity, stop, invert);
+        hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      }
+      break;
+    }
+#endif //MF_SERIAL_DMA
 
     //PIO UARTs 
     case 2: {
