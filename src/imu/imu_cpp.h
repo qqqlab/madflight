@@ -26,25 +26,11 @@ SOFTWARE.
 This file is kept as header to allow #IMU_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
 
 Body frame is NED: 
-  x-axis North(front) - gyro-x roll right is positive - accelerometer-x vehicle right side down position is +1 G
-  y-axis East(right)  - gyro-y pitch up is positive   - accelerometer-y vehicle nose down postion is +1 G
-  z-axis Down         - gyro-z yaw right is positive  - accelerometer-z vehicle level position is +1 G
-
-MPU-6XXX and MPU-9XXX sensor family
-===================================
-These are 6 or 9 axis sensors, with maximum sample rates: gyro 8 kHz, accel 4 kHz, and mag 100 Hz. The driver 
-configures gyro and accel with 1000 Hz sample rate (with on sensor 200 Hz low pass filter), and mag 100 Hz.
-
-===================================
-ICM-4xxxx sensors
-===================================
-Currently only ICM45686 is supported.
-This is a 6 axis sensor, with maximum sample rates of 6.4khz, max gyro range 4000dps, max accelerometer range 32G
-Limitations: 
-- The underlying driver lib supports only one sensor instance
-- only via SPI + interupt; I2C can be added using the same driver lib
+  x-axis points North(front) - gyro-x roll right is positive - accelerometer-x vehicle nose down postion is +1 G
+  y-axis points East(right)  - gyro-y pitch up is positive   - accelerometer-y vehicle right side down position is +1 G
+  z-axis points Down         - gyro-z yaw right is positive  - accelerometer-z vehicle level position is +1 G
 ========================================================================================================================*/
-
+Correct IMU header comments
 // Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
