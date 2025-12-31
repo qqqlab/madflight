@@ -30,7 +30,7 @@ Body frame is NED:
   y-axis points East(right)  - gyro-y pitch up is positive   - accelerometer-y vehicle right side down position is +1 G
   z-axis points Down         - gyro-z yaw right is positive  - accelerometer-z vehicle level position is +1 G
 ========================================================================================================================*/
-Correct IMU header comments
+
 // Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
   #error "Only include this file from madflight.h"
