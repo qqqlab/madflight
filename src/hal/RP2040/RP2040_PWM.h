@@ -43,46 +43,33 @@ class PWM
 {
   public:
     PWM() {};
-    bool begin(int pin, int freq, float min_us, float max_us) {
+    bool begin(int pin, float req_freq, float min_us, float max_us) {
         this->pin = pin;
-        this->req_freq = freq;
+        this->req_freq = req_freq;
         this->min_us = min_us;
         this->max_us = max_us;
 
-        //find divider so that full 16bit count results in freq, or find max_duty if full 16bit count not possible
-        this->max_duty = (1<<16) - 1;
-        float divider = clock_get_hz(clk_sys) / (max_duty + 1) / freq;
-        if(divider < 1) {
-          divider = 1;
-          this->max_duty =  clock_get_hz(clk_sys) / freq - 1;
-        }
-        this->act_freq = freq;
-        this->inv_duty_resolution_us = 1.0e-6 * act_freq * (max_duty + 1);
+        //find divider so that full 16bit count results in requested freq (i.e. find divider for maximum resolution)
+        float divider = (float)clock_get_hz(clk_sys) / (1<<16) / req_freq;
+        //divider is 8:4 fractional - round divider up to next 1/16th, to ensure that wrap less than 16 bits
+        divider = ceil(divider * 16) / 16.0;
+        if(divider < 1) divider = 1;
 
-        // get slice number
-        this->slicenum = pwm_gpio_to_slice_num(pin);
-        
-        // assign GPIO to pwm functionality
-        gpio_set_function(pin, GPIO_FUNC_PWM);
+        //calculate timer wrap count value
+        float act_clk = (float)clock_get_hz(clk_sys) / divider;
+        wrap = (int)(act_clk / req_freq - 1);
+        act_freq = act_clk / (wrap + 1);
+        inv_duty_resolution_us = 1.0e-6 * act_freq * (wrap + 1); //pre-calcuted inverse to speed up setting PWM value
 
-        // set the clkdiv mode (this might not actually do anything)
-        pwm_set_clkdiv_mode(slicenum, PWM_DIV_FREE_RUNNING);
-
-        // disable phase correct (if enabled, frequency is halved and duty cycle is doubled)
-        pwm_set_phase_correct(slicenum, false);
-
-        // set clkdiv to system clock in Mhz (125Mhz clock = clkdiv of 125)
-        // makes it so that our on/off threshold on each pwm channel is equal to the on time per cycle in microseconds
-        pwm_set_clkdiv(slicenum, divider);
-
-        // set wrap to full scale for maximum resolution
-        pwm_set_wrap(slicenum, max_duty);
-
-        // set count
-        pwm_set_gpio_level(pin, 0);
-
-        // enable PWM slice
-        pwm_set_enabled(slicenum, true);
+        // configure PWM hardware
+        slicenum = pwm_gpio_to_slice_num(pin); // get slice number
+        gpio_set_function(pin, GPIO_FUNC_PWM); // assign GPIO to pwm functionality
+        pwm_set_clkdiv_mode(slicenum, PWM_DIV_FREE_RUNNING); // set the clkdiv mode (this might not actually do anything)
+        pwm_set_phase_correct(slicenum, false); // disable phase correct (if enabled, frequency is halved and duty cycle is doubled)
+        pwm_set_clkdiv(slicenum, divider); // set divider
+        pwm_set_wrap(slicenum, wrap); // set wrap
+        pwm_set_gpio_level(pin, 0); // set count
+        pwm_set_enabled(slicenum, true); // enable PWM slice
         
         return true;
     };
@@ -96,7 +83,7 @@ class PWM
       if(us > max_us) us = max_us;
       int duty = us * inv_duty_resolution_us;
       if(duty < 0) duty = 0;
-      if(duty > max_duty) duty = max_duty;
+      if(duty > wrap) duty = wrap;
       pwm_set_gpio_level(pin, us * inv_duty_resolution_us);
     };
 
@@ -110,11 +97,10 @@ class PWM
   private:
     int pin;
     int slicenum;
-    int bits;
-    int max_duty;
+    int wrap;
     float min_us;
-    float max_us;     
-    int req_freq; //requested frequency
-    int act_freq; //actual frequency
+    float max_us;
+    float req_freq; //requested frequency
+    float act_freq; //actual frequency
     float inv_duty_resolution_us;
 };

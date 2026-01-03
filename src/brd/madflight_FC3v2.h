@@ -70,7 +70,7 @@ bat_i2c_bus   0
 pin_bat_i     -1
 pin_bat_v     -1
 bat_cal_v     1 //adc voltage scale, value is: actual_voltage_in_v / adc_reading
-bat_cal_i     0.0005 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
+bat_cal_i     0.002 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
 
 //--- GPS ---
 gps_gizmo     NONE  // options: NONE, UBLOX
