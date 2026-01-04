@@ -16,15 +16,15 @@
 #define dshot_parallel_wrap 3
 #define dshot_parallel_pio_version 0
 
-#define dshot_parallel_T1 6
-#define dshot_parallel_T2 6
+#define dshot_parallel_T1 5
+#define dshot_parallel_T2 7
 #define dshot_parallel_T3 4
 
 static const uint16_t dshot_parallel_program_instructions[] = {
             //     .wrap_target
     0x6028, //  0: out    x, 8                       
-    0xa50b, //  1: mov    pins, !null            [5] 
-    0xa501, //  2: mov    pins, x                [5] 
+    0xa40b, //  1: mov    pins, !null            [4] 
+    0xa601, //  2: mov    pins, x                [6] 
     0xa203, //  3: mov    pins, null             [2] 
             //     .wrap
 };
@@ -47,7 +47,7 @@ static inline pio_sm_config dshot_parallel_program_get_default_config(uint offse
 }
 
 #include "hardware/clocks.h"
-//pin_count 1-8
+// pin_count is 1-8
 static inline void dshot_parallel_program_init(PIO pio, uint sm, uint offset, uint pin_base, uint pin_count, float freq) {
     for(uint i=pin_base; i<pin_base+pin_count; i++) {
         pio_gpio_init(pio, i);

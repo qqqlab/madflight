@@ -40,7 +40,9 @@ Pause (output low) between frames: 21 bits recommended, 2 minimum
 
 Bit Structure
 
-A bit period (6.667 us for Dshot150) is split in 8 equal parts. A zero-bit is encoded as 3H 5L, and a one-bit is encoded as 6H 2L.
+A bit period (1667ns for Dshot600) is split in 8 equal parts. A zero-bit is encoded as 3H 5L (625ns high), and a one-bit is encoded as 6H 2L (1250ns high) - see: https://www.speedgoat.com/products/dshot
+
+madflight v2.2.1: modified to zero: 5H 11L (520ns high), one: 12H 4L (1250ns high) as some ESC misinterpreted zeroes as ones
 
 */
 
