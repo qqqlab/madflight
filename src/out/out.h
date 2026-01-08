@@ -32,6 +32,8 @@ SOFTWARE.
 class Out {
   public:
     bool armed = false; //output is enabled when armed == true
+    bool erpmEnabled[OUT_SIZE] = {};
+    int erpm[OUT_SIZE] = {}; //negative on error
 
     void setup();
     bool setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);

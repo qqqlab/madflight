@@ -17,15 +17,15 @@
 #define dshot_parallel_pio_version 0
 
 #define dshot_parallel_T1 5
-#define dshot_parallel_T2 7
-#define dshot_parallel_T3 4
+#define dshot_parallel_T2 5
+#define dshot_parallel_T3 5
 
 static const uint16_t dshot_parallel_program_instructions[] = {
             //     .wrap_target
     0x6028, //  0: out    x, 8                       
     0xa40b, //  1: mov    pins, !null            [4] 
-    0xa601, //  2: mov    pins, x                [6] 
-    0xa203, //  3: mov    pins, null             [2] 
+    0xa401, //  2: mov    pins, x                [4] 
+    0xa303, //  3: mov    pins, null             [3] 
             //     .wrap
 };
 

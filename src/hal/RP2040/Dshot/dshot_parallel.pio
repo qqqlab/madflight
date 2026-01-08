@@ -26,11 +26,11 @@ SOFTWARE.
 
 .program dshot_parallel
 
-//A bit period (1667ns for Dshot600) is split in 8 equal parts. A zero-bit is encoded as 3H 5L (625ns high), and a one-bit is encoded as 6H 2L (1250ns high) - see: https://www.speedgoat.com/products/dshot
-//madflight v2.2.1: modified to zero: 5H 11L (520ns high), one: 12H 4L (1250ns high) as some ESC misinterpreted zeroes as ones
+//A bit period (1667ns for Dshot600) is split in 8 equal parts. A zero-bit is encoded as 3H 5L (625ns high), and a one-bit is encoded as 6H 2L (1250ns high) - see: https://brushlesswhoop.com/dshot-and-bidirectional-dshot/   https://blck.mn/2016/11/dshot-the-new-kid-on-the-block/  https://www.speedgoat.com/products/dshot
+//madflight v2.2.1: modified to zero: 1H 2L (556ns high), one: 2H 1L (1111ns high) as some ESC misinterpreted zeroes as ones
 .define public T1 5
-.define public T2 7
-.define public T3 4
+.define public T2 5
+.define public T3 5
 
 .wrap_target
     out x, 8

@@ -202,6 +202,9 @@ static void cli_pout() {
   for(int i=0;i<OUT_SIZE;i++) {
     if(out.getType(i)) {
       Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
+      if(out.erpmEnabled[i]>=0) {
+        Serial.printf("erpm%d:%d\t", i, out.erpm[i]);
+      }
     }
   }
 }

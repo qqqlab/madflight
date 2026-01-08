@@ -44,6 +44,8 @@ bool Out::_setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_
   type[idx] = typ;
   pins[idx] = pin;
   command[idx] = 0.0f;
+  erpm[idx] = -1;
+  erpmEnabled[idx] = (type[idx] == 'B');
   switch(type[idx]) {
     case 'D':
     case 'B':
@@ -113,6 +115,7 @@ void Out::set(uint8_t idx, float value) {
         if(type[idx] == 'D') {
           dshot.set_throttle(throttle);
         }else{
+          dshotbidir.get_erpm(erpm);
           dshotbidir.set_throttle(throttle);
         }
       }
