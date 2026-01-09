@@ -86,6 +86,13 @@ private:
     uint32_t dma_buf[DSHOT_DMA_BUF_SIZE];
 
 public:
+    enum telem_error_enum {
+        TELEM_ERROR_NODATA = -1,
+        TELEM_ERROR_CRC = -2,
+        TELEM_ERROR_MAP = -3,
+        TELEM_ERROR_DMA = -4
+    };
+
     uint32_t interval_us = 0; //minimal interval between two writes in us (16 bits transmission + 21 bits pause)
 
     ~DshotBidirPio() {
@@ -212,39 +219,41 @@ public:
         return true;
     }
 
-    void get_erpm( int* erpm) {
+    void get_eperiod( int* eperiod) {
       for(int i = 0; i < pin_count; i++) {
-        erpm[i] = read_erpm(i);
+        eperiod[i] = read_eperiod(i);
       }
     }
 
-    //read erpm value for channel, returns negative on error
-    int read_erpm(uint8_t channel) {
+    //read eperiod value for channel, returns negative on error
+    int read_eperiod(uint8_t channel) {
         uint32_t tlm_val;
         int tlm_type = read_telem(channel, &tlm_val);
         if(tlm_type < 0) return tlm_type; //no data
-        if(tlm_type > 0) return -100 - tlm_type; //data received, but not erpm
+        if(tlm_type > 0) return -100 - tlm_type; //data received, but not eperiod
         return tlm_val;
     }
+
+    
 
     /*
     read telemetry for channel
     return values:
-    -3: dma busy
-    -2: mapping failure
-    -1: crc failure
-    0: val is erpm_us
-    1-8: val is telemetry
-    2: 0x02 	Temperature in C
-    3: 0x04 	Voltage: 0.25V per step
-    4: 0x06 	Current in Amp
-    5: 0x08 	Debug value 1
-    6: 0x0A 	Debug value 2
-    7: 0x0C 	Debug value 3
-    8: 0x0E 	State/Event 
+    -4: TELEM_ERROR_DMA - dma busy
+    -3: TELEM_ERROR_MAP - mapping failure
+    -2: TELEM_ERROR_CRC - crc failure
+    -1: TELEM_ERROR_NODATA - no telemetry data
+     0: ePeriod in microseconds
+     2: Temperature in C
+     3: Voltage: 0.25V per step
+     4: Current in Amp
+     5: Debug value 1
+     6: Debug value 2
+     7: Debug value 3
+     8: State/Event 
     */
     int read_telem(uint8_t channel, uint32_t *tlm_val) {
-        if(dma_channel_is_busy(dma_ch)) return -3;
+        if(dma_channel_is_busy(dma_ch)) return TELEM_ERROR_DMA;
 
         uint8_t *byte_buf = (uint8_t *)dma_buf;
         uint8_t mask = 1 << channel;
@@ -290,7 +299,8 @@ public:
 
         if(bit_cnt < 21) reply <<= 21 - bit_cnt; //append zeroes
 
-        //Serial.printf("ch=%d reply=%X\n", channel, reply);
+        if(reply == 0) return TELEM_ERROR_NODATA; //no telemetry data received
+
         *tlm_val = 0;
         return decode_telem(reply, tlm_val);
     }
@@ -320,7 +330,7 @@ private:
         return 0xFF;
     }
 
-    //decode received 21 bits to 12 bit value. Returns -1 on crc failure, -2 on mapping failure
+    //decode received 21 bits to 12 bit value. Returns negative on failure
     static int decode_bidir(uint32_t value) {
         uint16_t newValue;
         uint16_t mapped = 0x00;
@@ -330,7 +340,7 @@ private:
 
         for(int i = 0; i < 20; i += 5) {
             newValue = revertMapping(((value >> i) & 0x1F));
-            if(newValue == 0xff) return -2;
+            if(newValue == 0xff) return TELEM_ERROR_MAP;
             mapped |= newValue << leftShift;
             leftShift += 4;
         }
@@ -338,36 +348,22 @@ private:
         int crc = (~((mapped >> 4) ^ (mapped >> 8) ^ (mapped >> 12) )) & 0x0F;
 
         if(crc != (mapped & 0x0F) ) {
-            return -1;
+            return TELEM_ERROR_CRC;
         }
         return mapped >> 4;
     }
 
-/*
-decode telemetry - return values:
--2: mapping failure
--1:crc failure
-0:val is erpm_us
-1-8:val is telemetry
-2: 0x02 	Temperature in C
-3: 0x04 	Voltage: 0.25V per step
-4: 0x06 	Current in Amp
-5: 0x08 	Debug value 1
-6: 0x0A 	Debug value 2
-7: 0x0C 	Debug value 3
-8: 0x0E 	State/Event 
-*/
     static int decode_telem(uint32_t reply, uint32_t *val) {
         int r = decode_bidir(reply); //decode shifted gcr value to 12 bits
-        if(r<0) return r; //invalid
+        if(r < 0) return r; //invalid crc or mapping failure
 
         //decode telemetry value
         if(r & 0x100) {
-            //erpm value
+            //eperiod value
             if(r == 0xFFF) {
-                *val = 0;
+                *val = 0; //motor standing still
             }else{
-                *val = (r & 0x1ff) << (r >> 9); //erpm period in us
+                *val = (r & 0x1ff) << (r >> 9); //eperiod in us
             }
             return 0;
         }else{

@@ -24,8 +24,8 @@ public:
     dshot_impl.set_throttle(throttle);
   }
 
-  //get erpm values, call before set_throttle. Returns negative values on error.
-  void get_erpm( int* erpm) {
-    dshot_impl.get_erpm(erpm);
+  //get eperiod values, call before set_throttle. Returns negative values on error.
+  void get_eperiod( int* eperiod) {
+    dshot_impl.get_eperiod(eperiod);
   }
 };

@@ -177,11 +177,7 @@ static void cli_pmag() {
 }
 
 static void cli_pahr() {
-    // from ahr.h:
-  // roll in degrees: -180 to 180, roll right is +
-  // pitch in degrees: -90 to 90, pitch up is +
-  // yaw in degrees: -180 to 180, yaw right is positive
-  const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left"; // roll right is clockwise, is it?
+  const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left";
   const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
   const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
   Serial.printf("roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
@@ -202,8 +198,8 @@ static void cli_pout() {
   for(int i=0;i<OUT_SIZE;i++) {
     if(out.getType(i)) {
       Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
-      if(out.erpmEnabled[i]>=0) {
-        Serial.printf("erpm%d:%d\t", i, out.erpm[i]);
+      if(out.eperiodEnabled[i]>=0) {
+        Serial.printf("rpm%d:%d\t", i, out.rpm(i));
       }
     }
   }

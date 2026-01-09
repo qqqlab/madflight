@@ -44,8 +44,8 @@ bool Out::_setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_
   type[idx] = typ;
   pins[idx] = pin;
   command[idx] = 0.0f;
-  erpm[idx] = -1;
-  erpmEnabled[idx] = (type[idx] == 'B');
+  eperiod[idx] = -1;
+  eperiodEnabled[idx] = (type[idx] == 'B');
   switch(type[idx]) {
     case 'D':
     case 'B':
@@ -115,7 +115,7 @@ void Out::set(uint8_t idx, float value) {
         if(type[idx] == 'D') {
           dshot.set_throttle(throttle);
         }else{
-          dshotbidir.get_erpm(erpm);
+          dshotbidir.get_eperiod(eperiod);
           dshotbidir.set_throttle(throttle);
         }
       }
@@ -129,4 +129,11 @@ void Out::set(uint8_t idx, float value) {
       }
       break;
   }
+}
+
+int Out::rpm(uint8_t idx, int poles) {
+  if(idx >= OUT_SIZE) return -1;
+  if(eperiod[idx] < 0) return eperiod[idx];
+  if(eperiod[idx] == 0) return 0;
+  return 120000000 / poles / eperiod[idx];
 }

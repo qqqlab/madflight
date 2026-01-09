@@ -32,8 +32,8 @@ SOFTWARE.
 class Out {
   public:
     bool armed = false; //output is enabled when armed == true
-    bool erpmEnabled[OUT_SIZE] = {};
-    int erpm[OUT_SIZE] = {}; //negative on error
+    bool eperiodEnabled[OUT_SIZE] = {}; //ePeriod enabled flag
+    int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
 
     void setup();
     bool setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);
@@ -44,6 +44,7 @@ class Out {
     void set(uint8_t idx, float value); //set output (might not be output value because of armed == false)
     float get(uint8_t idx); //get last set value (might not be output value because of armed == false)
     char getType(uint8_t idx); //type 'D', 'M', or 'S'
+    int rpm(uint8_t idx, int poles = 14); //get RPM
 
   private:
     bool _setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
