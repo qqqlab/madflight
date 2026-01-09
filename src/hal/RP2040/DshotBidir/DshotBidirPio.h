@@ -234,8 +234,6 @@ public:
         return tlm_val;
     }
 
-    
-
     /*
     read telemetry for channel
     return values:

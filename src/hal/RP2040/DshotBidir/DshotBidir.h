@@ -1,3 +1,6 @@
+#pragma once
+
+#include <Arduino.h>
 #include "DshotBidirPio.h"
 
 class DshotBidir {
