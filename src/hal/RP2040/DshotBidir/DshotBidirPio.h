@@ -120,8 +120,10 @@ public:
         // This will find a free pio and state machine for our program and load it for us
         // We use pio_claim_free_sm_and_add_program_for_gpio_range (for_gpio_range variant)
         // so we will get a PIO instance suitable for addressing gpios >= 32 if needed and supported by the hardware
-        bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_bidir_program, &pio, &sm, &offset, pin, pin_count, true);
+        //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_bidir_program, &pio, &sm, &offset, pin, pin_count, true);
+        bool success = pio_registry_claim("DshotBi", &dshot_bidir_program, &pio, &sm, &offset, pin, pin_count, true);
         if(!success) {
+          Serial.println("ERROR: no free PIO for dshotbidir");
           dma_channel_unclaim(dma_ch);
           return false;
         }

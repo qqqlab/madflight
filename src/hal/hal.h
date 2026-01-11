@@ -31,6 +31,7 @@ SOFTWARE.
 #include <SPI.h> //Replace this with MF_SPI - but not really needed as RP2,ESP32,STM32 Arduino implementations are compatible
 
 //prototypes
+void hal_startup(); //call this to setup USB CDC/MSC before calling Serial.begin() - see bbx/BbxGizmoSdcard_RP2.cpp
 void hal_setup();
 void hal_eeprom_begin();
 uint8_t hal_eeprom_read(uint32_t adr);
@@ -43,7 +44,7 @@ void hal_print_pin_name(int pinnum);
 MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
 SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
 MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
-void hal_usb_setup(); //call this to setup USB CDC/MSC before calling Serial.begin() - see bbx/BbxGizmoSdcard_RP2.cpp
+void hal_print_resources();
 
 #if defined ARDUINO_ARCH_ESP32
   #include "ESP32/hal_ESP32.h"

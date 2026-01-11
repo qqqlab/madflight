@@ -2,13 +2,15 @@
 
 #include "Adafruit_NeoPixel.h"
 
+#include "../../hal/RP2040/pio_registry.h"
+
 bool Adafruit_NeoPixel::rp2040claimPIO(void) {
   // Find a PIO with enough available space in its instruction memory
   pio = NULL;
 
-  if (! pio_claim_free_sm_and_add_program_for_gpio_range(&ws2812_program, 
-                                                         &pio, &pio_sm, &pio_program_offset, 
-                                                         pin, 1, true)) {
+  //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&ws2812_program, &pio, &pio_sm, &pio_program_offset, pin, 1, true);
+  bool success = pio_registry_claim("NeoPix", &ws2812_program, &pio, &pio_sm, &pio_program_offset, pin, 1, true);
+  if (!success) {
     pio = NULL;
     pio_sm = -1;
     pio_program_offset = 0;

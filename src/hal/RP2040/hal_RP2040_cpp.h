@@ -39,6 +39,7 @@
 //-------------------------------------
 //Include Libraries
 //-------------------------------------
+#include "hal_RP2040.h"
 #include <Wire.h>                 // I2C communication
 #include <SPI.h>                  // SPI communication
 #include "RP2040_PWM.h"           // Servo and oneshot
@@ -63,10 +64,18 @@ MF_I2C    *hal_i2c[HAL_I2C_NUM] = {};
 MF_Serial *hal_ser[HAL_SER_NUM] = {};
 SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 
-//prototype
+//prototypes
 void hal_eeprom_begin();
+void bbx_rp2_usb_setup(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 
-//void hal_usb_setup() --> defined in bbx/BbxGizmoSdcard_RP2.cpp
+void hal_startup() {
+  pio_registry_name_unclaimed("Arduino");
+  bbx_rp2_usb_setup(); 
+}
+
+void hal_print_resources() {
+  pio_registry_print();
+}
 
 #if !MF_SERIAL_DMA
   uint8_t ser0_txbuf[256];

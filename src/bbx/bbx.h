@@ -90,7 +90,7 @@ class Bbx {
     void log_att();
     void log_ahrs();
     void log_sys();
-
+    void log_mot();
 
 };
 

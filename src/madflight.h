@@ -99,9 +99,10 @@ const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from 
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 void madflight_setup() {
-  hal_usb_setup(); //setup USB CDC/MSC
+  hal_startup(); //setup USB CDC/MSC and do other things which have to be done first
+
   Serial.begin(115200); //start console serial
-  
+
   // CFG - Configuration parameters (execute before delay to start LED)
   cfg.begin();
   #ifdef MF_CONFIG_CLEAR
@@ -303,6 +304,8 @@ void madflight_setup() {
 //===============================================================================================
 
 void madflight_die(String msg) {
+  hal_print_resources();
+
   bool do_print = true;
   led.enabled = true;
   for(;;) {

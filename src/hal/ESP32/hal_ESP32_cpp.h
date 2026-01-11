@@ -72,7 +72,8 @@ SPIClass spi1 = SPIClass(VSPI); // VSPI(default) or HSPI
 void hal_eeprom_begin();
 void startLoop1Task();
 
-void hal_usb_setup() {} // USB MSC not implemented for ESP32
+void hal_startup() {} // USB MSC not implemented for ESP32
+void hal_print_resources() {}
 
 void hal_setup()
 {

@@ -25,6 +25,8 @@ SOFTWARE.
 ==========================================================================================*/
 #pragma once
 
+#include "../pio_registry.h"
+
 #include "uart_rx.pio.h"
 #include "SerialRingBuf.h"
 
@@ -105,7 +107,8 @@ public:
         // This will find a free pio and state machine for our program and load it for us
         // We use pio_claim_free_sm_and_add_program_for_gpio_range (for_gpio_range variant)
         // so we will get a PIO instance suitable for addressing gpios >= 32 if needed and supported by the hardware
-        bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&uart_rx_program, &pio, &sm, &offset, pin, 1, true);
+        //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&uart_rx_program, &pio, &sm, &offset, pin, 1, true);
+        bool success = pio_registry_claim("UartRx", &uart_tx_program, &pio, &sm, &offset, pin, 1, true);
         if(!success) {
             return panic("PANIC: UartRxPioIrq no free sm");
         }

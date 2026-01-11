@@ -31,7 +31,7 @@ Bbx bbx;
 
 #ifdef ARDUINO_ARCH_RP2040
   #include "BbxGizmoSdcard_RP2.h"
-
+  #include "../hal/RP2040/pio_registry.h"
 
   int Bbx::gizmo_create() {
     //create gizmo
@@ -41,7 +41,9 @@ Bbx bbx;
         break;
       case Cfg::bbx_gizmo_enum::mf_SDSPI :
       case Cfg::bbx_gizmo_enum::mf_SDMMC :
-        gizmo = BbxGizmoSdcard::create(&config);
+        pio_registry_name_unclaimed("1Sdcard");
+        gizmo = BbxGizmoSdcard::create(&config); //Note: Sdfat claims a full PIO including 4 SM
+        pio_registry_name_unclaimed("Sdcard");
         break;
     }
     return 0;
@@ -256,19 +258,17 @@ void Bbx::log_imu() {
   bl.i16("gx",(imu.gx - cfg.imu_cal_gx)*10, 1e-1, "deg/s"); //dps
   bl.i16("gy",(imu.gy - cfg.imu_cal_gy)*10, 1e-1, "deg/s"); //dps
   bl.i16("gz",(imu.gz - cfg.imu_cal_gz)*10, 1e-1, "deg/s"); //dps
-  #if MAG_USE != MAG_USE_NONE
+  if(mag.installed()) {
     //get from magnetometer
     bl.i16("mx",((mag.x - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
     bl.i16("my",((mag.y - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
     bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
-  #else
+  } else if(imu.hasMag()) {
     //get from imu
-    if(imu.hasMag()) {
-      bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-      bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-      bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
-    }
-  #endif
+    bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
+    bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
+    bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
+  }
   bl.i16("roll",ahr.roll*100, 1e-2, "deg"); //deg -180 to 180
   bl.i16("pitch",ahr.pitch*100, 1e-2, "deg");; //deg -90 to 90
   bl.i16("yaw",ahr.yaw*100, 1e-2, "deg");; //deg -180 to 180
@@ -300,3 +300,16 @@ void Bbx::log_sys() {
   bl.i32("IMm",imu.interrupt_cnt - imu.update_cnt);
 }
 
+//motors
+void Bbx::log_mot() {
+  BinLog bl("MOT");
+  bl.TimeUS();
+  bl.i16("m0", out.get(0) * 1000, 1e-3, "");
+  bl.i16("m1", out.get(1) * 1000, 1e-3, "");
+  bl.i16("m2", out.get(2) * 1000, 1e-3, "");
+  bl.i16("m3", out.get(3) * 1000, 1e-3, "");
+  bl.i16("rpm0", out.rpm(0), 1, "rpm");
+  bl.i16("rpm1", out.rpm(1), 1, "rpm");
+  bl.i16("rpm2", out.rpm(2), 1, "rpm");
+  bl.i16("rpm3", out.rpm(3), 1, "rpm");
+}

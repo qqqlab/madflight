@@ -49,6 +49,8 @@ madflight v2.2.1: modified to zero: 5H 11L (520ns high), one: 12H 4L (1250ns hig
 
 #pragma once
 
+#include "../pio_registry.h"
+
 #include "dshot_parallel.pio.h"
 
 class DshotParallel {
@@ -78,8 +80,12 @@ public:
         // This will find a free pio and state machine for our program and load it for us
         // We use pio_claim_free_sm_and_add_program_for_gpio_range (for_gpio_range variant)
         // so we will get a PIO instance suitable for addressing gpios >= 32 if needed and supported by the hardware
-        bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_parallel_program, &pio, &sm, &offset, pin, pin_count, true);
-        if(!success) return false;
+        //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_parallel_program, &pio, &sm, &offset, pin, pin_count, true);
+        bool success = pio_registry_claim("Dshot", &dshot_parallel_program, &pio, &sm, &offset, pin, pin_count, true);
+        if(!success) {
+            Serial.println("ERROR: no free PIO for dshot");
+            return false;
+        }
 
         dshot_parallel_program_init(pio, sm, offset, pin, pin_count, rate_khz * 1000);
 

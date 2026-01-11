@@ -566,6 +566,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_print_all(false);
     RclCalibrate::calibrate();
   }else if (cmd == "ps") {
+    hal_print_resources();
     freertos_ps();
   }else if (cmd == "serial") {
     cli_serial(arg1.toInt());

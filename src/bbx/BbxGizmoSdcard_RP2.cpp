@@ -59,8 +59,7 @@ static void msc_flush_cb (void) {
 //  sd.cacheClear();   // clear file system's cache to force refresh ---> only in "SdFat_Adafruit_Fork.h" not in "SdFat.h"
 }
 
-
-void hal_usb_setup() {
+void bbx_rp2_usb_setup() {
   //make sure usb setup runs only once
   static bool usb_setup_done = false;
   if(!usb_setup_done) {
@@ -97,7 +96,7 @@ void hal_usb_setup() {
   }
 }
 #else //USE_TINYUSB
-void hal_usb_setup() {}
+void bbx_rp2_usb_setup() {}
 #endif //USE_TINYUSB
 
 
@@ -132,9 +131,9 @@ BbxGizmoSdcard* BbxGizmoSdcard::create(BbxConfig *config) {
 
 bool BbxGizmoSdcard::sd_setup() {
   if(setup_done) return true;
-  hal_usb_setup(); //start tinyusb if not started yet (need to do this before sdcard_begin())
+  bbx_rp2_usb_setup(); //start tinyusb if not started yet (need to do this before sdcard_begin())
   setup_done = sdcard_begin(config);
-  hal_usb_setup(); //connect card if inserted
+  bbx_rp2_usb_setup(); //connect card if inserted
 
   return setup_done;
 }

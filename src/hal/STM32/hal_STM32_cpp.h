@@ -50,7 +50,8 @@ SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 //prototype
 void hal_eeprom_begin();
 
-void hal_usb_setup() {} // USB MSC not implemented for STM32
+void hal_startup() {} // USB MSC not implemented for STM32
+void hal_print_resources() {}
 
 void hal_setup() 
 { 
