@@ -27,8 +27,10 @@ bool pio_registry_claim(const char* name, const pio_program_t *program, PIO *pio
     // name the claimed item
     pio_registry_register(*pio, *sm, name, program->length);
 
-    //unclaim unnamed registry entries - these are claims made by buggy pio_claim_free_sm_and_add_program_for_gpio_range()
-    pio_registry_unclaim_unnamed();
+    #if PICO_RP2350 && !PICO_RP2350A
+        //RP2350B unclaim unnamed registry entries - these are claims made by buggy pio_claim_free_sm_and_add_program_for_gpio_range()
+        pio_registry_unclaim_unnamed();
+    #endif
 
     // name any unnamed claimed items (should not be any)
     name2[0] = '2';
