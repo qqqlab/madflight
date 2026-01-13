@@ -66,11 +66,16 @@ SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 
 //prototypes
 void hal_eeprom_begin();
+void bbx_rp2_usb_detach(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 void bbx_rp2_usb_setup(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 
 void hal_startup() {
+  bbx_rp2_usb_detach();
   pio_registry_name_unclaimed("Arduino");
-  bbx_rp2_usb_setup(); 
+}
+
+void hal_usb_setup() {
+  bbx_rp2_usb_setup();
 }
 
 void hal_print_resources() {

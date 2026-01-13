@@ -59,43 +59,33 @@ static void msc_flush_cb (void) {
 //  sd.cacheClear();   // clear file system's cache to force refresh ---> only in "SdFat_Adafruit_Fork.h" not in "SdFat.h"
 }
 
+void bbx_rp2_usb_detach() {
+  TinyUSBDevice.detach();
+}
+
 void bbx_rp2_usb_setup() {
-  //make sure usb setup runs only once
-  static bool usb_setup_done = false;
-  if(!usb_setup_done) {
-    usb_setup_done = true;
+  if(sd.clusterCount() > 0) {
+      // Set disk size, SD block size is always 512
+      usb_msc.setCapacity(sd.card()->sectorCount(), 512);
+      // Set disk vendor id, product id and revision with string up to 8, 16, 4 characters respectively
+      usb_msc.setID("madfligh", "SD Card", "1.0");
+      // Set read write callback
+      usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);
+      // MSC is ready for read/write
+      usb_msc.setUnitReady(true);
+      usb_msc.begin();
 
-    // Set disk vendor id, product id and revision with string up to 8, 16, 4 characters respectively
-    usb_msc.setID("madfligh", "SD Card", "1.0");
-
-    // Set read write callback
-    usb_msc.setReadWriteCallback(msc_read_cb, msc_write_cb, msc_flush_cb);
-
-    // Still initialize MSC but tell usb stack that MSC is not ready to read/write
-    // If we don't initialize, board will be enumerated as CDC only
-    usb_msc.setUnitReady(false);
-    usb_msc.begin();
-
-    // If already enumerated, additional class driver begin() e.g msc, hid, midi won't take effect until re-enumeration
-    if (TinyUSBDevice.mounted()) {
-      TinyUSBDevice.detach();
-      delay(10);
-      TinyUSBDevice.attach();
-    }
+      // If already enumerated, additional class driver begin() e.g msc, hid, midi won't take effect until re-enumeration with TinyUSBDevice.attach(
+      if (TinyUSBDevice.mounted()) {
+        TinyUSBDevice.detach();
+        delay(10);
+      }
   }
 
-  static bool unit_ready = false;
-  if(sd.clusterCount() > 0 && !unit_ready) {
-    // Set disk size, SD block size is always 512
-    usb_msc.setCapacity(sd.card()->sectorCount(), 512);
-
-    // MSC is ready for read/write
-    usb_msc.setUnitReady(true);
-
-    unit_ready = true;
-  }
+  TinyUSBDevice.attach();
 }
 #else //USE_TINYUSB
+void bbx_rp2_usb_detach() {}
 void bbx_rp2_usb_setup() {}
 #endif //USE_TINYUSB
 
@@ -131,9 +121,9 @@ BbxGizmoSdcard* BbxGizmoSdcard::create(BbxConfig *config) {
 
 bool BbxGizmoSdcard::sd_setup() {
   if(setup_done) return true;
-  bbx_rp2_usb_setup(); //start tinyusb if not started yet (need to do this before sdcard_begin())
+  //bbx_rp2_usb_setup(); //start tinyusb if not started yet (need to do this before sdcard_begin())
   setup_done = sdcard_begin(config);
-  bbx_rp2_usb_setup(); //connect card if inserted
+  //bbx_rp2_usb_setup(); //connect card if inserted
 
   return setup_done;
 }
@@ -141,9 +131,9 @@ bool BbxGizmoSdcard::sd_setup() {
 //setup the file system
 void BbxGizmoSdcard::setup() {
   if(sd_setup()) {
-    Serial.printf("BBX: SDCARD size:%d MB  free:%d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000), (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
+    //Serial.printf("BBX: SDCARD size:%d MB  free:%d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000), (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
   }else{
-    Serial.printf("BBX: SDCARD not found\n");
+    //Serial.printf("BBX: SDCARD not found\n");
   }
 }
 

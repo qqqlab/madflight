@@ -36,7 +36,7 @@ public:
   void info() override;
   int read(const char* filename, uint8_t **data) override;
   void printSummary() override;
-  
+
 private:
   bool sd_setup();
   bool sd_listDir(const char * dirname, uint8_t levels=0);

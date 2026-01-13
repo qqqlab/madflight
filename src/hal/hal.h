@@ -32,6 +32,7 @@ SOFTWARE.
 
 //prototypes
 void hal_startup(); //call this to setup USB CDC/MSC before calling Serial.begin() - see bbx/BbxGizmoSdcard_RP2.cpp
+void hal_usb_setup();
 void hal_setup();
 void hal_eeprom_begin();
 uint8_t hal_eeprom_read(uint32_t adr);

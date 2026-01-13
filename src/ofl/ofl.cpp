@@ -59,7 +59,7 @@ int Ofl::setup() {
 
   //set calibration factor to one if not set by gizmo
   if(config.ofl_cal_rad == 0) {
-    config.ofl_cal_rad == 1.0;
+    config.ofl_cal_rad = 1.0;
   }
 
   return 0;
@@ -109,7 +109,7 @@ bool Ofl::update() {
 
   //convert from pixels to radians
   dx = dxnew * config.ofl_cal_rad;
-  dy = dxnew * config.ofl_cal_rad;
+  dy = dynew * config.ofl_cal_rad;
   x += dx;
   y += dy;
   update_ts = micros();

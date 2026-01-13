@@ -62,7 +62,7 @@ public:
   }
 
   bool update_raw() {
-    if(dev->readReg(0x18) & 0x80 == 0x00) return false; //exit if no new data
+    if((dev->readReg(0x18) & 0x80) == 0x00) return false; //exit if no new data
 
     uint8_t d[9];
     dev->readReg(0x00, d, 9);

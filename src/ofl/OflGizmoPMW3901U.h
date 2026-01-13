@@ -90,7 +90,6 @@ public:
     int dx_sum = 0;
     int dy_sum = 0;
 
-    uint32_t now = micros();
     bool got_data = false;
     uint8_t b;
     int n = ser_bus->available();

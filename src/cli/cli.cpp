@@ -198,7 +198,7 @@ static void cli_pout() {
   for(int i=0;i<OUT_SIZE;i++) {
     if(out.getType(i)) {
       Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
-      if(out.eperiodEnabled[i]>=0) {
+      if(out.eperiodEnabled[i]) {
         Serial.printf("rpm%d:%d\t", i, out.rpm(i));
       }
     }
@@ -206,11 +206,8 @@ static void cli_pout() {
 }
 
 static void cli_pimu() {
-  static uint32_t interrupt_cnt_last = 0;
   static uint32_t update_cnt_last = 0;
   static uint32_t ts_last = 0;
-  uint32_t delta_int = imu.interrupt_cnt - interrupt_cnt_last;
-  interrupt_cnt_last = imu.interrupt_cnt;
   uint32_t delta_upd = imu.update_cnt - update_cnt_last;
   update_cnt_last = imu.update_cnt;
   int miss_cnt = (int)imu.interrupt_cnt - imu.update_cnt;
@@ -224,12 +221,10 @@ static void cli_pimu() {
   Serial.printf("samp_hz:%d\t", hz);
 
   if(dt == 0) dt = 1;
-  //Serial.printf("intr_hz:%.0f\t", (float)delta_int/(dt*1e-6));
   Serial.printf("imu_loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
 
   int stat_cnt = 1;
   if(imu.stat_cnt > 0) stat_cnt = imu.stat_cnt;
-  //Serial.printf("stat_cnt:%d\t", (int)(stat_cnt));
   Serial.printf("latency_us:%d\t", (int)(imu.stat_latency / stat_cnt));
   Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime / stat_cnt));
   Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime) / stat_cnt));
@@ -238,7 +233,6 @@ static void cli_pimu() {
   Serial.printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
   Serial.printf("rt_max%%:%d\t", (int)imu.stat_runtime_max * hz / 10000);
   Serial.printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
-  //Serial.printf("upd_cnt:%d\t", (int)imu.update_cnt);
   Serial.printf("miss_cnt:%d\t", (int)miss_cnt);
   imu.statReset();
 }
@@ -259,7 +253,6 @@ static void cli_pbar() {
 static void cli_pgps() {
   Serial.printf("gps.time:%d\t", (int)gps.time);
   Serial.printf("fix:%d\t", (int)gps.fix);
-  //Serial.printf("date:%d\t", (int)gps.date);
   Serial.printf("sat:%d\t", (int)gps.sat);
   Serial.printf("lat:%d\t", (int)gps.lat);
   Serial.printf("lon:%d\t", (int)gps.lon);

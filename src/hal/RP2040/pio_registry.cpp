@@ -41,7 +41,7 @@ bool pio_registry_claim(const char* name, const pio_program_t *program, PIO *pio
 
 //name unnamed registry entries
 void pio_registry_name_unclaimed(const char* name) {
-    for(int p = 0; p < NUM_PIOS; p++) {
+    for(uint p = 0; p < NUM_PIOS; p++) {
         PIO pio = PIO_INSTANCE(p);
         for(uint sm = 0; sm < NUM_PIO_STATE_MACHINES; sm++) {
             if(pio_sm_is_claimed(pio, sm) && !pio_registry[p][sm][0]) {
@@ -53,7 +53,7 @@ void pio_registry_name_unclaimed(const char* name) {
 
 //unclaim unnamed registry entries
 void pio_registry_unclaim_unnamed() {
-    for(int p = 0; p < NUM_PIOS; p++) {
+    for(uint p = 0; p < NUM_PIOS; p++) {
         PIO pio = PIO_INSTANCE(p);
         for(uint sm = 0; sm < NUM_PIO_STATE_MACHINES; sm++) {
             if(pio_sm_is_claimed(pio, sm) && !pio_registry[p][sm][0]) {
@@ -72,7 +72,7 @@ void pio_registry_register(PIO pio, uint sm, const char* name, int8_t len) {
 //show list of SM
 void pio_registry_print() {
     Serial.printf("\nPIO RESOURCES\n");
-    for(int p = 0; p < NUM_PIOS; p++) {
+    for(uint p = 0; p < NUM_PIOS; p++) {
         PIO pio = PIO_INSTANCE(p);
         for(uint sm = 0; sm < NUM_PIO_STATE_MACHINES; sm++) {
             int base = pio_get_gpio_base(pio);
@@ -88,9 +88,9 @@ void pio_registry_print() {
                 Serial.printf("clkdiv=%7.2f ", pio->sm[sm].clkdiv / 65536.0);
                 Serial.printf("execctrl=%08X ", pio->sm[sm].execctrl);
                 Serial.printf("pinctrl=%08X ", pio->sm[sm].pinctrl);
-                Serial.printf("gpio_out=%2d",    base + (pio->sm[sm].pinctrl & 0x0000001f) >> 0);
+                Serial.printf("gpio_out=%2d",    base + ((pio->sm[sm].pinctrl & 0x0000001f) >> 0));
                 Serial.printf("(cnt=%d) ",       (pio->sm[sm].pinctrl & 0x03f00000) >> 20);
-                Serial.printf("gpio_side=%2d",   base + (pio->sm[sm].pinctrl & 0x000003e0) >> 5);
+                Serial.printf("gpio_side=%2d",   base + ((pio->sm[sm].pinctrl & 0x000003e0) >> 5));
                 Serial.printf("(cnt=%d) ",      (pio->sm[sm].pinctrl & 0x1c000000) >> 26);
                 Serial.printf("wrap=%2d-", (pio->sm[sm].execctrl & 0x00000f80) >> 7);
                 Serial.printf("%2d ", (pio->sm[sm].execctrl & 0x0001f000) >> 12);

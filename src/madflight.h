@@ -99,11 +99,10 @@ const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from 
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 void madflight_setup() {
-  hal_startup(); //setup USB CDC/MSC and do other things which have to be done first
-
-  Serial.begin(115200); //start console serial
-
-  // CFG - Configuration parameters (execute before delay to start LED)
+  // HAL - Detach USB to until SDCARD is setup
+  hal_startup();
+  
+  // CFG - Configuration parameters (execute before delay to start LED + SDCARD)
   cfg.begin();
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
@@ -113,14 +112,14 @@ void madflight_setup() {
   cfg.loadFromEeprom(); //load parameters from EEPROM
   cfg.load_madflight(madflight_board, madflight_config); //load config
 
-  // LED - Setup LED (execute before delay)
+  // LED - Setup LED (execute before delay to turn it on)
   led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
   led.config.pin = cfg.pin_led;
   led.setup();
   led.color(0x0000ff); //turn on blue to signal startup
   led.enabled = false; //do not change state until setup compled
 
-  // BBX - Black Box (execute before delay to start USB-MSC)
+  // BBX - Black Box (execute before delay to start USB-MSC if card is inserted)
   bbx.config.gizmo = (Cfg::bbx_gizmo_enum)cfg.bbx_gizmo; //the gizmo to use
   bbx.config.spi_bus = hal_get_spi_bus(cfg.bbx_spi_bus); //SPI bus
   bbx.config.spi_cs = cfg.pin_bbx_cs; //SPI select pin
@@ -129,10 +128,16 @@ void madflight_setup() {
   bbx.config.pin_mmc_cmd = cfg.pin_mmc_cmd;
   bbx.setup();
 
-  // 6 second startup delay
+  // USB - Start USB-CDC (Serial) and USB-MSC (if sdcard is inserted)
+  hal_usb_setup();
+
+  // Serial - Start serial console
+  Serial.begin(115200);
+
+  // Delay - 6 second startup delay
   for(int i = 12; i > 0; i--) {
     Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
-    Serial.flush();
+        Serial.flush();
     #ifndef MF_DEBUG 
       delay(500);
     #else
@@ -161,12 +166,13 @@ void madflight_setup() {
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
 
+  // I2C - Show i2c devices
   cli.print_i2cScan(); //print i2c scan
 
   // LED and BBX summary
   cfg.printModule("led");
   bbx.printSummary();
-
+ 
   // RCL - Radio Control Link
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use
   rcl.config.ser_bus_id = cfg.rcl_ser_bus; //serial bus id
@@ -200,7 +206,7 @@ void madflight_setup() {
   bat.config.rshunt = cfg.bat_cal_i;
   bat.setup();
 
-  //RDR
+  // RDR - Radar/Lidar/Sonar sensors
   rdr.config.gizmo = (Cfg::rdr_gizmo_enum)cfg.rdr_gizmo; //the gizmo to use
   rdr.config.rdr_ser_bus  = cfg.rdr_ser_bus; //serial bus
   rdr.config.rdr_baud     = cfg.rdr_baud; //baud rate
@@ -210,7 +216,7 @@ void madflight_setup() {
   rdr.config.rdr_i2c_adr  = cfg.rdr_i2c_adr;
   rdr.setup();
 
-  //OFL
+  // OFL - Optical flow sensor
   ofl.config.ofl_gizmo    = (Cfg::ofl_gizmo_enum)cfg.ofl_gizmo; //the gizmo to use
   ofl.config.ofl_spi_bus  = cfg.ofl_spi_bus; // spi bus
   ofl.config.pin_ofl_cs   = cfg.pin_ofl_cs;  // spi cs pin
@@ -257,7 +263,7 @@ void madflight_setup() {
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
   imu.config.pin_clkin = cfg.pin_imu_clkin; //CLKIN pin for ICM-42866-P - only tested for RP2 targets
 
-  // Some sensors need a couple of tries...
+  // Some IMU sensors need a couple of tries...
   int tries = 10;
   while(true) {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
@@ -268,7 +274,7 @@ void madflight_setup() {
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_die("IMU install failed.");
   }
-  // start IMU update handler
+  // Start IMU update handler
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
@@ -277,12 +283,12 @@ void madflight_setup() {
     if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
 
     #ifndef MF_DEBUG
-      // switch off LED to signal calibration
+      // Switch off LED to signal calibration
       led.enabled = true;
       led.off();
       led.enabled = false;
       
-      //Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
+      // Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
       cli.calibrate_gyro();
     #endif
   }
@@ -293,7 +299,7 @@ void madflight_setup() {
   // CLI - Command Line Interface
   cli.begin();
 
-  // Enable LED, and switch it to green to signal end of startup.
+  // LED - Enable and switch it to green to signal end of startup.
   led.enabled = true;
   led.color(0x00ff00); //switch color to green
   led.on();

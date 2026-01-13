@@ -73,6 +73,7 @@ void hal_eeprom_begin();
 void startLoop1Task();
 
 void hal_startup() {} // USB MSC not implemented for ESP32
+void hal_usb_setup() {}
 void hal_print_resources() {}
 
 void hal_setup()
