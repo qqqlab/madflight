@@ -34,7 +34,7 @@ private:
   MF_I2CDevice *dev = nullptr;
 
 public:
-  const float scale_uT = 0.00625; //scale factor to uT
+    const float scale_uT = 0.00625; //scale factor to uT
     int32_t mx; //raw adc values
     int32_t my;
     int32_t mz;
@@ -62,9 +62,7 @@ public:
   }
 
   bool update_raw() {
-uint8_t wai = dev->readReg(0x39);
-    //v2.2.2 disabled this - did not work...
-    //if((dev->readReg(0x18) & 0x80) == 0x00) return false; //exit if no new data
+    if((dev->readReg(0x18) & 0x40) == 0x00) return false; //exit if no new mag data
 
     uint8_t d[9];
     dev->readReg(0x00, d, 9);
