@@ -9,7 +9,6 @@
 
 class MPU_Interface {
   public:
-    virtual ~MPU_Interface() {}
     virtual void setFreq(int freq) = 0;
     virtual uint32_t writeRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
     virtual void readRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
@@ -31,6 +30,11 @@ class MPU_Interface {
 // SPI
 //================================================================
 class MPU_InterfaceSPI : public MPU_Interface {
+  private:
+    SPIClass * _spi;
+    int _freq;
+    uint8_t _spi_cs;
+
   public:
     MPU_InterfaceSPI(SPIClass *spi, uint8_t cs) {
       _spi = spi; 
@@ -38,11 +42,6 @@ class MPU_InterfaceSPI : public MPU_Interface {
       pinMode(_spi_cs, OUTPUT);
       digitalWrite(_spi_cs, HIGH);
       setFreq(1000000); //default to 1MHz
-    }
-
-    ~MPU_InterfaceSPI() override {
-      pinMode(_spi_cs, INPUT);
-      _spi = nullptr;
     }
 
     void setFreq(int freq) override {
@@ -76,11 +75,6 @@ class MPU_InterfaceSPI : public MPU_Interface {
     bool isSPI() {
       return true;
     }
-
-private:
-    SPIClass * _spi;
-    int _freq;
-    uint8_t _spi_cs;
 };
 
 //================================================================
@@ -88,14 +82,16 @@ private:
 //================================================================
 
 class MPU_InterfaceI2C : public MPU_Interface{
+  private:
+    MF_I2C *_i2c;
+    uint8_t _i2c_adr;
+
   public:
     MPU_InterfaceI2C(MF_I2C *i2c, uint8_t i2c_adr) {
       _i2c = i2c;
       _i2c_adr = i2c_adr;
       setFreq(100000); //default to 100kHz
     }
-
-    ~MPU_InterfaceI2C() override {}
 
     void setFreq(int freq) override {
       _i2c->setClock(freq);
@@ -126,8 +122,4 @@ class MPU_InterfaceI2C : public MPU_Interface{
     bool isSPI() {
       return false;
     }
-
-private:
-    MF_I2C *_i2c;
-    uint8_t _i2c_adr;
 };

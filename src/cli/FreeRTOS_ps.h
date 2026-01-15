@@ -104,7 +104,7 @@ void freertos_ps()
   uint32_t totalRunTime = tanew.ulTotalRunTime - taold.ulTotalRunTime;
   uint64_t tot = 0;
 
-  Serial.printf("\n");
+  Serial.printf("\n=== FreeRTOS TASKS ===\n\n");
   Serial.print("TID Name          CPU% Free S PR NI");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
     Serial.print(" Core");
@@ -140,7 +140,5 @@ void freertos_ps()
     Serial.printf("\n");
     tot += runtime;
   }
-
-  //Serial.printf("tot=%llu tim=%lu div=%f\n\n", tot, totalRunTime, (float)tot/totalRunTime);
 #endif
 }

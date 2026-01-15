@@ -57,11 +57,12 @@ Body frame is NED:
 #include "../cfg/cfg.h"
 
 //the "gizmos"
-#include "./MPUxxxx/MPU_interface.h"
-#include "./MPUxxxx/MPUxxxx.h"
-#include "./ImuGizmoBMI270.h"
-#include "./ImuGizmoICM45686.h"
-#include "./ImuGizmoICM426XX.h"
+#include "MPUxxxx/MPU_interface.h"
+#include "MPUxxxx/MPUxxxx.h"
+#include "ImuGizmoBMI270.h"
+#include "ImuGizmoICM45686.h"
+#include "ImuGizmoICM426XX.h"
+#include "ImuGizmoAuto.h"
 
 //global module class instance
 Imu imu;
@@ -89,7 +90,9 @@ int Imu::setup() {
   //==============================================================
   //create gizmo
   //==============================================================
-  if(!config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
+  if(config.gizmo == Cfg::imu_gizmo_enum::mf_AUTO) {
+    gizmo = ImuGizmoAuto::create(&config, (ImuState*)this);
+  } else if(!config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
     //-----------
     //SPI Sensors
     //-----------
@@ -138,7 +141,7 @@ int Imu::setup() {
         Serial.println("\n" MF_MOD ": ERROR - Sensor does not support imu_bus_type=SPI\n");
       }
     }
-  }else if(config.uses_i2c && config.i2c_bus) {
+  } else if(config.uses_i2c && config.i2c_bus) {
     //-----------
     //I2C Sensors
     //-----------
@@ -182,7 +185,8 @@ int Imu::setup() {
         gizmo->has_mag = false;
         break;
       }
-      case Cfg::imu_gizmo_enum::mf_ICM42688 : {
+      case Cfg::imu_gizmo_enum::mf_ICM42688 :
+      case Cfg::imu_gizmo_enum::mf_ICM42688P : {
         gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
         break;
       }

@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2023-2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -310,13 +310,11 @@ void madflight_setup() {
 //===============================================================================================
 
 void madflight_die(String msg) {
-  hal_print_resources();
-
   bool do_print = true;
   led.enabled = true;
   for(;;) {
     if(do_print) Serial.print("FATAL ERROR: " + msg + " Use CLI or reboot.\n");
-    for(int i=0;i<20;i++) {
+    for(int i = 0; i < 20; i++) {
       led.toggle();
       uint32_t ts = millis();
       while(millis() - ts < 50) {
@@ -329,7 +327,7 @@ void madflight_die(String msg) {
 void madflight_warn(String msg) { 
   Serial.print("WARNING: " + msg + "\n");
   //flash LED for 1 second
-  for(int i=0;i<20;i++) {
+  for(int i = 0; i < 20; i++) {
     led.toggle();
     delay(50);
   }

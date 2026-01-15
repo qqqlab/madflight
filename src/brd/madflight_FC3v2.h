@@ -31,7 +31,7 @@ LED: WS2812B
 const char madflight_board[] = R""(
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
-imu_gizmo     ICM45686
+imu_gizmo     AUTO //ICM45686
 imu_bus_type  SPI
 imu_align     CW180
 imu_spi_bus   1
