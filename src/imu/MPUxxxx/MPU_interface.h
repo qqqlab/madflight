@@ -9,6 +9,7 @@
 
 class MPU_Interface {
   public:
+    virtual ~MPU_Interface() {}
     virtual void setFreq(int freq) = 0;
     virtual uint32_t writeRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
     virtual void readRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;

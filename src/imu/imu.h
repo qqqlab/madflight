@@ -109,6 +109,7 @@ class Imu : public ImuState {
     //methods
     bool waitNewSample(); //wait for new sample, returns false on fail
     void statReset();
+    uint32_t getSampleRate() {return config.sample_rate;}  //sensor sample rate in Hz
 
     //low level interrupt handler (should be private, but is public, because called from interrupt)
     void _interrupt_handler();
