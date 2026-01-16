@@ -280,7 +280,9 @@ void madflight_setup() {
 
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
-    if(!imu.waitNewSample()) madflight_die("IMU interrupt not firing. Is pin 'pin_imu_int' connected?");
+    if(!imu.waitNewSample()) {
+      madflight_die(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
+    }
 
     #ifndef MF_DEBUG
       // Switch off LED to signal calibration
@@ -313,7 +315,7 @@ void madflight_die(String msg) {
   bool do_print = true;
   led.enabled = true;
   for(;;) {
-    if(do_print) Serial.print("FATAL ERROR: " + msg + " Use CLI or reboot.\n");
+    if(do_print) Serial.print("FATAL ERROR: " + msg + " Press enter to start CLI...\n");
     for(int i = 0; i < 20; i++) {
       led.toggle();
       uint32_t ts = millis();

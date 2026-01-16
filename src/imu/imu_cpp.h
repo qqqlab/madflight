@@ -90,12 +90,28 @@ int Imu::setup() {
   //==============================================================
   //create gizmo
   //==============================================================
-  if(config.gizmo == Cfg::imu_gizmo_enum::mf_AUTO) {
-    gizmo = ImuGizmoAuto::create(&config, (ImuState*)this);
-  } else if(!config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
-    //-----------
-    //SPI Sensors
-    //-----------
+  switch(config.gizmo) {
+    //-----------------
+    // SPI/I2C Sensors
+    //-----------------
+    case Cfg::imu_gizmo_enum::mf_AUTO : {
+      gizmo = ImuGizmoAuto::create(&config, (ImuState*)this);
+      break;
+    }
+    case Cfg::imu_gizmo_enum::mf_ICM42688 :
+    case Cfg::imu_gizmo_enum::mf_ICM42688P : {
+      gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
+      break;
+    }
+    case Cfg::imu_gizmo_enum::mf_LSM6DSV : {
+      gizmo = ImuGizmoLSM6DSV::create(&config, (ImuState*)this);
+      break;
+    }
+  }
+  if (!gizmo && !config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
+    //-----------------
+    // SPI-only Sensors
+    //-----------------
     switch(config.gizmo) {
       case Cfg::imu_gizmo_enum::mf_NONE : {
         //do nothing
@@ -132,19 +148,12 @@ int Imu::setup() {
         gizmo = ImuGizmoICM45686::create(&config, (ImuState*)this);
         break;
       }
-      case Cfg::imu_gizmo_enum::mf_ICM42688 :
-      case Cfg::imu_gizmo_enum::mf_ICM42688P : {
-        gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
-        break;
-      }
-      default: {
-        Serial.println("\n" MF_MOD ": ERROR - Sensor does not support imu_bus_type=SPI\n");
-      }
     }
-  } else if(config.uses_i2c && config.i2c_bus) {
-    //-----------
-    //I2C Sensors
-    //-----------
+  }
+  if (!gizmo && config.uses_i2c && config.i2c_bus) {
+    //-----------------
+    // I2C-only Sensors
+    //-----------------
     switch(config.gizmo) {
       case Cfg::imu_gizmo_enum::mf_NONE : {
         //do nothing
@@ -185,20 +194,12 @@ int Imu::setup() {
         gizmo->has_mag = false;
         break;
       }
-      case Cfg::imu_gizmo_enum::mf_ICM42688 :
-      case Cfg::imu_gizmo_enum::mf_ICM42688P : {
-        gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
-        break;
-      }
-      default: {
-        Serial.println("\n" MF_MOD ": ERROR - Sensor does not support imu_bus_type=I2C\n");
-      }
     }
   }
 
   //check gizmo
   if(!gizmo && config.gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR - Check pin/bus/bus_type config\n");
+    Serial.println("\n" MF_MOD ": ERROR sensor not found, check pin/bus/bus_type config\n");
     return -1001;
   }
 
@@ -361,7 +362,7 @@ void _imu_ll_interrupt_handler();
         Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
       #endif
     }
-    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING); 
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
   }
   
   inline void _imu_ll_interrupt_handler2() {
