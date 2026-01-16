@@ -9,7 +9,7 @@ protected:
   Dps3xx* pressureSensor;
   BarGizmoDPS310() {} // private constructor
 public:
-  static BarGizmoDPS310* create(MF_I2C *i2c, int8_t i2c_adr, uint32_t sampleRate) {
+  static BarGizmoDPS310* create(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
     if (i2c_adr == 0) {
       i2c_adr = 0x77;  // default i2c address for the DPS310
     }

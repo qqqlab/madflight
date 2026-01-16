@@ -38,7 +38,7 @@ Mag mag;
 int Mag::setup() {
   cfg.printModule(MF_MOD);
 
-  _samplePeriod = 1000000 / config.sampleRate;
+  _samplePeriod = 1000000 / config.sample_rate;
 
   //clear state
    x = 0; //"North" magnetic flux [uT]
@@ -56,24 +56,34 @@ int Mag::setup() {
     case Cfg::mag_gizmo_enum::mf_QMC5883 :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC5883L(config.i2c_bus, config.i2c_adr);
+        //return config
+        strncpy(config.name, "QMC5883L", sizeof(config.name));
       }
       break;
     case Cfg::mag_gizmo_enum::mf_QMC6309 :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC6309(config.i2c_bus); //i2c address is always 0x7C
+        //return config
+        strncpy(config.name, "QMC6309", sizeof(config.name));
       }
       break;
     case Cfg::mag_gizmo_enum::mf_RM3100 :
       gizmo = MagGizmoRM3100::create(config.i2c_bus);
+      //return config
+      strncpy(config.name, "RM3100", sizeof(config.name));
       break;
     case Cfg::mag_gizmo_enum::mf_QMC5883P :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC5883P(config.i2c_bus); //i2c address is always 0x2C
+        //return config
+        strncpy(config.name, "QMC5883P", sizeof(config.name));
       }
       break;
     case Cfg::mag_gizmo_enum::mf_MMC5603 :
       if(config.i2c_bus) {
         gizmo = new MagGizmoMMC5603(config.i2c_bus); //i2c address is always 0x30
+        //return config
+        strncpy(config.name, "MMC5603", sizeof(config.name));
       }
       break;
   }

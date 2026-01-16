@@ -23,7 +23,7 @@ SOFTWARE.
 ===========================================================================================*/
 
 /*
-Results polling sensor at full speed (by setting  mag.config.sampleRate = 10000 in madflight.h)
+Results polling sensor at full speed (by setting  mag.config.sample_rate = 10000 in madflight.h)
 
 CONTINOUS, RNG_2G
 

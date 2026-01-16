@@ -9,8 +9,8 @@ protected:
   Adafruit_BMP280 bar_BMP280;
   float press_old = 0;
 public:
-  BarGizmoBMP280(MF_I2C *i2c, int8_t i2c_adr, uint32_t sampleRate) {
-    (void) sampleRate; //TODO use sampleRate
+  BarGizmoBMP280(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
+    (void) sample_rate; //TODO use sample_rate
     unsigned status;
     status = bar_BMP280.begin(i2c, i2c_adr, BMP280_CHIPID);
     Serial.printf("BAR: BMP280 i2c_adr=0x%02X SensorID=0x%02X\n", i2c_adr, bar_BMP280.sensorID());

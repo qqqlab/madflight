@@ -845,7 +845,7 @@ bool LSM6DSV::detect(MPU_Interface* dev) {
 }
 
 //returns negative error code, positive warning code, or 0 on success
-int LSM6DSV::begin(SPIClass *spi, int cs_pin, int sampleRate) { 
+int LSM6DSV::begin(SPIClass *spi, int cs_pin, int sample_rate) { 
     // Use low speed for setup
     dev = new MPU_InterfaceSPI(spi, cs_pin);
     dev->setFreq(1000000);

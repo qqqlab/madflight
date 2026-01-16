@@ -70,10 +70,7 @@ class ImuGizmoAuto : public ImuGizmo {
         return gizmo;
     }
 
-  bool update() override {
-    return false;
-  }
-
+  //dummy function, as this gizmo never gets instantiated
   void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override {
     (void)ax;
     (void)ay;
@@ -81,16 +78,5 @@ class ImuGizmoAuto : public ImuGizmo {
     (void)gx;
     (void)gy;
     (void)gz;
-  }
-
-  int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
-    (void) gyro_scale_dps;
-    (void) acc_scale_g;
-    (void) rate_hz;
-    return 0;
-  }
-
-  int get_rate() {
-    return 0;
   }
 };

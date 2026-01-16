@@ -147,17 +147,36 @@ class ImuGizmoBMI270 : public ImuGizmo {
     float acc_multiplier;
     float gyro_multiplier;
 
-    ImuGizmoBMI270( SPIClass *spi, const uint8_t csPin ) {
-        _spi = spi;
-        _csPin = csPin;
+  private:
+    ImuGizmoBMI270() {} //private constructor
+
+  public:
+    ~ImuGizmoBMI270() {}
+
+    static ImuGizmo* create(ImuConfig *config, ImuState *state) {
+        if(!config || !state) return nullptr;
+
+        //check config
+        if(config->uses_i2c || !config->spi_bus || config->spi_cs < 0) {
+          Serial.println("IMU: ERROR check config - BMI270 SPI sensor with invalid imu_bus_type, imu_spi_bus and/or pin_imu_cs");
+          return nullptr;
+        }
+
+        //create gizmo
+        auto gizmo = new ImuGizmoBMI270();
+        gizmo->sensor_init(config->spi_bus, config->spi_cs, IMU_GYRO_DPS, IMU_ACCEL_G, config->sample_rate_requested);
+        //return config
+        strncpy(config->name, "BMI270", sizeof(config->name));
+        config->sample_rate = gizmo->_rate_hz;
+
+        return gizmo;
     }
 
-    int get_rate() {
-      return _rate_hz;
-    }
+  private:
+    void sensor_init(SPIClass *spi, const uint8_t csPin, int gyro_scale_dps, int acc_scale_g, int rate_hz) {
+      _spi = spi;
+      _csPin = csPin;
 
-    //returns 0 on success
-    int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
       set_gyro_scale_dps(gyro_scale_dps);
       set_acc_scale_g(acc_scale_g);
       set_rate(rate_hz);
@@ -213,8 +232,6 @@ class ImuGizmoBMI270 : public ImuGizmo {
 
       // Enable the gyro, accelerometer and temperature sensor - disable aux interface
       write_reg(BMI270_REG_PWR_CTRL, BMI270_VAL_PWR_CTRL);
-
-      return 0;
   }
 
     int who_am_i() {
@@ -232,11 +249,12 @@ class ImuGizmoBMI270 : public ImuGizmo {
         g[2] = data[11]<<8 | data[10];
     }
 
+  public:
     //Get sensor data in NED frame
     //x=North (forward), y=East (right), z=Down 
     //acc: gravitation force is positive in axis direction (i.e. at rest az = 1)
     //gyro: direction of positive rotation by right hand rule, i.e. positive is: yaw right, roll right, pitch up
-    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz)
+    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override
     {
       readSensor();
       //BM270 sensor orientation for gyro is NWU
@@ -279,6 +297,7 @@ class ImuGizmoBMI270 : public ImuGizmo {
       }
     }
 
+  private:
     void set_acc_scale_g(int scale_in_g)
     {
       if(scale_in_g <= 2) {
@@ -375,4 +394,4 @@ class ImuGizmoBMI270 : public ImuGizmo {
       return data;
     }
 
-}; // class BMI270
+};

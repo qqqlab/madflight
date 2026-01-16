@@ -39,7 +39,7 @@ struct BatState {
 
 struct BatConfig {
   public:
-    uint32_t sampleRate = 100; //sample rate [Hz]
+    uint32_t sample_rate = 100; //sample rate [Hz]
     Cfg::bat_gizmo_enum gizmo = Cfg::bat_gizmo_enum::mf_NONE; //the gizmo to use
     MF_I2C *i2c_bus = nullptr; //i2c bus
     uint8_t i2c_adr = 0; //i2c address. 0=default address

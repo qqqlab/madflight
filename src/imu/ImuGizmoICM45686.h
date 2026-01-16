@@ -7,12 +7,12 @@ class ImuGizmoICM45686 : public ImuGizmo {
   private:
     ImuGizmoICM45686() {} //private constructor
     ImuState *state = nullptr;
-    ICM45686 *icm = nullptr;
+    ICM45686 *sensor = nullptr;
     PWM *pwm_clkin = nullptr;
 
   public:
     ~ImuGizmoICM45686() {
-        delete icm;
+        delete sensor;
         delete pwm_clkin;
     }
 
@@ -30,11 +30,11 @@ class ImuGizmoICM45686 : public ImuGizmo {
             pwm_clkin->writeFactor(0.5);
         }
 
-        auto *icm = new ICM45686();
-        int rv = icm->begin(config->spi_bus, config->spi_cs, config->sampleRate, use_clkin);
+        auto *sensor = new ICM45686();
+        int rv = sensor->begin(config->spi_bus, config->spi_cs, config->sample_rate_requested, use_clkin);
 
         if(rv < 0) {
-            delete icm;
+            delete sensor;
             Serial.printf("IMU: ICM45686 init failed, rv=%d\n", rv);
             return nullptr;
         }
@@ -42,19 +42,15 @@ class ImuGizmoICM45686 : public ImuGizmo {
         //create gizmo
         auto gizmo = new ImuGizmoICM45686();
         gizmo->state = state;
-        gizmo->icm = icm;
+        gizmo->sensor = sensor;
         gizmo->pwm_clkin = pwm_clkin;
-        gizmo->has_mag = false;
-        gizmo->uses_i2c = false;
-
+        //return config
+        strncpy(config->name, "ICM45686", sizeof(config->name));
+        config->sample_rate = sensor->sampleRateActual;
         Serial.printf("IMU: ICM45686 started\n");
 
         return gizmo;
     }
-
-  bool update() override {
-    return false;
-  }
 
 /* Get sensor data in NED frame
    x=North (forward), y=East (right), z=Down 
@@ -72,23 +68,12 @@ ICM45686 has NWU orientation
 */
   
   void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override {
-    icm->read();
-    *ax = -icm->acc[0]; //-N = -N
-    *ay =  icm->acc[1]; //-E =  W
-    *az =  icm->acc[2]; //-D =  U
-    *gx =  icm->gyr[0]; // N =  N
-    *gy = -icm->gyr[1]; // E = -W
-    *gz = -icm->gyr[2]; // D = -U
-  }
-
-  int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
-    (void) gyro_scale_dps;
-    (void) acc_scale_g;
-    (void) rate_hz;
-    return 0;
-  }
-
-  int get_rate() {
-    return icm->sampleRateActual;
+    sensor->read();
+    *ax = -sensor->acc[0]; //-N = -N
+    *ay =  sensor->acc[1]; //-E =  W
+    *az =  sensor->acc[2]; //-D =  U
+    *gx =  sensor->gyr[0]; // N =  N
+    *gy = -sensor->gyr[1]; // E = -W
+    *gz = -sensor->gyr[2]; // D = -U
   }
 };

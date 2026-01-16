@@ -38,7 +38,7 @@ public:
   const float acc_scale = 32.0 / 524288.0; //Accel scale +/-32g, 20bit, 16384 LSB/g (actual resolution 19bit, i.e. 8192 LSB/g)
   const float gyr_scale = 4000.0 / 524288.0; //Gyro scale +/-4000dps, 20bit
 
-  int begin(SPIClass *spi, int cs_pin, int sampleRate, bool use_clkin); //returns negative error code, positive warning code, or 0 on success
+  int begin(SPIClass *spi, int cs_pin, int sample_rate, bool use_clkin); //returns negative error code, positive warning code, or 0 on success
   int read(); //returns number of samples, or -1 on error
 
   ~ICM45686() {

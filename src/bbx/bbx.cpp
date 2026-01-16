@@ -263,7 +263,7 @@ void Bbx::log_imu() {
     bl.i16("mx",((mag.x - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
     bl.i16("my",((mag.y - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
     bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
-  } else if(imu.hasMag()) {
+  } else if(imu.config.has_mag) {
     //get from imu
     bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
     bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT

@@ -20,8 +20,9 @@ public:
   AhrGizmoVqf(Ahr *ahr) {
     this->config = &(ahr->config);
     this->state = (AhrState*)ahr;
-
-    initVqf(1.0/config->pimu->getSampleRate(), 1.0/config->pimu->getSampleRate(), 1.0/config->pimu->getSampleRate());
+    
+    float sample_rate = config->pimu->config.sample_rate;
+    initVqf(1.0/sample_rate, 1.0/sample_rate, 1.0/sample_rate);
   }
 
   void setInitalOrientation(float *qnew) {

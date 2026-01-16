@@ -41,9 +41,9 @@ Ahr ahr;
 int Ahr::setup() {
   cfg.printModule(MF_MOD);
 
-  B_gyr = lowpass_to_beta(config.gyrLpFreq, config.pimu->getSampleRate());
-  B_acc = lowpass_to_beta(config.accLpFreq, config.pimu->getSampleRate());
-  B_mag = lowpass_to_beta(config.magLpFreq, config.pimu->getSampleRate());
+  B_gyr = lowpass_to_beta(config.gyrLpFreq, config.pimu->config.sample_rate);
+  B_acc = lowpass_to_beta(config.accLpFreq, config.pimu->config.sample_rate);
+  B_mag = lowpass_to_beta(config.magLpFreq, config.pimu->config.sample_rate);
 
   //create gizmo
   delete gizmo;
@@ -132,7 +132,7 @@ void Ahr::getQFromMag(float *q) {
   for(int i=0;i<100;i++) {
     uint32_t start = micros();
     config.pmag->update();
-    while(micros() - start < 1000000 / config.pimu->getSampleRate()); //wait until next sample time
+    while(micros() - start < 1000000 / config.pimu->config.sample_rate); //wait until next sample time
   }
 
   //update mx and my from mag or imu

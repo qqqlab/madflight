@@ -35,12 +35,12 @@ public:
   void setup(float alt) {
     Serial.printf("ALT: BARO\n");
 
-    float sampleRate = bar.config.SampleRate;
+    float sample_rate = bar.config.sample_rate;
     float filterHHertz = 2.0;
     float filterVHertz = 0.5;
     
-    B_h = lowpass_to_beta(filterHHertz, sampleRate);
-    B_v = lowpass_to_beta(filterVHertz, sampleRate);
+    B_h = lowpass_to_beta(filterHHertz, sample_rate);
+    B_v = lowpass_to_beta(filterVHertz, sample_rate);
     h = alt;
     v = 0;
     ts = 0;

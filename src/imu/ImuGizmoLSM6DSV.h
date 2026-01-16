@@ -59,7 +59,7 @@ class ImuGizmoLSM6DSV : public ImuGizmo {
 
       // Create sensor
       auto *sensor = new LSM6DSV();
-      int rv = sensor->begin(config->spi_bus, config->spi_cs, config->sampleRate);
+      int rv = sensor->begin(config->spi_bus, config->spi_cs, config->sample_rate_requested);
       if(rv < 0) {
           delete sensor;
           Serial.printf("IMU: LSM6DSV init failed, rv=%d\n", rv);
@@ -70,14 +70,11 @@ class ImuGizmoLSM6DSV : public ImuGizmo {
       auto gizmo = new ImuGizmoLSM6DSV();
       gizmo->state = state;
       gizmo->sensor = sensor;
-      gizmo->has_mag = false;
-      gizmo->uses_i2c = (config->spi_bus != nullptr);
+      //return config
+      strncpy(config->name, "LSM6DSV", sizeof(config->name));
+      config->sample_rate = sensor->actual_sample_rate_hz;
       Serial.printf("IMU: LSM6DSV started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
       return gizmo;
-  }
-
-  bool update() override {
-    return false;
   }
 
 /* Get sensor data in NED frame
@@ -104,16 +101,5 @@ LSM6DSV has NWU orientation
     *ax = -raw[3] * sensor->acc_scale; //-N = -N
     *ay =  raw[4] * sensor->acc_scale; //-E =  W
     *az =  raw[5] * sensor->acc_scale; //-D =  U
-  }
-
-  int begin(int gyro_scale_dps, int acc_scale_g, int rate_hz) {
-    (void) gyro_scale_dps;
-    (void) acc_scale_g;
-    (void) rate_hz;
-    return 0;
-  }
-
-  int get_rate() {
-    return sensor->actual_sample_rate_hz;
   }
 };

@@ -36,7 +36,7 @@ public:
   const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
 
   static bool detect(MPU_Interface* dev);
-  int begin(SPIClass *spi, int cs_pin, int sampleRate); //returns negative error code, positive warning code, or 0 on success
+  int begin(SPIClass *spi, int cs_pin, int sample_rate); //returns negative error code, positive warning code, or 0 on success
   void readraw(int16_t *raw); //read gyr[3],acc[3]
 
   ~LSM6DSV() {

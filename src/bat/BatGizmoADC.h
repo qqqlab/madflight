@@ -11,7 +11,7 @@ class BatGizmoADC: public BatGizmo {
     BatGizmoADC(Bat *bat) {
         this->config = &(bat->config);
         this->state = (BatState*)bat;
-        interval_us = 1000000 / config->sampleRate;
+        interval_us = 1000000 / config->sample_rate;
         state->i = 0;
         state->v = 0;
         state->mah = 0;

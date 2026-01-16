@@ -184,21 +184,21 @@ void madflight_setup() {
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
   bar.config.i2c_bus = hal_get_i2c_bus(cfg.bar_i2c_bus); //i2c bus
   bar.config.i2c_adr = cfg.bar_i2c_adr; //i2c address. 0=default address  
-  bar.config.sampleRate = 100; //sample rate [Hz]
+  bar.config.sample_rate = 100; //sample rate [Hz]
   bar.setup();
 
   // MAG - External Magnetometer
   mag.config.gizmo = (Cfg::mag_gizmo_enum)cfg.mag_gizmo; //the gizmo to use
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
-  mag.config.sampleRate = 100; //sample rate [Hz]
+  mag.config.sample_rate = 100; //sample rate [Hz]
   mag.setup(); 
 
   // BAT - Battery Monitor
   bat.config.gizmo = (Cfg::bat_gizmo_enum)cfg.bat_gizmo; //the gizmo to use
   bat.config.i2c_bus = hal_get_i2c_bus(cfg.bat_i2c_bus); //i2c bus
   bat.config.i2c_adr = cfg.bat_i2c_adr; //i2c address. 0=default address
-  bat.config.sampleRate = 100; //sample rate [Hz]
+  bat.config.sample_rate = 100; //sample rate [Hz]
   bat.config.adc_pin_v = cfg.pin_bat_v;
   bat.config.adc_pin_i = cfg.pin_bat_i;
   bat.config.adc_cal_v = cfg.bat_cal_v;
@@ -253,7 +253,7 @@ void madflight_setup() {
   ahr.setup();
 
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
-  imu.config.sampleRate = cfg.imu_rate; //sample rate [Hz]
+  imu.config.sample_rate_requested = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
   imu.config.gizmo = (Cfg::imu_gizmo_enum)cfg.imu_gizmo; //the gizmo to use
   imu.config.spi_bus = hal_get_spi_bus(cfg.imu_spi_bus); //SPI bus

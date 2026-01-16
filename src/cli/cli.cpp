@@ -216,8 +216,7 @@ static void cli_pimu() {
   uint32_t dt = now - ts_last;
   ts_last = now;
 
-  int hz = 0;
-  if(imu.getSamplePeriod() > 0) hz = 1000000 / imu.getSamplePeriod();
+  int hz = imu.config.sample_rate;
   Serial.printf("samp_hz:%d\t", hz);
 
   if(dt == 0) dt = 1;
@@ -695,7 +694,7 @@ void Cli::calibrate_Magnetometer() {
 
   if (mag.installed()) {
     Serial.print("EXT ");
-  }else if (imu.hasMag()) {
+  }else if (imu.config.has_mag) {
     Serial.print("IMU ");
   }
   Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
@@ -732,7 +731,7 @@ bool Cli::_calibrate_Magnetometer_ReadMag(float *m) {
     m[1] = mag.y;
     m[2] = mag.z;
   }else{
-    if(!imu.hasMag()) return false;
+    if(!imu.config.has_mag) return false;
     imu.waitNewSample();
     m[0] = imu.mx;
     m[1] = imu.my;
@@ -858,22 +857,22 @@ void Cli::calibrate_info(int seconds) {
     }
   } 
 
-  Serial.printf("=== Gyro - Sample rate: %d Hz===\n", gx.n/seconds );
+  Serial.printf("=== %s Gyro %s - Sample rate: %d Hz===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"), gx.n/seconds );
   gx.print("gx[deg/s]     ");
   gy.print("gy[deg/s]     ");
   gz.print("gz[deg/s]     ");
-  Serial.printf("=== Accelerometer - Sample rate: %d Hz===\n", ax.n/seconds );
+  Serial.printf("=== %s Accelerometer %s - Sample rate: %d Hz===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"), ax.n/seconds );
   ax.print("ax[g]         ");
   ay.print("ay[g]         ");
   az.print("az[g]         ");
   if(bar.installed()) {
-    Serial.printf("=== Barometer - Sample rate: %d Hz===\n", sp.n/seconds );
+    Serial.printf("=== %s Barometer I2C - Sample rate: %d Hz===\n", bar.config.name, sp.n/seconds );
     sa.print("Altitude[m]   ");
     sp.print("Pressure[Pa]  ");
     st.print("Temperature[C]");
   }
   if(mag.installed()) {
-    Serial.printf("=== Magnetometer (external) - Sample rate: %d Hz===\n", mx.n/seconds );
+    Serial.printf("=== %s Magnetometer I2C - Sample rate: %d Hz===\n", mag.config.name, mx.n/seconds );
     mx.print("mx[uT]        ");
     my.print("my[uT]        ");
     mz.print("mz[uT]        ");

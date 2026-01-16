@@ -37,28 +37,16 @@ Body frame is NED:
 #endif
 //#pragma once //don't use here, we want to get an error if included twice
 
-#define MF_MOD "IMU"
-
 //Available excecution methods (not all platforms support all methods)
 #define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (works on STM32. Does NOT work on ESP32, RP2040)
 #define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
 #define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
 
-//default settings
-#ifndef IMU_GYRO_DPS
-  #define IMU_GYRO_DPS 2000 //Full scale gyro range in deg/sec. Most IMUs support 250,500,1000,2000. Can use any value here, driver will pick next greater setting.
-#endif
-#ifndef IMU_ACCEL_G
-  #define IMU_ACCEL_G 16 //Full scale accelerometer range in G's. Most IMUs support 2,4,8,16. Can use any value here, driver will pick next greater setting.
-#endif
-
-
 #include "./imu.h"
 #include "../cfg/cfg.h"
 
 //the "gizmos"
-#include "MPUxxxx/MPU_interface.h"
-#include "MPUxxxx/MPUxxxx.h"
+#include "ImuGizmoMPUXXXX.h"
 #include "ImuGizmoBMI270.h"
 #include "ImuGizmoICM45686.h"
 #include "ImuGizmoICM426XX.h"
@@ -72,12 +60,9 @@ volatile bool _imu_ll_interrupt_enabled = false;
 volatile bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
-bool Imu::usesI2C() { return gizmo->uses_i2c; } //returns true if IMU uses I2C bus (not SPI bus)
-bool Imu::hasMag() { return gizmo->has_mag; }
-
 //returns 0 on success, positive on error, negative on warning
 int Imu::setup() {
-  cfg.printModule(MF_MOD);
+  cfg.printModule("IMU");
   
   //disable interrupt handler
   _imu_ll_interrupt_enabled = false;
@@ -87,15 +72,26 @@ int Imu::setup() {
   //exit if gizmo == NONE
   if(config.gizmo == Cfg::imu_gizmo_enum::mf_NONE) return 0;
 
-  //==============================================================
   //create gizmo
-  //==============================================================
   switch(config.gizmo) {
-    //-----------------
-    // SPI/I2C Sensors
-    //-----------------
+    case Cfg::imu_gizmo_enum::mf_NONE : {
+      //do nothing
+      break;
+    }    
     case Cfg::imu_gizmo_enum::mf_AUTO : {
       gizmo = ImuGizmoAuto::create(&config, (ImuState*)this);
+      break;
+    }
+    case Cfg::imu_gizmo_enum::mf_MPU9250 :
+    case Cfg::imu_gizmo_enum::mf_MPU9150 :
+    case Cfg::imu_gizmo_enum::mf_MPU6500 :
+    case Cfg::imu_gizmo_enum::mf_MPU6050 :
+    case Cfg::imu_gizmo_enum::mf_MPU6000 : {
+      gizmo = ImuGizmoMPUXXXX::create(&config, (ImuState*)this);
+      break;
+    }
+    case Cfg::imu_gizmo_enum::mf_BMI270 : {
+      gizmo = ImuGizmoBMI270::create(&config, (ImuState*)this);
       break;
     }
     case Cfg::imu_gizmo_enum::mf_ICM42688 :
@@ -103,103 +99,19 @@ int Imu::setup() {
       gizmo = ImuGizmoICM426XX::create(&config, (ImuState*)this);
       break;
     }
+    case Cfg::imu_gizmo_enum::mf_ICM45686 : {
+      gizmo = ImuGizmoICM45686::create(&config, (ImuState*)this);
+      break;
+    }
     case Cfg::imu_gizmo_enum::mf_LSM6DSV : {
       gizmo = ImuGizmoLSM6DSV::create(&config, (ImuState*)this);
       break;
     }
   }
-  if (!gizmo && !config.uses_i2c && config.spi_bus && config.spi_cs >= 0) {
-    //-----------------
-    // SPI-only Sensors
-    //-----------------
-    switch(config.gizmo) {
-      case Cfg::imu_gizmo_enum::mf_NONE : {
-        //do nothing
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU9250 : {
-        auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
-        gizmo = new MPUXXXX(MPUXXXX::MPU9250, mpu_iface);
-        gizmo->uses_i2c = false;
-        gizmo->has_mag = true;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU6500 : {
-        auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
-        gizmo = new MPUXXXX(MPUXXXX::MPU6500, mpu_iface);
-        gizmo->uses_i2c = false;
-        gizmo->has_mag = false;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU6000 : {
-        auto mpu_iface = new MPU_InterfaceSPI(config.spi_bus, config.spi_cs);
-        gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
-        gizmo->uses_i2c = false;
-        gizmo->has_mag = false;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_BMI270 : {
-        gizmo = new ImuGizmoBMI270(config.spi_bus, config.spi_cs);
-        gizmo->uses_i2c = false;
-        gizmo->has_mag = false;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_ICM45686 : {
-        gizmo = ImuGizmoICM45686::create(&config, (ImuState*)this);
-        break;
-      }
-    }
-  }
-  if (!gizmo && config.uses_i2c && config.i2c_bus) {
-    //-----------------
-    // I2C-only Sensors
-    //-----------------
-    switch(config.gizmo) {
-      case Cfg::imu_gizmo_enum::mf_NONE : {
-        //do nothing
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU9250 : {
-        auto mpu_iface = new MPU_InterfaceI2C(config.i2c_bus, config.i2c_adr);
-        gizmo = new MPUXXXX(MPUXXXX::MPU9250, mpu_iface);
-        gizmo->uses_i2c = true;
-        gizmo->has_mag = true;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU9150 : {
-        auto mpu_iface = new MPU_InterfaceI2C(config.i2c_bus, config.i2c_adr);
-        gizmo = new MPUXXXX(MPUXXXX::MPU9150, mpu_iface);
-        gizmo->uses_i2c = true;
-        gizmo->has_mag = true;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU6500 : {
-        auto mpu_iface = new MPU_InterfaceI2C(config.i2c_bus, config.i2c_adr);
-        gizmo = new MPUXXXX(MPUXXXX::MPU6500, mpu_iface);
-        gizmo->uses_i2c = true;
-        gizmo->has_mag = false;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU6050 : {
-        auto mpu_iface = new MPU_InterfaceI2C(config.i2c_bus, config.i2c_adr);
-        gizmo = new MPUXXXX(MPUXXXX::MPU6050, mpu_iface);
-        gizmo->uses_i2c = true;
-        gizmo->has_mag = false;
-        break;
-      }
-      case Cfg::imu_gizmo_enum::mf_MPU6000 : {
-        auto mpu_iface = new MPU_InterfaceI2C(config.i2c_bus, config.i2c_adr);
-        gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
-        gizmo->uses_i2c = true;
-        gizmo->has_mag = false;
-        break;
-      }
-    }
-  }
 
   //check gizmo
   if(!gizmo && config.gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR sensor not found, check pin/bus/bus_type config\n");
+    Serial.println("\nIMU: ERROR sensor not configured, check pin/bus/bus_type config\n");
     return -1001;
   }
 
@@ -213,9 +125,6 @@ int Imu::setup() {
   //setup low-level interrupt stuff
   //==============================================================
   //_imu_ll_interrupt_enabled = false; //already done
-  int rv = gizmo->begin(IMU_GYRO_DPS, IMU_ACCEL_G, config.sampleRate);
-  _sampleRate = gizmo->get_rate();
-  Serial.printf(MF_MOD ": Actual sample rate:%d Hz\n", (int)_sampleRate);
   onUpdate = NULL;
   _imu_ll_interrupt_busy = false;
   _imu_ll_interrupt_ts = 0;
@@ -227,7 +136,8 @@ int Imu::setup() {
   _imu_ll_interrupt_enabled = true;
   interrupt_cnt = 0;
   update_cnt = 0;
-  return rv;
+
+  return 0;
 }
 
 bool Imu::update() {
@@ -237,7 +147,7 @@ bool Imu::update() {
   uint32_t update_ts = micros();
 
   //get sensor data and update timestamps, count
-  if(gizmo->has_mag) {
+  if(config.has_mag) {
     gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
   }else{
     gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
@@ -281,7 +191,7 @@ bool Imu::update() {
 bool Imu::waitNewSample() {
   uint32_t last_cnt = update_cnt;
   uint32_t start = millis();
-  while( last_cnt == update_cnt && millis() - start <= (10*1000) / _sampleRate );
+  while( last_cnt == update_cnt && millis() - start <= (10*1000) / config.sample_rate );
   return (last_cnt != update_cnt);
 }
 
@@ -356,10 +266,10 @@ void _imu_ll_interrupt_handler();
           #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
         #endif
 
-        Serial.printf(MF_MOD ": IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
+        Serial.printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
         xTaskCreate(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
-        Serial.println(MF_MOD ": IMU_EXEC_FREERTOS");
+        Serial.println("IMU: IMU_EXEC_FREERTOS");
       #endif
     }
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
@@ -375,7 +285,7 @@ void _imu_ll_interrupt_handler();
 #elif IMU_EXEC == IMU_EXEC_IRQ
 
   void _imu_ll_interrupt_setup(int interrupt_pin) {
-    Serial.println(MF_MOD ": IMU_EXEC_IRQ");
+    Serial.println("IMU: IMU_EXEC_IRQ");
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
     #if MF_HACK_STM32_INTERRUPT_PRIORITY
       // (#79) on stm32, set the interrupt to the highest priority, otherwise it does not get called
@@ -406,5 +316,3 @@ void _imu_ll_interrupt_handler() {
     }
   }
 }
-
-#undef MF_MOD
