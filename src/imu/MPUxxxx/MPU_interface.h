@@ -35,10 +35,10 @@ class MPU_InterfaceSPI : public MPU_Interface {
     SPIClass * _spi;
     int _freq;
     uint8_t _spi_cs;
-    SPIMode _spi_mode;
+    uint8_t _spi_mode;
 
   public:
-    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, SPIMode spi_mode = SPI_MODE3) {
+    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, uint8_t spi_mode = SPI_MODE3) {
       _spi = spi; 
       _spi_cs = cs;
       _spi_mode = spi_mode;
