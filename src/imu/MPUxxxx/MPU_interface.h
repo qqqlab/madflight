@@ -35,11 +35,13 @@ class MPU_InterfaceSPI : public MPU_Interface {
     SPIClass * _spi;
     int _freq;
     uint8_t _spi_cs;
+    SPIMode _spi_mode;
 
   public:
-    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs) {
+    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, SPIMode spi_mode = SPI_MODE3) {
       _spi = spi; 
       _spi_cs = cs;
+      _spi_mode = spi_mode;
       pinMode(_spi_cs, OUTPUT);
       digitalWrite(_spi_cs, HIGH);
       setFreq(1000000); //default to 1MHz
@@ -50,7 +52,7 @@ class MPU_InterfaceSPI : public MPU_Interface {
     }
 
     uint32_t writeRegs( uint8_t reg, uint8_t *data, uint16_t n ) override {
-      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, SPI_MODE3));
+      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, _spi_mode));
       digitalWrite(_spi_cs, LOW);
       _spi->transfer(reg & 0x7f);
       uint32_t rv = 0;
@@ -63,7 +65,7 @@ class MPU_InterfaceSPI : public MPU_Interface {
     }
 
     void readRegs( uint8_t reg, uint8_t *data, uint16_t n ) override {
-      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, SPI_MODE3));
+      _spi->beginTransaction(SPISettings(_freq, MSBFIRST, _spi_mode));
       digitalWrite(_spi_cs, LOW);
       _spi->transfer(reg | 0x80);
       for(uint32_t i = 0; i < n; i++) {

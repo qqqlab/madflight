@@ -29,6 +29,7 @@ SOFTWARE.
 #include "ImuGizmoICM45686.h"
 #include "ImuGizmoICM426XX.h"
 #include "ImuGizmoLSM6DSV.h"
+#include "ImuGizmoLSM6DSO.h"
 
 class ImuGizmoAuto : public ImuGizmo {
   private:
@@ -59,6 +60,10 @@ class ImuGizmoAuto : public ImuGizmo {
           }else if(dev->readReg(0x0F) == 0x70) {
             Serial.println("IMU: AUTO detected LSM6DSV");
             gizmo = ImuGizmoLSM6DSV::create(config, state);
+
+          }else if(dev->readReg(0x0F) == 0x6C) {
+            Serial.println("IMU: AUTO detected LSM6DSO");
+            gizmo = ImuGizmoLSM6DSO::create(config, state);
           }
           delay(10);
         }

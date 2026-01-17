@@ -26,16 +26,17 @@ SOFTWARE.
 
 #include "imu.h"
 #include "MPUxxxx/MPU_interface.h"
-#include "LSM6DSV/LSM6DSV.h"
+#include "LSM6DSO/LSM6DSO.h"
 
-class ImuGizmoLSM6DSV : public ImuGizmo {
+class ImuGizmoLSM6DSO : public ImuGizmo {
   private:
-    ImuGizmoLSM6DSV() {} //private constructor
+    ImuGizmoLSM6DSO() {} //private constructor
     ImuState *state = nullptr;
-    LSM6DSV *sensor = nullptr;
+  public:
+    LSM6DSO *sensor = nullptr;
 
   public:
-    ~ImuGizmoLSM6DSV() {
+    ~ImuGizmoLSM6DSO() {
         delete sensor;
     }
 
@@ -51,29 +52,29 @@ class ImuGizmoLSM6DSV : public ImuGizmo {
       }else if(config->i2c_bus) {
           dev = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
       }
-      if (!LSM6DSV::detect(dev)) {
+      if (!LSM6DSO::detect(dev)) {
           delete dev;
           return nullptr;
       }
       delete dev;
 
       // Create sensor
-      auto *sensor = new LSM6DSV();
+      auto *sensor = new LSM6DSO();
       int rv = sensor->begin(config->spi_bus, config->spi_cs, config->sample_rate_requested);
       if(rv < 0) {
           delete sensor;
-          Serial.printf("IMU: LSM6DSV init failed, rv=%d\n", rv);
+          Serial.printf("IMU: LSM6DSO init failed, rv=%d\n", rv);
           return nullptr;
       }
 
       // Create gizmo
-      auto gizmo = new ImuGizmoLSM6DSV();
+      auto gizmo = new ImuGizmoLSM6DSO();
       gizmo->state = state;
       gizmo->sensor = sensor;
       //return config
-      strncpy(config->name, "LSM6DSV", sizeof(config->name));
+      strncpy(config->name, "LSM6DSO", sizeof(config->name));
       config->sample_rate = sensor->actual_sample_rate_hz;
-      Serial.printf("IMU: LSM6DSV started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
+      Serial.printf("IMU: LSM6DSO started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
       return gizmo;
   }
 
@@ -84,7 +85,7 @@ class ImuGizmoLSM6DSV : public ImuGizmo {
    gyr: direction of positive rotation by right hand rule: 
         [gx,gy,gz] roll-right:[positive,0,0], pitch-up:[0,positive,0], yaw-right:[0,0,positive]
 
-LSM6DSV has NWU orientation
+LSM6DSO has NWU orientation
 
   * +--+         Y
     |  | --> X   ^   Z-up

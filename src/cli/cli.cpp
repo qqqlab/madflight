@@ -826,16 +826,19 @@ bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3])
 
 
 void Cli::calibrate_info(int seconds) {
-  if(seconds<=0) seconds = 3;
-  Serial.printf("Gathering sensor statistics, please wait %d seconds ...\n", seconds);
+  bool report_spikes = (seconds >= 0);
+  if(seconds < 0) seconds = -seconds;
+  if(seconds == 0) seconds = 3;
+  Serial.printf("Gathering sensor statistics, please wait %d seconds ...\n\n", seconds);
 
-  Stat ax,ay,az,gx,gy,gz;
-  Stat sp,sa,st;
-  Stat mx,my,mz;
+  Stat ax(1000),ay(1000),az(1000);
+  Stat gx(1000),gy(1000),gz(1000);
+  Stat sp(1000),sa(1000),st(1000);
+  Stat mx(1000),my(1000),mz(1000);
   uint32_t last_cnt = imu.update_cnt;
-  uint32_t ts = millis();
+  uint32_t ts = micros();
 
-  while((uint32_t)millis() - ts < (uint32_t)1000*seconds) {
+  while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {
     if(last_cnt != imu.update_cnt) {
       ax.append(imu.ax);
       ay.append(imu.ay);
@@ -857,26 +860,54 @@ void Cli::calibrate_info(int seconds) {
     }
   } 
 
-  Serial.printf("=== %s Gyro %s - Sample rate: %d Hz===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"), gx.n/seconds );
-  gx.print("gx[deg/s]     ");
-  gy.print("gy[deg/s]     ");
-  gz.print("gz[deg/s]     ");
-  Serial.printf("=== %s Accelerometer %s - Sample rate: %d Hz===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"), ax.n/seconds );
-  ax.print("ax[g]         ");
-  ay.print("ay[g]         ");
-  az.print("az[g]         ");
+  if(report_spikes) {
+    Serial.printf("### SENSOR SPIKE REPORT - " MADFLIGHT_VERSION " ###\n\n");
+    Serial.printf("=== %s Gyro %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+    gx.print_spikes("gx[deg/s]     ");
+    gy.print_spikes("gy[deg/s]     ");
+    gz.print_spikes("gz[deg/s]     ");
+    Serial.printf("=== %s Accelerometer %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+    ax.print_spikes("ax[g]         ");
+    ay.print_spikes("ay[g]         ");
+    az.print_spikes("az[g]         ");
+    if(bar.installed()) {
+      Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
+      sa.print_spikes("Altitude[m]   ");
+      sp.print_spikes("Pressure[Pa]  ");
+      st.print_spikes("Temperature[C]");
+    }
+    if(mag.installed()) {
+      Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
+      mx.print_spikes("mx[uT]        ");
+      my.print_spikes("my[uT]        ");
+      mz.print_spikes("mz[uT]        ");
+    }
+    Serial.println();
+  }
+
+  Serial.printf("### SENSOR STATISTICS REPORT - " MADFLIGHT_VERSION " ###\n\n");
+  Serial.printf("=== %s Gyro %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+  gx.print("gx[deg/s]     ", seconds);
+  gy.print("gy[deg/s]     ", seconds);
+  gz.print("gz[deg/s]     ", seconds);
+  Serial.printf("=== %s Accelerometer %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+  ax.print("ax[g]         ", seconds);
+  ay.print("ay[g]         ", seconds);
+  az.print("az[g]         ", seconds);
   if(bar.installed()) {
-    Serial.printf("=== %s Barometer I2C - Sample rate: %d Hz===\n", bar.config.name, sp.n/seconds );
-    sa.print("Altitude[m]   ");
-    sp.print("Pressure[Pa]  ");
-    st.print("Temperature[C]");
+    Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
+    sa.print("Altitude[m]   ", seconds);
+    sp.print("Pressure[Pa]  ", seconds);
+    st.print("Temperature[C]", seconds);
   }
   if(mag.installed()) {
-    Serial.printf("=== %s Magnetometer I2C - Sample rate: %d Hz===\n", mag.config.name, mx.n/seconds );
-    mx.print("mx[uT]        ");
-    my.print("my[uT]        ");
-    mz.print("mz[uT]        ");
+    Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
+    mx.print("mx[uT]        ", seconds);
+    my.print("my[uT]        ", seconds);
+    mz.print("mz[uT]        ", seconds);
   }
+
+
 }
 
 //========================================================================================================================//
