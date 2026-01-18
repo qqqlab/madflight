@@ -67,7 +67,7 @@ public:
   bool update() override {
     if(!dts6012m_i2c->update()) return false;
     //sensor reports in [mm], or returns -1 on fail
-    uint16_t dist = dts6012m_i2c->distance;
+    int16_t dist = dts6012m_i2c->distance;
     if(dist == -1) {
       state->dist = -1; //no data
     }else if(dist < -1 || dist > 20000) {

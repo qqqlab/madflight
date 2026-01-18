@@ -214,6 +214,7 @@ bool Bmp3::Read() {
 }
 
 void Bmp3::Delay_us(uint32_t period, void *intf_ptr) {
+  (void)intf_ptr;
   delayMicroseconds(period);
 }
 

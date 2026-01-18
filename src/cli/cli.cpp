@@ -838,6 +838,14 @@ void Cli::calibrate_info(int seconds) {
   uint32_t last_cnt = imu.update_cnt;
   uint32_t ts = micros();
 
+  float bp_last = 0;
+  float ba_last = 0;
+  float bt_last = 0;
+
+  float mx_last = 0;
+  float my_last = 0;
+  float mz_last = 0;
+
   while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {
     if(last_cnt != imu.update_cnt) {
       ax.append(imu.ax);
@@ -847,16 +855,33 @@ void Cli::calibrate_info(int seconds) {
       gy.append(imu.gy);
       gz.append(imu.gz);
       last_cnt = imu.update_cnt;
+      if(!mag.installed() && imu.config.has_mag && ((imu.mx != mx_last) || (imu.my != my_last) || (imu.mz != mz_last))) {
+        //only record if at least one value is changed
+        mx.append(imu.mx);
+        my.append(imu.my);
+        mz.append(imu.mz);
+        mx_last = imu.mx;
+        my_last = imu.my;
+        mz_last = imu.mz;
+      }    
     }
-    if(bar.installed() && bar.update()) {
+    if(bar.installed() && bar.update() && ((bar.press != bp_last) || (bar.alt != ba_last) || (bar.temp != bt_last))) {
+      //only record if at least one value is changed
       sp.append(bar.press);
       sa.append(bar.alt);
       st.append(bar.temp);
+      bp_last = bar.press;
+      ba_last = bar.alt;
+      bt_last = bar.temp;
     }
-    if(mag.installed() && mag.update()) {
+    if(mag.installed() && mag.update() && ((mag.x != mx_last) || (mag.y != my_last) || (mag.z != mz_last))) {
+      //only record if at least one value is changed
       mx.append(mag.x);
       my.append(mag.y);
       mz.append(mag.z);
+      mx_last = mag.x;
+      my_last = mag.y;
+      mz_last = mag.z;
     }
   } 
 
@@ -870,13 +895,13 @@ void Cli::calibrate_info(int seconds) {
     ax.print_spikes("ax[g]         ");
     ay.print_spikes("ay[g]         ");
     az.print_spikes("az[g]         ");
-    if(bar.installed()) {
+    if(sp.n > 0) {
       Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
       sa.print_spikes("Altitude[m]   ");
       sp.print_spikes("Pressure[Pa]  ");
       st.print_spikes("Temperature[C]");
     }
-    if(mag.installed()) {
+    if(mx.n > 0) {
       Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
       mx.print_spikes("mx[uT]        ");
       my.print_spikes("my[uT]        ");
@@ -894,13 +919,13 @@ void Cli::calibrate_info(int seconds) {
   ax.print("ax[g]         ", seconds);
   ay.print("ay[g]         ", seconds);
   az.print("az[g]         ", seconds);
-  if(bar.installed()) {
+  if(sp.n > 0) {
     Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
     sa.print("Altitude[m]   ", seconds);
     sp.print("Pressure[Pa]  ", seconds);
     st.print("Temperature[C]", seconds);
   }
-  if(mag.installed()) {
+  if(mx.n > 0) {
     Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
     mx.print("mx[uT]        ", seconds);
     my.print("my[uT]        ", seconds);

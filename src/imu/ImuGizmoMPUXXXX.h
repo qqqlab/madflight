@@ -81,6 +81,7 @@ class ImuGizmoMPUXXXX : public ImuGizmo {
       //return config
       strncpy(config->name, sensor->type_name(), sizeof(config->name));
       config->sample_rate = sensor->get_rate();
+      config->has_mag = sensor->has_mag;
 
       return gizmo;
     }

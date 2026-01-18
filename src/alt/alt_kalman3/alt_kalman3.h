@@ -60,6 +60,7 @@ public:
   
   //altitude: barometric altitude in [m], ts: timestamp in [us]
   void updateBarAlt(float alt, uint32_t ts) {
+    (void)ts;
     filter.update(alt);
   }
   
@@ -72,6 +73,4 @@ public:
     n += sprintf(s+n, "alt.v:%+.2f\t", filter.v);
     n += sprintf(s+n, "alt.abias:%+.2f\t", filter.bias);
   }
-
-
 };

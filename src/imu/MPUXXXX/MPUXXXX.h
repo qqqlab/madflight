@@ -53,6 +53,7 @@ class MPUXXXX {
     float acc_multiplier;
     float gyro_multiplier;
     float mag_multiplier[3]; //multipliers for magnetometer in NED frame
+    bool has_mag = false;
 
   private:
   

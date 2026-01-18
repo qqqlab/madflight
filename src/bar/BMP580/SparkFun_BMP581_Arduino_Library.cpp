@@ -482,5 +482,6 @@ BMP5_INTF_RET_TYPE BMP581::writeRegisters(uint8_t regAddress, const uint8_t* dat
 
 void BMP581::usDelay(uint32_t period, void* interfacePtr)
 {
+    (void)interfacePtr;
     delayMicroseconds(period);
 }

@@ -68,7 +68,7 @@ public:
   bool update() override {
     if(!dts6012m_uart->update()) return false;
     //sensor reports in [mm], or returns -1 on fail
-    uint16_t dist = dts6012m_uart->getDistance();
+    int16_t dist = dts6012m_uart->getDistance();
     if(dist == -1) {
       state->dist = -1; //no data
     }else if(dist < -1 || dist > 20000) {

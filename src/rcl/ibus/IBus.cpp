@@ -85,6 +85,9 @@ IBus::~IBus() {
  * Initialize the IBus communication with event-driven processing
  */
 void IBus::begin(MF_Serial& serial, int8_t timer_id, int8_t rx_pin, int8_t tx_pin) {
+    (void)timer_id;
+    (void)rx_pin;
+    (void)tx_pin;
     // Initialize the serial interface
     serial.begin(115200);
     m_serial_interface = &serial;

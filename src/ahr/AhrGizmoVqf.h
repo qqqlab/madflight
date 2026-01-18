@@ -26,6 +26,7 @@ public:
   }
 
   void setInitalOrientation(float *qnew) {
+    (void)qnew;
     //TODO (?)
   }
 

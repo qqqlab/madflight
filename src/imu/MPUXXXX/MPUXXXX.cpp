@@ -127,6 +127,7 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
         mag_multiplier[1] = mag9150->mag_multiplier[0]; //E = W (sign is set in read6()/read9())
         mag_multiplier[0] = mag9150->mag_multiplier[1]; //N = N
         mag_multiplier[2] = mag9150->mag_multiplier[2]; //D = D
+        has_mag = true;
         return rv;
     }
 
@@ -138,6 +139,7 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
         mag_multiplier[1] = mag9250->mag_multiplier[0]; //E = W (sign is set in read6()/read9())
         mag_multiplier[0] = mag9250->mag_multiplier[1]; //N = N
         mag_multiplier[2] = mag9250->mag_multiplier[2]; //D = D
+        has_mag = true;
         return rv;
     }
 
@@ -168,8 +170,8 @@ const char* MPUXXXX::type_name() {
     case MPU6500: return "MPU6500";
     case MPU9150: return "MPU9150";
     case MPU9250: return "MPU9250";
+    default: return "UNKNOWN";
     }
-    return "UNKNOWN";
 }
 
 void MPUXXXX::set_acc_resolution() {
