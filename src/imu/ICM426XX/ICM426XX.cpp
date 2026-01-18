@@ -1,77 +1,46 @@
-/*
+/*==========================================================================================
+MIT License
 
-This file was modified for madflight, original file is here:
+Copyright (c) 2026 https://madflight.com
 
-https://github.com/betaflight/betaflight/blob/master/src/main/drivers/accgyro/accgyro_spi_icm426xx.c
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-find-and-replace:
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
 
-"spiWriteReg(dev, "    "dev->writeReg("
-"spiReadRegMsk(dev, "  "dev->readReg("
-"setUserBank(dev, "    "setUserBank("
-"extDevice_t"          "MPU_Interface"
-
-and casted into a class
-
-*/
-
-/*
- * This file is part of Cleanflight and Betaflight.
- *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
- *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this software.
- *
- * If not, see <http://www.gnu.org/licenses/>.
- */
-
-/*
- * Author: Dominic Clifton
- */
+//driver for ICM42688P, ICM42605, IMM42653
+//based on https://github.com/betaflight/betaflight/blob/master/src/main/drivers/accgyro/accgyro_spi_icm426xx.c
 
 #include <Arduino.h>
 
 #include "ICM426XX.h"
 
 #define ICM426XX_MAX_SPI_CLK_HZ 24000000
-
+#define ICM426XX_MAX_I2C_CLK_HZ 400000
 
 #define MPU_RA_WHO_AM_I         0x75
-
-/*
-#define MPUx0x0_WHO_AM_I_CONST              (0x68) // MPU3050, 6000 and 6050
-#define MPU6000_WHO_AM_I_CONST              (0x68)
-#define MPU6500_WHO_AM_I_CONST              (0x70)
-#define MPU9250_WHO_AM_I_CONST              (0x71)
-#define MPU9255_WHO_AM_I_CONST              (0x73)
-#define ICM20601_WHO_AM_I_CONST             (0xAC)
-#define ICM20602_WHO_AM_I_CONST             (0x12)
-#define ICM20608G_WHO_AM_I_CONST            (0xAF)
-#define ICM20649_WHO_AM_I_CONST             (0xE1)
-#define ICM20689_WHO_AM_I_CONST             (0x98)
-#define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
-*/
 
 #define ICM42605_WHO_AM_I_CONST             (0x42)
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
 #define IIM42653_WHO_AM_I_CONST             (0x56)
 
-
 #define ICM_42605_SPI ICM42605_WHO_AM_I_CONST
 #define ICM_42688P_SPI ICM42688P_WHO_AM_I_CONST
 #define IIM_42653_SPI IIM42653_WHO_AM_I_CONST
-
 
 #define ICM426XX_CLKIN_FREQ                         32000
 
@@ -215,16 +184,16 @@ const char* ICM426XX::type_name() {
    return "UNKNOWN";
 }
 
+bool ICM426XX::detect(SensorDevice* dev) {
+    const uint8_t wai = dev->readReg(MPU_RA_WHO_AM_I);
+    return ((wai == ICM42605_WHO_AM_I_CONST ) || (wai == ICM42688P_WHO_AM_I_CONST) || (wai == IIM42653_WHO_AM_I_CONST));
+}
 
-ICM426XX* ICM426XX::detect(MPU_Interface *dev, int pin_clkin)
+ICM426XX* ICM426XX::create(SensorDevice *dev, int pin_clkin)
 {
-    dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
+    dev->setLowSpeed();
 
     //dev->writeReg(ICM426XX_RA_PWR_MGMT0, 0x00);
-
-//#if defined(USE_GYRO_CLKIN)
-//    icm426xxEnableExternalClock(dev);
-//#endif
 
     uint8_t attemptsRemaining = 20;
     do {
@@ -233,7 +202,6 @@ ICM426XX* ICM426XX::detect(MPU_Interface *dev, int pin_clkin)
         case ICM42605_WHO_AM_I_CONST:
         case ICM42688P_WHO_AM_I_CONST:
         case IIM42653_WHO_AM_I_CONST: {
-          //Serial.printf("WhoAmI=0x%02X\n", whoAmI);
           auto icm = new ICM426XX(dev, whoAmI, pin_clkin);
           return icm;
         }
@@ -245,7 +213,7 @@ ICM426XX* ICM426XX::detect(MPU_Interface *dev, int pin_clkin)
 }
 
 
-ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI, int pin_clkin) {
+ICM426XX::ICM426XX(SensorDevice *dev, uint8_t whoAmI, int pin_clkin) {
     this->dev = dev;
     this->whoAmI = whoAmI;
 
@@ -261,7 +229,7 @@ ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI, int pin_clkin) {
         break;
     }
 
-    dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
+    //dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
 
     // Turn off ACC and GYRO so they can be configured
     // See section 12.9 in ICM-42688-P datasheet v1.7
@@ -353,6 +321,12 @@ ICM426XX::ICM426XX(MPU_Interface *dev, uint8_t whoAmI, int pin_clkin) {
         rtc_mode |= ICM426XX_INTF_CONFIG1_CLKIN; // Enable external CLK signal
         dev->writeReg(ICM426XX_INTF_CONFIG1, rtc_mode);
     }
+
+    if(dev->isSPI()) {
+        dev->setFreq(ICM426XX_MAX_SPI_CLK_HZ);
+    }else{
+        dev->setFreq(ICM426XX_MAX_I2C_CLK_HZ);
+    }
 }
 
 void ICM426XX::read(int16_t *accgyr) {
@@ -363,7 +337,7 @@ void ICM426XX::read(int16_t *accgyr) {
 #if defined(USE_GYRO_CLKIN)
 static pwmOutputPort_t pwmGyroClk = {0};
 
-static bool initExternalClock(const MPU_Interface *dev)
+static bool initExternalClock(const SensorDevice *dev)
 {
     int cfg;
     if (&gyro.gyroSensor1.gyroDev.dev == dev) {
@@ -408,7 +382,7 @@ static bool initExternalClock(const MPU_Interface *dev)
     return true;
 }
 
-static void icm426xxEnableExternalClock(const MPU_Interface *dev)
+static void icm426xxEnableExternalClock(const SensorDevice *dev)
 {
     if (initExternalClock(dev)) {
         // Switch to Bank 1 and set bits 2:1 in INTF_CONFIG5 (0x7B) to enable CLKIN on PIN9

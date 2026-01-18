@@ -25,11 +25,13 @@ SOFTWARE.
 #pragma once
 
 #include "imu.h"
-#include "MPUxxxx/MPU_interface.h"
+#include "common/SensorDevice.h"
 #include "ImuGizmoICM45686.h"
 #include "ImuGizmoICM426XX.h"
 #include "ImuGizmoLSM6DSV.h"
 #include "ImuGizmoLSM6DSO.h"
+#include "ImuGizmoBMI270.h"
+#include "ImuGizmoMPUXXXX.h"
 
 class ImuGizmoAuto : public ImuGizmo {
   private:
@@ -39,38 +41,24 @@ class ImuGizmoAuto : public ImuGizmo {
     static ImuGizmo* create(ImuConfig *config, ImuState *state) {
         if(!config || !state) return nullptr;
 
-        // AUTO is currently only for SPI sensors
-        if(!config->spi_bus || config->spi_cs < 0) return nullptr;
-
-        MPU_Interface *dev = new MPU_InterfaceSPI(config->spi_bus, config->spi_cs);
-        dev->setFreq(1000000); //low speed
-
         // Detect sensor type and attempt to create gizmo for it
         int tries = 5;
         ImuGizmo* gizmo = nullptr;
         while(!gizmo && tries--){
-          if(dev->readReg(0x72) == 0xE9) {
-            Serial.println("IMU: AUTO detected ICM45686");
-            gizmo = ImuGizmoICM45686::create(config, state);
-
-          }else if(dev->readReg(0x75) == 0x47) {
-            Serial.println("IMU: AUTO detected ICM42688P");
-            gizmo = ImuGizmoICM426XX::create(config, state);
-
-          }else if(dev->readReg(0x0F) == 0x70) {
-            Serial.println("IMU: AUTO detected LSM6DSV");
-            gizmo = ImuGizmoLSM6DSV::create(config, state);
-
-          }else if(dev->readReg(0x0F) == 0x6C) {
-            Serial.println("IMU: AUTO detected LSM6DSO");
-            gizmo = ImuGizmoLSM6DSO::create(config, state);
-          }
+          if(!gizmo) gizmo = ImuGizmoICM45686::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoICM426XX::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoLSM6DSV::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoLSM6DSO::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoBMI270::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoMPUXXXX::create(config, state);
           delay(10);
         }
 
-        if(!gizmo) Serial.println("IMU: AUTO nothing detected");
-
-        delete dev;
+        if(!gizmo) {
+          Serial.println("IMU: AUTO no sensor detected");
+        }else{
+          Serial.printf("IMU: AUTO detected %s\n", config->name);
+        }
 
         return gizmo;
     }

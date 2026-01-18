@@ -1,6 +1,4 @@
 /*==========================================================================================
-Driver for LSM6DSO gyroscope/accelometer
-
 MIT License
 
 Copyright (c) 2026 https://madflight.com
@@ -24,10 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+//Driver for LSM6DSO, LSM6DSOX gyroscope/accelometer
+
 #pragma once
 
 #include <SPI.h>
-#include "../MPUxxxx/MPU_interface.h"
+#include "../common/SensorDevice.h"
 
 class LSM6DSO {
 public:
@@ -35,13 +35,11 @@ public:
   const float acc_scale = 16.0 / 32768.0; //Accel scale +/-16g, 16bit, 2048 LSB/g
   const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
 
-  static bool detect(MPU_Interface* dev);
-  int begin(SPIClass *spi, int cs_pin, int sample_rate); //returns negative error code, positive warning code, or 0 on success
+  static bool detect(SensorDevice* dev) {
+    return (dev->readReg(0x0F) == 0x6C);
+  }
+  int begin(SensorDevice* dev); //returns negative error code, positive warning code, or 0 on success
   void readraw(int16_t *raw); //read gyr[3],acc[3]
 
-  ~LSM6DSO() {
-    delete dev;
-  }
-//private:
-  MPU_Interface* dev = nullptr;
+  SensorDevice* dev = nullptr;
 };

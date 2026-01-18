@@ -1,15 +1,39 @@
-// madflight https://github.com/qqqlab/madflight
-// Interface for MPU sensors
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2026 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
+// Interface for SPI/I2C sensors
 
 #pragma once
 
-#include "../../hal/MF_I2C.h"
 #include <Arduino.h>
 #include <SPI.h>
+#include "../../hal/MF_I2C.h"
+#include "../imu.h"
 
-class MPU_Interface {
+class SensorDevice {
   public:
-    virtual ~MPU_Interface() {}
+    virtual ~SensorDevice() {}
     virtual void setFreq(int freq) = 0;
     virtual uint32_t writeRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
     virtual void readRegs( uint8_t reg, uint8_t *data, uint16_t n ) = 0;
@@ -22,15 +46,24 @@ class MPU_Interface {
     uint8_t readReg(uint8_t reg) {
       uint8_t data = 0;
       readRegs(reg, &data, 1);
-      //Serial.printf("MPU.readReg(0x%02X)=0x%02X\n", reg, data);
       return data;
     }
+
+    void setLowSpeed() {
+      if(isSPI()) {
+        setFreq(1000000); 
+      }else{
+        setFreq(100000); 
+      }
+    }
+
+    static SensorDevice* createImuDevice(ImuConfig *config);
 };
 
 //================================================================
 // SPI
 //================================================================
-class MPU_InterfaceSPI : public MPU_Interface {
+class SensorDeviceSPI : public SensorDevice {
   private:
     SPIClass * _spi;
     int _freq;
@@ -38,13 +71,13 @@ class MPU_InterfaceSPI : public MPU_Interface {
     uint8_t _spi_mode;
 
   public:
-    MPU_InterfaceSPI(SPIClass *spi, uint8_t cs, uint8_t spi_mode = SPI_MODE3) {
+    SensorDeviceSPI(SPIClass *spi, uint8_t cs, uint8_t spi_mode = SPI_MODE3) {
       _spi = spi; 
       _spi_cs = cs;
       _spi_mode = spi_mode;
       pinMode(_spi_cs, OUTPUT);
       digitalWrite(_spi_cs, HIGH);
-      setFreq(1000000); //default to 1MHz
+      setLowSpeed();
     }
 
     void setFreq(int freq) override {
@@ -84,16 +117,16 @@ class MPU_InterfaceSPI : public MPU_Interface {
 // I2C
 //================================================================
 
-class MPU_InterfaceI2C : public MPU_Interface{
+class SensorDeviceI2C : public SensorDevice{
   private:
     MF_I2C *_i2c;
     uint8_t _i2c_adr;
 
   public:
-    MPU_InterfaceI2C(MF_I2C *i2c, uint8_t i2c_adr) {
+    SensorDeviceI2C(MF_I2C *i2c, uint8_t i2c_adr) {
       _i2c = i2c;
       _i2c_adr = i2c_adr;
-      setFreq(100000); //default to 100kHz
+      setLowSpeed();
     }
 
     void setFreq(int freq) override {

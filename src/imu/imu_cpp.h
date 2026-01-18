@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2023-2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-/*========================================================================================================================
-This file is kept as header to allow #IMU_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
-
-Body frame is NED: 
-  x-axis points North(front) - gyro-x roll right is positive - accelerometer-x vehicle nose down postion is +1 G
-  y-axis points East(right)  - gyro-y pitch up is positive   - accelerometer-y vehicle right side down position is +1 G
-  z-axis points Down         - gyro-z yaw right is positive  - accelerometer-z vehicle level position is +1 G
-========================================================================================================================*/
+//This file is kept as header to allow #IMU_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
 
 // Make sure this file is included from madflight.h and not from somewhere else
 #ifndef MF_ALLOW_INCLUDE_CCP_H
@@ -71,6 +64,16 @@ int Imu::setup() {
 
   //exit if gizmo == NONE
   if(config.gizmo == Cfg::imu_gizmo_enum::mf_NONE) return 0;
+
+  //check bus config
+  if (!config.uses_i2c && (!config.spi_bus || config.spi_cs < 0)) {
+    Serial.println("IMU: ERROR check config - SPI sensor without imu_spi_bus and/or pin_imu_cs");
+    return -1;
+  }
+  if (config.uses_i2c && !config.i2c_bus) {
+    Serial.println("IMU: ERROR check config - I2C sensor without imu_i2c_bus");
+    return -1;
+  }
 
   //create gizmo
   switch(config.gizmo) {

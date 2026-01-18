@@ -1,4 +1,27 @@
-// madflight https://github.com/qqqlab/madflight
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2026 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
 // Header only BMI270 SPI IMU sensor class
 
 #pragma once
@@ -158,24 +181,29 @@ class ImuGizmoBMI270 : public ImuGizmo {
 
         //check config
         if(config->uses_i2c || !config->spi_bus || config->spi_cs < 0) {
-          Serial.println("IMU: ERROR check config - BMI270 SPI sensor with invalid imu_bus_type, imu_spi_bus and/or pin_imu_cs");
+          //Serial.println("IMU: ERROR check config - BMI270 SPI sensor with invalid imu_bus_type, imu_spi_bus and/or pin_imu_cs");
           return nullptr;
         }
 
         //create gizmo
         auto gizmo = new ImuGizmoBMI270();
-        gizmo->sensor_init(config->spi_bus, config->spi_cs, IMU_GYRO_DPS, IMU_ACCEL_G, config->sample_rate_requested);
+        if(!gizmo->sensor_init(config->spi_bus, config->spi_cs, IMU_GYRO_DPS, IMU_ACCEL_G, config->sample_rate_requested)) {
+          delete gizmo;
+          return nullptr;
+        }
+
         //return config
         strncpy(config->name, "BMI270", sizeof(config->name));
         config->sample_rate = gizmo->_rate_hz;
-
         return gizmo;
     }
 
   private:
-    void sensor_init(SPIClass *spi, const uint8_t csPin, int gyro_scale_dps, int acc_scale_g, int rate_hz) {
+    bool sensor_init(SPIClass *spi, const uint8_t csPin, int gyro_scale_dps, int acc_scale_g, int rate_hz) {
       _spi = spi;
       _csPin = csPin;
+
+      if(who_am_i() != 0x24) return false;
 
       set_gyro_scale_dps(gyro_scale_dps);
       set_acc_scale_g(acc_scale_g);
@@ -232,6 +260,8 @@ class ImuGizmoBMI270 : public ImuGizmo {
 
       // Enable the gyro, accelerometer and temperature sensor - disable aux interface
       write_reg(BMI270_REG_PWR_CTRL, BMI270_VAL_PWR_CTRL);
+
+      return true;
   }
 
     int who_am_i() {

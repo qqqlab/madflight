@@ -1,9 +1,7 @@
 /*==========================================================================================
-Driver for ICM-45686 gyroscope/accelometer
-
 MIT License
 
-Copyright (c) 2025 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+//Driver for ICM-45686 gyroscope/accelometer
+
 #pragma once
 
 #include <SPI.h>
-#include "../MPUxxxx/MPU_interface.h"
+#include "../common/SensorDevice.h"
 
 class ICM45686 {
 public:
@@ -38,14 +38,14 @@ public:
   const float acc_scale = 32.0 / 524288.0; //Accel scale +/-32g, 20bit, 16384 LSB/g (actual resolution 19bit, i.e. 8192 LSB/g)
   const float gyr_scale = 4000.0 / 524288.0; //Gyro scale +/-4000dps, 20bit
 
-  int begin(SPIClass *spi, int cs_pin, int sample_rate, bool use_clkin); //returns negative error code, positive warning code, or 0 on success
+  static bool detect(SensorDevice* dev) {
+    return (dev->readReg(0x72) == 0xE9);
+  }
+  int begin(SensorDevice* dev, int sample_rate, bool use_clkin); //returns negative error code, positive warning code, or 0 on success
   int read(); //returns number of samples, or -1 on error
 
-  ~ICM45686() {
-    delete dev;
-  }
 private:
-  MPU_Interface* dev = nullptr;
+  SensorDevice* dev = nullptr;
   int error_code = -2; //default to "not initalized error"
 
   //packet to read from address ICM45686_REG_FIFO_COUNTH

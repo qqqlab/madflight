@@ -1,7 +1,31 @@
-// madflight https://github.com/qqqlab/madflight
-// 2023-12-27 Invensense MPU-9250 SPI/I2C library
-// sampling rate acc+gyro 1000Hz, mag 100Hz
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2026 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
+// Driver for AK8963
  
+#include "MPU_regs.h"
+
 //================================================================
 // AK8963 Magnetometer - internal to MPU9250
 //================================================================
@@ -40,16 +64,16 @@ class AK8963 {
   public:
     float mag_multiplier[3];
 
-    AK8963(MPU_Interface *iface) {
-        _iface = iface;
+    AK8963(SensorDevice *dev) {
+        _dev = dev;
     }
 
     //error codes 2000, warning codes -2000
     int begin()
     {
-      _iface->writeReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
-      //_iface->writeReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus --> ONLY DO THIS IN SPI MODE, disables the external I2C interface....
-      _iface->writeReg(MPUREG_USER_CTRL, 0x20);        // Enable I2C master mode 
+      _dev->writeReg(MPUREG_I2C_MST_CTRL, 0x0D);     // I2C master clock speed 400KHz
+      //_dev->writeReg(MPUREG_USER_CTRL, 0x30);        // Enable I2C master mode, disable slave mode I2C bus --> ONLY DO THIS IN SPI MODE, disables the external I2C interface....
+      _dev->writeReg(MPUREG_USER_CTRL, 0x20);        // Enable I2C master mode 
 
       int rv = 0;
 
@@ -66,9 +90,9 @@ class AK8963 {
 
       // Send I2C command to get Mag data, this command is repeated with the sample rate (1kHz) 
       // as long as these MPU registers are not overwritten with an another command
-      _iface->writeReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
-      _iface->writeReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
-      _iface->writeReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
+      _dev->writeReg(MPUREG_I2C_SLV0_ADDR, AK8963_I2C_ADDR|READ_FLAG); // Set the I2C slave addres of AK8963 and set for read.
+      _dev->writeReg(MPUREG_I2C_SLV0_REG, AK8963_HXL); // I2C slave 0 register address from where to begin data transfer
+      _dev->writeReg(MPUREG_I2C_SLV0_CTRL, 0x87); // Read 7 bytes from the magnetometer
       // must start your read from AK8963A register 0x03 and read seven bytes so that upon read of ST2 register 0x09 the AK8963A will unlatch the data registers for the next measurement.
 
       return rv;
@@ -76,7 +100,7 @@ class AK8963 {
 
   private:
 
-    MPU_Interface *_iface;
+    SensorDevice *_dev;
 
     void AK8963_getASA()
     {
@@ -102,14 +126,14 @@ class AK8963 {
 
     int AK8963_ReadReg(uint8_t reg)
     {
-      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
-      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
+      _dev->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR|READ_FLAG); //Set the I2C slave addres of AK8963 and set for reading.
+      _dev->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _dev->writeReg(MPUREG_I2C_SLV4_CTRL, 0x80); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 2000) {
         //wait for I2C_SLV4_DONE
-        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
-          return _iface->readReg(MPUREG_I2C_SLV4_DI);
+        if( _dev->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+          return _dev->readReg(MPUREG_I2C_SLV4_DI);
         }
       }
       return -1;
@@ -117,14 +141,14 @@ class AK8963 {
 
     bool AK8963_WriteReg(uint8_t reg, uint8_t data) 
     {
-      _iface->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
-      _iface->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
-      _iface->writeReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
-      _iface->writeReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
+      _dev->writeReg(MPUREG_I2C_SLV4_ADDR, AK8963_I2C_ADDR); //Set the I2C slave addres of AK8963 and set for writing.
+      _dev->writeReg(MPUREG_I2C_SLV4_REG, reg); //I2C slave 0 register address from where to begin data transfer
+      _dev->writeReg(MPUREG_I2C_SLV4_DO, data); //Reset AK8963
+      _dev->writeReg(MPUREG_I2C_SLV4_CTRL, 0x81); //Enable I2C transfer
       uint32_t now = micros();
       while(micros() - now < 2000) {
         //wait for I2C_SLV4_DONE 
-        if( _iface->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
+        if( _dev->readReg(MPUREG_I2C_MST_STATUS) & 0x40 ) {
           return true;
         }
       }

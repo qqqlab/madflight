@@ -25,43 +25,41 @@ SOFTWARE.
 #pragma once
 
 #include "imu.h"
-#include "MPUxxxx/MPU_interface.h"
 #include "LSM6DSV/LSM6DSV.h"
 
 class ImuGizmoLSM6DSV : public ImuGizmo {
   private:
     ImuGizmoLSM6DSV() {} //private constructor
     ImuState *state = nullptr;
-    LSM6DSV *sensor = nullptr;
 
   public:
+    LSM6DSV *sensor = nullptr;
+    SensorDevice *dev = nullptr;
+
     ~ImuGizmoLSM6DSV() {
         delete sensor;
+        delete dev;
     }
 
     static ImuGizmo* create(ImuConfig *config, ImuState *state) {
       if(!config || !state) return nullptr;
 
-      // Detect sensor
-      MPU_Interface *dev = nullptr;
-      if(config->spi_bus) {
-          if(config->spi_cs >= 0) {
-              dev = new MPU_InterfaceSPI(config->spi_bus, config->spi_cs, SPI_MODE0);
-          }
-      }else if(config->i2c_bus) {
-          dev = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-      }
+      // Create SensorDevice
+      SensorDevice *dev = SensorDevice::createImuDevice(config);
+      if(!dev) return nullptr;
+
+      // Detect sensor, exit without printing anything
       if (!LSM6DSV::detect(dev)) {
           delete dev;
           return nullptr;
       }
-      delete dev;
 
       // Create sensor
       auto *sensor = new LSM6DSV();
-      int rv = sensor->begin(config->spi_bus, config->spi_cs, config->sample_rate_requested);
+      int rv = sensor->begin(dev);
       if(rv < 0) {
           delete sensor;
+          delete dev;
           Serial.printf("IMU: LSM6DSV init failed, rv=%d\n", rv);
           return nullptr;
       }
@@ -70,6 +68,7 @@ class ImuGizmoLSM6DSV : public ImuGizmo {
       auto gizmo = new ImuGizmoLSM6DSV();
       gizmo->state = state;
       gizmo->sensor = sensor;
+      gizmo->dev = dev;
       //return config
       strncpy(config->name, "LSM6DSV", sizeof(config->name));
       config->sample_rate = sensor->actual_sample_rate_hz;

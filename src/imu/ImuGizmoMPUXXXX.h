@@ -25,117 +25,96 @@ SOFTWARE.
 #pragma once
 
 #include "imu.h"
-#include "MPUxxxx/MPU_interface.h"
+#include "common/SensorDevice.h"
 #include "MPUxxxx/MPUxxxx.h"
 
 class ImuGizmoMPUXXXX : public ImuGizmo {
   private:
     ImuGizmoMPUXXXX() {} //private constructor
+    ImuState *state = nullptr;
 
   public:
-    static ImuGizmo* create(ImuConfig *config, ImuState *state) {
-        if(!config || !state) return nullptr;
+    MPUXXXX *sensor = nullptr;
+    SensorDevice *dev = nullptr;
 
-        //check bus config
-        if (!config->uses_i2c && (!config->spi_bus || config->spi_cs < 0)) {
-          Serial.println("IMU: ERROR check config - SPI sensor without imu_spi_bus and/or pin_imu_cs");
-          return nullptr;
-        }
-        if (config->uses_i2c && !config->i2c_bus) {
-          Serial.println("IMU: ERROR check config imu_bus_type - I2C sensor without imu_i2c_bus");
-          return nullptr;
-        }
-
-        //create gizmo
-        ImuGizmo *gizmo = nullptr;
-        if (!config->uses_i2c) {
-          //------------
-          // SPI Sensors
-          //------------
-          switch(config->gizmo) {
-            case Cfg::imu_gizmo_enum::mf_MPU9250 : {
-              auto mpu_iface = new MPU_InterfaceSPI(config->spi_bus, config->spi_cs);
-              gizmo = new MPUXXXX(MPUXXXX::MPU9250, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU9250", sizeof(config->name));
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU6500 : {
-              auto mpu_iface = new MPU_InterfaceSPI(config->spi_bus, config->spi_cs);
-              gizmo = new MPUXXXX(MPUXXXX::MPU6500, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU6500", sizeof(config->name));
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU6000 : {
-              auto mpu_iface = new MPU_InterfaceSPI(config->spi_bus, config->spi_cs);
-              gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU6000", sizeof(config->name));
-              break;
-            }
-            default : {
-              Serial.println("IMU: ERROR check config imu_bus_type - Sensor does not support SPI bus");
-            }
-          }
-        } else {
-          //------------
-          // I2C Sensors
-          //------------
-          switch(config->gizmo) {
-            case Cfg::imu_gizmo_enum::mf_MPU9250 : {
-              auto mpu_iface = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-              gizmo = new MPUXXXX(MPUXXXX::MPU9250, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU9250", sizeof(config->name));
-              config->has_mag = true;
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU9150 : {
-              auto mpu_iface = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-              gizmo = new MPUXXXX(MPUXXXX::MPU9150, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU9150", sizeof(config->name));
-              config->has_mag = true;
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU6500 : {
-              auto mpu_iface = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-              gizmo = new MPUXXXX(MPUXXXX::MPU6500, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU6500", sizeof(config->name));
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU6050 : {
-              auto mpu_iface = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-              gizmo = new MPUXXXX(MPUXXXX::MPU6050, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU6050", sizeof(config->name));
-              break;
-            }
-            case Cfg::imu_gizmo_enum::mf_MPU6000 : {
-              auto mpu_iface = new MPU_InterfaceI2C(config->i2c_bus, config->i2c_adr);
-              gizmo = new MPUXXXX(MPUXXXX::MPU6000, mpu_iface);
-              //return config
-              strncpy(config->name, "MPU6000", sizeof(config->name));
-              break;
-            }
-            default : {
-              Serial.println("IMU: ERROR check config - Sensor does not support I2C bus");
-            }
-          }
-        }
-
-        return gizmo;
+    ~ImuGizmoMPUXXXX() {
+      delete sensor;
+      delete dev;
     }
 
-  //dummy function, as this gizmo never gets instantiated
-  void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override {
-    (void)ax;
-    (void)ay;
-    (void)az;
-    (void)gx;
-    (void)gy;
-    (void)gz;
-  }
+    static ImuGizmo* create(ImuConfig *config, ImuState *state) {
+      if(!config || !state) return nullptr;
+
+      // Create SensorDevice
+      SensorDevice *dev = SensorDevice::createImuDevice(config);
+      if(!dev) return nullptr;
+
+      //translate cfg to mpu type
+      MPUXXXX::MPU_Type mpu_type = MPUXXXX::MPU_Type::UNKNOWN;
+      switch(config->gizmo) {
+        case Cfg::imu_gizmo_enum::mf_AUTO    : mpu_type = MPUXXXX::MPU_Type::AUTO; break;
+        case Cfg::imu_gizmo_enum::mf_MPU6000 : mpu_type = MPUXXXX::MPU_Type::MPU6000; break;
+        case Cfg::imu_gizmo_enum::mf_MPU6050 : mpu_type = MPUXXXX::MPU_Type::MPU6050; break;
+        case Cfg::imu_gizmo_enum::mf_MPU6500 : mpu_type = MPUXXXX::MPU_Type::MPU6500; break;
+        case Cfg::imu_gizmo_enum::mf_MPU9150 : mpu_type = MPUXXXX::MPU_Type::MPU9150; break;
+        case Cfg::imu_gizmo_enum::mf_MPU9250 : mpu_type = MPUXXXX::MPU_Type::MPU9250; break;
+        default:
+          delete dev;
+          return nullptr;
+      }
+
+      // Create sensor
+      MPUXXXX* sensor = new MPUXXXX();
+      int rv = sensor->begin(mpu_type, dev, 16, 2000, config->sample_rate_requested);
+      if(rv < 0) {
+        if(config->gizmo != Cfg::imu_gizmo_enum::mf_AUTO) Serial.printf("IMU: ERROR creating MPU sensor, rv=%d\n",rv);
+        delete sensor;
+        delete dev;
+        return nullptr;
+      }
+
+      // Create gizmo
+      auto gizmo = new ImuGizmoMPUXXXX();
+      gizmo->state = state;
+      gizmo->sensor = sensor;
+      gizmo->dev = dev;
+      //return config
+      strncpy(config->name, sensor->type_name(), sizeof(config->name));
+      config->sample_rate = sensor->get_rate();
+
+      return gizmo;
+    }
+
+    //Get sensor data in NED frame
+    //x=North (forward), y=East (right), z=Down 
+    //acc: gravitation force is positive in axis direction
+    //gyro: direction of positive rotation by right hand rule, i.e. positive is: roll right, pitch up, yaw right
+    void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) override
+    {
+      sensor->read6();
+      *ax = sensor->rawa[0] * sensor->acc_multiplier;
+      *ay = sensor->rawa[1] * sensor->acc_multiplier;
+      *az = sensor->rawa[2] * sensor->acc_multiplier;
+      *gx = sensor->rawg[0] * sensor->gyro_multiplier;
+      *gy = sensor->rawg[1] * sensor->gyro_multiplier;
+      *gz = sensor->rawg[2] * sensor->gyro_multiplier;
+    }
+
+    //Get sensor data in NED frame
+    //x=North (forward), y=East (right), z=Down 
+    //acc: gravitation force is positive in axis direction (sensor reports negative)
+    //gyro: direction of positive rotation by right hand rule, i.e. positive is: yaw right, roll right, pitch up
+    void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) override
+    {
+      sensor->read9();
+      *ax = sensor->rawa[0] * sensor->acc_multiplier;
+      *ay = sensor->rawa[1] * sensor->acc_multiplier;
+      *az = sensor->rawa[2] * sensor->acc_multiplier;
+      *gx = sensor->rawg[0] * sensor->gyro_multiplier;
+      *gy = sensor->rawg[1] * sensor->gyro_multiplier;
+      *gz = sensor->rawg[2] * sensor->gyro_multiplier;
+      *mx = sensor->rawm[0] * sensor->mag_multiplier[0];
+      *my = sensor->rawm[1] * sensor->mag_multiplier[1];
+      *mz = sensor->rawm[2] * sensor->mag_multiplier[2];
+    }
 };

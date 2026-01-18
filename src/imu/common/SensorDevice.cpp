@@ -22,24 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//Driver for LSM6DSV, LSM6DSV16X gyroscope/accelometer
+// Interface for SPI/I2C sensors
 
-#pragma once
+#include "SensorDevice.h"
 
-#include <SPI.h>
-#include "../common/SensorDevice.h"
+SensorDevice* SensorDevice::createImuDevice(ImuConfig *config) {
+    if(!config) return nullptr;
 
-class LSM6DSV {
-public:
-  const int actual_sample_rate_hz = 1000; //TODO: allow variable sample rate
-  const float acc_scale = 1.0 / 2048.0; //Accel scale +/-16g, 16bit, 2048 LSB/g
-  const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
-
-  static bool detect(SensorDevice* dev) {
-    return (dev->readReg(0x0F) == 0x70);
-  }
-  int begin(SensorDevice* dev); //returns negative error code, positive warning code, or 0 on success
-  void readraw(int16_t *raw); //read gyr[3],acc[3]
-
-  SensorDevice* dev = nullptr;
-};
+    // Detect sensor
+    SensorDevice *dev = nullptr;
+    if(config->spi_bus) {
+        if(config->spi_cs >= 0) {
+            dev = new SensorDeviceSPI(config->spi_bus, config->spi_cs, SPI_MODE3);
+        }
+    }else if(config->i2c_bus) {
+        dev = new SensorDeviceI2C(config->i2c_bus, config->i2c_adr);
+    }
+    if(!dev) Serial.println("asdfasdf");
+    return dev;
+}

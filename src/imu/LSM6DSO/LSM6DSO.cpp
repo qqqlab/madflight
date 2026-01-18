@@ -1,6 +1,4 @@
 /*==========================================================================================
-Driver for LSM6DSO gyroscope/accelometer
-
 MIT License
 
 Copyright (c) 2026 https://madflight.com
@@ -24,26 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//based on https://github.com/betaflight/betaflight/blob/master/src/main/drivers/accgyro/accgyro_spi_lsm6dso_init.c
+//Driver for LSM6DSO, LSM6DSOX gyroscope/accelometer
 
 #define USE_BF_CONFIG 0
 
 #include "LSM6DSO.h"
 #include "LSM6DSO_regs.h"
-#include "../MPUxxxx/MPU_interface.h"
-
-bool LSM6DSO::detect(MPU_Interface* dev) {
-    return (dev->readReg(LSM6DSO_REG_WHO_AM_I) == 0x6C);
-}
 
 //returns negative error code, positive warning code, or 0 on success
-int LSM6DSO::begin(SPIClass *spi, int cs_pin, int sample_rate) { 
-    // Use low speed for setup
-    dev = new MPU_InterfaceSPI(spi, cs_pin);
-    dev->setFreq(1000000);
+int LSM6DSO::begin(SensorDevice* dev) { 
+    this->dev = dev;
+    dev->setLowSpeed(); // Use low speed for setup
 
+    if(!detect(dev)) return -1;
+    delay(10);
 
 #if USE_BF_CONFIG
+    //based on https://github.com/betaflight/betaflight/blob/master/src/main/drivers/accgyro/accgyro_spi_lsm6dso_init.c
+
     // Reset the device - default 00000100
     dev->writeReg(LSM6DSO_REG_CTRL3_C, LSM6DSO_MASK_CTRL3_C_RESET);
     delay(100); //wait 100ms before continuing config

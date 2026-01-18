@@ -1,9 +1,7 @@
 /*==========================================================================================
-Driver for ICM-45686 gyroscope/accelometer
-
 MIT License
 
-Copyright (c) 2025 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
+
+//Driver for ICM-45686 gyroscope/accelometer
+
 #include "ICM45686.h"
 #include <Arduino.h> //delayMicroseconds
 
@@ -70,13 +71,13 @@ SOFTWARE.
 #define ICM45686_I2C_LOW_SPEED        100000
 #define ICM45686_I2C_HIGH_SPEED      1000000
 
-int ICM45686::begin(SPIClass *spi, int cs_pin, int sample_rate, bool use_clkin) {
+int ICM45686::begin(SensorDevice* dev, int sample_rate, bool use_clkin) {
     sampleRateActual = 0;
     error_code = 0;
     fifobuf.tx_reg = ICM45686_REG_FIFO_COUNTH | 0x80;
 
-    delete dev;
-    dev = new MPU_InterfaceSPI(spi, cs_pin);
+    this->dev = dev;
+    dev->setLowSpeed();
 
     // check who-am-i
     uint8_t wai = dev->readReg(0x72);
@@ -155,7 +156,11 @@ int ICM45686::begin(SPIClass *spi, int cs_pin, int sample_rate, bool use_clkin) 
     // enable gyro+acc in low noise mode
     write_reg(0x0010, 0b00001111, 0b00001111); //PWR_MGMT0
 
-    dev->setFreq(ICM45686_SPI_HIGH_SPEED);
+    if(dev->isSPI()) {
+        dev->setFreq(ICM45686_SPI_HIGH_SPEED);
+    }else{
+        dev->setFreq(ICM45686_I2C_HIGH_SPEED);
+    }
 
     return error_code;
 }

@@ -1,6 +1,4 @@
 /*==========================================================================================
-Driver for LSM6DSV gyroscope/accelometer
-
 MIT License
 
 Copyright (c) 2026 https://madflight.com
@@ -24,22 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+//Driver for LSM6DSV, LSM6DSV16X gyroscope/accelometer
 //based on https://raw.githubusercontent.com/betaflight/betaflight/refs/heads/master/src/main/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
 
 #include "LSM6DSV.h"
 #include "LSM6DSV_regs.h"
-#include "../MPUxxxx/MPU_interface.h"
-
-
-bool LSM6DSV::detect(MPU_Interface* dev) {
-    return (dev->readReg(LSM6DSV_WHO_AM_I) == 0x70);
-}
 
 //returns negative error code, positive warning code, or 0 on success
-int LSM6DSV::begin(SPIClass *spi, int cs_pin, int sample_rate) { 
-    // Use low speed for setup
-    dev = new MPU_InterfaceSPI(spi, cs_pin);
-    dev->setFreq(1000000);
+int LSM6DSV::begin(SensorDevice* dev) { 
+    this->dev = dev;
+    dev->setLowSpeed(); // Use low speed for setup
 
     // Check who-am-i
     if (!detect(dev)) return -1;

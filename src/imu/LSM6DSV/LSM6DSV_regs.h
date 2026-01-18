@@ -1,7 +1,4 @@
-
 /*==========================================================================================
-Driver for LSM6DSV gyroscope/accelometer
-
 MIT License
 
 Copyright (c) 2026 https://madflight.com
@@ -25,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+//Driver for LSM6DSV, LSM6DSV16X gyroscope/accelometer
 //based on https://raw.githubusercontent.com/betaflight/betaflight/refs/heads/master/src/main/drivers/accgyro/accgyro_spi_lsm6dsv16x.c
 
 // 10 MHz max SPI frequency
