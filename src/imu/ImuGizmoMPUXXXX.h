@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "imu.h"
 #include "common/SensorDevice.h"
-#include "MPUxxxx/MPUxxxx.h"
+#include "MPUXXXX/MPUXXXX.h"
 
 class ImuGizmoMPUXXXX : public ImuGizmo {
   private:
