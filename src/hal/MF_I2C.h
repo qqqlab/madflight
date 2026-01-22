@@ -2,16 +2,41 @@
 
 #include <stdint.h>
 
+#define DEBUG_I2C 0
+
+#if DEBUG_I2C
+  #include <Arduino.h>
+#endif
+
 class MF_I2C {
+  private:
+    uint32_t _freq = 0;
+    virtual void setClockBase(uint32_t freq) = 0; //private to capture clock changes
   public:
     virtual void begin() = 0;
     virtual void end() = 0;
-    virtual void setClock(uint32_t freq) = 0;
     virtual void beginTransmission(uint8_t address) = 0;
     virtual uint8_t endTransmission(bool stopBit) = 0;
     virtual uint32_t requestFrom(uint8_t address, uint32_t len, bool stopBit) = 0;
     virtual uint32_t read(uint8_t *buf, uint32_t len) = 0;
     virtual uint32_t write(const uint8_t *buf, uint32_t len) = 0;
+
+    void setClock(uint32_t freq) {
+      _freq = freq;
+      setClockBase(freq);
+    }
+
+    uint32_t getClock() {
+      return _freq;
+    }
+
+    //only set clock if new frequency is lower than current frequency
+    void setClockMax(uint32_t freq) {
+      if(_freq == 0 || _freq > freq) {
+        _freq = freq;
+        setClockBase(freq);
+      }
+    }
 
     uint8_t read() {
       uint8_t data;
@@ -38,6 +63,43 @@ class MF_I2C {
     //virtual void begin(uint8_t address) = 0; 
     //virtual void onReceive(void(*)(int)) = 0;
     //virtual void onRequest(void(*)(void)) = 0;
+
+    //write/read bytes, returns number of bytes read (or written for write only transaction)
+    uint32_t transceive(uint8_t adr, uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen, bool stop = false) {
+     if(wlen == 0 && rlen == 0) return 0; //nothing to do
+      uint32_t rv = 0;
+      beginTransmission(adr);
+      if(wlen > 0) {
+        rv = write(wbuf, wlen);
+        if(rlen == 0) {
+          endTransmission(true); //nothing to read, send stop
+        }else{
+          endTransmission(stop); //read follows, send repeated start (stop==false) or stop (stop==true)
+        }
+      }
+      if(rlen > 0) {
+        rv = requestFrom(adr, rlen); 
+        if(rv > 0) {
+          readBytes(rbuf, rv);
+        }
+        //requestFrom already called endTransmission(), don't call again here 
+      }
+      #if DEBUG_I2C
+        Serial.printf("MF_I2C::transceive adr=0x%02X ", adr);
+        if(wlen > 0) {
+          Serial.printf("tx=");
+          for(int i=0;i<wlen;i++) Serial.printf("%02X ", wbuf[i]);
+        }
+        if(rlen > 0) {
+          Serial.printf("rx=");
+          for(int i=0;i<rv;i++) Serial.printf("%02X ", rbuf[i]);
+        }
+        Serial.printf("\n");
+      #endif
+      return rv;
+    }
+
+
 };
 
 //MF_I2CDevice: helper class to read/write device registers
@@ -98,20 +160,7 @@ class MF_I2CDevice {
 
     //write/read bytes, returns number of bytes read (or written for write only transaction)
     uint32_t transceive(uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen) {
-      if(wlen == 0 && rlen == 0) return 0; //nothing to do
-      uint32_t rv = 0;
-      i2c->beginTransmission(adr);
-      if(wlen > 0) rv = i2c->write(wbuf, wlen);
-      if(wlen > 0 && rlen > 0) i2c->endTransmission(false); //false = repeated start
-      if(rlen > 0) {
-        rv = i2c->requestFrom(adr, rlen); //this also calls endTransmission(), don't call again
-        if(rv > 0) {
-          i2c->readBytes(rbuf, rv);
-        }
-      }else{
-        i2c->endTransmission();
-      }
-      return rv;
+      return i2c->transceive(adr, wbuf, wlen, rbuf, rlen);
     }
 };
 
@@ -134,7 +183,7 @@ class MF_I2CPtrWrapper : public MF_I2C {
       _i2c->end(); 
     }
 
-    void setClock(uint32_t freq) override {
+    void setClockBase(uint32_t freq) override {
       _i2c->setClock(freq); 
     }
 

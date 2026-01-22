@@ -34,6 +34,7 @@ SOFTWARE.
 #include "RdrGizmoSR04.h"
 #include "RdrGizmoDTS6012M_UART.h"
 #include "RdrGizmoDTS6012M_I2C.h"
+#include "RdrGizmoVL53L3CX.h"
 
 //create global module instance
 Rdr rdr;
@@ -68,6 +69,9 @@ int Rdr::setup() {
       }else{
         gizmo = RdrGizmoDTS6012M_I2C::create(&config, (RdrState*)this);
       }
+      break;
+    case Cfg::rdr_gizmo_enum::mf_VL53L3CX :
+      gizmo = RdrGizmoVL53L3CX::create(&config, (RdrState*)this);
       break;
   }
 

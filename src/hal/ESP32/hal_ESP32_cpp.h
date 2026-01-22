@@ -95,8 +95,9 @@ void hal_setup()
     #else
       TwoWire *i2c = &Wire;
     #endif
-    i2c->begin(cfg.pin_i2c0_sda, cfg.pin_i2c0_scl, 1000000);
+    i2c->begin(cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
     hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+    hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
   }
   if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
     #ifdef USE_ESP32_SOFTWIRE
@@ -104,8 +105,9 @@ void hal_setup()
     #else
       TwoWire *i2c = &Wire1; 
     #endif
-    i2c->begin(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl, 1000000);
+    i2c->begin(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
     hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+    hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
   }
 
   //SPI BUS

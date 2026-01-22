@@ -1,25 +1,24 @@
-#define APP_DATE "2025-08-18"
+#define APP_DATE "2026-01-21"
 
 /*====================================================================
  I2C Chip Scanner - scan I2C bus and try to identify chips
 
 Example output:
 
-===================
-I2C Chip Scanner
-===================
-I2C: Scanning ...
-I2C: Found address: 0x1E (decimal 30)
-      MATCH (adr=0x1E reg=0x0A result=0x483433): HMC5883L
-I2C: Found address: 0x29 (decimal 41)
-      POTENTIAL MATCH (address 0x29 match only): VL53L7CX      
-I2C: Found address: 0x68 (decimal 104)
-      MATCH (adr=0x68 reg=0x75 result=0x68): MPU6000, MPU6050, or MPU9150
-I2C: Found address: 0x77 (decimal 119)
-      MATCH (adr=0x77 reg=0xD0 result=0x55): BMP180
-I2C: Found 4 device(s)
+===========================
+I2C Chip Scanner 2026-01-21
+===========================
+Step 1: Scanning Adressses ... 0x29(41)  - Found 1 devices
+
+Step 2: Identifying Devices ...
+try: VL53L3CX --> read adr:0x29 reg:0x10F len:2 --> received:0xEAAA --> VL53L3CX
+
+Step 3: Summary
+address 0x29 (decimal  41) VL53L3CX
+
 ====================================================================*/
 
+#include <Arduino.h>
 #include "Wire.h"
 
 TwoWire *i2c = &Wire;
@@ -66,6 +65,7 @@ void loop() {
   uint8_t adr_found[128];
   String adr_msg[128];
 
+  Serial.printf("\n");
   Serial.printf("===========================\n");
   Serial.printf("I2C Chip Scanner " APP_DATE "\n");
   Serial.printf("===========================\n");
@@ -82,12 +82,12 @@ void loop() {
   Serial.printf(" - Found %d devices\n", num_adr_found);
 
   //try to identify the devices
-  Serial.printf("Step 2: Identifying Devices ...\n");
+  Serial.printf("\nStep 2: Identifying Devices ...\n");
   for (uint8_t i = 0; i < num_adr_found; i++) {
     i2c_identify_chip(adr_found[i], adr_msg[i]);
   }
 
-  Serial.printf("\nStep 3: Summary\n\n");
+  Serial.printf("\nStep 3: Summary\n");
   for (uint8_t i = 0; i < num_adr_found; i++) {
     Serial.printf("address 0x%02X (decimal %3d) %s\n", adr_found[i], adr_found[i], adr_msg[i].c_str());
   }
@@ -124,6 +124,7 @@ test_struct tests[] = {
   {0x46, 0x47, 0x01, 1, 0x50, "BMP580 / BMP581 barometer"},
   {0x46, 0x47, 0x01, 1, 0x51, "BMP585 barometer"},
   {0x51, 0x51, 0x03, 1, 0x3B, "DTS6012M lidar"},
+  {0x29, 0x29, 0x010F, 2, 0xEAAA, "VL53L3CX"},
   {0x68, 0x69, 0x00, 1, 0xEA, "ICM20948 9DOF motion"},
   {0x68, 0x69, 0x00, 1, 0x68, "MPU3050 motion"},
   {0x68, 0x69, 0x00, 1, 0x69, "MPU3050 motion"},
@@ -245,8 +246,8 @@ void i2c_WriteReg( uint8_t adr, uint8_t reg, uint8_t data ) {
 
 int i2c_ReadRegs( uint8_t adr, uint16_t reg, uint8_t *data, uint8_t n, bool stop ) {
   i2c->beginTransmission(adr);
-  if(reg>0xff) i2c->write(reg>>8);
-  i2c->write(reg);
+  if(reg > 0xff) i2c->write(reg >> 8); //write MSB (if any)
+  i2c->write(reg); //write LSB
   i2c->endTransmission(stop); //false = repeated start, true = stop + start
   int bytesReceived = i2c->requestFrom(adr, n);
   if(bytesReceived > 0) {

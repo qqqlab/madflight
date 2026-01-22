@@ -581,6 +581,10 @@ void Cli::print_i2cScan() {
   for(int bus_i=0;bus_i<4;bus_i++) {
     MF_I2C *i2c = hal_get_i2c_bus(bus_i);
     if(i2c) {
+      //set clock speed to 100k
+      uint32_t clock = i2c->getClock();
+      i2c->setClock(100000);
+      //do scan
       Serial.printf("I2C: Scanning i2c_bus:%d - ", bus_i);
       int count = 0;
       for (byte i = 1; i < 128; i++) {
@@ -591,6 +595,8 @@ void Cli::print_i2cScan() {
         }
       }
       Serial.printf("- Found %d device(s)\n", count);
+      //restore original clock speed
+      i2c->setClock(clock);
     }
   }
 }

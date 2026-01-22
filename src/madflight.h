@@ -298,6 +298,14 @@ void madflight_setup() {
   // LUA - Start Lua script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();
 
+  //report I2C clock speeds
+  for(int i=0;i<2;i++) {
+    MF_I2C* i2c = hal_get_i2c_bus(i);
+    if(i2c) {
+      Serial.printf("I2C: bus:%d clock:%d\n", i, i2c->getClock());
+    }
+  }
+
   // CLI - Command Line Interface
   cli.begin();
 

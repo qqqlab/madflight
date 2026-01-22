@@ -114,19 +114,21 @@ void hal_setup() {
     auto *i2c = &Wire; //type is TwoWire
     i2c->setSDA(cfg.pin_i2c0_sda);
     i2c->setSCL(cfg.pin_i2c0_scl);
-    i2c->setClock(1000000);
+    //i2c->setClock(1000000);
     i2c->setTimeout(25, true); //timeout, reset_with_timeout
     i2c->begin();
     hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+    hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
   }
   if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
     auto *i2c = &Wire1; //type is TwoWire
     i2c->setSDA(cfg.pin_i2c1_sda);
     i2c->setSCL(cfg.pin_i2c1_scl);
-    i2c->setClock(1000000);
+    //i2c->setClock(1000000);
     i2c->setTimeout(25, true); //timeout, reset_with_timeout
     i2c->begin();
     hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+    hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
   }
 
   //SPI BUS
