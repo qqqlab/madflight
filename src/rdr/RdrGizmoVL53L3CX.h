@@ -77,16 +77,12 @@ public:
 
   static RdrGizmoVL53L3CX* create(RdrConfig *config, RdrState *state) {
       //get i2c bus
-      MF_I2C* i2c_bus = hal_get_i2c_bus(config->rdr_i2c_bus);
-      if(!i2c_bus) return nullptr;
-
-      //set default address
-      if(config->rdr_i2c_adr <= 0) config->rdr_i2c_adr = 0x29;
-
-      //get I2C bus
       MF_I2C* i2c = hal_get_i2c_bus(config->rdr_i2c_bus);
       if(!i2c) return nullptr;
       i2c->setClockMax(VL53L3CX_I2C_CLOCK);
+
+      //set default address
+      if(config->rdr_i2c_adr <= 0) config->rdr_i2c_adr = 0x29;
 
       //detect
       if(!detect(config)) {

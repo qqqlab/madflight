@@ -97,22 +97,25 @@ void loop() {
 
 struct test_struct{
     uint8_t adr1;
-    uint8_t adr2;    
-    uint16_t reg;
+    uint8_t adr2;
+    uint32_t reg;
     uint8_t len;
     uint32_t expected;
     String descr;
 };
 
-//table of addresses, register and expected reply
+//table of addresses, register and expected reply (use 0x10000 for 16 bit register 0)
 test_struct tests[] = {
 // adr1  adr2  reg  len exp       descr
   {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L magnetometer"},
+  {0x10, 0x13, 0x40, 1, 0x32, "BMM150 magnetometer"},
+  {0x24, 0x25, 0x10000, 2, 0x0360, "HM0360 camera"},
   {0x2C, 0x2C, 0x00, 1, 0x80, "QMC5883P magnetometer"},
   {0x1E, 0x1E, 0x0A, 3, 0x483433, "HMC5883L magnetometer"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
   {0x30, 0x30, 0x00, 2, 0x01B0, "HM01B0 camera"},
   {0x30, 0x30, 0x0A, 1, 0x26, "OV2460 camera"},
   {0x30, 0x30, 0x0A, 2, 0x9711, "OV9712 / OV9211 camera"},
+  {0x34, 0x35, 0x10000, 2, 0x0360, "HM0360 camera"},
   {0x3C, 0x3C, 0x300A, 2, 0x3660, "OV3660 camera"},
   {0x3C, 0x3C, 0x300A, 2, 0x5640, "OV5640 camera"},  
   {0x40, 0x4F, 0x00, 2, 0x399F, "INA219 current sensor"},
@@ -158,7 +161,7 @@ test_struct tests[] = {
 
 struct adrtest_struct{
     uint8_t adr1;
-    uint8_t adr2;    
+    uint8_t adr2;
     char descr[60];
 };
 
@@ -175,16 +178,20 @@ void i2c_identify_chip(uint8_t adr, String &msg) {
   int i = 0;
   while(tests[i].adr1) {
     uint8_t adr1 = tests[i].adr1;
-    uint8_t adr2 = tests[i].adr2;    
-    uint16_t reg = tests[i].reg;
-    uint8_t len = tests[i].len;    
+    uint8_t adr2 = tests[i].adr2;
+    uint32_t reg = tests[i].reg;
+    uint8_t len = tests[i].len;
     uint32_t expected = tests[i].expected;
     uint32_t received = 0;
-    if(adr1<=adr && adr<=adr2) {
+    if((adr1 <= adr) && (adr <= adr2)) {
       uint8_t data[4];
-      Serial.printf("try: %s --> read adr:0x%02X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
+      if(reg <= 0xff) {
+        Serial.printf("try: %s --> read adr:0x%02X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
+      }else{
+        Serial.printf("try: %s --> read adr:0x%04X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
+      }
       i2c_ReadRegs(adr, reg, data, len, true);
-      for(int i=0;i<len;i++) received = (received<<8) + data[i];   
+      for(int i=0;i<len;i++) received = (received<<8) + data[i];
       Serial.printf("received:0x%02X ", (int)received);
       if(received == expected) {
         msg = tests[i].descr;
@@ -242,12 +249,10 @@ void i2c_WriteReg( uint8_t adr, uint8_t reg, uint8_t data ) {
   i2c->endTransmission();
 }
 
-
-
-int i2c_ReadRegs( uint8_t adr, uint16_t reg, uint8_t *data, uint8_t n, bool stop ) {
+int i2c_ReadRegs( uint8_t adr, uint32_t reg, uint8_t *data, uint8_t n, bool stop ) {
   i2c->beginTransmission(adr);
-  if(reg > 0xff) i2c->write(reg >> 8); //write MSB (if any)
-  i2c->write(reg); //write LSB
+  if(reg > 0xff) i2c->write((reg >> 8) & 0xff); //write MSB (if any)
+  i2c->write(reg & 0xff); //write LSB
   i2c->endTransmission(stop); //false = repeated start, true = stop + start
   int bytesReceived = i2c->requestFrom(adr, n);
   if(bytesReceived > 0) {

@@ -12,7 +12,10 @@ class MF_I2C {
   private:
     uint32_t _freq = 0;
     virtual void setClockBase(uint32_t freq) = 0; //private to capture clock changes
-  public:
+  public:    
+    //==========================================
+    // Arduino i2c functions
+    //==========================================
     virtual void begin() = 0;
     virtual void end() = 0;
     virtual void beginTransmission(uint8_t address) = 0;
@@ -24,18 +27,6 @@ class MF_I2C {
     void setClock(uint32_t freq) {
       _freq = freq;
       setClockBase(freq);
-    }
-
-    uint32_t getClock() {
-      return _freq;
-    }
-
-    //only set clock if new frequency is lower than current frequency
-    void setClockMax(uint32_t freq) {
-      if(_freq == 0 || _freq > freq) {
-        _freq = freq;
-        setClockBase(freq);
-      }
     }
 
     uint8_t read() {
@@ -63,6 +54,21 @@ class MF_I2C {
     //virtual void begin(uint8_t address) = 0; 
     //virtual void onReceive(void(*)(int)) = 0;
     //virtual void onRequest(void(*)(void)) = 0;
+
+    //==========================================
+    // madflight extensions
+    //==========================================
+    uint32_t getClock() {
+      return _freq;
+    }
+
+    //only set clock if new frequency is lower than current frequency
+    void setClockMax(uint32_t freq) {
+      if(_freq == 0 || _freq > freq) {
+        _freq = freq;
+        setClockBase(freq);
+      }
+    }
 
     //write/read bytes, returns number of bytes read (or written for write only transaction)
     uint32_t transceive(uint8_t adr, uint8_t* wbuf, uint32_t wlen, uint8_t* rbuf, uint32_t rlen, bool stop = false) {
@@ -99,10 +105,53 @@ class MF_I2C {
       return rv;
     }
 
+    //write data to 8 bit register, returns number of bytes written (including reg byte)
+    uint32_t writeReg(uint8_t adr, uint8_t reg, uint8_t *data, uint32_t len) {
+      beginTransmission(adr);
+      uint32_t rv = write(&reg, 1);
+      if(len > 0) {
+        rv += write(data, len);
+      }
+      endTransmission();
+      return rv;
+    }
 
+    //write one byte to register, returns number of bytes written (including reg byte)
+    uint32_t writeReg(uint8_t adr, uint8_t reg, uint8_t data) {
+      return writeReg(adr, reg, &data, 1);
+    }
+
+    //write register byte, returns number of bytes written (including reg byte)
+    uint32_t writeReg(uint8_t adr, uint8_t reg) {
+      return writeReg(adr, reg, nullptr, 0);
+    }
+
+    //read bytes from 8 bit register, returns number of bytes read
+    uint32_t readReg(uint8_t adr, uint8_t reg, uint8_t *data, uint32_t len) {
+      uint32_t bytesReceived = 0;
+      beginTransmission(adr);
+      write(&reg, 1);
+      if(len > 0) {
+        endTransmission(false); //false = repeated start
+        bytesReceived = requestFrom(adr, len); //this also calls endTransmission(), don't call again
+        if(bytesReceived > 0) {
+          readBytes(data, bytesReceived);
+        }
+      }else{
+        endTransmission();
+      }
+      return bytesReceived;
+    }
+
+    //read byte from 8 bit register, returns byte read
+    uint8_t readReg(uint8_t adr, uint8_t reg) {
+      uint8_t data;
+      readReg(adr, reg, &data, 1);
+      return data;
+    }
 };
 
-//MF_I2CDevice: helper class to read/write device registers
+//MF_I2CDevice: helper class to read/write device registers without specifying adr on each call
 class MF_I2CDevice {
   public:
     MF_I2C *i2c = nullptr;
@@ -113,49 +162,29 @@ class MF_I2CDevice {
       this->adr = adr;
     }
 
-    //write data to register, returns number of bytes written (including reg byte)
+    //write data to 8 bit register, returns number of bytes written (including reg byte)
     uint32_t writeReg(uint8_t reg, uint8_t *data, uint32_t len) {
-      i2c->beginTransmission(adr);
-      uint32_t rv = i2c->write(&reg, 1);
-      if(len > 0) {
-        rv += i2c->write(data, len);
-      }
-      i2c->endTransmission();
-      return rv;
+      return i2c->writeReg(adr, reg, data, len);
     }
 
     //write one byte to register, returns number of bytes written (including reg byte)
     uint32_t writeReg(uint8_t reg, uint8_t data) {
-      return writeReg(reg, &data, 1);
+      return i2c->writeReg(adr, reg, &data, 1);
     }
 
     //write register byte, returns number of bytes written (including reg byte)
     uint32_t writeReg(uint8_t reg) {
-      return writeReg(reg, nullptr, 0);
+      return i2c->writeReg(adr, reg, nullptr, 0);
     }
 
     //read bytes from register, returns number of bytes read
     uint32_t readReg(uint8_t reg, uint8_t *data, uint32_t len) {
-      uint32_t bytesReceived = 0;
-      i2c->beginTransmission(adr);
-      i2c->write(&reg, 1);
-      if(len > 0) {
-        i2c->endTransmission(false); //false = repeated start
-        bytesReceived = i2c->requestFrom(adr, len); //this also calls endTransmission(), don't call again
-        if(bytesReceived > 0) {
-          i2c->readBytes(data, bytesReceived);
-        }
-      }else{
-        i2c->endTransmission();
-      }
-      return bytesReceived;
+      return i2c->readReg(adr, reg, data, len);
     }
 
     //read byte from register, returns byte read
     uint8_t readReg(uint8_t reg) {
-      uint8_t data;
-      readReg(reg, &data, 1);
-      return data;
+      return i2c->readReg(adr, reg);
     }
 
     //write/read bytes, returns number of bytes read (or written for write only transaction)

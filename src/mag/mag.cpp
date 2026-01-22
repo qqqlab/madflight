@@ -31,6 +31,7 @@ SOFTWARE.
 #include "MagGizmoRM3100.h"
 #include "MagGizmoQMC5883P.h"
 #include "MagGizmoMMC5603.h"
+#include "MagGizmoBMM150.h"
 
 //create global module instance
 Mag mag;
@@ -85,6 +86,8 @@ int Mag::setup() {
         //return config
         strncpy(config.name, "MMC5603", sizeof(config.name));
       }
+    case Cfg::mag_gizmo_enum::mf_BMM150 :
+      gizmo =MagGizmoBMM150::create(&config, (MagState*)this); 
       break;
   }
 
