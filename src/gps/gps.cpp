@@ -58,7 +58,11 @@ int Gps::setup() {
 }
 
 bool Gps::update() {
-  if(!gizmo) return false;
-  return gizmo->update();
+  runtimeTrace.start();
+  bool updated = (gizmo != nullptr);
+  updated = updated && gizmo->update();
+
+  runtimeTrace.stop(updated);
+  return updated;
 }
 

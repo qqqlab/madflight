@@ -156,10 +156,11 @@ int Rcl::setup() {
 
 
 bool Rcl::update() { //returns true if channel pwm data was updated
-  if(!gizmo) return false;
-  bool rv = gizmo->update();
+  runtimeTrace.start();
+  bool updated = (gizmo != nullptr);
+  updated = updated && gizmo->update();
 
-  if(rv) {
+  if(updated) {
     _update_count++;
     
     //throttle: 0.0 in range from stick full back to rcl_cfg_thro_low, 1.0 on full throttle
@@ -215,7 +216,9 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     //set update timestamp
     update_time = millis();
   }
-  return rv;
+
+  runtimeTrace.stop(updated);
+  return updated;
 }
 
 bool Rcl::connected() {

@@ -20,6 +20,7 @@
 #include "../rdr/rdr.h"
 #include "../veh/veh.h"
 
+#include "msp/msp.h"
 #include "cli_RclCalibrate.h"
 
 #include "stat.h"
@@ -327,32 +328,97 @@ void Cli::setup() {
   cli_print_all(false);
 }
 
-//returns true if a command was processed (even an invalid one)
-bool Cli::update() {
-  if(mavlink) {
-    return mavlink->update();
-  }else{
-    //process chars from Serial
-    bool rv = false;
-    while(Serial.available()) {
-      uint8_t c = Serial.read();
-      if(c == 0xFD || c == 0xFE) { //mavlink v1,v2 protocol header byte
-        auto ser = &Serial;
-        MF_Serial *ser_bus = new MF_SerialPtrWrapper<decltype(ser)>( ser );
-        mavlink = new RclGizmoMavlink(ser_bus, 115200, nullptr);
-        return false;
-      }
-      if(cmd_process_char(c)) rv = true;
+
+bool Cli::update_MODE_CLI() {
+  bool rv = false;
+  //process chars from Serial
+  int n = Serial.available(); //Note: Serial.read(&c,1) does not work on all platforms
+  for(int i = 0; i < n; i++) {  
+    uint8_t c = Serial.read();
+    //---------------------------
+    // MSP check
+    //---------------------------
+    //switch to MSP if we received a MSP command
+    if(Msp::process_byte(c)) {
+      cli_mode = MODE_MSP;
+      return update_MODE_MSP(); //process remaining chars in serial buffer
     }
 
-    //handle output for pxxx commands
-    cli_print_loop();
+    //---------------------------
+    // MAVLINK check
+    //---------------------------
+    //check for MAVLINK v1,v2 protocol header byte, start mavlink parser
+    if((c == 0xFD || c == 0xFE) && !mavlink) {
+      auto ser = &Serial;
+      MF_Serial *ser_bus = new MF_SerialPtrWrapper<decltype(ser)>( ser );
+      mavlink = new RclGizmoMavlink(ser_bus, -1, nullptr);
+    }
+    //switch to MAVLINK as soon as we received a MAVLINK message
+    if(mavlink && mavlink->process_char(c) != RclGizmoMavlink::process_result_enum::NONE) {
+      cli_mode = MODE_MAV;
+      return update_MODE_MAV(); //process remaining chars in serial buffer
+    }
 
-    //for TinyUSB
-    Serial.flush();
-
-    return rv;
+    //---------------------------
+    // process CLI command
+    //---------------------------
+    if(cmd_process_char(c)) rv = true;
   }
+  //handle output for pxxx commands
+  cli_print_loop();
+
+  return rv;
+}
+
+bool Cli::update_MODE_MSP() {
+  static bool last_msp_rv = false;
+  bool rv = false;
+
+  //process chars from Serial
+  int n = Serial.available(); //Note: Serial.read(&c,1) does not work on all platforms
+  for(int i = 0; i < n; i++) {  
+    uint8_t c = Serial.read();
+
+    //switch back to MODE_CLI if a single '#' is received directrly after the last msp command
+    if(last_msp_rv == true && c == '#') {
+      cli_mode = MODE_CLI;
+      last_msp_rv = false;
+      return Cli::update_MODE_CLI();
+    }
+
+    //process MSP character
+    rv = Msp::process_byte(c);
+    last_msp_rv = rv;
+  }
+  return rv;
+}
+
+bool Cli::update_MODE_MAV() {
+  led.color(0xff00ff);
+  led.toggle();
+  return mavlink->update();
+}
+
+//returns true if a command was processed (even an invalid one)
+bool Cli::update() {
+  runtimeTrace.start();
+
+  bool updated = false;
+  switch(cli_mode) {
+    case MODE_CLI: 
+      updated = update_MODE_CLI();
+      break;
+    case MODE_MSP: 
+      updated =  update_MODE_MSP();
+      break;
+    case MODE_MAV: 
+      updated = update_MODE_MAV();
+      break;
+  }
+  Serial.flush(); //for TinyUSB
+
+  runtimeTrace.stop(updated);
+  return updated;
 }
 
 void Cli::begin() {
@@ -558,8 +624,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_print_all(false);
     RclCalibrate::calibrate();
   }else if (cmd == "ps") {
-    hal_print_resources();
-    freertos_ps();
+    ps();
   }else if (cmd == "serial") {
     cli_serial(arg1.toInt());
   }else if (cmd == "spinmotors") {
@@ -567,9 +632,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }else if (cmd != "") {
     Serial.println("ERROR Unknown command - Type help for help");
   }
-
 }
-
 
 //========================================================================================================================//
 //                                          HELPERS                                                                       //
@@ -971,4 +1034,10 @@ void Cli::cli_print_loop() {
     if (cli_print_need_newline) Serial.println();
     imu.stat_runtime_max = 0; //reset maximum runtime
   }
+}
+
+void Cli::ps() {
+  hal_print_resources();
+  freertos_ps();
+  RuntimeTraceGroup::print();
 }

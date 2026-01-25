@@ -108,17 +108,21 @@ int Bar::setup() {
 }
 
 bool Bar::update() {
-  if(!gizmo) return false;
+  runtimeTrace.start();
+  bool updated = (gizmo != nullptr);
+  updated = updated && gizmo->update(&press, &temp);
 
-  if(!gizmo->update(&press, &temp)) return false; //exit if no new sample available
+  if(updated) {
+    float P = press;
+    //float T = temp;
+    //alt = 153.84348f * (1 - pow(P / 101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
+    alt = 44330.0f * (1 - pow(P / 101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
+    //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
+    uint32_t now = micros();
+    dt = (now - ts) / 1000000.0;
+    ts = now;
+  }
 
-  float P = press;
-  //float T = temp;
-  //alt = 153.84348f * (1 - pow(P / 101325.0f, 0.19029496f)) * (T + 273.15f); //hypsometric formula - reduces to barometric with T=15C
-  alt = 44330.0f * (1 - pow(P / 101325.0f, 0.19029496f)); //barometric formula  0.19029496 = 1/5.255
-  //alt = (101325.0f - P) / 12.0f; //linearisation of barometric formula at sealevel
-  uint32_t now = micros();
-  dt = (now - ts) / 1000000.0;
-  ts = now;
-  return true;
+  runtimeTrace.stop(updated);
+  return updated;
 }

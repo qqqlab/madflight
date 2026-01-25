@@ -1,4 +1,4 @@
-#define APP_DATE "2026-01-21"
+#define APP_DATE "2026-01-22"
 
 /*====================================================================
  I2C Chip Scanner - scan I2C bus and try to identify chips
@@ -6,15 +6,15 @@
 Example output:
 
 ===========================
-I2C Chip Scanner 2026-01-21
+I2C Chip Scanner 2026-01-22
 ===========================
 Step 1: Scanning Adressses ... 0x29(41)  - Found 1 devices
 
 Step 2: Identifying Devices ...
-try: VL53L3CX --> read adr:0x29 reg:0x10F len:2 --> received:0xEAAA --> VL53L3CX
+try: VL53L3CX time-of-flight distance --> read adr:0x29 reg:10F --> received:EAAA --> MATCH
 
 Step 3: Summary
-address 0x29 (decimal  41) VL53L3CX
+address 0x29 (dec  41) VL53L3CX time-of-flight distance
 
 ====================================================================*/
 
@@ -89,7 +89,7 @@ void loop() {
 
   Serial.printf("\nStep 3: Summary\n");
   for (uint8_t i = 0; i < num_adr_found; i++) {
-    Serial.printf("address 0x%02X (decimal %3d) %s\n", adr_found[i], adr_found[i], adr_msg[i].c_str());
+    Serial.printf("address 0x%02X (dec %3d) %s\n", adr_found[i], adr_found[i], adr_msg[i].c_str());
   }
 
   delay(1000);
@@ -99,64 +99,72 @@ struct test_struct{
     uint8_t adr1;
     uint8_t adr2;
     uint32_t reg;
-    uint8_t len;
     uint32_t expected;
     String descr;
 };
 
-//table of addresses, register and expected reply (use 0x10000 for 16 bit register 0)
-test_struct tests[] = {
-// adr1  adr2  reg  len exp       descr
-  {0x0D, 0x0D, 0x0D, 1, 0xFF, "QMC5883L magnetometer"},
-  {0x10, 0x13, 0x40, 1, 0x32, "BMM150 magnetometer"},
-  {0x24, 0x25, 0x10000, 2, 0x0360, "HM0360 camera"},
-  {0x2C, 0x2C, 0x00, 1, 0x80, "QMC5883P magnetometer"},
-  {0x1E, 0x1E, 0x0A, 3, 0x483433, "HMC5883L magnetometer"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
-  {0x30, 0x30, 0x00, 2, 0x01B0, "HM01B0 camera"},
-  {0x30, 0x30, 0x0A, 1, 0x26, "OV2460 camera"},
-  {0x30, 0x30, 0x0A, 2, 0x9711, "OV9712 / OV9211 camera"},
-  {0x34, 0x35, 0x10000, 2, 0x0360, "HM0360 camera"},
-  {0x3C, 0x3C, 0x300A, 2, 0x3660, "OV3660 camera"},
-  {0x3C, 0x3C, 0x300A, 2, 0x5640, "OV5640 camera"},  
-  {0x40, 0x4F, 0x00, 2, 0x399F, "INA219 current sensor"},
-  {0x40, 0x4F, 0x00, 2, 0x4127, "INA226 current sensor"},
-  {0x48, 0x4F, 0x01, 2, 0x8583, "ADS1113 / ADS1114 / ADS1115 ADC"},
-  {0x42, 0x42, 0x00, 1, 0x9B, "GC0308 camera"},
-  {0x42, 0x42, 0x0A, 1, 0x76, "OV7670 camera"},
-  {0x42, 0x42, 0x0A, 1, 0x77, "OV7725 camera"},
-  {0x46, 0x47, 0x01, 1, 0x50, "BMP580 / BMP581 barometer"},
-  {0x46, 0x47, 0x01, 1, 0x51, "BMP585 barometer"},
-  {0x51, 0x51, 0x03, 1, 0x3B, "DTS6012M lidar"},
-  {0x29, 0x29, 0x010F, 2, 0xEAAA, "VL53L3CX"},
-  {0x68, 0x69, 0x00, 1, 0xEA, "ICM20948 9DOF motion"},
-  {0x68, 0x69, 0x00, 1, 0x68, "MPU3050 motion"},
-  {0x68, 0x69, 0x00, 1, 0x69, "MPU3050 motion"},
-  {0x68, 0x69, 0x75, 1, 0x12, "ICM20602 6DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x19, "MPU6886 6DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x47, "ICM42688P 6DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x68, "MPU6000 / MPU6050 / MPU9150 6/9DOF motion"}, 
-  {0x68, 0x69, 0x75, 1, 0x69, "FAKE MPU6050, got WHO_AM_I=0x69, real chip returns 0x68"},
-  {0x68, 0x69, 0x75, 1, 0x70, "MPU6500 6DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x71, "MPU9250 9DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x72, "FAKE MPU6050, got WHO_AM_I=0x72, real chip returns 0x68"},
-  {0x68, 0x69, 0x75, 1, 0x73, "MPU9255 9DOF motion"},
-  {0x68, 0x69, 0x75, 1, 0x74, "MPU9515 motion"},
-  {0x68, 0x69, 0x75, 1, 0x75, "FAKE MPU9250, got WHO_AM_I=0x75, real chip returns 0x71"}, 
-  {0x68, 0x69, 0x75, 1, 0x78, "FAKE MPU9250, got WHO_AM_I=0x78, real chip returns 0x71"},  
-  {0x68, 0x69, 0x75, 1, 0x98, "ICM20689 6DOF motion"},
-  {0x76, 0x77, 0x00, 1, 0x50, "BMP388 pressure"},
-  {0x76, 0x77, 0x00, 1, 0x60, "BMP390 pressure"},
-  {0x76, 0x77, 0x0D, 1, 0x10, "DPS310 / HP303B / SPL06 pressure"},
-  {0x76, 0x77, 0x8F, 1, 0x80, "HP203B pressure"},
-  {0x76, 0x77, 0xD0, 1, 0x55, "BMP180 pressure"},
-  {0x76, 0x77, 0xD0, 1, 0x56, "BMP280 pressure"},
-  {0x76, 0x77, 0xD0, 1, 0x57, "BMP280 pressure"},
-  {0x76, 0x77, 0xD0, 1, 0x58, "BMP280 pressure"},
-  {0x76, 0x77, 0xD0, 1, 0x60, "BME280 pressure, temperature, humidity"},
-  {0x76, 0x77, 0xD0, 1, 0x61, "BME680 pressure, temperature, humidity, gas"},
-  {0x7C, 0x7C, 0x00, 1, 0x90, "QMC6309 magnetometer"},
+//table of addresses, 8/16bit register and 8/16/24bit expected reply (use 0x10000 for 16 bit register 0)
+const test_struct tests[] = {
+// adr1  adr2  reg      expected  descr
+  {0x10, 0x13, 0x40,    0x32,     "BMM150 magnetometer"},
+  {0x1E, 0x1E, 0x0A,    0x483433, "HMC5883L magnetometer"}, // ID-Reg-A 'H', ID-Reg-B '4', ID-Reg-C '3'
+  {0x30, 0x0D, 0x39,    0x10,     "MMC5603 magnetometer"},
+  {0x0D, 0x0D, 0x0D,    0xFF,     "QMC5883L magnetometer"},
+  {0x2C, 0x2C, 0x00,    0x80,     "QMC5883P magnetometer"},
+  {0x7C, 0x7C, 0x00,    0x90,     "QMC6309 magnetometer"},
 
-  {0,0,0,0,0,""} //end
+  {0x42, 0x42, 0x00,    0x9B,     "GC0308 camera"},
+  {0x30, 0x30, 0x00,    0x01B0,   "HM01B0 camera"},
+  {0x24, 0x25, 0x10000, 0x0360,   "HM0360 camera"},
+  {0x34, 0x35, 0x10000, 0x0360,   "HM0360 camera"},
+  {0x30, 0x30, 0x0A,    0x26,     "OV2460 camera"},
+  {0x3C, 0x3C, 0x300A,  0x3660,   "OV3660 camera"},
+  {0x3C, 0x3C, 0x300A,  0x5640,   "OV5640 camera"},
+  {0x42, 0x42, 0x0A,    0x76,     "OV7670 camera"},
+  {0x42, 0x42, 0x0A,    0x77,     "OV7725 camera"},
+  {0x30, 0x30, 0x0A,    0x9711,   "OV9712 / OV9211 camera"},
+
+  {0x40, 0x4F, 0x00,    0x399F,   "INA219 current sensor"},
+  {0x40, 0x4F, 0x00,    0x4127,   "INA226 current sensor"},
+  {0x40, 0x4F, 0x3F,    0x2281,   "INA228 current sensor"},
+
+  {0x48, 0x4F, 0x01,    0x8583,   "ADS1113 / ADS1114 / ADS1115 ADC"},
+
+  {0x51, 0x51, 0x03,    0x3B,     "DTS6012M lidar"},
+  {0x29, 0x29, 0x010F,  0xEAAA,   "VL53L3CX time-of-flight distance"},
+
+  {0x68, 0x69, 0x75,    0x12,     "ICM20602 6DOF motion"},
+  {0x68, 0x69, 0x75,    0x98,     "ICM20689 6DOF motion"},
+  {0x68, 0x69, 0x00,    0xEA,     "ICM20948 9DOF motion"},
+  {0x68, 0x69, 0x75,    0x47,     "ICM42688P 6DOF motion"},
+  {0x68, 0x69, 0x00,    0x68,     "MPU3050 motion"},
+  {0x68, 0x69, 0x00,    0x69,     "MPU3050 motion"},
+  {0x68, 0x69, 0x75,    0x68,     "MPU6000 / MPU6050 / MPU9150 6/9DOF motion"},
+  {0x68, 0x69, 0x75,    0x70,     "MPU6500 6DOF motion"},
+  {0x68, 0x69, 0x75,    0x19,     "MPU6886 6DOF motion"},
+  {0x68, 0x69, 0x75,    0x74,     "MPU9515 motion"},
+  {0x68, 0x69, 0x75,    0x71,     "MPU9250 9DOF motion"},
+  {0x68, 0x69, 0x75,    0x73,     "MPU9255 9DOF motion"},
+
+  {0x68, 0x69, 0x75,    0x69,     "FAKE MPU6050, got WHO_AM_I=0x69, real chip returns 0x68"},
+  {0x68, 0x69, 0x75,    0x72,     "FAKE MPU6050, got WHO_AM_I=0x72, real chip returns 0x68"},
+  {0x68, 0x69, 0x75,    0x75,     "FAKE MPU9250, got WHO_AM_I=0x75, real chip returns 0x71"},
+  {0x68, 0x69, 0x75,    0x78,     "FAKE MPU9250, got WHO_AM_I=0x78, real chip returns 0x71"},
+
+  {0x76, 0x77, 0xD0,    0x61,     "BME680 barometer, temperature, humidity, gas"},
+  {0x76, 0x77, 0xD0,    0x55,     "BMP180 barometer"},
+  {0x76, 0x77, 0xD0,    0x56,     "BMP280 barometer"},
+  {0x76, 0x77, 0xD0,    0x57,     "BMP280 barometer"},
+  {0x76, 0x77, 0xD0,    0x58,     "BMP280 barometer"},
+  {0x76, 0x77, 0xD0,    0x60,     "BME280 barometer, temperature, humidity"},
+  {0x76, 0x77, 0x00,    0x50,     "BMP388 barometer"},
+  {0x76, 0x77, 0x00,    0x60,     "BMP390 barometer"},
+  {0x46, 0x47, 0x01,    0x50,     "BMP580 / BMP581 barometer"},
+  {0x46, 0x47, 0x01,    0x51,     "BMP585 barometer"},
+  {0x76, 0x77, 0x0D,    0x10,     "DPS310 / HP303B / SPL06 barometer"},
+  {0x76, 0x77, 0x8F,    0x80,     "HP203B barometer"},
+
+  {0,0,0,0,""} //end
 };
 
 struct adrtest_struct{
@@ -166,7 +174,7 @@ struct adrtest_struct{
 };
 
 //address only tests
-adrtest_struct adrtests[] = {
+const adrtest_struct adrtests[] = {
 // adr1  adr2  descr
   {0x29, 0x29, "VL53L7CX"}, //no public register map available
   {0x77, 0x77, "MS5611"}, //no ID register
@@ -180,22 +188,20 @@ void i2c_identify_chip(uint8_t adr, String &msg) {
     uint8_t adr1 = tests[i].adr1;
     uint8_t adr2 = tests[i].adr2;
     uint32_t reg = tests[i].reg;
-    uint8_t len = tests[i].len;
     uint32_t expected = tests[i].expected;
     uint32_t received = 0;
+    uint8_t rlen = (expected >= 0x10000 ? 3 : (expected >= 0x100 ? 2 : 1));
     if((adr1 <= adr) && (adr <= adr2)) {
       uint8_t data[4];
-      if(reg <= 0xff) {
-        Serial.printf("try: %s --> read adr:0x%02X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
-      }else{
-        Serial.printf("try: %s --> read adr:0x%04X reg:0x%02X len:%d --> ", tests[i].descr.c_str(), adr, reg, len);
+      Serial.printf("try: %s --> read adr:0x%02X reg:%02X --> received:", tests[i].descr.c_str(), (int)adr, (int)reg);
+      int reveivedlen = i2c_ReadRegs(adr, reg, data, rlen, true);
+      for(int i = 0; i < reveivedlen; i++) {
+        received = (received << 8) + data[i];
+        Serial.printf("%02X", (int)data[i]);
       }
-      i2c_ReadRegs(adr, reg, data, len, true);
-      for(int i=0;i<len;i++) received = (received<<8) + data[i];
-      Serial.printf("received:0x%02X ", (int)received);
       if(received == expected) {
         msg = tests[i].descr;
-        Serial.printf("--> %s\n",msg.c_str());
+        Serial.printf(" --> MATCH\n");
         return;
       } 
       Serial.printf("\n");
@@ -208,7 +214,7 @@ void i2c_identify_chip(uint8_t adr, String &msg) {
   while(adrtests[i].adr1) {
     int adr1 = adrtests[i].adr1;
     int adr2 = adrtests[i].adr2;    
-    if(adr1<=adr && adr<=adr2) {
+    if((adr1 <= adr) && (adr <= adr2)) {
       msg = adrtests[i].descr + String(" - ADDRESS MATCH ONLY");
       return;
     }

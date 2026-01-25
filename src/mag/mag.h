@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../hal/MF_I2C.h"
 #include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 struct MagState {
   public:
@@ -66,6 +67,9 @@ class Mag : public MagState {
     uint32_t _samplePeriod = 10000; //gizmo sample period in [us]
     MF_Schedule schedule;
     bool _installed = false;
+    
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("MAG");
 };
 
 //Global module instance

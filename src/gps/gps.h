@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 /// GPS fix codes.  These are kept aligned with MAVLink
 enum GPS_Status {
@@ -90,6 +91,9 @@ class Gps : public GpsState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("GPS");
 };
 
 //Global module instance

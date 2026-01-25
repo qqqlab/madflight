@@ -98,6 +98,8 @@ public:
   }
 
   bool update(float *press, float *temp) override {
+    if(micros() - ((BarState*)this)->ts < 10000) return false; //sample rate is 85Hz, 11.7ms, bail out if last sample was less than 10 ms ago
+
     // Variable to track errors returned by API calls
     int8_t err = BMP5_OK;
 

@@ -104,13 +104,14 @@ void freertos_ps()
   uint32_t totalRunTime = tanew.ulTotalRunTime - taold.ulTotalRunTime;
   uint64_t tot = 0;
 
-  Serial.printf("\n=== FreeRTOS TASKS ===\n\n");
-  Serial.print("TID Name          CPU% Free S PR NI");
+  Serial.printf("\n=== FreeRTOS Tasks ===\n\n");
+  Serial.print("TID Name           CPU% Free S PR NI");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
     Serial.print(" Core");
   #endif
   Serial.println();
 
+  float perc_sum = 0;
   for( uint32_t i = 0; i < tanew.uxArraySize; i++ )
   {
     TaskStatus_t &t = tanew.pxTaskStatusArray[i];
@@ -122,11 +123,12 @@ void freertos_ps()
         runtime -= (uint32_t)told.ulRunTimeCounter;
       }
     }
-
-    Serial.printf("%3d %-12s %4.1f%% %4d %c %2d %2d",
+    float perc = (float)runtime / totalRunTime * 100;
+    perc_sum += perc;
+    Serial.printf("%3d %-12s%6.2f%% %4d %c %2d %2d",
       (int)t.xTaskNumber,
       t.pcTaskName,
-      (float)runtime / totalRunTime * 100,
+      (float)perc,
       (int)t.usStackHighWaterMark,
       freertos_taskStatusChar(t.eCurrentState),
       (int)t.uxBasePriority,
@@ -140,5 +142,6 @@ void freertos_ps()
     Serial.printf("\n");
     tot += runtime;
   }
+  Serial.printf("    Total       %6.2f%%\n", perc_sum);
 #endif
 }

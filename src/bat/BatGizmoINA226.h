@@ -29,8 +29,10 @@ public:
   }
 
   bool update() override {
-    if(!bat_ina226.isConversionReady()) return false;
     uint32_t now = micros();
+    if(now - state->ts < 33000) return false; //sample time is 36ms, start polling after 33ms
+  
+    if(!bat_ina226.isConversionReady()) return false;
     float dt_h = (now - state->ts) / 3600e6;
     state->i = bat_ina226.readShuntCurrent();
     state->v = bat_ina226.readBusVoltage();

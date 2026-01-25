@@ -29,26 +29,33 @@ SOFTWARE.
 #include <Arduino.h>
 
 class RuntimeTrace {
+  friend class RuntimeTraceGroup;
 public:
-  char name[9] = {0};
-  uint32_t begin_ts = 0;
-  uint32_t acc_cnt = 0; //accumulated update loops
-  uint32_t acc_dt = 0; //accumulated runtime
-  bool report = true;
+  RuntimeTrace(const char* name);
+  void start();
+  void stop(bool updated);
 
-  RuntimeTrace(const char* name, bool report = true);
-  void begin();
-  void end();
+private:
+  char name[9] = {};
+  volatile uint32_t start_ts = 0; //start() timestamp
+  uint32_t reset_ts = micros(); //counting since
+  uint32_t n = 0; //accumulated loops
+  uint32_t dt = 0; //accumulated runtime
+  uint32_t n_upd = 0; //accumulated updated loops
+  uint32_t dt_upd = 0; //accumulated updated runtime
+  float perc = 0; //for print
+  float perc_upd = 0; //for print
+
+  void reset(uint32_t now);
+  void print(uint32_t now);
 };
 
 class RuntimeTraceGroup {
-private:
-  uint32_t ts = 0; //last statistics timestamp
-  RuntimeTrace* arr[RUNTIMETRACE_NUM] = {0};
-
 public:
-  int add(RuntimeTrace *item);
-  void report(uint32_t now);
-};
+  static int add(RuntimeTrace *item);
+  static void print();
+  static void reset();
 
-extern RuntimeTraceGroup runtime_trace_group;
+private:
+  static RuntimeTrace* arr[RUNTIMETRACE_NUM];  
+};

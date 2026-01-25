@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 #define RCL_MAX_CH 20 //maximum number of channels
 
@@ -92,6 +93,8 @@ class Rcl {
     bool _arm_sw_prev = true; //default to true, to require arm switch first off, then on to enter armed state!
     uint32_t _arm_ts = 0;
     int _update_count = 0;
+
+    RuntimeTrace runtimeTrace = RuntimeTrace("RCL");
 };
 
 extern Rcl rcl;

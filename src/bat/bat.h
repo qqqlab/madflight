@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_I2C.h"
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 struct BatState {
   public:
@@ -65,6 +66,9 @@ class Bat : public BatState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("BAT");
 };
 
 //Global module instance

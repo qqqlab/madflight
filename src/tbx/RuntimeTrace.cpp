@@ -24,27 +24,53 @@ SOFTWARE.
 
 #include "RuntimeTrace.h"
 
-RuntimeTraceGroup runtime_trace_group;
+RuntimeTrace* RuntimeTraceGroup::arr[RUNTIMETRACE_NUM] = {};
 
-RuntimeTrace::RuntimeTrace(const char* name, bool report) {
+RuntimeTrace::RuntimeTrace(const char* name) {
   strncpy(this->name, name, 8);
-  this->report = report;
-  runtime_trace_group.add(this);
+  RuntimeTraceGroup::add(this);
 }
 
-void RuntimeTrace::begin() {
-  begin_ts = micros();
+void RuntimeTrace::start() {
+  start_ts = micros();
 }
 
-void RuntimeTrace::end() {
-  uint32_t now = micros();
-  acc_dt += (micros() - begin_ts);
-  acc_cnt++;
-  if(report) runtime_trace_group.report(now);
+void RuntimeTrace::stop(bool updated) {
+  volatile uint32_t now = micros();
+  dt += (now - start_ts);
+  n++;
+  if(updated) {
+    dt_upd += (now - start_ts);
+    n_upd++;
+  }
 }
+
+void RuntimeTrace::reset(uint32_t now) {
+  reset_ts = now;
+  dt = 0;
+  n = 0;
+  dt_upd = 0;
+  n_upd = 0;
+}
+
+void RuntimeTrace::print(uint32_t now) {
+  uint32_t reset_dt = (now - reset_ts);
+  float hz = 1e6f * n / reset_dt;
+  perc = 100.0f * dt / reset_dt;
+  float rt = (n == 0 ? 0 : (float)dt / n);
+  float hz_upd = 1e6f * n_upd / reset_dt;
+  perc_upd = 100.0f * dt_upd / reset_dt;
+  float rt_upd = (n_upd == 0 ? 0 : (float)dt_upd / n_upd);
+  Serial.printf("%-8s %8.0fHz  %6.2f%%   %9.2fus %8.0fHz  %6.2f%%   %9.2fus\n", name, hz, perc, rt,  hz_upd, perc_upd, rt_upd);
+}
+
+
+
+
+
 
 int RuntimeTraceGroup::add(RuntimeTrace *item) {
-  for(int i=0;i<RUNTIMETRACE_NUM;i++) {
+  for(int i=0 ; i < RUNTIMETRACE_NUM; i++) {
     if(!arr[i]) {
       arr[i] = item;
       return i;
@@ -53,29 +79,48 @@ int RuntimeTraceGroup::add(RuntimeTrace *item) {
   return -1;
 }
 
-void RuntimeTraceGroup::report(uint32_t now) {
-  //report once per second
-  if(now - ts > 10000000) {
-    Serial.printf("TRACE:");
-    uint32_t dt = (now - ts) / 1000; //in [ms]
-    ts = now;
-    for(int i=0;i<RUNTIMETRACE_NUM;i++) {
-      RuntimeTrace *t = arr[i];
-      if(!t) break;
-      uint32_t hz = t->acc_cnt * 1000 / dt;
-      uint32_t rt = t->acc_dt / t->acc_cnt;
-      t->acc_cnt = 0;
-      t->acc_dt = 0;
-      Serial.printf("\t%s.hz:%d\t%s.rt:%d", t->name, (int)hz, t->name, (int)rt);
-    }
-    Serial.println();
+void RuntimeTraceGroup::print() {
+  if(!arr[0]) return;
+  volatile uint32_t now = micros();
+  uint32_t reset_dt = (now - arr[0]->reset_ts);
+  Serial.printf("\n=== Wallclock Runtime - Measurement Period: %.2f seconds ===\n\n", 1e-6 * reset_dt);
+
+  Serial.printf("Module        Calls  Wallclock     Runtime    Updates  Wallclock     Runtime\n");
+
+  //show non _xxx traces
+  float perc_sum = 0;
+  float perc_sum_t = 0;  
+  for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
+    RuntimeTrace *t = arr[i];
+    if(!t) break;
+    if(t->name[0] == '_') continue;
+    t->print(now);
+    perc_sum += t->perc;
+    perc_sum_t += t->perc_upd;
   }
+
+  Serial.printf("Other                %6.2f%%                           %6.2f%%              \n", 100.f - perc_sum, 0);
+
+  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", 100.f, perc_sum_t);
+
+  //show _xxx traces
+  for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
+    RuntimeTrace *t = arr[i];
+    if(!t) break;
+    if(t->name[0] != '_') continue;
+    t->print(now);
+    perc_sum += t->perc;
+    perc_sum_t += t->perc_upd;
+  }
+
+  reset();
 }
 
-/*
-RuntimeTrace::RuntimeTrace(const char* name) {}
-void RuntimeTrace::begin() {}
-void RuntimeTrace::end() {}
-int RuntimeTraceGroup::add(RuntimeTrace *item) {}
-void RuntimeTraceGroup::report(uint32_t now) {}
-*/
+void RuntimeTraceGroup::reset() {
+  volatile uint32_t now = micros();
+  for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
+    RuntimeTrace *t = arr[i];
+    if(!t) break;
+    t->reset(now);
+  }
+}

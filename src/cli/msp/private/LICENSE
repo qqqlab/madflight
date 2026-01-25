@@ -1,7 +1,6 @@
-/*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2016 rtlopez
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-===========================================================================================*/
-
-#pragma once
-
-#include <Arduino.h> //String+Serial
-
-//lowpass frequency to filter beta constant
-float lowpass_to_beta(float f0, float fs);
-
-void madflight_panic(String msg);
-void madflight_warn(String msg);
-void madflight_warn_or_panic(String msg, bool panic);

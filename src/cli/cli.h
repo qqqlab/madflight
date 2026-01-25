@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <Arduino.h> //String
 #include "../rcl/RclGizmoMavlink.h"
+#include "../tbx/RuntimeTrace.h"
 
 //cli command extension, return true if command was processed
 extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((weak));
@@ -47,9 +48,28 @@ public:
   void begin();
   void help();
 
+  void ps();
+
+private:
+  RuntimeTrace runtimeTrace = RuntimeTrace("CLI");
+
 //========================================================================================================================//
 //                                          COMMAND PROCESSING                                                            //
 //========================================================================================================================//
+
+public:
+  enum cli_mode_enum {
+    MODE_CLI,
+    MODE_MAV,
+    MODE_MSP
+  };
+
+private:
+  RclGizmoMavlink* mavlink = nullptr;
+  cli_mode_enum cli_mode = MODE_CLI;
+  bool update_MODE_CLI();
+  bool update_MODE_MSP();
+  bool update_MODE_MAV();
 
 private:
   String cmdline = "";
@@ -63,6 +83,8 @@ private:
   bool cmd_process_char(char c);
   String getCmdPart(uint32_t &pos);
   void processCmd();
+
+
 
 public:
   void executeCmd(String cmd, String arg1 = "", String arg2 = "");
@@ -95,12 +117,12 @@ public:
   //add custom print command, returns true if added
   bool add_print_command(const char *cmd, const char *info, void (*function)(void));
 
+
 private:
   uint32_t cli_print_time = 0;
 
   void cli_print_all(bool val);
   void cli_print_loop();
-  RclGizmoMavlink* mavlink = nullptr;
 };
 
 extern Cli cli;

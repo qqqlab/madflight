@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 struct RdrState {
   public:
@@ -62,6 +63,9 @@ class Rdr : public RdrState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("RDR");
 };
 
 //Global module instance

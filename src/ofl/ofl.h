@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 struct OflState {
   public:
@@ -76,6 +77,9 @@ class Ofl : public OflState {
       updated = false;
       return true;
     }
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("OFL");
 };
 
 //Global module instance

@@ -66,56 +66,59 @@ int Ofl::setup() {
 }
 
 bool Ofl::update() {
-  if(!gizmo) return false;
-  if(!gizmo->update()) return false;
+  runtimeTrace.start();
+  bool updated = (gizmo != nullptr);
+  updated = updated && gizmo->update();
 
-  //rotate sensor axis to NE(D) frame
-  float dxnew, dynew;
-  switch(config.ofl_align) {
-    case Cfg::ofl_align_enum::mf_NW:
-      dxnew = dx_raw;
-      dynew = -dy_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_SW:
-      dxnew = -dx_raw;
-      dynew = -dy_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_SE:
-      dxnew = -dx_raw;
-      dynew = dy_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_ES:
-      dxnew = -dy_raw;
-      dynew = dx_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_EN:
-      dxnew = dy_raw;
-      dynew = dx_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_WS:
-      dxnew = -dy_raw;
-      dynew = -dx_raw;
-      break;
-    case Cfg::ofl_align_enum::mf_WN:
-      dxnew = dy_raw;
-      dynew = -dx_raw;
-      break;
-    default:
-    case Cfg::ofl_align_enum::mf_NE:
-      dxnew = dx_raw;
-      dynew = dy_raw;
-      break;
+  if(updated) {
+    //rotate sensor axis to NE(D) frame
+    float dxnew, dynew;
+    switch(config.ofl_align) {
+      case Cfg::ofl_align_enum::mf_NW:
+        dxnew = dx_raw;
+        dynew = -dy_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_SW:
+        dxnew = -dx_raw;
+        dynew = -dy_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_SE:
+        dxnew = -dx_raw;
+        dynew = dy_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_ES:
+        dxnew = -dy_raw;
+        dynew = dx_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_EN:
+        dxnew = dy_raw;
+        dynew = dx_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_WS:
+        dxnew = -dy_raw;
+        dynew = -dx_raw;
+        break;
+      case Cfg::ofl_align_enum::mf_WN:
+        dxnew = dy_raw;
+        dynew = -dx_raw;
+        break;
+      default:
+      case Cfg::ofl_align_enum::mf_NE:
+        dxnew = dx_raw;
+        dynew = dy_raw;
+        break;
+    }
+
+    //convert from pixels to radians
+    dx = dxnew * config.ofl_cal_rad;
+    dy = dynew * config.ofl_cal_rad;
+    x += dx;
+    y += dy;
+    update_ts = micros();
+    update_cnt++;
   }
 
-  //convert from pixels to radians
-  dx = dxnew * config.ofl_cal_rad;
-  dy = dynew * config.ofl_cal_rad;
-  x += dx;
-  y += dy;
-  update_ts = micros();
-  update_cnt++;
-
-  updated = true;
-  return true;
+  runtimeTrace.stop(updated);
+  return updated;
 }
 

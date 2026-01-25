@@ -44,34 +44,50 @@ SERIAL_CONTROL (126)  //Qgroundcontrol mavlink console
 //-------------------------------------------------------------------------------------------
 // include mavlink library
 //-------------------------------------------------------------------------------------------
-//The MAVLink protocol code generator does its own alignment, so alignment cast warnings can be ignored
+// The MAVLink protocol code generator does its own alignment, so alignment cast warnings can be ignored
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
 #if defined(__GNUC__) && __GNUC__ >= 9
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #endif
 
-//reduce RAM footprint
-#define MAVLINK_COMM_NUM_BUFFERS 1
+// Prevent use of channel buffers ->> don't call any mavlink helpers with uint8_t chan argument
+#define MAVLINK_COMM_NUM_BUFFERS 0
+#define MAVLINK_GET_CHANNEL_BUFFER
+#define MAVLINK_GET_CHANNEL_STATUS
+#include "mavlink_c_library_v2/mavlink_types.h"
+mavlink_message_t* mavlink_get_channel_buffer(uint8_t chan);
+mavlink_status_t* mavlink_get_channel_status(uint8_t chan);
 
+// Finally, include mavlink.h
 #include "mavlink_c_library_v2/ardupilotmega/mavlink.h"
 //-------------------------------------------------------------------------------------------
 
 class RclGizmoMavlink : public RclGizmo {
   public:
-    RclGizmoMavlink(MF_Serial *ser_bus, uint32_t baud, uint16_t* pwm);
+    RclGizmoMavlink(MF_Serial *ser_bus, int32_t baud, uint16_t* pwm);
     bool update() override;
     bool telem_statustext(uint8_t severity, char *text);
     uint16_t *pwm = nullptr;
 
+    enum process_result_enum {
+      NONE,
+      MSG,
+      PWM
+    };
+
+    process_result_enum process_char(uint8_t c); //returns true if a valid message was received
   private:
+    mavlink_message_t mav_rxmsg; 
+    mavlink_status_t mav_status;
+
     MF_Serial *ser_bus;
     bool receive();
     
     //TELEM
     SemaphoreHandle_t tx_mux; //UART TX mutex
     void telem_update();
-    bool telem_send(mavlink_message_t *msg, uint16_t timeout_ms = 0);
+    bool telem_send(mavlink_message_t *pmsg, uint16_t timeout_ms = 0);
     
     //scheduled messages
     bool telem_heartbeat();
@@ -96,6 +112,15 @@ class RclGizmoMavlink : public RclGizmo {
       uint32_t last_ms = 0;
     };
 
-    static telem_sched_t telem_sched[]; 
-    uint8_t telem_sched_idx;
+    uint8_t telem_sched_idx = 0;
+
+    //messages to send with period in ms (0 is off)
+    telem_sched_t telem_sched[6] = {
+      {&RclGizmoMavlink::telem_param_list,             0}, //telem_param_list needs to be telem_sched[0]
+      {&RclGizmoMavlink::telem_heartbeat,           1000},
+      {&RclGizmoMavlink::telem_attitude,             250},
+      {&RclGizmoMavlink::telem_global_position_int, 1000},
+      {&RclGizmoMavlink::telem_gps_raw_int,         1000},
+      {&RclGizmoMavlink::telem_battery_status,      2000},
+    };
 };

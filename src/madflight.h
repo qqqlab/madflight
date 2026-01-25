@@ -73,12 +73,8 @@ extern const char madflight_config[];
 #include "veh/veh.h" //Vehicle info
 
 // toolbox
+#include "tbx/common.h" //madflight_warn and panic
 #include "tbx/RuntimeTrace.h"
-
-// prototypes
-void madflight_die(String msg);
-void madflight_warn(String msg);
-void madflight_warn_or_die(String msg, bool die);
 
 //===============================================================================================
 // madflight_setup()
@@ -107,7 +103,7 @@ void madflight_setup() {
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.writeToEeprom();
-    madflight_die("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
+    madflight_panic("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
   #endif
   cfg.loadFromEeprom(); //load parameters from EEPROM
   cfg.load_madflight(madflight_board, madflight_config); //load config
@@ -269,10 +265,10 @@ void madflight_setup() {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
     if(rv<=0) break;
     tries--;
-    madflight_warn_or_die("IMU init failed rv= " + String(rv) + ".", (tries <= 0) );
+    madflight_warn_or_panic("IMU init failed rv= " + String(rv) + ".", (tries <= 0) );
   }
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
-    madflight_die("IMU install failed.");
+    madflight_panic("IMU install failed.");
   }
   // Start IMU update handler
   if(imu.installed()) {
@@ -281,7 +277,7 @@ void madflight_setup() {
     if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
     if(!imu.waitNewSample()) {
-      madflight_die(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
+      madflight_panic(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
     }
 
     #ifndef MF_DEBUG
@@ -313,40 +309,7 @@ void madflight_setup() {
   led.enabled = true;
   led.color(0x00ff00); //switch color to green
   led.on();
+
+  RuntimeTraceGroup::reset();
 }
 
-//===============================================================================================
-// HELPERS
-//===============================================================================================
-
-void madflight_die(String msg) {
-  bool do_print = true;
-  led.enabled = true;
-  for(;;) {
-    if(do_print) Serial.print("FATAL ERROR: " + msg + " Press enter to start CLI...\n");
-    for(int i = 0; i < 20; i++) {
-      led.toggle();
-      uint32_t ts = millis();
-      while(millis() - ts < 50) {
-        if(cli.update()) do_print = false; //process CLI commands, stop error output after first command
-        rcl.update(); //keep rcl (mavlink?) running
-      } 
-    }
-  }
-}
-void madflight_warn(String msg) { 
-  Serial.print("WARNING: " + msg + "\n");
-  //flash LED for 1 second
-  for(int i = 0; i < 20; i++) {
-    led.toggle();
-    delay(50);
-  }
-}
-
-void madflight_warn_or_die(String msg, bool die) {
-  if(die) {
-    madflight_die(msg);
-  }else{
-    madflight_warn(msg);
-  }
-}
