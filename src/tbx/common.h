@@ -29,6 +29,5 @@ SOFTWARE.
 //lowpass frequency to filter beta constant
 float lowpass_to_beta(float f0, float fs);
 
+void madflight_die(String msg); //depreciated
 void madflight_panic(String msg);
-void madflight_warn(String msg);
-void madflight_warn_or_panic(String msg, bool panic);

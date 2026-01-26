@@ -33,6 +33,11 @@ float lowpass_to_beta(float f0, float fs) {
   return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
 }
 
+//depreciated
+void madflight_die(String msg) {
+  madflight_panic(msg);
+}
+
 void madflight_panic(String msg) {
   bool do_print = true;
   led.enabled = true;
@@ -46,21 +51,5 @@ void madflight_panic(String msg) {
         rcl.update(); //keep rcl (mavlink?) running
       } 
     }
-  }
-}
-void madflight_warn(String msg) { 
-  Serial.print("WARNING: " + msg + "\n");
-  //flash LED for 1 second
-  for(int i = 0; i < 20; i++) {
-    led.toggle();
-    delay(50);
-  }
-}
-
-void madflight_warn_or_panic(String msg, bool panic) {
-  if(panic) {
-    madflight_panic(msg);
-  }else{
-    madflight_warn(msg);
   }
 }

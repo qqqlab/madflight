@@ -73,7 +73,7 @@ extern const char madflight_config[];
 #include "veh/veh.h" //Vehicle info
 
 // toolbox
-#include "tbx/common.h" //madflight_warn and panic
+#include "tbx/common.h" //madflight_panic
 #include "tbx/RuntimeTrace.h"
 
 //===============================================================================================
@@ -265,7 +265,7 @@ void madflight_setup() {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
     if(rv<=0) break;
     tries--;
-    madflight_warn_or_panic("IMU init failed rv= " + String(rv) + ".", (tries <= 0) );
+    Serial.printf("IMU: WARNING init failed rv=%d\n", rv);
   }
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_panic("IMU install failed.");
@@ -274,7 +274,7 @@ void madflight_setup() {
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
-    if(!imu_loop) madflight_warn("'void imu_loop()' not defined.");
+    if(!imu_loop) Serial.println("IMU: WARNING 'void imu_loop()' not defined.");
     imu.onUpdate = imu_loop;
     if(!imu.waitNewSample()) {
       madflight_panic(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
