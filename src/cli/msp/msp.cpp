@@ -1,5 +1,5 @@
 #include <Arduino.h> //Serial
-#include "Msp.h"
+#include "msp.h"
 #include "private/MspProcessor.h"
 
 MspProcessor _msp;
