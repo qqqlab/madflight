@@ -22,21 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//This file is kept as header to allow #IMU_xxx defines to be added in user code (Arduino IDE has no easy way to add -D compiler options)
-
-// Make sure this file is included from madflight.h and not from somewhere else
-#ifndef MF_ALLOW_INCLUDE_CCP_H
-  #error "Only include this file from madflight.h"
-#endif
-//#pragma once //don't use here, we want to get an error if included twice
-
-//Available excecution methods (not all platforms support all methods)
-#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (works on STM32. Does NOT work on ESP32, RP2040)
-#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
-#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
-
 #include "./imu.h"
 #include "../cfg/cfg.h"
+#include "../hal/hal.h"
 
 //the "gizmos"
 #include "ImuGizmoMPUXXXX.h"
@@ -260,7 +248,7 @@ void _imu_ll_interrupt_handler();
       //
       #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
         int callcore = hal_get_core_num();
-        int othercore = (callcore+1)%2;
+        int othercore = (callcore + 1) % 2;
         
         //TODO move this to hal
         #if defined ARDUINO_ARCH_ESP32

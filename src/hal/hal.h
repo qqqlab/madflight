@@ -29,6 +29,15 @@ SOFTWARE.
 #include "MF_Serial.h"
 #include "MF_Schedule.h"
 #include <SPI.h> //Replace this with MF_SPI - but not really needed as RP2,ESP32,STM32 Arduino implementations are compatible
+#if defined ARDUINO_ARCH_ESP32
+  #include "ESP32/hal_ESP32.h"
+#elif defined ARDUINO_ARCH_RP2040
+  #include "RP2040/hal_RP2040.h"
+#elif defined ARDUINO_ARCH_STM32
+  #include "STM32/hal_STM32.h"
+#else 
+  #error "HAL: Unknown hardware architecture, madflight runs on ESP32 / RP2040 / STM32"
+#endif
 
 //prototypes
 void hal_startup(); //call this to setup USB CDC/MSC before calling Serial.begin() - see bbx/BbxGizmoSdcard_RP2.cpp
@@ -47,12 +56,3 @@ SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
 MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
 void hal_print_resources();
 
-#if defined ARDUINO_ARCH_ESP32
-  #include "ESP32/hal_ESP32.h"
-#elif defined ARDUINO_ARCH_RP2040
-  #include "RP2040/hal_RP2040.h"
-#elif defined ARDUINO_ARCH_STM32
-  #include "STM32/hal_STM32.h"
-#else 
-  #error "HAL: Unknown hardware architecture, madflight runs on ESP32 / RP2040 / STM32"
-#endif

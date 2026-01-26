@@ -48,9 +48,10 @@ RclGizmoMavlink::RclGizmoMavlink(MF_Serial *ser_bus, int32_t baud, uint16_t* pwm
 bool RclGizmoMavlink::update() {
   bool pwm_updated = false;
 
-  //receive first, don't fill up txbuf space with telemetry if we need to send a reply to received messages
-  uint8_t c;
-  while(ser_bus->read(&c, 1)) {
+  // receive first, don't fill up txbuf space with telemetry if we need to send a reply to received messages
+  int n = ser_bus->available(); //only process what is in the buffer now
+  for(int i = 0; i < n; i++) {
+    uint8_t c = ser_bus->read();
     if(process_char(c) == process_result_enum::PWM) pwm_updated = true;
   }
 
@@ -191,7 +192,7 @@ bool RclGizmoMavlink::telem_heartbeat() {
     , veh.flightmode_ap_id() // uint32_t custom_mode; /*<  A bitfield for use for autopilot-specific flags*/
     , MAV_STATE_STANDBY // uint8_t system_status; /*<  System status flag.*/
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 bool RclGizmoMavlink::telem_attitude() {
@@ -206,7 +207,7 @@ bool RclGizmoMavlink::telem_attitude() {
     , ahr.gy    * 0.0174533f
     , ahr.gz    * 0.0174533f
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 bool RclGizmoMavlink::telem_global_position_int() { //33
@@ -222,7 +223,7 @@ bool RclGizmoMavlink::telem_global_position_int() { //33
     , (gps.have_veld ? gps.veld / 10 : 0) //vz	int16_t	cm/s	Ground Z Speed (Altitude, positive down)
     , UINT16_MAX //hdg	uint16_t	cdeg	Vehicle heading (yaw angle), 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 bool RclGizmoMavlink::telem_gps_raw_int() {
@@ -245,7 +246,7 @@ bool RclGizmoMavlink::telem_gps_raw_int() {
     , 0          // uint32_t hdg_acc; /*< [degE5] Heading / track uncertainty*/
     , 0          // uint16_t yaw; /*< [cdeg] Yaw in earth frame from north. Use 0 if this GPS does not provide yaw. Use UINT16_MAX if this GPS is configured to provide yaw and is currently unable to provide it. Use 36000 for north.*/
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 bool RclGizmoMavlink::telem_battery_status() {
@@ -269,7 +270,7 @@ bool RclGizmoMavlink::telem_battery_status() {
     , 0 //uint8_t mode; /*<  Battery mode. Default (0) is that battery mode reporting is not supported or battery is in normal-use mode.*/
     , 0 //uint32_t fault_bitmask; /*<  Fault/health indications. These should be set when charge_state is MAV_BATTERY_CHARGE_STATE_FAILED or MAV_BATTERY_CHARGE_STATE_UNHEALTHY (if not, fault reporting is not supported).*/
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 //start sending param value list
@@ -295,7 +296,7 @@ bool RclGizmoMavlink::telem_param_value(uint16_t param_index) {
     , param_count
     , param_index
   );
-  return telem_send(&msg);
+  return telem_send(&msg, 0);
 }
 
 bool RclGizmoMavlink::telem_param_list() {
@@ -303,6 +304,7 @@ bool RclGizmoMavlink::telem_param_list() {
   if(telem_param_list_index < param_count) {
     if(telem_param_value(telem_param_list_index)) {
       telem_param_list_index++;
+      telem_sched_idx = 0; //schedule param_value next
       return true;
     }else{
       return false;
@@ -318,14 +320,16 @@ void RclGizmoMavlink::telem_update() {
   const uint8_t telem_sched_cnt = sizeof(RclGizmoMavlink::telem_sched) / sizeof(RclGizmoMavlink::telem_sched_t);
   uint32_t now = millis();
   for(int i = 0; i < telem_sched_cnt; i++) {
-    telem_sched_idx = (telem_sched_idx + 1) % telem_sched_cnt;
     telem_sched_t *sch = &telem_sched[telem_sched_idx];
     if(sch->interval_ms && ((now - sch->last_ms) > sch->interval_ms)) {
       sched_func_t f = sch->func;
       if( (this->*f)() ) {
         sch->last_ms = now;
+      }else{
+        break; //exit on failed send
       }
     }
+    telem_sched_idx = (telem_sched_idx + 1) % telem_sched_cnt;
   }
 }
 

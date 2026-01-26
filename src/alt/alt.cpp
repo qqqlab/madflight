@@ -26,24 +26,8 @@ SOFTWARE.
 Each ALT_USE_xxx section in this file defines a specific altimeter estimator class
 =================================================================================================*/
 
-// Make sure this file is included from madflight.h and not from somewhere else
-#ifndef MF_ALLOW_INCLUDE_CCP_H
-  #error "Only include this file from madflight.h"
-#endif
-//#pragma once //don't use here, we want to get an error if included twice
-
-#define ALT_USE_NONE    0
-#define ALT_USE_KALMAN2 1 // Kalman filter estimates h and v from barometer and acceleration
-#define ALT_USE_KALMAN3 2 // Kalman filter estimates h, v, and abias from barometer and acceleration
-#define ALT_USE_BAR     3 // Filtered barometer
-#define ALT_USE_COMP    4 // Complementary filter
-
+#include <Arduino.h>
 #include "alt.h" //declares AltEst - Altimeter Estimator base class
-
-//default for ALT (Altitude Estimation)
-#ifndef ALT_USE
-  #define ALT_USE ALT_USE_BARO
-#endif
 
 //=================================================================================================
 // None or undefined

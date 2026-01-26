@@ -35,46 +35,7 @@ extern const char madflight_config[];
   const char madflight_board[] = "";
 #endif
 
-#ifndef ALT_USE
-  #define ALT_USE ALT_USE_KALMAN3
-#endif
-
-#include <Arduino.h> //keep PlatformIO happy
-#include "madflight_version.h"
-
-// bus abstraction
-#include "hal/MF_Serial.h"
-#include "hal/MF_I2C.h"
-
-// include all "_cpp.h" modules which have compile time config options
-#define MF_ALLOW_INCLUDE_CCP_H
-#include "alt/alt_cpp.h" //Altitude estimator (TODO - convert to use gizmos)
-#include "hal/hal_cpp.h"
-#include "imu/imu_cpp.h" //for IMU_EXEC
-#undef MF_ALLOW_INCLUDE_CCP_H
-
-// include all other modules without compile time config options
-#include "ahr/ahr.h" //AHRS
-#include "cfg/cfg.h" //Config
-#include "cli/cli.h" //Command Line Interface
-#include "bar/bar.h" //Barometer sensor
-#include "bat/bat.h" //Battery sensor
-#include "bbx/bbx.h" //Blackbox SDCARD
-#include "gps/gps.h" //GPS
-#include "led/led.h" //LED
-#include "lua/lua.h" //Lua scripting
-#include "mag/mag.h" //Magnetometer sensor
-#include "ofl/ofl.h" //Optical flow sensor
-#include "out/out.h" //Outputs (motor, servo)
-#include "pid/pid.h" //PIDController control
-#include "rcl/rcl.h" //RC radio link
-#include "rdr/rdr.h" //Radar, lidar, ultrasonic sensors
-#include "tbx/tbx.h" //Toolbox common tools
-#include "veh/veh.h" //Vehicle info
-
-// toolbox
-#include "tbx/common.h" //madflight_panic
-#include "tbx/RuntimeTrace.h"
+#include "madflight_modules.h"
 
 //===============================================================================================
 // madflight_setup()

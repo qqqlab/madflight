@@ -24,6 +24,16 @@ SOFTWARE.
 
 #pragma once
 
+#ifndef ALT_USE
+  #define ALT_USE ALT_USE_KALMAN3
+#endif
+
+#define ALT_USE_NONE    0
+#define ALT_USE_KALMAN2 1 // Kalman filter estimates h and v from barometer and acceleration
+#define ALT_USE_KALMAN3 2 // Kalman filter estimates h, v, and abias from barometer and acceleration
+#define ALT_USE_BAR     3 // Filtered barometer
+#define ALT_USE_COMP    4 // Complementary filter
+
 //=================================================================================================
 // ALT - Altitude Estimator
 //=================================================================================================

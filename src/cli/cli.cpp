@@ -1,24 +1,5 @@
 #include "cli.h"
-#include "../madflight_version.h"
-
-//include all module interfaces
-#include "../ahr/ahr.h"
-#include "../alt/alt.h"
-#include "../bar/bar.h"
-#include "../bat/bat.h"
-#include "../cfg/cfg.h"
-#include "../gps/gps.h"
-#include "../hal/hal.h"
-#include "../imu/imu.h"
-#include "../led/led.h"
-#include "../bbx/bbx.h"
-#include "../mag/mag.h"
-#include "../ofl/ofl.h"
-#include "../out/out.h"
-#include "../pid/pid.h"
-#include "../rcl/rcl.h"
-#include "../rdr/rdr.h"
-#include "../veh/veh.h"
+#include "../madflight_modules.h"
 
 #include "msp/msp.h"
 #include "cli_RclCalibrate.h"
@@ -394,8 +375,6 @@ bool Cli::update_MODE_MSP() {
 }
 
 bool Cli::update_MODE_MAV() {
-  led.color(0xff00ff);
-  led.toggle();
   return mavlink->update();
 }
 

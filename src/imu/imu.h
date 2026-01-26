@@ -24,6 +24,11 @@ SOFTWARE.
 
 #pragma once
 
+//Available excecution methods (not all platforms support all methods)
+#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (works on STM32. Does NOT work on ESP32, RP2040)
+#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
+#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
+
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"

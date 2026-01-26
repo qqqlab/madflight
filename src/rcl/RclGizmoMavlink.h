@@ -87,7 +87,7 @@ class RclGizmoMavlink : public RclGizmo {
     //TELEM
     SemaphoreHandle_t tx_mux; //UART TX mutex
     void telem_update();
-    bool telem_send(mavlink_message_t *pmsg, uint16_t timeout_ms = 0);
+    bool telem_send(mavlink_message_t *pmsg, uint16_t timeout_ms);
     
     //scheduled messages
     bool telem_heartbeat();
@@ -118,9 +118,9 @@ class RclGizmoMavlink : public RclGizmo {
     telem_sched_t telem_sched[6] = {
       {&RclGizmoMavlink::telem_param_list,             0}, //telem_param_list needs to be telem_sched[0]
       {&RclGizmoMavlink::telem_heartbeat,           1000},
-      {&RclGizmoMavlink::telem_attitude,             250},
       {&RclGizmoMavlink::telem_global_position_int, 1000},
       {&RclGizmoMavlink::telem_gps_raw_int,         1000},
       {&RclGizmoMavlink::telem_battery_status,      2000},
+      {&RclGizmoMavlink::telem_attitude,             250},
     };
 };

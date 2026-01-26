@@ -162,8 +162,5 @@ const char madflight_config[] = R""(
 // Reset config eeprom to defaults (uncomment this, upload, execute, then comment out, and upload again)
 //#define MF_CONFIG_CLEAR
 
-// Uncomment to print additional debug information and reduce startup delay
+// Uncomment to reduce startup delay
 //#define MF_DEBUG
-
-// Uncomment to enable Lua Scripting
-//#define MF_LUA_ENABLE 1

@@ -2,10 +2,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "../../../madflight_version.h"
-#include "../../../ahr/ahr.h"
-#include "../../../bat/bat.h"
-#include "../../../rcl/rcl.h"
+#include "../../../madflight_modules.h"
 
 /*
 //betaflight msp flow

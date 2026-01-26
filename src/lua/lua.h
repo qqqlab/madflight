@@ -47,4 +47,4 @@ public:
 #endif // #if MF_LUA_ENABLE
 
 
-LuaClass lua;
+extern LuaClass lua;

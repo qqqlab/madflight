@@ -1,63 +1,40 @@
+/*==========================================================================================
+MIT License
 
+Copyright (c) 2023-2026 https://madflight.com
 
-#ifndef MF_MCU_NAME
-  #ifdef CONFIG_IDF_TARGET_ESP32S3
-    #define MF_MCU_NAME "ESP32-S3"
-  #elif defined CONFIG_IDF_TARGET_ESP32
-    #define MF_MCU_NAME "ESP32"
-  #else
-    #define MF_MCU_NAME "ESP32 (unsupported type)"
-  #endif
-#endif
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-//======================================================================================================================//
-//                    IMU
-//======================================================================================================================//
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
-#endif
-#ifndef IMU_FREERTOS_TASK_PRIORITY
-  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 1) //IMU Interrupt task priority, higher number is higher priority.
-#endif
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-//======================================================================================================================//
-//  hal_setup()
-//======================================================================================================================//
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
 
-/*--------------------------------------------------------------------------------------------------
-  IMPORTANT
-  
-  ESP32 Wire has a bug in I2C which causes the bus to hang for 1 second after a failed read, which can 
-  happen a couple times per minute. This makes Wire I2C for IMU not a real option... 
-  See --> https://github.com/espressif/esp-idf/issues/4999
+#ifdef ARDUINO_ARCH_ESP32
 
-  Uncomment USE_ESP32_SOFTWIRE to use software I2C, but this does not work well with all sensors...
-  
-  So, until a better I2C solution is available: use an SPI IMU sensor on ESP32!!!!
-----------------------------------------------------------------------------------------------------*/  
-//#define USE_ESP32_SOFTWIRE //uncomment to use SoftWire instead of Wire
-
-//-------------------------------------
-//Include Libraries
-//-------------------------------------
+#include "../hal.h"
+#include "../../cfg/cfg.h"
+#include <SPI.h> //SPI communication
+#include "ESP32_PWM_cpp.h" //Servo and oneshot
 #ifdef USE_ESP32_SOFTWIRE
   #include "ESP32_SoftWire.h"
 #else
   #include <Wire.h>
 #endif
-#include <SPI.h> //SPI communication
-#include "ESP32_PWM_cpp.h" //Servo and onshot
-#include "../MF_Serial.h"
-#include "../MF_I2C.h"
 
-//-------------------------------------
 //Bus Setup
-//-------------------------------------
-
-#define HAL_SER_NUM 3
-#define HAL_I2C_NUM 2
-#define HAL_SPI_NUM 2
-
 MF_I2C    *hal_i2c[HAL_I2C_NUM] = {};
 MF_Serial *hal_ser[HAL_SER_NUM] = {};
 SPIClass  *hal_spi[HAL_SPI_NUM] = {};
@@ -276,3 +253,19 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 
   return hal_ser[bus_id];
 }
+
+MF_I2C* hal_get_i2c_bus(int bus_id) { 
+  if(bus_id < 0 || bus_id >= HAL_I2C_NUM) return nullptr;
+  MF_I2C *i2c_bus = hal_i2c[bus_id];
+  if(!i2c_bus) return nullptr;
+  return i2c_bus;
+}
+
+SPIClass* hal_get_spi_bus(int bus_id) {
+  if(bus_id < 0 || bus_id >= HAL_SPI_NUM) return nullptr;
+  SPIClass *spi_bus = hal_spi[bus_id];
+  if(!spi_bus) return nullptr;
+  return spi_bus;
+}
+
+#endif //#ifdef ARDUINO_ARCH_ESP32

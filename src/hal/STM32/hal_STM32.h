@@ -7,6 +7,18 @@
   #define MF_HACK_STM32_INTERRUPT_PRIORITY 1
 #endif
 
+#if MF_HACK_STM32_INTERRUPT_PRIORITY
+  IRQn_Type hal_get_irqn_from_pin(int pin);
+#endif  
+
+#ifndef IMU_EXEC
+  #define IMU_EXEC IMU_EXEC_IRQ //Use IMU as interrupt by default
+#endif
+
+#define HAL_SER_NUM 8
+#define HAL_I2C_NUM 2
+#define HAL_SPI_NUM 2
+
 #include <Arduino.h>
 #include <STM32FreeRTOS.h>
 #include "STM32_PWM.h" //Servo and oneshot
