@@ -57,39 +57,51 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
     //check whoami
     int wai = whoami();
     if(_type == MPU6000 && wai != 0x68) {
-        Serial.printf("WARNING: MPU6000 whoami mismatch, got:0x%02X expected:0x68\n",wai);
+        Serial.printf("IMU: WARNING: MPU6000 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        _type = AUTO;
     }  
     if(_type == MPU6050 && wai != 0x68) {
-        Serial.printf("WARNING: MPU6050 whoami mismatch, got:0x%02X expected:0x68\n",wai);
+        Serial.printf("IMU: WARNING: MPU6050 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        _type = AUTO;
     }
+    if(_type == MPU60X0 && wai != 0x68) {
+        Serial.printf("IMU: WARNING: MPU60X0 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        _type = AUTO;
+    }    
     if(_type == MPU6500 && wai != 0x70) {
-        Serial.printf("WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70\n",wai);
+        Serial.printf("IMU: WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70, attempting autodetect\n",wai);
+        _type = AUTO;
     }
     if(_type == MPU9150 && wai != 0x68) {
-        Serial.printf("WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68\n",wai);
+        Serial.printf("IMU: WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        _type = AUTO;
     }  
     if(_type == MPU9250 && wai != 0x71 && wai != 0x73) {  // MPU9250 -> 0x71, MPU9255 -> 0x73
         if(wai == 0x70) {
-            Serial.printf("WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500\n",wai);
+            Serial.printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500, attempting autodetect\n",wai);
         }else{
-            Serial.printf("WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71\n",wai);
+            Serial.printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71, attempting autodetect\n",wai);
         }
+        _type = AUTO;
     }
 
-    //setup auto type
-    switch(wai) {
-        case 0x68: //MPU6000, MPU6050, MPU9150
-            _type = MPUXXXX::MPU_Type::MPU6000; 
-            break;
-        case 0x70: //MPU6500
-            _type = MPUXXXX::MPU_Type::MPU6500; 
-            break; 
-        case 0x71: //MPU9250
-        case 0x73: //MPU9255
-            _type = MPUXXXX::MPU_Type::MPU9250; 
-            break;
-        default:   
-            return -99; //autodetect error
+    //setup type by whoami
+    if(_type == AUTO) {
+        switch(wai) {
+            case 0x68: //MPU6000, MPU6050, MPU9150
+                _type = MPU60X0; 
+                break;
+            case 0x70: //MPU6500
+                _type = MPU6500; 
+                break; 
+            case 0x71: //MPU9250
+            case 0x73: //MPU9255
+                _type = MPU9250; 
+                break;
+            default:
+                return -99; //autodetect error
+        }
+        Serial.printf("IMU: Autodetected %s\n", type_name());
     }
 
     //config
@@ -167,6 +179,7 @@ const char* MPUXXXX::type_name() {
     switch (_type) {
     case MPU6000: return "MPU6000";
     case MPU6050: return "MPU6050";
+    case MPU60X0: return "MPU60X0";
     case MPU6500: return "MPU6500";
     case MPU9150: return "MPU9150";
     case MPU9250: return "MPU9250";
@@ -175,7 +188,7 @@ const char* MPUXXXX::type_name() {
 }
 
 void MPUXXXX::set_acc_resolution() {
-    if(_type == MPU6000 || _type == MPU6050) {
+    if(_type == MPU6000 || _type == MPU6050 || _type == MPU60X0 || _type == MPU9150) {
         uint8_t data[6] = {0};
         _dev->readRegs(MPUREG_XA_OFFS_H,data,6);
         rev1 = ((data[5]&1)<<2) | ((data[3]&1)<<1) | ((data[1]&1)<<0);
@@ -183,7 +196,7 @@ void MPUXXXX::set_acc_resolution() {
         //rev 0.4 and 1.x have half acc resolution
         acc_resolution = ( (rev1 == 0 && rev2 == 4) || (rev1 == 1) ? 16384 : 32786);
 
-        Serial.printf("MPU60X0 revision:%d.%d\n",(int)rev1,(int)rev2);
+        Serial.printf("IMU: MPU60X0 revision:%d.%d\n",(int)rev1,(int)rev2);
     }else{
         acc_resolution = 32786;
     }

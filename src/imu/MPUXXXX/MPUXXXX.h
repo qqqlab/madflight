@@ -39,6 +39,7 @@ class MPUXXXX {
         AUTO, //autodetect
         MPU6000,
         MPU6050,
+        MPU60X0,
         MPU6500,
         MPU9150,
         MPU9250

@@ -962,7 +962,7 @@ void Cli::calibrate_info(int seconds) {
     mz.print("mz[uT]        ", seconds);
   }
 
-
+  Serial.println("\ncalinfo completed\n");
 }
 
 //========================================================================================================================//
