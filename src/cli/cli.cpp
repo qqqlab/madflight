@@ -769,22 +769,12 @@ void Cli::calibrate_Magnetometer() {
   }
 }
 
-
-
-//get a reading from the external or imu magnetometer
+//get a reading from the magnetometer
 bool Cli::_calibrate_Magnetometer_ReadMag(float *m) {
-  if (mag.installed()) {
-    mag.update();
-    m[0] = mag.x;
-    m[1] = mag.y;
-    m[2] = mag.z;
-  }else{
-    if(!imu.config.has_mag) return false;
-    imu.waitNewSample();
-    m[0] = imu.mx;
-    m[1] = imu.my;
-    m[2] = imu.mz;
-  }
+  mag.update();
+  m[0] = mag.mx;
+  m[1] = mag.my;
+  m[2] = mag.mz;
   return true;
 }
 
@@ -805,7 +795,7 @@ bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3])
   float m_min[3];
 
   //exit if no mag present
-  if(!_calibrate_Magnetometer_ReadMag(m)) return false;
+  if(!mag.installed()) return false;
 
   // get starting set of data
   for(int i=0;i<50;i++) {
@@ -902,16 +892,7 @@ void Cli::calibrate_info(int seconds) {
       gx.append(imu.gx);
       gy.append(imu.gy);
       gz.append(imu.gz);
-      last_cnt = imu.update_cnt;
-      if(!mag.installed() && imu.config.has_mag && ((imu.mx != mx_last) || (imu.my != my_last) || (imu.mz != mz_last))) {
-        //only record if at least one value is changed
-        mx.append(imu.mx);
-        my.append(imu.my);
-        mz.append(imu.mz);
-        mx_last = imu.mx;
-        my_last = imu.my;
-        mz_last = imu.mz;
-      }    
+      last_cnt = imu.update_cnt;  
     }
     if(bar.installed() && bar.update() && ((bar.press != bp_last) || (bar.alt != ba_last) || (bar.temp != bt_last))) {
       //only record if at least one value is changed
@@ -922,35 +903,35 @@ void Cli::calibrate_info(int seconds) {
       ba_last = bar.alt;
       bt_last = bar.temp;
     }
-    if(mag.installed() && mag.update() && ((mag.x != mx_last) || (mag.y != my_last) || (mag.z != mz_last))) {
+    if(mag.installed() && mag.update() && ((mag.mx != mx_last) || (mag.my != my_last) || (mag.mz != mz_last))) {
       //only record if at least one value is changed
-      mx.append(mag.x);
-      my.append(mag.y);
-      mz.append(mag.z);
-      mx_last = mag.x;
-      my_last = mag.y;
-      mz_last = mag.z;
+      mx.append(mag.mx);
+      my.append(mag.my);
+      mz.append(mag.mz);
+      mx_last = mag.mx;
+      my_last = mag.my;
+      mz_last = mag.mz;
     }
   } 
 
   if(report_spikes) {
     Serial.printf("### SENSOR SPIKE REPORT - " MADFLIGHT_VERSION " ###\n\n");
-    Serial.printf("=== %s Gyro %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+    Serial.printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
     gx.print_spikes("gx[deg/s]     ");
     gy.print_spikes("gy[deg/s]     ");
     gz.print_spikes("gz[deg/s]     ");
-    Serial.printf("=== %s Accelerometer %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+    Serial.printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
     ax.print_spikes("ax[g]         ");
     ay.print_spikes("ay[g]         ");
     az.print_spikes("az[g]         ");
     if(sp.n > 0) {
-      Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
+      Serial.printf("=== %s Barometer I2C ===\n", bar.name());
       sa.print_spikes("Altitude[m]   ");
       sp.print_spikes("Pressure[Pa]  ");
       st.print_spikes("Temperature[C]");
     }
     if(mx.n > 0) {
-      Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
+      Serial.printf("=== %s Magnetometer I2C ===\n", mag.name());
       mx.print_spikes("mx[uT]        ");
       my.print_spikes("my[uT]        ");
       mz.print_spikes("mz[uT]        ");
@@ -959,22 +940,23 @@ void Cli::calibrate_info(int seconds) {
   }
 
   Serial.printf("### SENSOR STATISTICS REPORT - " MADFLIGHT_VERSION " ###\n\n");
-  Serial.printf("=== %s Gyro %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+  Serial.printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
   gx.print("gx[deg/s]     ", seconds);
   gy.print("gy[deg/s]     ", seconds);
   gz.print("gz[deg/s]     ", seconds);
-  Serial.printf("=== %s Accelerometer %s ===\n", imu.config.name, (imu.config.uses_i2c?"I2C":"SPI"));
+  Serial.printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
   ax.print("ax[g]         ", seconds);
   ay.print("ay[g]         ", seconds);
   az.print("az[g]         ", seconds);
   if(sp.n > 0) {
-    Serial.printf("=== %s Barometer I2C ===\n", bar.config.name);
+    Serial.printf("=== %s Barometer I2C ===\n", bar.name());
     sa.print("Altitude[m]   ", seconds);
     sp.print("Pressure[Pa]  ", seconds);
     st.print("Temperature[C]", seconds);
   }
   if(mx.n > 0) {
-    Serial.printf("=== %s Magnetometer I2C ===\n", mag.config.name);
+    float f = sqrt(mx.mean() * mx.mean() + my.mean() * my.mean() + mz.mean() * mz.mean());
+    Serial.printf("=== %s Magnetometer I2C - Field Strength: %.2f uT===\n", mag.name(), f);
     mx.print("mx[uT]        ", seconds);
     my.print("my[uT]        ", seconds);
     mz.print("mz[uT]        ", seconds);

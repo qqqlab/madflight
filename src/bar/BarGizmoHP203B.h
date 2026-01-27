@@ -50,6 +50,7 @@ private:
   }
 
 public:
+  const char* name() override {return "HP203B";}
   BarGizmoHP203B(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
     (void) sample_rate; //TODO - currently fixed at 120 Hz (8.2ms)
     if(i2c_adr == 0) i2c_adr = 0x76; // fixed: 0x76 or 0x77

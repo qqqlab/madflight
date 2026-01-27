@@ -9,6 +9,7 @@ protected:
   Adafruit_BMP280 bar_BMP280;
   float press_old = 0;
 public:
+  const char* name() override {return "BMP280";}
   BarGizmoBMP280(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
     (void) sample_rate; //TODO use sample_rate
     unsigned status;

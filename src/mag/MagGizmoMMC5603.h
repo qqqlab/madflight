@@ -28,12 +28,14 @@ SOFTWARE.
 
 #include "mag.h"
 #include "../hal/MF_I2C.h"
+#include "../tbx/common.h"
 
 class MagGizmoMMC5603 : public MagGizmo {
 private:
   MF_I2CDevice *dev = nullptr;
 
 public:
+    const char* name() override {return "MMC5603";}
     const float scale_uT = 0.00625; //scale factor to uT
     int32_t mx; //raw adc values
     int32_t my;
@@ -43,24 +45,57 @@ public:
     delete dev;
   }
 
+  static MagGizmoMMC5603* create(MagConfig *config, MagState *state) {
+    if(!config->i2c_bus) return nullptr;
+    MagGizmoMMC5603 *gizmo = new MagGizmoMMC5603(config->i2c_bus);
+    if(!gizmo->begin()) {
+      delete gizmo;
+      return nullptr;
+    }
+    return gizmo;
+  }
+
+private:
   MagGizmoMMC5603(MF_I2C *i2c) {
-    i2c->setClock(400000);
+    i2c->setClockMax(400000);
+    dev = new MF_I2CDevice(i2c, 0x30); //i2c address is always 0x30
+  }
 
-    this->dev = new MF_I2CDevice(i2c, 0x30); //i2c address is always 0x30
-
+  bool begin() {
     //check who-am-i
     uint8_t wai = dev->readReg(0x39);
     if( wai != 0x10) {
-      Serial.printf("\nMAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n\n");
+      Serial.printf("MAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n");
     }
 
+    /* CONTINUOUS MODE
+    1. set ODR[7:0] to non-zero
+    2. Then Cmm_freq_en is set to 1 to let the internal circuitry to calculate the target number for the counter
+    3. After that Cmm_en is set to 1 and the continuous mode is started and the internal counter starts to count at the same time.
+    Note: odr and control regs are write-only
+    */
+    
+    //software reset
+    dev->writeReg(0x1C, 0x80); //control1: Sw_reset=0x80
+    delay(30); //datasheet: 20 ms
+
     //configure 75Hz with auto set/reset every 100 samples
-    dev->writeReg(0x1A, 75); //odr: 75Hz @ bw00 with auto sr
-    dev->writeReg(0x1B, 0xA0); //control0: Cmm_freq_en=80 calc freq, Auto_SR_en=20 auto set/reset, 
-    dev->writeReg(0x1C, 0x00); //control1: bw00 (6.6ms)
-    dev->writeReg(0x1D, 0x1B); //control2: Cmm_en=10 continuous mode, En_prd_set=8 auto set/reset, Prd_set[2:0]=3 set/reset every 100 samples
+    dev->writeReg(0x1C, 0x00); //control1: bw=0x00 (6.6ms)
+    dev->writeReg(0x1A, 75);   //odr: 75Hz @ bw=0x00
+    dev->writeReg(0x1B, 0xA0); //control0: Cmm_freq_en=0x80 calc freq, Auto_SR_en=0x20 auto set/reset, 
+    dev->writeReg(0x1D, 0x1B); //control2: Cmm_en=0x10 continuous mode, En_prd_set=0x08 auto set/reset, Prd_set[2:0]=3 set/reset every 100 samples
+
+    //test sensor
+    uint32_t ts = micros();
+    while(micros() - ts < 20000) {
+      if(update_raw()) return true;
+    }
+
+    Serial.println("\nMAG: ERROR: MMC5603 no samples received, disabling magnetometer\n\n");
+    return false;
   }
 
+public:
   bool update_raw() {
     if((dev->readReg(0x18) & 0x40) == 0x00) return false; //exit if no new mag data
 

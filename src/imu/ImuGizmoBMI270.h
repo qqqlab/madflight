@@ -174,6 +174,7 @@ class ImuGizmoBMI270 : public ImuGizmo {
     ImuGizmoBMI270() {} //private constructor
 
   public:
+    const char* name() override {return "BMI270";}
     ~ImuGizmoBMI270() {}
 
     static ImuGizmo* create(ImuConfig *config, ImuState *state) {
@@ -193,7 +194,6 @@ class ImuGizmoBMI270 : public ImuGizmo {
         }
 
         //return config
-        strncpy(config->name, "BMI270", sizeof(config->name));
         config->sample_rate = gizmo->_rate_hz;
         return gizmo;
     }

@@ -70,10 +70,15 @@ public:
     if(hist_len == 0) return;
     float m = mean();
     float limit = 4 * std();
-    Serial.printf("Spikes outside %f to %f for %s\n", m - limit, m + limit, hdr);
+    Serial.printf("Spikes outside %f to %f for %s", m - limit, m + limit, hdr);
     int i = 2;
+    bool none = true;
     while(i < hist_cnt() - 2) {
       if(fabs(hist[i] - m) > limit) {
+        if(none) {
+          Serial.println();
+          none = false;
+        }
         Serial.printf("%6d: %f %f -->", i-2, hist[i-2],  hist[i-1]); //before
         while(fabs(hist[i] - m) > limit) {
           Serial.printf(" %f", hist[i]); //more than limit off mean
@@ -83,6 +88,7 @@ public:
       }
       i++;
     }
+    if(none) Serial.println(" : No spikes");
   }
 
 };

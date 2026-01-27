@@ -34,6 +34,7 @@ class ImuGizmoLSM6DSO : public ImuGizmo {
     ImuState *state = nullptr;
 
   public:
+    const char* name() override {return "LSM6DSO";}
     LSM6DSO *sensor = nullptr;
     SensorDevice *dev = nullptr;
 
@@ -71,7 +72,6 @@ class ImuGizmoLSM6DSO : public ImuGizmo {
       gizmo->sensor = sensor;
       gizmo->dev = dev;
       //return config
-      strncpy(config->name, "LSM6DSO", sizeof(config->name));
       config->sample_rate = sensor->actual_sample_rate_hz;
       Serial.printf("IMU: LSM6DSO started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
       return gizmo;

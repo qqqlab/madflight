@@ -45,13 +45,12 @@ struct BarConfig {
     Cfg::bar_gizmo_enum gizmo = Cfg::bar_gizmo_enum::mf_NONE; //the gizmo to use
     MF_I2C *i2c_bus = nullptr; //i2c bus
     uint8_t i2c_adr = 0; //i2c address. 0=default address
-    //config values returned by gizmo
-    char name[10] = {};
 };
 
 class BarGizmo {
 public:
   virtual ~BarGizmo() {}
+  virtual const char* name() = 0;
   virtual bool update(float *press, float *temp) = 0; //returns true if pressure was updated
 };
 
@@ -64,6 +63,7 @@ class Bar : public BarState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+    const char* name() {return (gizmo ? gizmo->name() : "NONE");}
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("BAR");

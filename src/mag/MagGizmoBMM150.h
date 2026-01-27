@@ -12,6 +12,7 @@ class MagGizmoBMM150: public MagGizmo {
     MagState* state;
 
   public:
+    const char* name() override {return "BMM150";}
 
     static MagGizmoBMM150* create(MagConfig *config, MagState *state) {
       //get i2c bus
@@ -75,8 +76,6 @@ class MagGizmoBMM150: public MagGizmo {
       auto gizmo = new MagGizmoBMM150();
       gizmo->state = state;
       gizmo->sensor = sensor;
-      //return config
-      strncpy(config->name, "BMM150", sizeof(config->name));
       return gizmo;
     }
 

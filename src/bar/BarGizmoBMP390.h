@@ -8,6 +8,7 @@ class BarGizmoBMP390: public BarGizmo {
 protected:
   bfs::Bmp3 bmp;
 public:
+  const char* name() override {return "BMP390";}
   BarGizmoBMP390(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
     if(i2c_adr==0) i2c_adr = 0x77; //BMP390 is 0x76 or 0x77
     Serial.printf("BAR: BBMP390/BMP388 I2C_ADR=0x%02X ", i2c_adr);

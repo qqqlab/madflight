@@ -34,6 +34,7 @@ class ImuGizmoICM45686 : public ImuGizmo {
     PWM *pwm_clkin = nullptr;
 
   public:
+    const char* name() override {return "ICM45686";}
     ICM45686 *sensor = nullptr;
     SensorDevice *dev = nullptr;
 
@@ -76,9 +77,7 @@ class ImuGizmoICM45686 : public ImuGizmo {
         gizmo->dev = dev;
         gizmo->pwm_clkin = pwm_clkin;
         //return config
-        strncpy(config->name, "ICM45686", sizeof(config->name));
         config->sample_rate = sensor->sampleRateActual;
-        Serial.printf("IMU: ICM45686 started\n");
 
         return gizmo;
     }

@@ -143,35 +143,70 @@ bool Imu::update() {
 
   //get sensor data and update timestamps, count
   if(config.has_mag) {
+    float mx, my, mz;
     gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    if(config.pmag) {
+      //handle mag rotation for different mounting positions
+      switch((Cfg::imu_align_enum)cfg.imu_align) {
+        case Cfg::imu_align_enum::mf_CW0 :
+          break;
+        case Cfg::imu_align_enum::mf_CW90 :
+          { float tmp;  tmp=mx; mx=-my; my=tmp; }
+          break;
+        case Cfg::imu_align_enum::mf_CW180 :
+          { mx=-mx; my=-my; }
+          break;
+        case Cfg::imu_align_enum::mf_CW270 :
+          { float tmp; tmp=mx; mx=my; my=-tmp; }
+          break;
+        case Cfg::imu_align_enum::mf_CW0FLIP :
+          { my=-my; mz=-mz; }
+          break;
+        case Cfg::imu_align_enum::mf_CW90FLIP :
+          { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
+          break;
+        case Cfg::imu_align_enum::mf_CW180FLIP :
+          { mx=-mx; mz=-mz; }
+          break;
+        case Cfg::imu_align_enum::mf_CW270FLIP :
+          { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+          break;
+      }
+
+      //update the mag values
+      config.pmag->mx = mx;
+      config.pmag->my = my;
+      config.pmag->mz = mz;
+      config.pmag->ts = update_ts;
+    }
   }else{
     gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
   }
 
-  //handle rotation for different mounting positions
+  //handle imu rotation for different mounting positions
   switch((Cfg::imu_align_enum)cfg.imu_align) {
     case Cfg::imu_align_enum::mf_CW0 :
       break;
     case Cfg::imu_align_enum::mf_CW90 :
-      { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp;   tmp=mx; mx=-my; my=tmp; }
+      { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp; }
       break;
     case Cfg::imu_align_enum::mf_CW180 :
-      { ax=-ax; ay=-ay;   gx=-gx; gy=-gy;   mx=-mx; my=-my; }
+      { ax=-ax; ay=-ay;   gx=-gx; gy=-gy; }
       break;
     case Cfg::imu_align_enum::mf_CW270 :
-      { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp;   tmp=mx; mx=my; my=-tmp; }
+      { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp; }
       break;
     case Cfg::imu_align_enum::mf_CW0FLIP :
-      { ay=-ay; az=-az;   gy=-gy; gz=-gz;   my=-my; mz=-mz; }
+      { ay=-ay; az=-az;   gy=-gy; gz=-gz;}
       break;
     case Cfg::imu_align_enum::mf_CW90FLIP :
-      { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;   tmp=mx; mx=my; my=tmp; mz=-mz; }
+      { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;}
       break;
     case Cfg::imu_align_enum::mf_CW180FLIP :
-      { ax=-ax; az=-az;   gx=-gx; gz=-gz;   mx=-mx; mz=-mz; }
+      { ax=-ax; az=-az;   gx=-gx; gz=-gz; }
       break;
     case Cfg::imu_align_enum::mf_CW270FLIP :
-      { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz;   tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+      { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; }
       break;
   }
 

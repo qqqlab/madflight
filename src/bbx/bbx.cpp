@@ -259,15 +259,9 @@ void Bbx::log_imu() {
   bl.i16("gy",(imu.gy - cfg.imu_cal_gy)*10, 1e-1, "deg/s"); //dps
   bl.i16("gz",(imu.gz - cfg.imu_cal_gz)*10, 1e-1, "deg/s"); //dps
   if(mag.installed()) {
-    //get from magnetometer
-    bl.i16("mx",((mag.x - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-    bl.i16("my",((mag.y - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-    bl.i16("mz",((mag.z - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
-  } else if(imu.config.has_mag) {
-    //get from imu
-    bl.i16("mx",((imu.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-    bl.i16("my",((imu.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-    bl.i16("mz",((imu.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
+    bl.i16("mx",((mag.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
+    bl.i16("my",((mag.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
+    bl.i16("mz",((mag.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
   }
   bl.i16("roll",ahr.roll*100, 1e-2, "deg"); //deg -180 to 180
   bl.i16("pitch",ahr.pitch*100, 1e-2, "deg");; //deg -90 to 90

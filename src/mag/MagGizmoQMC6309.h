@@ -96,6 +96,7 @@ private:
 
 
 public:
+  const char* name() override {return "QMC6309";}
   const float scale_uT = 0.025; //scale factor to uT   (at +/-800uT (+/-8G) RNG)
     int16_t mx; //raw adc values
     int16_t my;

@@ -34,6 +34,7 @@ class ImuGizmoMPUXXXX : public ImuGizmo {
     ImuState *state = nullptr;
 
   public:
+    const char* name() override {return sensor->type_name();}
     MPUXXXX *sensor = nullptr;
     SensorDevice *dev = nullptr;
 
@@ -79,7 +80,6 @@ class ImuGizmoMPUXXXX : public ImuGizmo {
       gizmo->sensor = sensor;
       gizmo->dev = dev;
       //return config
-      strncpy(config->name, sensor->type_name(), sizeof(config->name));
       config->sample_rate = sensor->get_rate();
       config->has_mag = sensor->has_mag;
 

@@ -31,3 +31,5 @@ float lowpass_to_beta(float f0, float fs);
 
 void madflight_die(String msg); //depreciated
 void madflight_panic(String msg);
+
+void debug_print_bytes(uint8_t *d, int len, char *header = nullptr);

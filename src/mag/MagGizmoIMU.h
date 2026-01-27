@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-#include "common.h"
-#include <Arduino.h>
-#include "../led/led.h"
-#include "../rcl/rcl.h"
-#include "../cli/cli.h"
+#pragma once
 
-//lowpass frequency to filter beta constant
-float lowpass_to_beta(float f0, float fs) {
-  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
-}
+#include "mag.h"
+#include "../hal/MF_I2C.h"
+#include "../tbx/common.h"
 
-//depreciated
-void madflight_die(String msg) {
-  madflight_panic(msg);
-}
-
-void madflight_panic(String msg) {
-  bool do_print = true;
-  led.enabled = true;
-  for(;;) {
-    if(do_print) Serial.print("FATAL ERROR: " + msg + " Press enter to start CLI...\n");
-    for(int i = 0; i < 20; i++) {
-      led.toggle();
-      uint32_t ts = millis();
-      while(millis() - ts < 50) {
-        if(cli.update()) do_print = false; //process CLI commands, stop error output after first command
-        rcl.update(); //keep rcl (mavlink?) running
-      } 
-    }
+class MagGizmoIMU : public MagGizmo {
+private:
+  MagState* state;
+  uint32_t last_ts;
+public:
+  const char* name() override {return "IMU";}
+  MagGizmoIMU(MagState* state) {
+    this->state = state;
   }
-}
-
-void debug_print_bytes(uint8_t *d, int len, char *header) {
-  if(header) {
-    Serial.print(header);
-    Serial.print(": ");
+  bool update(float *x, float *y, float *z) override {
+    //data is pushed by imu, nothing to do here but check for change in ts
+    bool updated = (last_ts != state->ts);
+    last_ts = state->ts;
+    return updated;
   }
-  for(int i = 0; i < len; i++) Serial.printf("%02X ", d[i]);
-  Serial.println();
-}
+};

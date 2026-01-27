@@ -38,6 +38,7 @@ class ImuGizmoAuto : public ImuGizmo {
     ImuGizmoAuto() {} //private constructor
 
   public:
+    const char* name() override {return "AUTO";}
     static ImuGizmo* create(ImuConfig *config, ImuState *state) {
         if(!config || !state) return nullptr;
 
@@ -57,7 +58,7 @@ class ImuGizmoAuto : public ImuGizmo {
         if(!gizmo) {
           Serial.println("IMU: AUTO no sensor detected");
         }else{
-          Serial.printf("IMU: AUTO detected %s\n", config->name);
+          Serial.printf("IMU: AUTO detected %s\n", gizmo->name());
         }
 
         return gizmo;

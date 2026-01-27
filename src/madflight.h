@@ -36,6 +36,7 @@ extern const char madflight_config[];
 #endif
 
 #include "madflight_modules.h"
+#include "mag/MagGizmoIMU.h"
 
 //===============================================================================================
 // madflight_setup()
@@ -231,6 +232,14 @@ void madflight_setup() {
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_panic("IMU install failed.");
   }
+
+  // connect imu internal magnetometer to mag
+  if(imu.config.has_mag && !mag.gizmo) {
+    mag.gizmo = new MagGizmoIMU((MagState*)&mag);
+    imu.config.pmag = &mag;
+    Serial.println("IMU: magnetometer installed");
+  }
+
   // Start IMU update handler
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started

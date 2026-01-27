@@ -31,9 +31,10 @@ SOFTWARE.
 class MagGizmoRM3100: public MagGizmo {
 protected:
   MagGizmoRM3100() {}; //protected constructor
-  RM3100 *rm3100 = nullptr;
+  RM3100 *sensor = nullptr;
 
 public:
+  const char* name() override {return "RM3100";}
   static MagGizmoRM3100* create(MF_I2C *i2c) {
     uint8_t probe_adr = RM3100::probe(i2c);
     if(probe_adr == 0) {
@@ -44,17 +45,17 @@ public:
     //create and configure gizmo
     auto gizmo = new MagGizmoRM3100();
     uint16_t cycle_count = 294; //cycle_count=294 gives approx 100Hz update rate
-    gizmo->rm3100 = new RM3100(i2c, probe_adr, cycle_count);
-    Serial.printf("MAG: RM3100 detected - i2c_adr:0x%02X cycle_count:%d resolution:%d nT/LSB\n", probe_adr, cycle_count, (int)(gizmo->rm3100->scale_uT*1000));
+    gizmo->sensor = new RM3100(i2c, probe_adr, cycle_count);
+    Serial.printf("MAG: RM3100 detected - i2c_adr:0x%02X cycle_count:%d resolution:%d nT/LSB\n", probe_adr, cycle_count, (int)(gizmo->sensor->scale_uT*1000));
     return gizmo;
   }
 
   bool update(float *x, float *y, float *z) override {
-    rm3100->read(x,y,z);
+    sensor->read(x,y,z);
     return true;
   }
 
   ~MagGizmoRM3100() {
-    delete rm3100;
+    delete sensor;
   }
 };

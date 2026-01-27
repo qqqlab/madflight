@@ -9,6 +9,7 @@ protected:
   Dps3xx* pressureSensor;
   BarGizmoDPS310() {} // private constructor
 public:
+  const char* name() override {return "DPS310";}
   static BarGizmoDPS310* create(MF_I2C *i2c, int8_t i2c_adr, uint32_t sample_rate) {
     (void)sample_rate;
     if (i2c_adr == 0) {

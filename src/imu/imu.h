@@ -32,6 +32,7 @@ SOFTWARE.
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"
+#include "../mag/mag.h"
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -52,10 +53,12 @@ struct ImuConfig {
     uint8_t i2c_adr = 0; //i2c address. 0=default address
     bool uses_i2c = false; //use I2C bus?
     int pin_clkin = -1; //IMU clkin pin
+    Mag *pmag = nullptr; //mag pointer, used to store IMU internal magnetometer samples
+
     //config values returned by gizmo
-    char name[10] = {};
     bool has_mag = false; //true if IMU has built-in magnetometer
     uint32_t sample_rate = 0; //actual sample rate [Hz]
+
 };
 
 //imu sample data (raw, uncorrected and unfiltered) 
@@ -69,9 +72,6 @@ public:
     float gx = 0; //"North" rotation speed [deg/s]
     float gy = 0; //"East" rotation speed [deg/s]
     float gz = 0; //"Down" rotation speed [deg/s]
-    float mx = 0; //"North" magnetic flux [uT]
-    float my = 0; //"East" magnetic flux [uT]
-    float mz = 0; //"Down" magnetic flux [uT]
     float temp = 0; //temperature [C]
 };
 
@@ -79,20 +79,20 @@ public:
 class ImuGizmo {
 public:
   virtual ~ImuGizmo() {}
+  virtual const char* name() = 0;
   virtual void getMotion6NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz) = 0;
   virtual void getMotion9NED(float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *mx, float *my, float *mz) {(void)ax;(void)ay;(void)az;(void)gx;(void)gy;(void)gz;(void)mx;(void)my;(void)mz;};
 };
 
 class Imu : public ImuState {
   public:
-
     ImuConfig config;
-
     ImuGizmo *gizmo = nullptr;
 
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } //returns true if a gizmo is installed
+    const char* name() {return (gizmo ? gizmo->name() : "NONE");}
 
     //interrupt statistics
     volatile uint32_t interrupt_cnt = 0; //number of times interrupt was triggered since start

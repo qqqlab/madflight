@@ -87,27 +87,21 @@ bool Ahr::update() {
   gz += B_gyr * ((config.pimu->gz - config.gyr_offset[2]) - gz);
 
   //Magnetometer (External chip, or internal in IMU chip) 
-  float _mx, _my, _mz;
-  //If no external mag, then use internal mag
-  if(!config.pmag || (config.pmag->x == 0 && config.pmag->y == 0 && config.pmag->z == 0)) {
-    _mx = config.pimu->mx;
-    _my = config.pimu->my;
-    _mz = config.pimu->mz;
-  }else{
-    _mx = config.pmag->x;
-    _my = config.pmag->y;
-    _mz = config.pmag->z;
-  }
-  //update the mag values
-  if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
-    //Correct the mag values with the calibration values
-    _mx = (_mx - config.mag_offset[0]) * config.mag_scale[0];
-    _my = (_my - config.mag_offset[1]) * config.mag_scale[1];
-    _mz = (_mz - config.mag_offset[2]) * config.mag_scale[2];
-    //Low-pass filtered magnetometer data
-    mx += B_mag * (_mx - mx);
-    my += B_mag * (_my - my);
-    mz += B_mag * (_mz - mz);
+  if(config.pmag) {
+    float _mx = config.pmag->mx;
+    float _my = config.pmag->my;
+    float _mz = config.pmag->mz;
+    //update the mag values
+    if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
+      //Correct the mag values with the calibration values
+      _mx = (_mx - config.mag_offset[0]) * config.mag_scale[0];
+      _my = (_my - config.mag_offset[1]) * config.mag_scale[1];
+      _mz = (_mz - config.mag_offset[2]) * config.mag_scale[2];
+      //Low-pass filtered magnetometer data
+      mx += B_mag * (_mx - mx);
+      my += B_mag * (_my - my);
+      mz += B_mag * (_mz - mz);
+    }
   }else{
     mx = 0;
     my = 0;
