@@ -34,6 +34,7 @@ SOFTWARE.
 #include "../imu/imu.h"
 #include "../cfg/cfg.h"
 #include "../tbx/common.h" //lowpass_to_beta
+#include "../tbx/RuntimeTrace.h"
 
 //create global module instance
 Ahr ahr;
@@ -69,6 +70,8 @@ int Ahr::setup() {
 }
 
 bool Ahr::update() {
+  runtimeTrace.start();
+
   // get sensor data from imu and mag
   // correct the sensor data with the calibration values
   // use simple first-order low-pass filter to get rid of high frequency noise
@@ -118,6 +121,7 @@ bool Ahr::update() {
   //update euler angles
   computeAngles();
 
+  runtimeTrace.stop(true);
   return true;
 }
 

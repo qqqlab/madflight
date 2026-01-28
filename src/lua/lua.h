@@ -26,7 +26,7 @@ public:
       return;
     }
     
-    if(xTaskCreate(lua_task, "LUA", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
+    if(xTaskCreate(lua_task, "mf_LUA", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       Serial.println("LUA: Task creation failed");
       return;
     }

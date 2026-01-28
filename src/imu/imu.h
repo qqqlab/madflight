@@ -33,6 +33,7 @@ SOFTWARE.
 #include <SPI.h>
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
+#include "../tbx/RuntimeTrace.h"
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -118,6 +119,9 @@ class Imu : public ImuState {
 
     //low level interrupt handler (should be private, but is public, because called from interrupt)
     void _interrupt_handler();
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("_IMU");
 };
 
 extern Imu imu;

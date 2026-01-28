@@ -136,85 +136,87 @@ int Imu::setup() {
 }
 
 bool Imu::update() {
-  if(!gizmo) return false;
+  runtimeTrace.start();
+  bool updated = (gizmo != nullptr);
+  if(updated) {
+    //start of update timestamp
+    uint32_t update_ts = micros();
 
-  //start of update timestamp
-  uint32_t update_ts = micros();
+    //get sensor data and update timestamps, count
+    if(config.has_mag) {
+      float mx, my, mz;
+      gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+      if(config.pmag) {
+        //handle mag rotation for different mounting positions
+        switch((Cfg::imu_align_enum)cfg.imu_align) {
+          case Cfg::imu_align_enum::mf_CW0 :
+            break;
+          case Cfg::imu_align_enum::mf_CW90 :
+            { float tmp;  tmp=mx; mx=-my; my=tmp; }
+            break;
+          case Cfg::imu_align_enum::mf_CW180 :
+            { mx=-mx; my=-my; }
+            break;
+          case Cfg::imu_align_enum::mf_CW270 :
+            { float tmp; tmp=mx; mx=my; my=-tmp; }
+            break;
+          case Cfg::imu_align_enum::mf_CW0FLIP :
+            { my=-my; mz=-mz; }
+            break;
+          case Cfg::imu_align_enum::mf_CW90FLIP :
+            { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
+            break;
+          case Cfg::imu_align_enum::mf_CW180FLIP :
+            { mx=-mx; mz=-mz; }
+            break;
+          case Cfg::imu_align_enum::mf_CW270FLIP :
+            { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+            break;
+        }
 
-  //get sensor data and update timestamps, count
-  if(config.has_mag) {
-    float mx, my, mz;
-    gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-    if(config.pmag) {
-      //handle mag rotation for different mounting positions
-      switch((Cfg::imu_align_enum)cfg.imu_align) {
-        case Cfg::imu_align_enum::mf_CW0 :
-          break;
-        case Cfg::imu_align_enum::mf_CW90 :
-          { float tmp;  tmp=mx; mx=-my; my=tmp; }
-          break;
-        case Cfg::imu_align_enum::mf_CW180 :
-          { mx=-mx; my=-my; }
-          break;
-        case Cfg::imu_align_enum::mf_CW270 :
-          { float tmp; tmp=mx; mx=my; my=-tmp; }
-          break;
-        case Cfg::imu_align_enum::mf_CW0FLIP :
-          { my=-my; mz=-mz; }
-          break;
-        case Cfg::imu_align_enum::mf_CW90FLIP :
-          { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
-          break;
-        case Cfg::imu_align_enum::mf_CW180FLIP :
-          { mx=-mx; mz=-mz; }
-          break;
-        case Cfg::imu_align_enum::mf_CW270FLIP :
-          { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
-          break;
+        //update the mag values
+        config.pmag->mx = mx;
+        config.pmag->my = my;
+        config.pmag->mz = mz;
+        config.pmag->ts = update_ts;
       }
-
-      //update the mag values
-      config.pmag->mx = mx;
-      config.pmag->my = my;
-      config.pmag->mz = mz;
-      config.pmag->ts = update_ts;
+    }else{
+      gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
     }
-  }else{
-    gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
-  }
 
-  //handle imu rotation for different mounting positions
-  switch((Cfg::imu_align_enum)cfg.imu_align) {
-    case Cfg::imu_align_enum::mf_CW0 :
-      break;
-    case Cfg::imu_align_enum::mf_CW90 :
-      { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp; }
-      break;
-    case Cfg::imu_align_enum::mf_CW180 :
-      { ax=-ax; ay=-ay;   gx=-gx; gy=-gy; }
-      break;
-    case Cfg::imu_align_enum::mf_CW270 :
-      { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp; }
-      break;
-    case Cfg::imu_align_enum::mf_CW0FLIP :
-      { ay=-ay; az=-az;   gy=-gy; gz=-gz;}
-      break;
-    case Cfg::imu_align_enum::mf_CW90FLIP :
-      { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;}
-      break;
-    case Cfg::imu_align_enum::mf_CW180FLIP :
-      { ax=-ax; az=-az;   gx=-gx; gz=-gz; }
-      break;
-    case Cfg::imu_align_enum::mf_CW270FLIP :
-      { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; }
-      break;
-  }
+    //handle imu rotation for different mounting positions
+    switch((Cfg::imu_align_enum)cfg.imu_align) {
+      case Cfg::imu_align_enum::mf_CW0 :
+        break;
+      case Cfg::imu_align_enum::mf_CW90 :
+        { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp; }
+        break;
+      case Cfg::imu_align_enum::mf_CW180 :
+        { ax=-ax; ay=-ay;   gx=-gx; gy=-gy; }
+        break;
+      case Cfg::imu_align_enum::mf_CW270 :
+        { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp; }
+        break;
+      case Cfg::imu_align_enum::mf_CW0FLIP :
+        { ay=-ay; az=-az;   gy=-gy; gz=-gz;}
+        break;
+      case Cfg::imu_align_enum::mf_CW90FLIP :
+        { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;}
+        break;
+      case Cfg::imu_align_enum::mf_CW180FLIP :
+        { ax=-ax; az=-az;   gx=-gx; gz=-gz; }
+        break;
+      case Cfg::imu_align_enum::mf_CW270FLIP :
+        { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; }
+        break;
+    }
 
-  this->dt = (update_ts - this->ts) / 1000000.0;
-  this->ts = update_ts;
-  this->update_cnt++;
-  
-  return true; //FIXME: should only return true if new sample was retrieved
+    this->dt = (update_ts - this->ts) / 1000000.0;
+    this->ts = update_ts;
+    this->update_cnt++;
+}
+  runtimeTrace.stop(updated);
+  return updated;
 }
 
 //wait for new sample, returns false on fail
@@ -288,9 +290,9 @@ void _imu_ll_interrupt_handler();
         //TODO move this to hal
         #if defined ARDUINO_ARCH_ESP32
           //note: probably don't what to use this because of single FPU context switching issues...
-          xTaskCreatePinnedToCore(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
+          xTaskCreatePinnedToCore(_imu_ll_task, "mf_IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
         #elif defined ARDUINO_ARCH_RP2040
-          xTaskCreate(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+          xTaskCreate(_imu_ll_task, "mf_IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
           vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //[RP2040 only] Sets the core affinity mask for a task, i.e. the cores on which a task can run.
         #else
           #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
@@ -298,7 +300,7 @@ void _imu_ll_interrupt_handler();
 
         Serial.printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
-        xTaskCreate(_imu_ll_task, "IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
+        xTaskCreate(_imu_ll_task, "mf_IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
         Serial.println("IMU: IMU_EXEC_FREERTOS");
       #endif
     }

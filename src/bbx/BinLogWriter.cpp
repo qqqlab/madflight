@@ -16,6 +16,7 @@
 #include "BinLogWriter.h"
 #include "BinLog.h"
 #include "../cfg/cfg.h"
+#include "../tbx/RuntimeTrace.h"
 
 namespace BinLogWriter {
   //prototypes
@@ -64,7 +65,7 @@ namespace BinLogWriter {
     //queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue); //not available for STM32
     queue = xQueueCreate(QUEUE_LENGTH, sizeof(msg_t));
 
-    if(xTaskCreate(bbx_task, "BBX", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
+    if(xTaskCreate(bbx_task, "mf_BBX", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       Serial.println("BBX: Task creation failed");
     }
   }
@@ -275,11 +276,16 @@ namespace BinLogWriter {
     if(bbx.gizmo) bbx.gizmo->close();
   }
 
+  
+
   static void bbx_task(void *pvParameters) {
     (void)pvParameters;
-    msg_t msg;
+    static RuntimeTrace runtimeTrace = RuntimeTrace("BBX");
+    static msg_t msg;
     for(;;) {
-      if( xQueueReceive(queue, &msg, portMAX_DELAY) == pdPASS ) {
+      bool updated = (xQueueReceive(queue, &msg, portMAX_DELAY) == pdPASS);
+      if(updated) {
+        runtimeTrace.start();
         switch(command) {
         case START:
           command = NONE;
@@ -296,6 +302,7 @@ namespace BinLogWriter {
           if(bbx.gizmo) bbx.gizmo->write(msg.buf, len);
         }
       }
+      runtimeTrace.stop(updated);
     }
   }
 

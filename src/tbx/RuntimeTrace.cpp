@@ -85,9 +85,9 @@ void RuntimeTraceGroup::print() {
   uint32_t reset_dt = (now - arr[0]->reset_ts);
   Serial.printf("\n=== Wallclock Runtime - Measurement Period: %.2f seconds ===\n\n", 1e-6 * reset_dt);
 
-  Serial.printf("Module        Calls  Wallclock     Runtime    Updates  Wallclock     Runtime\n");
+  Serial.printf("Module        Calls  Wallclock     Rt/call    Updates  Wallclock      Rt/upd\n");
 
-  //show non _xxx traces
+  //show traces with names NOT starting with _  
   float perc_sum = 0;
   float perc_sum_t = 0;  
   for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
@@ -103,7 +103,7 @@ void RuntimeTraceGroup::print() {
 
   Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", 100.f, perc_sum_t);
 
-  //show _xxx traces
+  //show traces with names starting with _ 
   for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
     RuntimeTrace *t = arr[i];
     if(!t) break;

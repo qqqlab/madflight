@@ -87,6 +87,9 @@ class Ahr : public AhrState {
     void fusionUpdate();
     void computeAngles();
     void getQFromMag(float *q);
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("_AHR");
 };
 
 //Global module instance

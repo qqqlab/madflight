@@ -130,8 +130,8 @@ void startLoop1Task() {
 #ifndef CONFIG_FREERTOS_UNICORE
   //start setup1() and loop1() on second core
   if(setup1 || loop1) {
-    Serial.println("Starting loop1Task");
-    xTaskCreateUniversal(loop1Task, "loop1Task", getArduinoLoopTaskStackSize(), NULL, 1, &loop1TaskHandle, ((ARDUINO_RUNNING_CORE)+1)%2);
+    Serial.println("Starting task mf_loop1");
+    xTaskCreateUniversal(loop1Task, "mf_loop1", getArduinoLoopTaskStackSize(), NULL, 1, &loop1TaskHandle, ((ARDUINO_RUNNING_CORE)+1)%2);
   }
 #endif
 }
