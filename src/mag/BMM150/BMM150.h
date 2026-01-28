@@ -29,7 +29,7 @@
 class BMM150{
 public:
   BMM150();
-  ~BMM150();
+  virtual ~BMM150();
 
   /**
    * @fn softReset

@@ -991,7 +991,6 @@ void BMM150_I2C::writeData(uint8_t Reg, uint8_t *Data, uint8_t len)
 
 int16_t BMM150_I2C::readData(uint8_t Reg, uint8_t *Data ,uint8_t len)
 {
-  int i=0;
   _i2c->beginTransmission(this->_I2C_addr);
   _i2c->write(Reg);
   if(_i2c->endTransmission() != 0) return -1;

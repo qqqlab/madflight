@@ -268,7 +268,7 @@ void madflight_setup() {
   for(int i=0;i<2;i++) {
     MF_I2C* i2c = hal_get_i2c_bus(i);
     if(i2c) {
-      Serial.printf("I2C: bus:%d clock:%d\n", i, i2c->getClock());
+      Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
     }
   }
 

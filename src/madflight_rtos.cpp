@@ -25,12 +25,23 @@ SOFTWARE.
 #include "madflight_modules.h"
 
 #if defined ARDUINO_ARCH_ESP32
-#include <esp_task_wdt.h>
-void hal_task_wdt_disable() {
-  esp_task_wdt_init(5, false); //disable task watchdog
-}
+  #if ESP_ARDUINO_VERSION_MAJOR <= 2
+    #include <esp_task_wdt.h>
+    void hal_task_wdt_disable() {
+      esp_task_wdt_init(5, false); //disable task watchdog
+    }
+  #else
+    #include <esp_task_wdt.h>
+    void hal_task_wdt_disable() {
+      esp_task_wdt_config_t c;
+      c.timeout_ms = 5000;
+      c.idle_core_mask = 0x03;
+      c.trigger_panic = false;
+      esp_task_wdt_init(&c);
+    }
+  #endif
 #else
-void hal_task_wdt_disable() {}
+  void hal_task_wdt_disable() {}
 #endif
 
 

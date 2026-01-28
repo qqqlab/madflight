@@ -65,7 +65,7 @@ private:
     //check who-am-i
     uint8_t wai = dev->readReg(0x39);
     if( wai != 0x10) {
-      Serial.printf("MAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n");
+      Serial.printf("MAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n", wai);
     }
 
     /* CONTINUOUS MODE

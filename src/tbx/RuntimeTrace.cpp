@@ -99,7 +99,7 @@ void RuntimeTraceGroup::print() {
     perc_sum_t += t->perc_upd;
   }
 
-  Serial.printf("Other                %6.2f%%                           %6.2f%%              \n", 100.f - perc_sum, 0);
+  Serial.printf("Other                %6.2f%%                           %6.2f%%              \n", 100.f - perc_sum, 0.f);
 
   Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", 100.f, perc_sum_t);
 
