@@ -24,14 +24,15 @@ SOFTWARE.
 
 #pragma once
 
+#ifndef MF_MSGTOPIC_LIST_SIZE
+  #define MF_MSGTOPIC_LIST_SIZE 40 //max number of topics. Used only for top() statistics
+#endif
+#ifndef MF_MSGSUB_LIST_SIZE
+  #define MF_MSGSUB_LIST_SIZE 8 //max number of subscribers per topic. Used only for top() statistics
+#endif
+
 #include <Arduino.h> //String
 #include "../hal/hal.h" //STM32 FreeRTOS
-
-//#include <FreeRTOS.h>
-//#include <queue.h>
-
-#define TOPIC_LIST_SIZE 40 //max number of topics in MessageBroker. Only for statistics
-#define SUB_LIST_SIZE 8 //max number of subscribers per topic. Only for statistics
 
 class MsgBroker;
 class MsgSubscriptionBase;
@@ -48,95 +49,63 @@ class MsgBroker {
   protected:
     static void add_topic(MsgTopicBase *topic);
   private:
-    static MsgTopicBase* topic_list[TOPIC_LIST_SIZE];
+    static MsgTopicBase* topic_list[MF_MSGTOPIC_LIST_SIZE];
+};
+
+//=============================================================================
+class MsgTopicBase {
+    friend class MsgBroker;
+    friend class MsgSubscriptionBase;
+  protected:
+    String name;
+    uint32_t generation = 0; //counts messages published to this topic
+    MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
+
+    MsgTopicBase(String name, int len);
+    void publish(void *msg);
+    bool pull(void *msg);
+    void add_subscription(MsgSubscriptionBase *sub);
+    void remove_subscription(MsgSubscriptionBase *sub);
+    int subscriber_count();
+    virtual ~MsgTopicBase() {}
+  private:
+    MsgTopicBase() {}
+    QueueHandle_t queue;
 };
 
 //=============================================================================
 class MsgSubscriptionBase {
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
+  public:
+    bool updated(); //returns true if new msg available
   protected:
     String name;
     uint32_t generation = 0; //last pulled topic generation 
     uint32_t pull_cnt = 0; //pull counter
-  private:
-    MsgSubscriptionBase() {}
-};
 
-//=============================================================================
-class MsgTopicBase {
-    friend class MsgBroker;
-  protected:
-    String name;
-    uint32_t generation = 0; //counts messages published to this topic
-    MsgSubscriptionBase* sub_list[SUB_LIST_SIZE] = {};
-    MsgTopicBase(String name);
-    void add_subscription(MsgSubscriptionBase *sub);
-    void remove_subscription(MsgSubscriptionBase *sub);
-    int subscriber_count();
+    MsgSubscriptionBase(String name, MsgTopicBase *topic); //start a new subscription
+    virtual ~MsgSubscriptionBase();
+    bool pull(void *msg); //pull message, returns true and msg when new msg available; else returns false and does not update msg
   private:
-    MsgTopicBase() {}
+    MsgTopicBase *topic;
+    MsgSubscriptionBase() {}
 };
 
 //=============================================================================
 template <class T>
 class MsgTopic : public MsgTopicBase {
-    friend MsgSubscription<T>;
-
   public:
-    MsgTopic(String name) : MsgTopicBase(name) {
-        queue = xQueueCreate(1, sizeof(T));
-    }
-
-    //publish msg
-    void publish(T *msg) {
-        xQueueOverwrite(queue, msg);
-        generation++;
-    }
-
+    MsgTopic(String name) : MsgTopicBase(name, sizeof(T)) {}
+    void publish(T *msg) { MsgTopicBase::publish(msg); }
   protected:
-    //pull last published message, returns false if no message was published
-    bool pull(T *msg) {
-        return (xQueuePeek(queue, msg, 0) == pdPASS);
-    }
-
-  private:
-    QueueHandle_t queue;
+    bool pull(T *msg) { return MsgTopicBase::pull(msg); }
 };
 
 //=============================================================================
 template <class T>
 class MsgSubscription : public MsgSubscriptionBase {
   public:
-    //start a new subscription
-    MsgSubscription(String name, MsgTopic<T> *topic) : topic{topic} {
-        this->name = name;
-        topic->add_subscription(this);
-    }
-
-    ~MsgSubscription() {
-        topic->remove_subscription(this);
-    }
-
-    //returns true if new msg available
-    bool updated() {
-        return (generation != topic->generation);
-    }
-
-    //pull message, returns true and msg when new msg available; else returns false and does not update msg
-    bool pull(T *msg) {
-        if(!updated()) return false;
-        if(!topic->pull(msg)) return false; 
-        generation = topic->generation;
-        pull_cnt++;
-        return true; //NOTE: retrieved msg might be older than this->generation
-    }
-
-  private:
-    MsgTopic<T> *topic;
+    MsgSubscription(String name, MsgTopic<T> *topic) : MsgSubscriptionBase(name, topic) {}
+    bool pull(T *msg) { return MsgSubscriptionBase::pull(msg); }
 };
-
-
-
-
-
