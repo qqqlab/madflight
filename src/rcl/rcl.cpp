@@ -45,8 +45,9 @@ SOFTWARE.
   #define RCL_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle in microseconds
 #endif
 
-//create global Rcl class instance
+//create global Rcl class instance and topic
 Rcl rcl;
+MsgTopic<RclState> rcl_topic = MsgTopic<RclState>("rcl");
 
 int Rcl::setup() {
   cfg.printModule("rcl");
@@ -215,6 +216,8 @@ bool Rcl::update() { //returns true if channel pwm data was updated
 
     //set update timestamp
     update_time = millis();
+
+    rcl_topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

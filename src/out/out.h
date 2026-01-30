@@ -28,12 +28,21 @@ SOFTWARE.
 
 #include "../hal/hal.h" //class PWM, Dshot
 #include <stdint.h> //uint8_t
+#include "../tbx/msg.h"
 
-class Out {
+struct OutState {
   public:
+    //uint32_t ts; //TODO
     bool armed = false; //output is enabled when armed == true
-    bool eperiodEnabled[OUT_SIZE] = {}; //ePeriod enabled flag
+    float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
+};
+
+extern MsgTopic<OutState> out_topic;
+
+class Out : public OutState {
+  public:
+    bool eperiodEnabled[OUT_SIZE] = {}; //ePeriod enabled flag
 
     void setup();
     bool setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);
@@ -49,10 +58,10 @@ class Out {
   private:
     bool _setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
 
-    float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     char type[OUT_SIZE] = {};
     int pins[OUT_SIZE] = {};
-    
+
+
     //PWM
     PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
 

@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 struct RdrState {
   public:
@@ -36,6 +37,8 @@ struct RdrState {
     uint32_t update_ts = 0; //timestamp last successful update() call
     uint32_t update_cnt = 0; //number of updates since start
 };
+
+extern MsgTopic<RdrState> rdr_topic;
 
 struct RdrConfig {
   public:

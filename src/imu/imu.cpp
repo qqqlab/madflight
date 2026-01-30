@@ -33,8 +33,9 @@ SOFTWARE.
 #include "ImuGizmoICM426XX.h"
 #include "ImuGizmoAuto.h"
 
-//global module class instance
+//global module class instance and topic
 Imu imu;
+MsgTopic<ImuState> imu_topic = MsgTopic<ImuState>("imu");
 
 void _imu_ll_interrupt_setup(int interrupt_pin); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
@@ -214,6 +215,8 @@ bool Imu::update() {
     this->dt = (update_ts - this->ts) / 1000000.0;
     this->ts = update_ts;
     this->update_cnt++;
+
+    imu_topic.publish(this);
 }
   runtimeTrace.stop(updated);
   return updated;

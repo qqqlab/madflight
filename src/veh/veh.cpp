@@ -29,14 +29,16 @@ SOFTWARE.
 #include "veh.h"
 #include "../bbx/bbx.h"
 
-//global module class instance
+//global module class instance and topic
 Veh veh;
+MsgTopic<VehState> veh_topic = MsgTopic<VehState>("veh");
 
 //returns true if flightmode changed
 bool Veh::setFlightmode(uint8_t flightmode) {
   if(_flightmode == flightmode) return false;
   _flightmode = flightmode;
   bbx.log_mode(flightmode_ap_id(), flightmode_name());
+  veh_topic.publish(this);
   return true;
 }
 

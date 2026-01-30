@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 /// GPS fix codes.  These are kept aligned with MAVLink
 enum GPS_Status {
@@ -68,6 +69,8 @@ struct GpsState {
     bool have_vacc = false;         // does GPS give vertical position accuracy? Set to true only once available.
     bool have_undulation = false;   // do we have a value for the undulation
 };
+
+extern MsgTopic<GpsState> gps_topic;
 
 struct GpsConfig {
   public:

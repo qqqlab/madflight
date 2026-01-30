@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../hal/MF_I2C.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 struct BatState {
   public:
@@ -37,6 +38,8 @@ struct BatState {
     float wh = 0;    // Battery usage [Wh]
     uint32_t ts = 0; // Last update time stamp [us]
 };
+
+extern MsgTopic<BatState> bat_topic;
 
 struct BatConfig {
   public:

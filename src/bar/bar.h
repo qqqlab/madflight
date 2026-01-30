@@ -28,6 +28,7 @@ SOFTWARE.
 #include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 struct BarState {
   public:
@@ -38,6 +39,8 @@ struct BarState {
     float dt = 0;     // Time since last sample in [seconds]
     float ground_level; // Ground level in [m]
 };
+
+extern MsgTopic<BarState> bar_topic;
 
 struct BarConfig {
   public:

@@ -1,11 +1,10 @@
 #include "cli.h"
 #include "../madflight_modules.h"
-
 #include "msp/msp.h"
 #include "cli_RclCalibrate.h"
-
 #include "stat.h"
 #include "FreeRTOS_ps.h"
+#include "../tbx/msg.h"
 
 //create global module instance
 Cli cli;
@@ -873,8 +872,7 @@ void Cli::calibrate_info(int seconds) {
   Stat gx(1000),gy(1000),gz(1000);
   Stat sp(1000),sa(1000),st(1000);
   Stat mx(1000),my(1000),mz(1000);
-  uint32_t last_cnt = imu.update_cnt;
-  uint32_t ts = micros();
+
 
   float bp_last = 0;
   float ba_last = 0;
@@ -884,33 +882,42 @@ void Cli::calibrate_info(int seconds) {
   float my_last = 0;
   float mz_last = 0;
 
+  ImuState imu_s;
+  BarState bar_s;
+  MagState mag_s;
+  auto imu_sub = MsgSubscription<ImuState>("calinfo", &imu_topic);
+  auto bar_sub = MsgSubscription<BarState>("calinfo", &bar_topic);
+  auto mag_sub = MsgSubscription<MagState>("calinfo", &mag_topic);
+
+  uint32_t ts = micros();
   while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {
-    if(last_cnt != imu.update_cnt) {
-      ax.append(imu.ax);
-      ay.append(imu.ay);
-      az.append(imu.az);
-      gx.append(imu.gx);
-      gy.append(imu.gy);
-      gz.append(imu.gz);
-      last_cnt = imu.update_cnt;  
+    if(imu_sub.pull(&imu_s)) {
+      ax.append(imu_s.ax);
+      ay.append(imu_s.ay);
+      az.append(imu_s.az);
+      gx.append(imu_s.gx);
+      gy.append(imu_s.gy);
+      gz.append(imu_s.gz);
     }
-    if(bar.installed() && bar.update() && ((bar.press != bp_last) || (bar.alt != ba_last) || (bar.temp != bt_last))) {
+
+    if(bar_sub.pull(&bar_s) && ((bar_s.press != bp_last) || (bar_s.alt != ba_last) || (bar_s.temp != bt_last))) {
       //only record if at least one value is changed
-      sp.append(bar.press);
-      sa.append(bar.alt);
-      st.append(bar.temp);
-      bp_last = bar.press;
-      ba_last = bar.alt;
-      bt_last = bar.temp;
+      sp.append(bar_s.press);
+      sa.append(bar_s.alt);
+      st.append(bar_s.temp);
+      bp_last = bar_s.press;
+      ba_last = bar_s.alt;
+      bt_last = bar_s.temp;
     }
-    if(mag.installed() && mag.update() && ((mag.mx != mx_last) || (mag.my != my_last) || (mag.mz != mz_last))) {
+
+    if(mag_sub.pull(&mag_s) && ((mag_s.mx != mx_last) || (mag_s.my != my_last) || (mag_s.mz != mz_last))) {
       //only record if at least one value is changed
-      mx.append(mag.mx);
-      my.append(mag.my);
-      mz.append(mag.mz);
-      mx_last = mag.mx;
-      my_last = mag.my;
-      mz_last = mag.mz;
+      mx.append(mag_s.mx);
+      my.append(mag_s.my);
+      mz.append(mag_s.mz);
+      mx_last = mag_s.mx;
+      my_last = mag_s.my;
+      mz_last = mag_s.mz;
     }
   } 
 
@@ -1001,4 +1008,5 @@ void Cli::ps() {
   hal_print_resources();
   freertos_ps();
   RuntimeTraceGroup::print();
+  MsgBroker::top();
 }

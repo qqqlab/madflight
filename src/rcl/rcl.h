@@ -27,8 +27,24 @@ SOFTWARE.
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 #define RCL_MAX_CH 20 //maximum number of channels
+
+struct RclState {
+public:
+    uint32_t ts = 0; //sample timestamp [us]
+    uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
+    float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
+    float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
+    float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
+    float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
+    float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
+    bool armed = false; //armed state (triggered by arm switch or stick commands)
+    uint8_t flightmode = 0; //flightmode 0 to 5    
+};
+
+extern MsgTopic<RclState> rcl_topic;
 
 struct RclConfig {
   public:
@@ -47,7 +63,7 @@ class RclGizmo {
     //virtual bool telem_statustext(uint8_t severity, char *text) {(void)severity; (void)text; return true;} //send MAVLink status text
 };
 
-class Rcl {
+class Rcl : public RclState {
   public:
     RclConfig config;
 
@@ -61,16 +77,6 @@ class Rcl {
     bool connected();
     void calibrate(); //interactive calibration
     bool telem_statustext(uint8_t severity, char *text); //send MAVLink status text
-
-    uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
-
-    float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
-    float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
-    float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
-    float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
-    float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
-    bool armed = false; //armed state (triggered by arm switch or stick commands)
-    uint8_t flightmode = 0; //flightmode 0 to 5
 
   private:
     int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels

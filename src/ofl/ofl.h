@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 struct OflState {
   public:
@@ -42,6 +43,8 @@ struct OflState {
     uint32_t update_ts = 0; // update timestamp [us]
     uint32_t update_cnt = 0; // number of updates since start
 };
+
+extern MsgTopic<OflState> ofl_topic;
 
 struct OflConfig {
   public:

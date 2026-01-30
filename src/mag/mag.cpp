@@ -31,8 +31,9 @@ SOFTWARE.
 #include "MagGizmoMMC5603.h"
 #include "MagGizmoBMM150.h"
 
-//create global module instance
+//create global module instance and topic
 Mag mag;
+MsgTopic<MagState> mag_topic = MsgTopic<MagState>("mag");
 
 int Mag::setup() {
   cfg.printModule("IMU");
@@ -122,6 +123,8 @@ bool Mag::update() {
     }
 
     ts = micros();
+
+    mag_topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

@@ -34,6 +34,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -75,6 +76,8 @@ public:
     float gz = 0; //"Down" rotation speed [deg/s]
     float temp = 0; //temperature [C]
 };
+
+extern MsgTopic<ImuState> imu_topic;
 
 //Note: Instantiate a gizmo with: ImuGizmo *newgizmo = new ImuGizmoXXX::create(ImuConfig *config, ImuState *state)
 class ImuGizmo {

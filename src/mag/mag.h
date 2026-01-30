@@ -28,6 +28,7 @@ SOFTWARE.
 #include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/msg.h"
 
 struct MagState {
   public:
@@ -36,6 +37,8 @@ struct MagState {
     float mz = 0; //"Down" magnetic flux [uT]
     uint32_t ts = 0; //last sample time in [us]
 };
+
+extern MsgTopic<MagState> mag_topic;
 
 struct MagConfig {
   public:
