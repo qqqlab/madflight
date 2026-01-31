@@ -58,13 +58,15 @@ public:
 class Mag : public MagState {
   public:
     MagConfig config;
-
     MagGizmo *gizmo = nullptr;
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     const char* name() {return (gizmo ? gizmo->name() : "NONE");}
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   protected:
     uint32_t _samplePeriod = 10000; //gizmo sample period in [us]

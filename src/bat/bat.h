@@ -63,12 +63,14 @@ class BatGizmo {
 class Bat : public BatState {
   public:
     BatConfig config;
-
     BatGizmo *gizmo = nullptr;
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("BAT");

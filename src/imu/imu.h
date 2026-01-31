@@ -116,7 +116,6 @@ class Imu : public ImuState {
     void (*onUpdate)(void) = NULL;
 
     //methods
-    bool waitNewSample(); //wait for new sample, returns false on fail
     void statReset();
     uint32_t getSampleRate() {return config.sample_rate;}  //sensor sample rate in Hz
 

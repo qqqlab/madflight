@@ -64,22 +64,17 @@ class OflGizmo {
 };
 
 class Ofl : public OflState {
-  private:
-    volatile bool updated = false;
-
   public:
     OflConfig config;
 
     OflGizmo *gizmo = nullptr;
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
-    bool is_updated() { // Returns true if gizmo was updated in another task
-      if(!updated) return false;
-      updated = false;
-      return true;
-    }
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("OFL");

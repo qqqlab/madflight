@@ -66,17 +66,18 @@ class RclGizmo {
 class Rcl : public RclState {
   public:
     RclConfig config;
-
     RclGizmo *gizmo = nullptr;
 
     int setup();   // Use config to setup gizmo, returns 0 on success, or error code
-    bool update(); // Returns true if channel pwm data was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     int update_count() {return _update_count;} //Returns the number of channel packets the gizmo received
-
     bool connected();
     void calibrate(); //interactive calibration
     bool telem_statustext(uint8_t severity, char *text); //send MAVLink status text
+
+  protected:
+    friend void rcl_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels

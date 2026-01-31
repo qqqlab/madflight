@@ -40,16 +40,15 @@ void madflight_die(String msg) {
 
 void madflight_panic(String msg) {
   bool do_print = true;
+  uint32_t updated_cnt = cli.updated_cnt;
   led.enabled = true;
+  led.color(0xFF8C00); //dark orange
   for(;;) {
     if(do_print) Serial.print("FATAL ERROR: " + msg + " Press enter to start CLI...\n");
     for(int i = 0; i < 20; i++) {
       led.toggle();
-      uint32_t ts = millis();
-      while(millis() - ts < 50) {
-        if(cli.update()) do_print = false; //process CLI commands, stop error output after first command
-        rcl.update(); //keep rcl (mavlink?) running
-      } 
+      if(updated_cnt != cli.updated_cnt) do_print = false; //stop error output after first CLI command
+      delay(50);
     }
   }
 }

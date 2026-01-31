@@ -126,12 +126,11 @@ bool Ahr::update() {
 }
 
 void Ahr::getQFromMag(float *q) {
-  //warm up mag by getting 100 samples (imu should be running already)
-  for(int i=0;i<100;i++) {
-    uint32_t start = micros();
-    config.pmag->update();
-    while(micros() - start < 1000000 / config.pimu->config.sample_rate); //wait until next sample time
-  }
+  //warm up mag by getting 100 samples within max 1 second (imu + mag should be running already)
+  uint32_t ts = millis();
+  do {
+    portYIELD();
+  } while( mag_topic.get_generation() < 100 && millis() - ts < 1000 );
 
   //update mx and my from mag or imu
   update();

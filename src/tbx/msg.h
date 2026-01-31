@@ -42,11 +42,12 @@ template <class T> class MsgTopic;
 
 //=============================================================================
 class MsgBroker {
-    friend class MsgTopicBase;
   public:
     static int topic_count();
     static void top();
   protected:
+    friend class MsgTopicBase;
+
     static void add_topic(MsgTopicBase *topic);
   private:
     static MsgTopicBase* topic_list[MF_MSGTOPIC_LIST_SIZE];
@@ -54,9 +55,13 @@ class MsgBroker {
 
 //=============================================================================
 class MsgTopicBase {
+  public:
+    uint32_t get_generation() {return generation;}
+
+  protected:
     friend class MsgBroker;
     friend class MsgSubscriptionBase;
-  protected:
+
     String name;
     uint32_t generation = 0; //counts messages published to this topic
     MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
@@ -75,18 +80,20 @@ class MsgTopicBase {
 
 //=============================================================================
 class MsgSubscriptionBase {
-    friend class MsgBroker;
-    template <class T> friend class MsgSubscription;
   public:
     bool updated(); //returns true if new msg available
   protected:
+    friend class MsgBroker;
+    template <class T> friend class MsgSubscription;
+
     String name;
     uint32_t generation = 0; //last pulled topic generation 
     uint32_t pull_cnt = 0; //pull counter
 
     MsgSubscriptionBase(String name, MsgTopicBase *topic); //start a new subscription
     virtual ~MsgSubscriptionBase();
-    bool pull(void *msg); //pull message, returns true and msg when new msg available; else returns false and does not update msg
+    bool pull(void *msg); //pull message: returns true if msg was pulled, returns false if no msg available
+    bool pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
   private:
     MsgTopicBase *topic;
     MsgSubscriptionBase() {}
@@ -108,4 +115,5 @@ class MsgSubscription : public MsgSubscriptionBase {
   public:
     MsgSubscription(String name, MsgTopic<T> *topic) : MsgSubscriptionBase(name, topic) {}
     bool pull(T *msg) { return MsgSubscriptionBase::pull(msg); }
+    bool pull_updated(T *msg) { return MsgSubscriptionBase::pull_updated(msg); }
 };

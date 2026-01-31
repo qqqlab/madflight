@@ -396,11 +396,8 @@ bool Cli::update() {
   Serial.flush(); //for TinyUSB
 
   runtimeTrace.stop(updated);
+  if(updated) updated_cnt++;
   return updated;
-}
-
-void Cli::begin() {
-  Serial.println("CLI: Command Line Interface Started - Type help for help");
 }
 
 void Cli::help() {
@@ -458,12 +455,9 @@ void Cli::help() {
   );
 }
 
-
 //========================================================================================================================//
 //                                          COMMAND PROCESSING                                                            //
 //========================================================================================================================//
-
-
 void Cli::cmd_execute_batch(const char *batch) {
   cmd_clear();
   int pos = 0;
@@ -615,9 +609,6 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
 //========================================================================================================================//
 //                                          HELPERS                                                                       //
 //========================================================================================================================//
-
-
-
 void Cli::print_i2cScan() {
   for(int bus_i=0;bus_i<4;bus_i++) {
     MF_I2C *i2c = hal_get_i2c_bus(bus_i);
@@ -645,7 +636,6 @@ void Cli::print_i2cScan() {
 //========================================================================================================================//
 //                                          CALIBRATION FUNCTIONS                                                         //
 //========================================================================================================================//
-
 void Cli::calibrate_gyro() {
   Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
   calibrate_IMU2(true);
@@ -658,59 +648,50 @@ void Cli::calibrate_IMU() {
 
 //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
 void Cli::calibrate_IMU2(bool gyro_only) {
-  //Read IMU values, and average the readings
-  int cnt = 3000;
-  float axerr = 0;
-  float ayerr = 0;
-  float azerr = 0;
-  float gxerr = 0;
-  float gyerr = 0;
-  float gzerr = 0;
-  int bar_cnt = 0;
-  float bar_alt = 0;
-  for(int i=0; i<cnt; i++) {
-    if(bar.update()) {
-      bar_cnt++;
-      bar_alt += bar.alt;
-    }
-    imu.waitNewSample();
-    axerr += imu.ax;
-    ayerr += imu.ay;
-    azerr += imu.az;
-    gxerr += imu.gx;
-    gyerr += imu.gy;
-    gzerr += imu.gz;
-  }
-  axerr /= cnt;
-  ayerr /= cnt;
-  azerr /= cnt;
-  gxerr /= cnt;
-  gyerr /= cnt;
-  gzerr /= cnt;
+  auto imu_sub = MsgSubscription<ImuState>("calimu", &imu_topic);
+  auto bar_sub = MsgSubscription<BarState>("calimu", &bar_topic);
+  ImuState imu_s;
+  BarState bar_s;
 
-  //remove gravitation
-  azerr -= 1.0;
+  //Read IMU values, and average the readings
+  const int timeout = 3000;
+  Stat alt;
+  Stat ax, ay, az, gx, gy, gz;
+  uint32_t ts = millis();
+  while(millis() - ts < timeout) {
+    if(bar_sub.pull_updated(&bar_s)) {
+      alt.append(bar_s.alt);
+    }
+    if(imu_sub.pull_updated(&imu_s)) {
+      ax.append(imu_s.ax);
+      ay.append(imu_s.ay);
+      az.append(imu_s.az);
+      gx.append(imu_s.gx);
+      gy.append(imu_s.gy);
+      gz.append(imu_s.gz - 1.0); //remove gravitation
+    }
+  }
 
   //save ground level
-  if(bar_cnt > 0) {
-    bar.ground_level = bar_alt / bar_cnt;
-    Serial.printf("BAR: Ground level: %f m (%d samples)\n", bar.ground_level, bar_cnt);
+  if(alt.n > 0) {
+    bar.ground_level = alt.mean();
+    Serial.printf("BAR: Ground level: %.3fm (%d samples, stdev: %.3fm)\n", alt.mean(), alt.n, alt.std());
   }
 
-  Serial.printf("set imu_cal_gx %+f #config was %+f\n", gxerr, cfg.imu_cal_gx);
-  Serial.printf("set imu_cal_gy %+f #config was %+f\n", gyerr, cfg.imu_cal_gy);
-  Serial.printf("set imu_cal_gz %+f #config was %+f\n", gzerr, cfg.imu_cal_gz);
+  Serial.printf("set imu_cal_gx %+f #config was %+f\n", gx.mean(), cfg.imu_cal_gx);
+  Serial.printf("set imu_cal_gy %+f #config was %+f\n", gy.mean(), cfg.imu_cal_gy);
+  Serial.printf("set imu_cal_gz %+f #config was %+f\n", gz.mean(), cfg.imu_cal_gz);
 
   bool apply_gyro = true;
   
   if (gyro_only) {
     //only apply reasonable gyro errors
     float gtol = 10;
-    apply_gyro = ( -gtol < gxerr && gxerr < gtol  &&  -gtol < gyerr && gyerr < gtol  &&  -gtol < gzerr && gzerr < gtol );
+    apply_gyro = ( -gtol < gx.mean() && gx.mean() < gtol  &&  -gtol < gy.mean() && gy.mean() < gtol  &&  -gtol < gz.mean() && gz.mean() < gtol );
   }else{
-    Serial.printf("set imu_cal_ax %+f #config was %+f\n", axerr, cfg.imu_cal_ax);
-    Serial.printf("set imu_cal_ay %+f #config was %+f\n", ayerr, cfg.imu_cal_ay);
-    Serial.printf("set imu_cal_az %+f #config was %+f\n", azerr, cfg.imu_cal_az);
+    Serial.printf("set imu_cal_ax %+f #config was %+f\n", ax.mean(), cfg.imu_cal_ax);
+    Serial.printf("set imu_cal_ay %+f #config was %+f\n", ay.mean(), cfg.imu_cal_ay);
+    Serial.printf("set imu_cal_az %+f #config was %+f\n", az.mean(), cfg.imu_cal_az);
   }
 /*
     //only apply reasonable acc errors
@@ -720,17 +701,17 @@ void Cli::calibrate_IMU2(bool gyro_only) {
 */
   
   if (apply_gyro) {
-    cfg.imu_cal_gx = gxerr;
-    cfg.imu_cal_gy = gyerr;
-    cfg.imu_cal_gz = gzerr;
+    cfg.imu_cal_gx = gx.mean();
+    cfg.imu_cal_gy = gy.mean();
+    cfg.imu_cal_gz = gz.mean();
   }else{
      Serial.println("=== Not applying gyro correction, out of tolerance ===");
   }
 
   if (!gyro_only) {
-    cfg.imu_cal_ax = axerr;
-    cfg.imu_cal_ay = ayerr;
-    cfg.imu_cal_az = azerr;
+    cfg.imu_cal_ax = ax.mean();
+    cfg.imu_cal_ay = ay.mean();
+    cfg.imu_cal_az = az.mean();
   }
   
   Serial.println("Use 'save' to save these values to flash");
@@ -739,12 +720,7 @@ void Cli::calibrate_IMU2(bool gyro_only) {
 void Cli::calibrate_Magnetometer() {
   float bias[3], scale[3];
 
-  if (mag.installed()) {
-    Serial.print("EXT ");
-  }else if (imu.config.has_mag) {
-    Serial.print("IMU ");
-  }
-  Serial.println("Magnetometer calibration. Rotate the IMU about all axes until complete.");
+  Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
   if ( _calibrate_Magnetometer(bias, scale) ) {
     Serial.println("Calibration Successful!");
     Serial.printf("set mag_cal_x  %+f #config %+f\n", bias[0], cfg.mag_cal_x);
@@ -768,13 +744,16 @@ void Cli::calibrate_Magnetometer() {
   }
 }
 
+static MsgSubscription<MagState> * mag_subription;
+
 //get a reading from the magnetometer
-bool Cli::_calibrate_Magnetometer_ReadMag(float *m) {
-  mag.update();
-  m[0] = mag.mx;
-  m[1] = mag.my;
-  m[2] = mag.mz;
-  return true;
+static bool _calibrate_Magnetometer_ReadMag(float *m) {
+  MagState mag_s;
+  bool updated = mag_subription->pull_updated(&mag_s);
+  m[0] = mag_s.mx;
+  m[1] = mag_s.my;
+  m[2] = mag_s.mz;
+  return updated;
 }
 
 // finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
@@ -795,6 +774,9 @@ bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3])
 
   //exit if no mag present
   if(!mag.installed()) return false;
+
+  //start subscription
+  mag_subription = new MsgSubscription<MagState>("calmag", &mag_topic);
 
   // get starting set of data
   for(int i=0;i<50;i++) {
@@ -861,18 +843,18 @@ bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3])
   return true;
 }
 
-
 void Cli::calibrate_info(int seconds) {
   bool report_spikes = (seconds >= 0);
   if(seconds < 0) seconds = -seconds;
   if(seconds == 0) seconds = 3;
   Serial.printf("Gathering sensor statistics, please wait %d seconds ...\n\n", seconds);
 
-  Stat ax(1000),ay(1000),az(1000);
-  Stat gx(1000),gy(1000),gz(1000);
-  Stat sp(1000),sa(1000),st(1000);
-  Stat mx(1000),my(1000),mz(1000);
-
+  //keep up to 1000 samples of history
+  const int hist = 1000;
+  Stat ax(hist), ay(hist), az(hist);
+  Stat gx(hist), gy(hist), gz(hist);
+  Stat sp(hist), sa(hist), st(hist);
+  Stat mx(hist), my(hist), mz(hist);
 
   float bp_last = 0;
   float ba_last = 0;
@@ -891,7 +873,7 @@ void Cli::calibrate_info(int seconds) {
 
   uint32_t ts = micros();
   while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {
-    if(imu_sub.pull(&imu_s)) {
+    if(imu_sub.pull_updated(&imu_s)) {
       ax.append(imu_s.ax);
       ay.append(imu_s.ay);
       az.append(imu_s.az);
@@ -900,7 +882,7 @@ void Cli::calibrate_info(int seconds) {
       gz.append(imu_s.gz);
     }
 
-    if(bar_sub.pull(&bar_s) && ((bar_s.press != bp_last) || (bar_s.alt != ba_last) || (bar_s.temp != bt_last))) {
+    if(bar_sub.pull_updated(&bar_s) && ((bar_s.press != bp_last) || (bar_s.alt != ba_last) || (bar_s.temp != bt_last))) {
       //only record if at least one value is changed
       sp.append(bar_s.press);
       sa.append(bar_s.alt);
@@ -910,7 +892,7 @@ void Cli::calibrate_info(int seconds) {
       bt_last = bar_s.temp;
     }
 
-    if(mag_sub.pull(&mag_s) && ((mag_s.mx != mx_last) || (mag_s.my != my_last) || (mag_s.mz != mz_last))) {
+    if(mag_sub.pull_updated(&mag_s) && ((mag_s.mx != mx_last) || (mag_s.my != my_last) || (mag_s.mz != mz_last))) {
       //only record if at least one value is changed
       mx.append(mag_s.mx);
       my.append(mag_s.my);
@@ -975,7 +957,6 @@ void Cli::calibrate_info(int seconds) {
 //========================================================================================================================//
 //                                                PRINT FUNCTIONS                                                         //
 //========================================================================================================================//
-
 void Cli::cli_print_all(bool val) {
   for(int i=0;i<cli_print_extern_count;i++) cli_print_flag_extern[i] = val;
   for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) cli_print_flag[i] = val;

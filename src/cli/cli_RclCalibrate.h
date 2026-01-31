@@ -44,9 +44,7 @@ private:
 
 //update rcl, yield and check for cancel, return false if 'q' was pressed
 bool do_events(bool *event_key = nullptr) {
-  rcl.update();
-
-  taskYIELD();
+  taskYIELD(); //yield RCL (and other) tasks
 
   while(Serial.available()) {
     //set event_key flag

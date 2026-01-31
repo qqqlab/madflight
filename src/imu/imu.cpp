@@ -222,14 +222,6 @@ bool Imu::update() {
   return updated;
 }
 
-//wait for new sample, returns false on fail
-bool Imu::waitNewSample() {
-  uint32_t last_cnt = update_cnt;
-  uint32_t start = millis();
-  while( last_cnt == update_cnt && millis() - start <= (10*1000) / config.sample_rate );
-  return (last_cnt != update_cnt);
-}
-
 void Imu::statReset() {
     stat_cnt = 0; //number of accumulated samples
     stat_latency = 0; //summed interrupt latency from start of interrupt handler to start of interrupt task in us

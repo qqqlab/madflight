@@ -123,11 +123,16 @@ MsgSubscriptionBase::~MsgSubscriptionBase() {
     topic->remove_subscription(this);
 }
 
-//pull message, returns true and msg when new msg available; else returns false and does not update msg
+//pull message: returns true if msg was pulled, returns false if no msg available
 bool MsgSubscriptionBase::pull(void *msg) {
-    if(!updated()) return false;
     if(!topic->pull(msg)) return false; 
     generation = topic->generation;
     pull_cnt++;
     return true; //NOTE: retrieved msg might be older than this->generation
+}
+
+//pull updated message: returns true when updated msg available, else returns false and does not update msg 
+bool MsgSubscriptionBase::pull_updated(void *msg) {
+    if(!updated()) return false;
+    return pull(msg);
 }
