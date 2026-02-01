@@ -31,9 +31,8 @@ SOFTWARE.
 #include "OflGizmoPMW3901.h" //SPI
 #include "OflGizmoPMW3901U.h" //UART
 
-//create global module instance and topic
+//create global module instance
 Ofl ofl;
-MsgTopic<OflState> ofl_topic = MsgTopic<OflState>("ofl");
 
 int Ofl::setup() {
   cfg.printModule(MF_MOD);
@@ -118,7 +117,7 @@ bool Ofl::update() {
     update_ts = micros();
     update_cnt++;
 
-    ofl_topic.publish(this);
+    topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

@@ -648,8 +648,8 @@ void Cli::calibrate_IMU() {
 
 //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
 void Cli::calibrate_IMU2(bool gyro_only) {
-  auto imu_sub = MsgSubscription<ImuState>("calimu", &imu_topic);
-  auto bar_sub = MsgSubscription<BarState>("calimu", &bar_topic);
+  auto imu_sub = MsgSubscription<ImuState>("calimu", &imu.topic);
+  auto bar_sub = MsgSubscription<BarState>("calimu", &bar.topic);
   ImuState imu_s;
   BarState bar_s;
 
@@ -776,7 +776,7 @@ bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3])
   if(!mag.installed()) return false;
 
   //start subscription
-  mag_subription = new MsgSubscription<MagState>("calmag", &mag_topic);
+  mag_subription = new MsgSubscription<MagState>("calmag", &mag.topic);
 
   // get starting set of data
   for(int i=0;i<50;i++) {
@@ -867,9 +867,9 @@ void Cli::calibrate_info(int seconds) {
   ImuState imu_s;
   BarState bar_s;
   MagState mag_s;
-  auto imu_sub = MsgSubscription<ImuState>("calinfo", &imu_topic);
-  auto bar_sub = MsgSubscription<BarState>("calinfo", &bar_topic);
-  auto mag_sub = MsgSubscription<MagState>("calinfo", &mag_topic);
+  auto imu_sub = MsgSubscription<ImuState>("calinfo", &imu.topic);
+  auto bar_sub = MsgSubscription<BarState>("calinfo", &bar.topic);
+  auto mag_sub = MsgSubscription<MagState>("calinfo", &mag.topic);
 
   uint32_t ts = micros();
   while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {

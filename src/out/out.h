@@ -38,10 +38,10 @@ struct OutState {
     int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
 };
 
-extern MsgTopic<OutState> out_topic;
-
 class Out : public OutState {
   public:
+    MsgTopic<OutState> topic = MsgTopic<OutState>("out");
+
     bool eperiodEnabled[OUT_SIZE] = {}; //ePeriod enabled flag
 
     void setup();

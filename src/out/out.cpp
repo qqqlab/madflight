@@ -24,9 +24,8 @@ SOFTWARE.
 
 #include "out.h"
 
-//global module class instance and topic
+//global module class instance
 Out out;
-MsgTopic<OutState> out_topic = MsgTopic<OutState>("out");
 
 char Out::getType(uint8_t idx) {
   if(idx >= OUT_SIZE) return 0;
@@ -120,7 +119,7 @@ void Out::set(uint8_t idx, float value) {
           dshotbidir.set_throttle(throttle);
         }
       }
-      out_topic.publish(this);
+      topic.publish(this);
       break;
     case 'M':
     case 'S':
@@ -129,7 +128,7 @@ void Out::set(uint8_t idx, float value) {
       }else{
         if(type[idx] == 'M') pwm[idx].writeFactor(0);
       }
-      out_topic.publish(this);
+      topic.publish(this);
       break;
   }
 }

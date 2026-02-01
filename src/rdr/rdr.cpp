@@ -38,7 +38,6 @@ SOFTWARE.
 
 //create global module instance
 Rdr rdr;
-MsgTopic<RdrState> rdr_topic = MsgTopic<RdrState>("rdr");
 
 int Rdr::setup() {
   cfg.printModule(MF_MOD);
@@ -94,7 +93,7 @@ bool Rdr::update() {
     update_ts = micros();
     update_cnt++;
 
-    rdr_topic.publish(this);
+    topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

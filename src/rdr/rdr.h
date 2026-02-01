@@ -38,8 +38,6 @@ struct RdrState {
     uint32_t update_cnt = 0; //number of updates since start
 };
 
-extern MsgTopic<RdrState> rdr_topic;
-
 struct RdrConfig {
   public:
     Cfg::rdr_gizmo_enum gizmo = Cfg::rdr_gizmo_enum::mf_NONE;
@@ -61,6 +59,7 @@ class Rdr : public RdrState {
   public:
     RdrConfig config;
     RdrGizmo *gizmo = nullptr;
+    MsgTopic<RdrState> topic = MsgTopic<RdrState>("rdr");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

@@ -30,9 +30,8 @@ SOFTWARE.
 #include "BatGizmoINA226.h"
 #include "BatGizmoINA228.h"
 
-//create global module instance and topic
+//create global module instance
 Bat bat;
-MsgTopic<BatState> bat_topic = MsgTopic<BatState>("bat");
 
 int Bat::setup() {
   cfg.printModule(MF_MOD);
@@ -72,7 +71,7 @@ bool Bat::update() {
   bool updated = (gizmo != nullptr);
   updated = updated && gizmo->update();
 
-  if(updated) bat_topic.publish(this);
+  if(updated) topic.publish(this);
   runtimeTrace.stop(updated);
   return updated;
 }

@@ -40,8 +40,6 @@ struct BarState {
     float ground_level; // Ground level in [m]
 };
 
-extern MsgTopic<BarState> bar_topic;
-
 struct BarConfig {
   public:
     uint32_t sample_rate = 100; //requested sample rate [Hz]
@@ -61,6 +59,7 @@ class Bar : public BarState {
   public:
     BarConfig config;
     BarGizmo *gizmo = nullptr;
+    MsgTopic<BarState> topic = MsgTopic<BarState>("bar");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

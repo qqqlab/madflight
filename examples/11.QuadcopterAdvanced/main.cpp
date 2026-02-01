@@ -41,8 +41,12 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 Fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2023-2025 https://madflight.com
+MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
+
+void setup() {}
+void loop() {}
+#if 0
 
 //Vehicle specific madflight configuration
 #define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
@@ -412,3 +416,4 @@ Yaw right               (CCW+ CW-)       -++-
     out.set(3, thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
   }
 }
+#endif

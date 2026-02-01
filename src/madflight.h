@@ -294,7 +294,7 @@ void madflight_setup() {
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
-    if(imu_topic.get_generation() == 0) {
+    if(imu.topic.get_generation() == 0) {
       madflight_panic(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
     }
 

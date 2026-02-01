@@ -38,8 +38,6 @@ struct MagState {
     uint32_t ts = 0; //last sample time in [us]
 };
 
-extern MsgTopic<MagState> mag_topic;
-
 struct MagConfig {
   public:
     uint32_t sample_rate = 100; //sample rate [Hz]
@@ -59,6 +57,7 @@ class Mag : public MagState {
   public:
     MagConfig config;
     MagGizmo *gizmo = nullptr;
+    MsgTopic<MagState> topic = MsgTopic<MagState>("mag");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

@@ -89,6 +89,7 @@ class Gps : public GpsState {
   public:
     GpsConfig config;
     GpsGizmo *gizmo = nullptr;
+    MsgTopic<GpsState> topic = MsgTopic<GpsState>("gps");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

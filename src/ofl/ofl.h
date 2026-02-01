@@ -44,8 +44,6 @@ struct OflState {
     uint32_t update_cnt = 0; // number of updates since start
 };
 
-extern MsgTopic<OflState> ofl_topic;
-
 struct OflConfig {
   public:
     Cfg::ofl_gizmo_enum ofl_gizmo = Cfg::ofl_gizmo_enum::mf_NONE;
@@ -66,8 +64,8 @@ class OflGizmo {
 class Ofl : public OflState {
   public:
     OflConfig config;
-
     OflGizmo *gizmo = nullptr;
+    MsgTopic<OflState> topic = MsgTopic<OflState>("ofl");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

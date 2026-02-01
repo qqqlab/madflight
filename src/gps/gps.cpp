@@ -31,9 +31,8 @@ SOFTWARE.
 #include "GpsGizmoUblox.h"
 //#include "GpsGizmoNmea.h" //TODO
 
-//create global module instance and topic
+//create global module instance
 Gps gps;
-MsgTopic<GpsState> gps_topic = MsgTopic<GpsState>("gps");
 
 int Gps::setup() {
   cfg.printModule(MF_MOD);
@@ -63,7 +62,7 @@ bool Gps::update() {
   bool updated = (gizmo != nullptr);
   updated = updated && gizmo->update();
 
-  if(updated) gps_topic.publish(this);
+  if(updated) topic.publish(this);
   runtimeTrace.stop(updated);
   return updated;
 }

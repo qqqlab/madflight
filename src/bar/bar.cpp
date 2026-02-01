@@ -34,9 +34,8 @@ SOFTWARE.
 #include "BarGizmoDPS310.h"
 #include <math.h>
 
-//create global module instance and topic
+//create global module instance
 Bar bar;
-MsgTopic<BarState> bar_topic = MsgTopic<BarState>("bar");
 
 
 int Bar::setup() {
@@ -112,7 +111,7 @@ bool Bar::update() {
     dt = (now - ts) / 1000000.0;
     ts = now;
 
-    bar_topic.publish(this);
+    topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

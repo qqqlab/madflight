@@ -130,7 +130,7 @@ void Ahr::getQFromMag(float *q) {
   uint32_t ts = millis();
   do {
     portYIELD();
-  } while( mag_topic.get_generation() < 100 && millis() - ts < 1000 );
+  } while( mag.topic.get_generation() < 100 && millis() - ts < 1000 );
 
   //update mx and my from mag or imu
   update();

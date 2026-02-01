@@ -38,11 +38,13 @@ Blinking long ON short OFF (red)       ARMED
 Blink interval longer than 1 second    imu_loop() is taking too much time
 Fast blinking                          Something is wrong, connect USB serial for info
 
-MIT license
-Copyright (c) 2023-2025 https://madflight.com
+MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include <Arduino.h>
+void setup() {}
+void loop() {}
+#if 0
+
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
@@ -367,3 +369,4 @@ Yaw right               (CCW+ CW-)       -++-
     out.set(3, thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
   }
 }
+#endif

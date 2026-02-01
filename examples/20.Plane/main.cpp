@@ -70,8 +70,12 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 Fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2024-2025 https://madflight.com
+MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
+
+void setup() {}
+void loop() {}
+#if 0
 
 //Vehicle specific madflight configuration
 #define VEH_TYPE VEH_TYPE_PLANE //set the vehicle type for logging and mavlink
@@ -446,3 +450,4 @@ void out_Mixer() {
   //0.0 is zero throttle if connecting to ESC for conventional PWM, 1.0 is max throttle
   //0.5 is centered servo, 0.0 and 1.0 are servo at their extreme positions as set with SERVO_MIN and SERVO_MAX
 }
+#endif

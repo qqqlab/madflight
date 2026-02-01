@@ -44,8 +44,6 @@ public:
     uint8_t flightmode = 0; //flightmode 0 to 5    
 };
 
-extern MsgTopic<RclState> rcl_topic;
-
 struct RclConfig {
   public:
     Cfg::rcl_gizmo_enum gizmo = Cfg::rcl_gizmo_enum::mf_NONE; //the gizmo to use
@@ -67,6 +65,7 @@ class Rcl : public RclState {
   public:
     RclConfig config;
     RclGizmo *gizmo = nullptr;
+    MsgTopic<RclState> topic = MsgTopic<RclState>("rcl");
 
     int setup();   // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup

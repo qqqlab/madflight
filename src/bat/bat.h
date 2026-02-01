@@ -39,8 +39,6 @@ struct BatState {
     uint32_t ts = 0; // Last update time stamp [us]
 };
 
-extern MsgTopic<BatState> bat_topic;
-
 struct BatConfig {
   public:
     uint32_t sample_rate = 100; //sample rate [Hz]
@@ -64,6 +62,7 @@ class Bat : public BatState {
   public:
     BatConfig config;
     BatGizmo *gizmo = nullptr;
+    MsgTopic<BatState> topic = MsgTopic<BatState>("bat");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
