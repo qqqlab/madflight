@@ -123,7 +123,7 @@ public:
     // Get measurements from the sensor
     bmp5_sensor_data data = {0,0};
     err = pressureSensor.getSensorData(&data);
-    if(err == BMP5_OK) {
+    if(err == BMP5_OK && data.pressure > 50000) { //anti spike
       *press = data.pressure;
       *temp = data.temperature;
       return true;
