@@ -41,8 +41,9 @@ Fast blinking                          Something is wrong, connect USB serial fo
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-void setup() {}
-void loop() {}
+#include <Arduino.h>
+void setup() {Serial.begin(115200);}
+void loop() {delay(1);}
 #if 0
 
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
