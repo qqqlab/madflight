@@ -987,7 +987,9 @@ void Cli::cli_print_loop() {
 
 void Cli::ps() {
   hal_print_resources();
-  freertos_ps();
-  RuntimeTraceGroup::print();
   MsgBroker::top();
+  RuntimeTraceGroup::print();
+  freertos_ps();
+  Serial.println();
+  hal_meminfo();
 }

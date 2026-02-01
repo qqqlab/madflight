@@ -268,4 +268,8 @@ SPIClass* hal_get_spi_bus(int bus_id) {
   return spi_bus;
 }
 
+void hal_meminfo() {
+  Serial.printf("MEM: %d bytes minimum free RAM)\n", (int)esp_get_minimum_free_heap_size());
+}
+
 #endif //#ifdef ARDUINO_ARCH_ESP32

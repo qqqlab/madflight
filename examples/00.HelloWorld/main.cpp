@@ -9,26 +9,30 @@ See http://madflight.com for detailed description
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
-#include <madflight.h>
+#include "madflight_config.h" // Edit this header file to setup the pins, hardware, radio, etc. for madflight
+#include <madflight.h> // Include the library, do this after madflight_config 
 
 void setup() {
-  madflight_setup(); //setup madflight modules and start IMU, BBX, RCL, CLI, and SENSORS rtos tasks
+  // Setup madflight modules and start IMU, BBX, RCL, CLI, and SENSORS rtos tasks
+  madflight_setup(); 
 }
 
 void loop() {
+  // Optional runtime tracing - type 'ps' in CLI to see results
   static RuntimeTrace runtimeTrace = RuntimeTrace("_loop");
   runtimeTrace.start();
-  //nothing to do here for madflight (the rtos tasks do the module updates)
+  // Add your code here (Nothing to do here for madflight, the rtos tasks do the module updates)
   runtimeTrace.stop(true);
 }
 
-//This is __MAIN__ function of this program. It is called when new IMU data is available.
+// This function is called from the IMU task when fresh IMU data is available.
 void imu_loop() {
-  //toggle led on every 1000 samples (normally 1 second)
+  // Toggle led on every 1000 samples (E.g. 1 second peroid at 1000Hz sample rate)
   if(imu.update_cnt % 1000 == 0) led.toggle();
 
-  bbx.log_imu(); //log IMU data to SDCARD at full speed
+  // Log IMU data to SDCARD at full speed - type 'bbstart' in CLI to start logging.
+  bbx.log_imu();
 
-  ahr.update(); //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data 
+  // AHRS sensor fusion -  type 'pahr' in CLI to see results
+  ahr.update();
 }

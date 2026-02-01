@@ -328,4 +328,14 @@ SPIClass* hal_get_spi_bus(int bus_id) {
   if(!spi_bus) return nullptr;
   return spi_bus;
 }
+
+void hal_meminfo() {
+  #ifdef PICO_RP2350
+    const int avail = 524288; //512K
+  #else
+    const int avail = 262144; //256K
+  #endif
+  int used = avail - rp2040.getFreeHeap();
+  Serial.printf("MEM: Used %.1f%% RAM (used %d of %d bytes)\n", 100.f * used / avail, used, avail);
+}
 #endif //#ifdef ARDUINO_ARCH_RP2040

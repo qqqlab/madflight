@@ -83,6 +83,7 @@ void rcl_task(void *pvParameters) {
 
 void sensor_task(void *pvParameters) {
   (void)pvParameters;
+  uint32_t loop_cnt = 0;
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t interval_ticks = pdMS_TO_TICKS(MF_SENSOR_TASK_INTERVAL_MS);
   for(;;) {
@@ -93,6 +94,12 @@ void sensor_task(void *pvParameters) {
     if(bat.update()) bbx.log_bat(); // battery consumption
     rdr.update(); // radar
     ofl.update(); // optical flow
+
+    // Other logging
+    if(loop_cnt % 2 == 0) bbx.log_att();   // Attitude (125Hz)
+    if(loop_cnt % 25 == 0) bbx.log_sys();  // System (10Hz)
+
+    loop_cnt++;
   }
 }
 
@@ -322,6 +329,9 @@ void madflight_setup() {
       Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
     }
   }
+
+  // MEMINFO 
+  hal_meminfo();
 
   // INFO - Command Line Interface banner
   Serial.println("CLI: Command Line Interface Started - Type help for help");

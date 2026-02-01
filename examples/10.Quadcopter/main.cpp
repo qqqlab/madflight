@@ -41,11 +41,6 @@ Fast blinking                          Something is wrong, connect USB serial fo
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include <Arduino.h>
-void setup() {Serial.begin(115200);}
-void loop() {delay(1);}
-#if 0
-
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
@@ -87,9 +82,9 @@ const float Kd_yaw_angle    = 0.1;      //Yaw D-gain
 const float Kp_ro_pi_rate   = 0.15;     //Roll/Pitch rate P-gain
 const float Ki_ro_pi_rate   = 0.2;      //Roll/Pitch rate I-gain
 const float Kd_ro_pi_rate   = 0.0002;   //Roll/Pitch rate D-gain (be careful when increasing too high, motors will begin to overheat!)
-const float Kp_yaw_rate     = 0.3;       //Yaw rate P-gain
-const float Ki_yaw_rate     = 0.05;      //Yaw rate I-gain
-const float Kd_yaw_rate     = 0.00015;   //Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
+const float Kp_yaw_rate     = 0.3;      //Yaw rate P-gain
+const float Ki_yaw_rate     = 0.05;     //Yaw rate I-gain
+const float Kd_yaw_rate     = 0.00015;  //Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
 
 //Yaw to keep in ANGLE mode when yaw stick is centered
 float yaw_desired = 0;
@@ -123,7 +118,11 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  cli.update(); //process CLI commands
+  // Optional runtime tracing - type 'ps' in CLI to see results
+  static RuntimeTrace runtimeTrace = RuntimeTrace("_loop");
+  runtimeTrace.start();
+  // Add your code here (Nothing to do here for madflight, the rtos tasks do the module updates)
+  runtimeTrace.stop(true);
 }
 
 //========================================================================================================================//
@@ -137,9 +136,6 @@ void imu_loop() {
 
   //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
   ahr.update(); 
-
-  //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
-  rcl.update();
 
   //PID Controller RATE or ANGLE
   #ifdef FLIGHTMODE_ANGLE
@@ -370,4 +366,3 @@ Yaw right               (CCW+ CW-)       -++-
     out.set(3, thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
   }
 }
-#endif

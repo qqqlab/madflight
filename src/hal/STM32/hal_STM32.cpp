@@ -362,4 +362,6 @@ SPIClass* hal_get_spi_bus(int bus_id) {
   return spi_bus;
 }
 
+void hal_meminfo() {}
+
 #endif //#ifdef ARDUINO_ARCH_STM32

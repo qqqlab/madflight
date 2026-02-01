@@ -55,4 +55,4 @@ MF_I2C* hal_get_i2c_bus(int bus_id); //get I2C bus
 SPIClass* hal_get_spi_bus(int bus_id); //get SPI bus
 MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = MF_SerialMode::mf_SERIAL_8N1, bool invert = false); //create/get Serial bus (late binding)
 void hal_print_resources();
-
+void hal_meminfo();

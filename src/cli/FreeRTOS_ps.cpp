@@ -62,9 +62,6 @@ void freertos_ps()
   } taskarr[2];
   static uint8_t taskarrIdx = 0;
 
-  Serial.print("portSTACK_GROWTH");
-Serial.println(portSTACK_GROWTH);
-
   taskarr_s &taold = taskarr[taskarrIdx];
   taskarrIdx = (taskarrIdx+1)%2;
   taskarr_s &tanew = taskarr[taskarrIdx];
