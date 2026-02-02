@@ -165,8 +165,6 @@ void imu_loop() {
 
   //Actuator mixing
   out_Mixer(); //Mixes PID outputs and sends command pulses to the motors, if mot.arm == true
-
-  //bbx.log_imu(); //uncomment for full speed black box logging of IMU data, but SDCARD will fill up quickly...
 }
 
 //========================================================================================================================

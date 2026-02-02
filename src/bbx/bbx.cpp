@@ -3,24 +3,10 @@
 #include <Arduino.h> //Serial
 #include "bbx.h"
 #include "BinLogWriter.h"
-
+#include "../tbx/ScheduleFreq.h"
 
 //include all module interfaces for loggers
-#include "../ahr/ahr.h"
-#include "../alt/alt.h"
-#include "../bar/bar.h"
-#include "../bat/bat.h"
-#include "../cfg/cfg.h"
-#include "../gps/gps.h"
-#include "../hal/hal.h"
-#include "../imu/imu.h"
-#include "../led/led.h"
-#include "../bbx/bbx.h"
-#include "../mag/mag.h"
-#include "../out/out.h"
-#include "../pid/pid.h"
-#include "../rcl/rcl.h"
-#include "../veh/veh.h"
+#include "../madflight_modules.h"
 
 //create global module instance
 Bbx bbx;
@@ -249,6 +235,10 @@ void Bbx::log_att() {
 
 //raw (unfiltered but corrected) IMU data
 void Bbx::log_imu() {
+  //log at max cfg.bbx_log_imu Hz
+  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_imu);
+  if(!schedule.expired()) return;
+
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
   bl.TimeUS(imu.ts);

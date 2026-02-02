@@ -258,6 +258,10 @@ SOFTWARE.
 \
   /*v2.2.0 additions */ \
   MF_PARAM( pin_imu_clkin,    -1, int32_t, 'p') /*CLKIN pin for ICM-42866-P - only tested for RP2 targets*/ \
+\
+  /*v2.3.0 additions */ \
+  MF_PARAM( bbx_log_imu,     100, int32_t, 'i') /* Max IMU log interval [Hz]*/ \
+\
 //end MF_PARAM_LIST
 
 

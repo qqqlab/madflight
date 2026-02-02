@@ -42,11 +42,9 @@ class ScheduleFreq {
   public:
     uint32_t ts_interval_us = 0;
     uint32_t dt_interval_us = 0;
-    float dt_interval_s = 0;
 
     ScheduleFreq(float freq_hz) {
-      dt_interval_us = 1000000 / freq_hz;
-      dt_interval_s = (float)dt_interval_us * 1e-6f;
+      dt_interval_us = (freq_hz <= 0 ? 0xFFFFFFFF : 1000000 / freq_hz);
     }
 
     virtual bool expired() {

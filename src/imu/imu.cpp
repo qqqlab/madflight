@@ -25,6 +25,7 @@ SOFTWARE.
 #include "./imu.h"
 #include "../cfg/cfg.h"
 #include "../hal/hal.h"
+#include "../bbx/bbx.h"
 
 //the "gizmos"
 #include "ImuGizmoMPUXXXX.h"
@@ -214,12 +215,15 @@ bool Imu::update() {
     this->dt = (update_ts - this->ts) / 1000000.0;
     this->ts = update_ts;
     this->update_cnt++;
+
     #if IMU_EXEC == IMU_EXEC_IRQ
         topic.publishFromISR(this);
     #else
         topic.publish(this);
     #endif
-}
+
+    bbx.log_imu();
+  }
   runtimeTrace.stop(updated);
   return updated;
 }

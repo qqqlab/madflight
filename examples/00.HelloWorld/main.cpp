@@ -30,9 +30,6 @@ void imu_loop() {
   // Toggle led on every 1000 samples (E.g. 1 second peroid at 1000Hz sample rate)
   if(imu.update_cnt % 1000 == 0) led.toggle();
 
-  // Log IMU data to SDCARD at full speed - type 'bbstart' in CLI to start logging.
-  bbx.log_imu();
-
   // AHRS sensor fusion -  type 'pahr' in CLI to see results
   ahr.update();
 }
