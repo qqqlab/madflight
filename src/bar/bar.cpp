@@ -77,7 +77,8 @@ int Bar::setup() {
       break;
     case Cfg::bar_gizmo_enum::mf_BMP580 :
       if(config.i2c_bus) {
-        gizmo = new BarGizmoBMP580(config.i2c_bus, config.i2c_adr, config.sample_rate);
+        //gizmo = new BarGizmoBMP580(config.i2c_bus, config.i2c_adr, config.sample_rate);
+        gizmo = BarGizmoBMP580::create(&config, this);
       }
       break;
     case Cfg::bar_gizmo_enum::mf_DPS310 :
