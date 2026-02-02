@@ -5,6 +5,10 @@ MspParser::MspParser() {}
 
 void MspParser::parse(char c, MspMessage& msg)
 {
+  //buffer overrun check
+  if(msg.received >= MSP_BUF_SIZE) {
+    msg.state = MSP_STATE_IDLE;
+  }
   switch(msg.state)
   {
     case MSP_STATE_IDLE:               // sync char 1 '$'
@@ -123,7 +127,7 @@ void MspParser::parse(char c, MspMessage& msg)
       break;
 
     default:
-      //msg.state = MSP_STATE_IDLE;
+      msg.state = MSP_STATE_IDLE; //should not get here
       break;
   }
 }

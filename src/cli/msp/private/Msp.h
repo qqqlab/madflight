@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <cstddef>
 
-constexpr size_t MSP_BUF_SIZE = 192;
-constexpr size_t MSP_BUF_OUT_SIZE = 240;
+constexpr size_t MSP_BUF_SIZE = 256;
+constexpr size_t MSP_BUF_OUT_SIZE = 256;
 
 enum MspState {
   MSP_STATE_IDLE,
