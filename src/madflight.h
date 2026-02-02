@@ -63,6 +63,7 @@ const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode
 
 void cli_task(void *pvParameters) {
   (void)pvParameters;
+  cli.begin();
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t interval_ticks = pdMS_TO_TICKS(MF_CLI_TASK_INTERVAL_MS);
   for(;;) {
@@ -137,7 +138,7 @@ void madflight_setup() {
   // USB - Start USB-CDC (Serial) and USB-MSC (if sdcard is inserted)
   hal_usb_setup();
 
-  // CLI - Start CLI task early in setup, allows for CLI commands while booting
+  // CLI - Start CLI task early in setup, but after Serial is up, allows for CLI commands while booting
   xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
 
   // Serial - Start USB serial console
@@ -334,6 +335,7 @@ void madflight_setup() {
   hal_meminfo();
 
   // INFO - Command Line Interface banner
+  cli.banner();
   Serial.println("CLI: Command Line Interface Started - Type help for help");
 
   // LED - Enable and switch it to green to signal end of startup.

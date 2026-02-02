@@ -333,7 +333,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(0x23); //4,5 _model.accelActive() | _model.baroActive() << 1 | _model.magActive() << 2 | _model.gpsActive() << 3 | 0 << 4 | _model.gyroActive() << 5);
       r.writeU32(0); //6,7,8,9 _model.state.mode.mask); // flight mode flags
       r.writeU8(0); //10 pid profile
-      r.writeU16(0x000c); //11,12 lrintf(_model.state.stats.getCpuLoad()));
+      r.writeU16(0); //11,12 cpu load in % - lrintf(_model.state.stats.getCpuLoad()));
       if (m.cmd == MSP_STATUS_EX) {
         r.writeU8(1); //13 max profile count
         r.writeU8(0); //14 current rate profile index
@@ -350,7 +350,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU32(0); //17,18,19,20 _model.state.mode.armingDisabledFlags);  // 4 bytes, flags
       r.writeU8(0); //21 reboot required
 
-      r.writeU8(0x29); //21 - cpu temperature in deg C
+      r.writeU8(0); //21 - cpu temperature in deg C
       r.writeU8(0x00); //22 - ???
       break;
 
@@ -457,7 +457,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(lrintf(imu.ax * 2048)); //g / 2048
       r.writeU16(lrintf(imu.ay * 2048));
       r.writeU16(lrintf(imu.az * 2048));
-      r.writeU16(lrintf(imu.gx * 10)); //deg/s / 10
+      r.writeU16(lrintf(imu.gx * 10)); //deg/s / 10 (?)
       r.writeU16(lrintf(imu.gy * 10));
       r.writeU16(lrintf(imu.gz * 10));
       r.writeU16(lrintf(mag.mx * 100)); //_model.state.mag.adc[i] * 1090

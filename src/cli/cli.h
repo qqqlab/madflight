@@ -44,18 +44,19 @@ bool cli_execute(String cmd, String arg1, String arg2) {
 class Cli {
 public:
   uint32_t updated_cnt = 0;
-  void setup();
-  void begin();
+  Cli();
   void help();
   void ps();
+  void banner();
 
 protected:
   friend void cli_task(void *pvParameters);
+  void begin();
   bool update(); //returns true if a command was processed (even an invalid one)
 
 private:
   RuntimeTrace runtimeTrace = RuntimeTrace("CLI");
-
+  int ser_buf_size = 0;
 //========================================================================================================================//
 //                                          COMMAND PROCESSING                                                            //
 //========================================================================================================================//

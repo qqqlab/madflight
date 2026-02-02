@@ -302,12 +302,19 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
 };
 bool cli_print_flag[CLI_PRINT_FLAG_COUNT] = {false};
 
-
-
-void Cli::setup() {
+Cli::Cli() {
   cli_print_all(false);
 }
 
+void Cli::begin() {
+  ser_buf_size = Serial.availableForWrite();
+}
+
+void Cli::banner() {
+  if(ser_buf_size < 255) {
+    Serial.printf("CLI: WARNING Serial transmit buffer (%d bytes) is small\n", ser_buf_size);
+  }
+}
 
 bool Cli::update_MODE_CLI() {
   bool rv = false;
@@ -359,7 +366,7 @@ bool Cli::update_MODE_MSP() {
   for(int i = 0; i < n; i++) {  
     uint8_t c = Serial.read();
 
-    //switch back to MODE_CLI if a single '#' is received directrly after the last msp command
+    //switch back to MODE_CLI if a '#' is received immediately after the last msp command
     if(last_msp_rv == true && c == '#') {
       cli_mode = MODE_CLI;
       last_msp_rv = false;

@@ -68,12 +68,11 @@ void MspParser::parse(char c, MspMessage& msg)
     case MSP_STATE_HEADER_V1:
       msg.buffer[msg.received++] = c;
       msg.checksum = crc8_xor(msg.checksum, c);
-      if(msg.received == sizeof(MspHeaderV1))
-      {
+      if(msg.received == sizeof(MspHeaderV1)) {
         const MspHeaderV1 * hdr = reinterpret_cast<MspHeaderV1*>(msg.buffer);
-        if(hdr->size > MSP_BUF_SIZE) msg.state = MSP_STATE_IDLE;
-        else
-        {
+        if(hdr->size > MSP_BUF_SIZE) {
+          msg.state = MSP_STATE_IDLE;
+        } else {
           msg.expected = hdr->size;
           msg.cmd = hdr->cmd;
           msg.received = 0;
@@ -85,14 +84,13 @@ void MspParser::parse(char c, MspMessage& msg)
     case MSP_STATE_PAYLOAD_V1:
       msg.buffer[msg.received++] = c;
       msg.checksum = crc8_xor(msg.checksum, c);
-      if(msg.received == msg.expected)
-      {
+      if(msg.received == msg.expected) {
         msg.state = MSP_STATE_CHECKSUM_V1;
       }
       break;
 
     case MSP_STATE_CHECKSUM_V1:
-      msg.state = msg.checksum == c ? MSP_STATE_RECEIVED : MSP_STATE_IDLE;
+      msg.state = (msg.checksum == c ? MSP_STATE_RECEIVED : MSP_STATE_IDLE);
       break;
 
     case MSP_STATE_HEADER_V2:
@@ -123,7 +121,7 @@ void MspParser::parse(char c, MspMessage& msg)
       break;
 
     case MSP_STATE_CHECKSUM_V2:
-      msg.state = msg.checksum2 == c ? MSP_STATE_RECEIVED : MSP_STATE_IDLE;
+      msg.state = (msg.checksum2 == c ? MSP_STATE_RECEIVED : MSP_STATE_IDLE);
       break;
 
     default:
