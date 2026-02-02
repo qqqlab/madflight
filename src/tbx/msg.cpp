@@ -71,10 +71,20 @@ MsgTopicBase::MsgTopicBase(String name, int len) {
     queue = xQueueCreate(1, len);
     MsgBroker::add_topic(this);
 }
+
 void MsgTopicBase::publish(void *msg) {
     xQueueOverwrite(queue, msg);
     generation++;
 }
+
+void MsgTopicBase::publishFromISR(void *msg) {
+    BaseType_t higherPriorityTaskWoken;
+    xQueueOverwriteFromISR(queue, msg, &higherPriorityTaskWoken);
+    (void)higherPriorityTaskWoken;
+    generation++;
+}
+
+
 bool MsgTopicBase::pull(void *msg) {
     return (xQueuePeek(queue, msg, 0) == pdPASS);
 }

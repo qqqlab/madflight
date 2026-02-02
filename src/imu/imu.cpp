@@ -214,8 +214,11 @@ bool Imu::update() {
     this->dt = (update_ts - this->ts) / 1000000.0;
     this->ts = update_ts;
     this->update_cnt++;
-
-    topic.publish(this);
+    #if IMU_EXEC == IMU_EXEC_IRQ
+        topic.publishFromISR(this);
+    #else
+        topic.publish(this);
+    #endif
 }
   runtimeTrace.stop(updated);
   return updated;

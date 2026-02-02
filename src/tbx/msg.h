@@ -68,6 +68,7 @@ class MsgTopicBase {
 
     MsgTopicBase(String name, int len);
     void publish(void *msg);
+    void publishFromISR(void *msg);
     bool pull(void *msg);
     void add_subscription(MsgSubscriptionBase *sub);
     void remove_subscription(MsgSubscriptionBase *sub);
@@ -105,6 +106,7 @@ class MsgTopic : public MsgTopicBase {
   public:
     MsgTopic(String name) : MsgTopicBase(name, sizeof(T)) {}
     void publish(T *msg) { MsgTopicBase::publish(msg); }
+    void publishFromISR(T *msg) { MsgTopicBase::publishFromISR(msg); }
   protected:
     bool pull(T *msg) { return MsgTopicBase::pull(msg); }
 };
