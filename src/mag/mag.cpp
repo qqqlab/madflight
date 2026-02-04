@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#define MF_MOD "MAG"
+
 #include <Arduino.h> //Serial
 #include "mag.h"
 #include "MagGizmoQMC5883L.h"
@@ -35,7 +37,7 @@ SOFTWARE.
 Mag mag;
 
 int Mag::setup() {
-  cfg.printModule("IMU");
+  cfg.printModule(MF_MOD);
 
   _samplePeriod = 1000000 / config.sample_rate;
 
@@ -80,7 +82,7 @@ int Mag::setup() {
 
   //check gizmo
   if(!gizmo && config.gizmo != Cfg::mag_gizmo_enum::mf_NONE) {
-    Serial.println("\nIMU: ERROR check pin/bus config\n");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 

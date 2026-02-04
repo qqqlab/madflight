@@ -47,6 +47,11 @@ void bbx_rp2_usb_setup(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 
 void hal_startup() {
   bbx_rp2_usb_detach();
+
+  // remove Arduino timer state machine
+  //pio_sm_set_enabled(pio2, 0, false);
+  //pio_sm_unclaim(pio2, 0);
+
   pio_registry_name_unclaimed("Arduino");
 }
 
@@ -66,24 +71,7 @@ void hal_print_resources() {
 #endif
 
 void hal_setup() {
-  //print bus config
-#if MF_SERIAL_DMA  
-  Serial.printf("HAL: SER bus 0 is hardware DMA uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 1 is hardware DMA uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
-#else
-  Serial.printf("HAL: SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
-#endif
-  Serial.printf("HAL: SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
-  Serial.printf("HAL: SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
-  Serial.printf("HAL: SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
-  Serial.printf("HAL: SER bus 5 is pio uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
-  Serial.printf("HAL: I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-  Serial.printf("HAL: I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-  Serial.printf("HAL: SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-  Serial.printf("HAL: SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
-
-  //SER BUS is configured on demand
+  //SER BUS - is configured on demand
 
   //I2C BUS
   if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
@@ -338,4 +326,24 @@ void hal_meminfo() {
   int used = avail - rp2040.getFreeHeap();
   Serial.printf("MEM: Used %.1f%% RAM (used %d of %d bytes)\n", 100.f * used / avail, used, avail);
 }
+
+void hal_print_businfo() {
+  Serial.println("\n=== BUS INFO ===\n");
+#if MF_SERIAL_DMA  
+  Serial.printf("SER bus 0 is hardware DMA uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("SER bus 1 is hardware DMA uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+#else
+  Serial.printf("SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+#endif
+  Serial.printf("SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
+  Serial.printf("SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
+  Serial.printf("SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
+  Serial.printf("SER bus 5 is pio uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
+  Serial.printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+  Serial.printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+  Serial.printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+  Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+}
+
 #endif //#ifdef ARDUINO_ARCH_RP2040

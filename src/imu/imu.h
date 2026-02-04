@@ -34,7 +34,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
 #include "../tbx/RuntimeTrace.h"
-#include "../tbx/msg.h"
+#include "../tbx/MsgBroker.h"
 
 //default settings
 #ifndef IMU_GYRO_DPS

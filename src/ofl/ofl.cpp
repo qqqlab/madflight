@@ -53,7 +53,7 @@ int Ofl::setup() {
 
   //check gizmo
   if(!installed() && config.ofl_gizmo != Cfg::ofl_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR check pin/bus config\n");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 

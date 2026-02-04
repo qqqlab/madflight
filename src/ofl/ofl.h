@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
-#include "../tbx/msg.h"
+#include "../tbx/MsgBroker.h"
 
 struct OflState {
   public:

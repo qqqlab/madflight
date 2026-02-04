@@ -27,7 +27,7 @@ SOFTWARE.
 #include "../hal/MF_I2C.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
-#include "../tbx/msg.h"
+#include "../tbx/MsgBroker.h"
 
 struct BatState {
   public:

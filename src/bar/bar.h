@@ -28,7 +28,7 @@ SOFTWARE.
 #include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
-#include "../tbx/msg.h"
+#include "../tbx/MsgBroker.h"
 
 struct BarState {
   public:

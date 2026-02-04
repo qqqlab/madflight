@@ -170,7 +170,7 @@ void madflight_setup() {
   cfg.load_madflight(madflight_board, madflight_config); //load config
 
   // INFO - Pins sorted by GPIO number
-  cfg.printPins();
+  //cfg.printPins();
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
@@ -322,20 +322,9 @@ void madflight_setup() {
   // LUA - Start Lua task and read script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();
 
-  // I2C - Report I2C clock speeds
-  for(int i=0;i<2;i++) {
-    MF_I2C* i2c = hal_get_i2c_bus(i);
-    if(i2c) {
-      Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
-    }
-  }
-
-  // MEMINFO 
-  hal_meminfo();
-
   // INFO - Command Line Interface banner
   cli.banner();
-  Serial.println("CLI: Command Line Interface Started - Type help for help");
+  Serial.println("CLI: Command Line Interface Started - Type 'help' for help, or 'diff' to debug");
 
   // LED - Enable and switch it to green to signal end of startup.
   led.enabled = true;

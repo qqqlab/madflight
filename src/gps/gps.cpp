@@ -50,7 +50,7 @@ int Gps::setup() {
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::gps_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR check pin/bus config\n");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 

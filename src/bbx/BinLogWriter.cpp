@@ -248,20 +248,20 @@ namespace BinLogWriter {
 
     //write headers (flush often)
     FMT_sendFMT(); //send FMT for FMT
-    queueSendFMTU(true,0,"",""); //send FMT for FMTU
+    queueSendFMTU(true, 0, "", ""); //send FMT for FMTU
     log_header_msg("ArduPlane"); //this sets the vehicle type -> which drives the translaton of flightmode codes to names (among other things probably)
     //log_header_msg("ArduCopter");  //gives problems with plot.ardupilot.org
     //TODO log_header_msg(MADFLIGHT_VERSION);
     queueFlush();
     
     //write multipliers
-    for(int i=0;i<_num_multipliers;i++) {
+    for(int i = 0; i < _num_multipliers; i++) {
       log_header_mult(log_Multipliers[i].ID, log_Multipliers[i].mult);
       queueFlush();
     }
     
     //write units
-    for(int i=0;i<_num_units;i++) {
+    for(int i = 0; i < _num_units; i++) {
       log_header_unit(log_Units[i].ID, log_Units[i].unit);
       queueFlush();
     }

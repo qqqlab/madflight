@@ -48,6 +48,7 @@ public:
   void help();
   void ps();
   void banner();
+  void print_resources();
 
 protected:
   friend void cli_task(void *pvParameters);

@@ -49,7 +49,8 @@ SOFTWARE.
 Rcl rcl;
 
 int Rcl::setup() {
-  cfg.printModule("rcl");
+  cfg.printModule("rcl", CfgClass::printModuleMode::GIZMO_NO_CR);
+  Serial.printf("Channels: roll:%d pitch:%d throttle:%d yaw:%d armed:%d flightmode:%d\n", (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_thr_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
 
   //clear vars
   throttle = 0;
@@ -126,7 +127,7 @@ int Rcl::setup() {
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::rcl_gizmo_enum::mf_NONE) {
-    Serial.println(MF_MOD ": ERROR check pin/bus config");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 
@@ -149,8 +150,6 @@ int Rcl::setup() {
   st[FLT].inv = 0; //NOT USED
   st_flt_spacing = (cfg.rcl_flt_max - cfg.rcl_flt_min) / 5;
 
-  Serial.printf(MF_MOD ": Setup completed.  Channels: throttle:%d roll:%d pitch:%d yaw:%d armed:%d flightmode:%d\n"
-  , (int)cfg.rcl_thr_ch, (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
   return 0;
 }
 

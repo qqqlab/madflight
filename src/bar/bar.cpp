@@ -77,7 +77,6 @@ int Bar::setup() {
       break;
     case Cfg::bar_gizmo_enum::mf_BMP580 :
       if(config.i2c_bus) {
-        //gizmo = new BarGizmoBMP580(config.i2c_bus, config.i2c_adr, config.sample_rate);
         gizmo = BarGizmoBMP580::create(&config, this);
       }
       break;
@@ -90,7 +89,7 @@ int Bar::setup() {
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::bar_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR check pin/bus config\n");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 

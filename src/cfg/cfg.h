@@ -353,7 +353,8 @@ public:
   //print
   bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
   void printPins();
-  void printModule(const char* module_name);
+  enum class printModuleMode {GIZMO, CFG_ERROR, GIZMO_NO_CR};
+  void printModule(const char* module_name, printModuleMode mode = printModuleMode::GIZMO);
   void printNameAndValue(uint16_t i, const char* comment = nullptr);
   void printValue(uint16_t i);
 

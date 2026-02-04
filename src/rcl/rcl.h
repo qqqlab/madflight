@@ -27,7 +27,7 @@ SOFTWARE.
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
-#include "../tbx/msg.h"
+#include "../tbx/MsgBroker.h"
 
 #define RCL_MAX_CH 20 //maximum number of channels
 

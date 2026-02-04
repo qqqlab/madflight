@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#define MF_MOD "IMU"
+
 #include "./imu.h"
 #include "../cfg/cfg.h"
 #include "../hal/hal.h"
@@ -56,11 +58,13 @@ int Imu::setup() {
 
   //check bus config
   if (!config.uses_i2c && (!config.spi_bus || config.spi_cs < 0)) {
-    Serial.println("IMU: ERROR check config - SPI sensor without imu_spi_bus and/or pin_imu_cs");
+    Serial.println("IMU: ERROR SPI sensor without imu_spi_bus and/or pin_imu_cs");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1;
   }
   if (config.uses_i2c && !config.i2c_bus) {
-    Serial.println("IMU: ERROR check config - I2C sensor without imu_i2c_bus");
+    Serial.println("IMU: ERROR I2C sensor without imu_i2c_bus");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1;
   }
 

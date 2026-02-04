@@ -1,10 +1,8 @@
-#include "cli.h"
 #include "../madflight_modules.h"
 #include "msp/msp.h"
 #include "cli_RclCalibrate.h"
 #include "stat.h"
 #include "FreeRTOS_ps.h"
-#include "../tbx/msg.h"
 
 //create global module instance
 Cli cli;
@@ -414,6 +412,7 @@ void Cli::help() {
   "-- TOOLS --\n"
   "help or ?           This info\n"
   "ps                  Task list\n"
+  "res                 Resources\n"
   "i2c                 I2C scan\n"
   "serial <bus_id>     Dump serial data\n"
   "spinmotors          Spin each motor\n"
@@ -529,7 +528,6 @@ void Cli::processCmd() {
   this->executeCmd(cmd, arg1, arg2);
 }
 
-
 void Cli::executeCmd(String cmd, String arg1, String arg2) {
   //process external print commands
   for (int i=0;i<cli_print_extern_count;i++) {
@@ -608,6 +606,8 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_serial(arg1.toInt());
   }else if (cmd == "spinmotors") {
     cli_spinmotors();
+  }else if (cmd == "res") {
+    print_resources();
   }else if (cmd != "") {
     Serial.println("ERROR Unknown command - Type help for help");
   }
@@ -993,10 +993,31 @@ void Cli::cli_print_loop() {
 }
 
 void Cli::ps() {
-  hal_print_resources();
   MsgBroker::top();
   RuntimeTraceGroup::print();
   freertos_ps();
   Serial.println();
   hal_meminfo();
+}
+
+void Cli::print_resources() {
+  // MEMINFO 
+  hal_meminfo();
+
+  // DMA, PIO
+  hal_print_resources();
+
+  //serial, i2c, and spi busses
+  hal_print_businfo();
+
+  //i2c clock speeds
+  for(int i=0;i<2;i++) {
+    MF_I2C* i2c = hal_get_i2c_bus(i);
+    if(i2c) {
+      Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
+    }
+  }
+
+  //pinout sorted by gpio number
+  cfg.printPins();
 }
