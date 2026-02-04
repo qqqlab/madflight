@@ -24,17 +24,10 @@ SOFTWARE.
 
 #define MF_MOD "AHR"
 
-#include <Arduino.h> //Serial
-#include "ahr.h"
+#include "../madflight_modules.h"
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
-
-#include "../mag/mag.h"
-#include "../imu/imu.h"
-#include "../cfg/cfg.h"
-#include "../tbx/common.h" //lowpass_to_beta
-#include "../tbx/RuntimeTrace.h"
 
 //create global module instance
 Ahr ahr;
@@ -120,6 +113,8 @@ bool Ahr::update() {
 
   //update euler angles
   computeAngles();
+
+  bbx.log_ahrs();
 
   runtimeTrace.stop(true);
   return true;

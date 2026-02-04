@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2023-2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -79,19 +79,21 @@ class Bbx {
     void printSummary();
   
     //loggers
-    void log_bar();
+    void log_baro();
     void log_bat();
     void log_gps();
     void log_imu();
-    void log_mode(uint8_t fm, const char* name);
+    void log_mode();
     void log_msg(const char* msg);
     void log_parm(const char* name, float value, float default_value);
     void log_pid();
-    void log_att();
+//    void log_att();
     void log_ahrs();
     void log_sys();
-    void log_mot();
-
+    void log_out();
+    void log_rdr();
+    void log_ofl();
+    void log_rcl();
 };
 
 extern Bbx bbx;

@@ -1,12 +1,31 @@
+/*==========================================================================================
+MIT License
+
+Copyright (c) 2023-2026 https://madflight.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
+
 #define MF_MOD "BBX"
 
-#include <Arduino.h> //Serial
-#include "bbx.h"
-#include "BinLogWriter.h"
-#include "../tbx/ScheduleFreq.h"
-
-//include all module interfaces for loggers
 #include "../madflight_modules.h"
+#include "BinLogWriter.h"
 
 //create global module instance
 Bbx bbx;
@@ -131,14 +150,14 @@ void Bbx::printSummary() {
 // Loggers
 //-------------------------------
 
-void Bbx::log_bar() {
+void Bbx::log_baro() {
   BinLog bl("BARO");
   bl.TimeUS();                      //uint64_t TimeUS: Time since system startup [us]
-  bl.u8("I", 0, 1, "instance");     //uint8_t I: barometer sensor instance number [-]
-  bl.flt("Alt", bar.alt, 1, "m");   //float Alt: calculated altitude [m]
+  bl.u8 ("I",     0,         1, "instance");     //uint8_t I: barometer sensor instance number [-]
+  bl.flt("Alt",   bar.alt,   1, "m");   //float Alt: calculated altitude [m]
                                     //float AltAMSL: altitude AMSL
   bl.flt("Press", bar.press, 1, "Pa");      //float Press: measured atmospheric pressure [Pa]
-  bl.i16("Temp", bar.temp, 1, "degC"); //int16_t Temp: measured atmospheric temperature [C]
+  bl.i16("Temp",  bar.temp,  1, "degC"); //int16_t Temp: measured atmospheric temperature [C]
                                     //float CRt: derived climb rate from primary barometer
                                     //uint32_t SMS: time last sample was taken
                                     //float Offset: raw adjustment of barometer altitude, zeroed on calibration, possibly set by GCS
@@ -149,12 +168,12 @@ void Bbx::log_bar() {
 void Bbx::log_bat() {
   BinLog bl("BAT");
   bl.TimeUS();                      //uint64_t TimeUS: Time since system startup [us]
-  bl.u8("I", 0, 1, "instance");     //uint8_t Inst: battery instance number [-]
-  bl.flt("Volt", bat.v, 1, "V");    //float Volt: measured voltage [V]
+  bl.u8 ("I",       0,               1, "instance");     //uint8_t Inst: battery instance number [-]
+  bl.flt("Volt",    bat.v,           1, "V");    //float Volt: measured voltage [V]
                                     //float VoltR: estimated resting voltage
-  bl.flt("Curr", bat.i, 1, "A");    //float Curr: measured current [A]
-  bl.flt("CurrTot", bat.mah*1000, 1, "Ah");  //float CurrTot: consumed Ah, current * time [Ah]
-  bl.flt("EnrgTot", bat.wh, 1, "Wh");  //float EnrgTot: consumed Wh, energy this battery has expended [Wh]
+  bl.flt("Curr",    bat.i,           1, "A");    //float Curr: measured current [A]
+  bl.flt("CurrTot", bat.mah  * 1000, 1, "Ah");  //float CurrTot: consumed Ah, current * time [Ah]
+  bl.flt("EnrgTot", bat.wh,          1, "Wh");  //float EnrgTot: consumed Wh, energy this battery has expended [Wh]
                                     //int16_t Temp: measured temperature
                                     //float Res: estimated battery resistance
                                     //uint8_t RemPct: remaining percentage
@@ -169,21 +188,21 @@ void Bbx::log_bat() {
 void Bbx::log_gps() {
   BinLog bl("GPS");                 // Information received from GNSS systems attached to the autopilot
   bl.TimeUS();                      //uint64_t TimeUS 1e-6 [s]: Time since system startup [us]
-  bl.u8("I", 0, 1, "instance");     //uint8_t I 0 [instance]: GPS instance number
-  bl.u8("Status", gps.fix);         //uint8_t Status 0 []: GPS Fix type; 2D fix, 3D fix etc. --madflight 0:no fix, 1:fix 2:2D fix, 3:3D fix)
+  bl.u8       ("I",      0, 1, "instance");     //uint8_t I 0 [instance]: GPS instance number
+  bl.u8       ("Status", gps.fix);         //uint8_t Status 0 []: GPS Fix type; 2D fix, 3D fix etc. --madflight 0:no fix, 1:fix 2:2D fix, 3:3D fix)
   //NOTE: gps.time is time in milliseconds since midnight UTC
-  bl.u32("GMS", gps.time);          //uint32_t GMS 1e-3 [s]: milliseconds since start of GPS Week [ms]
-  bl.u16("GWk", 2288);              //uint16_t GWk 0 []: weeks since 5 Jan 1980 [week]
-  bl.u8("NSats", gps.sat, 1, "satellites"); //uint8_t NSats '0':1e0 ['S':satellites]: number of satellites visible [-]
-  bl.i16x100("HDop", gps.hdop, 1, "m");     //int16_t*100 HDop '-':0 ['-']: horizontal dilution of precision [-]
-  bl.i32latlon("Lat", gps.lat, 1e-7, "deglatitude");     //int32_t Lat 1e-7 ['D':deglatitude]: latitude [deg*10e7]
-  bl.i32latlon("Lng", gps.lon, 1e-7, "deglongitude");     //int32_tLng 1e-7 ['U':deglongitude]: longitude [deg*10e7]
-  bl.flt("Alt", gps.alt/1000.0, 1, "m");           //i32x100 Alt 'B':1e-2 ['m':m]: altitude [mm]
-  bl.flt("Spd", gps.sog/1000.0, 1, "m/s");           //float Spd 1 ['n':m/s]: ground speed [mm/s]
-  bl.i32("GCrs",gps.cog, 1, "degheading");     //float GCrs 1 ['h':degheading]: ground course [deg]
-  bl.flt("VZ", gps.veld/1000.0, 1, "m/s");           //float VZ 1 ['n':m/s]: vertical speed [mm/s]
-  bl.flt("Yaw", 0, 1, "degheading");           //float Yaw 1 ['h':degheading]: vehicle yaw
-  bl.u8("U",1);                     //U: boolean value indicating whether this GPS is in use
+  bl.u32      ("GMS",    gps.time);          //uint32_t GMS 1e-3 [s]: milliseconds since start of GPS Week [ms]
+  bl.u16      ("GWk",    2288);              //uint16_t GWk 0 []: weeks since 5 Jan 1980 [week]
+  bl.u8       ("NSats",  gps.sat,         1,    "satellites"); //uint8_t NSats '0':1e0 ['S':satellites]: number of satellites visible [-]
+  bl.i16x100  ("HDop",   gps.hdop,        1,    "m");     //int16_t*100 HDop '-':0 ['-']: horizontal dilution of precision [-]
+  bl.i32latlon("Lat",    gps.lat,         1e-7, "deglatitude");     //int32_t Lat 1e-7 ['D':deglatitude]: latitude [deg*10e7]
+  bl.i32latlon("Lng",    gps.lon,         1e-7, "deglongitude");     //int32_tLng 1e-7 ['U':deglongitude]: longitude [deg*10e7]
+  bl.flt      ("Alt",    gps.alt * 1e-3,  1,    "m");           //i32x100 Alt 'B':1e-2 ['m':m]: altitude [mm]
+  bl.flt      ("Spd",    gps.sog * 1e-3,  1,    "m/s");           //float Spd 1 ['n':m/s]: ground speed [mm/s]
+  bl.i32      ("GCrs",   gps.cog,         1,    "degheading");     //float GCrs 1 ['h':degheading]: ground course [deg]
+  bl.flt      ("VZ",     gps.veld * 1e-3, 1,    "m/s");           //float VZ 1 ['n':m/s]: vertical speed [mm/s]
+  bl.flt      ("Yaw",    0,               1,    "degheading");           //float Yaw 1 ['h':degheading]: vehicle yaw
+  bl.u8       ("U",      1);                     //U: boolean value indicating whether this GPS is in use
 
   //non standard (use short names!!!)
   //bl.u32("D",gps.date);  //date as DDMMYY
@@ -202,23 +221,28 @@ void Bbx::log_pos(float homeAlt, float OriginAlt) override {
 */
 
 //AHRS roll/pitch/yaw plus filtered+corrected IMU data
-void Bbx::log_ahrs() {
+void Bbx::log_ahrs() {  
+  //limit logging frequency to max configured Hz
+  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_ahr);
+  if(!schedule.expired()) return;
+
   BinLog bl("AHRS"); 
   bl.TimeUS();
-  bl.i16("ax",ahr.ax*1000, 1e-3, "G"); //G
-  bl.i16("ay",ahr.ay*1000, 1e-3, "G"); //G
-  bl.i16("az",ahr.az*1000, 1e-3, "G"); //G
-  bl.i16("gx",ahr.gx*10, 1e-1, "deg/s"); //dps
-  bl.i16("gy",ahr.gy*10, 1e-1, "deg/s"); //dps
-  bl.i16("gz",ahr.gz*10, 1e-1, "deg/s"); //dps
-  bl.i16("mx",ahr.mx*100, 1e-2, "uT"); //uT
-  bl.i16("my",ahr.my*100, 1e-2, "uT"); //uT
-  bl.i16("mz",ahr.mz*100, 1e-2, "uT"); //uT
-  bl.i16("roll",ahr.roll*100, 1e-2, "deg"); //deg -180 to 180
-  bl.i16("pitch",ahr.pitch*100, 1e-2, "deg");; //deg -90 to 90
-  bl.i16("yaw",ahr.yaw*100, 1e-2, "deg");; //deg -180 to 180
+  bl.i16("ax",    ahr.ax * 1000,   1e-3, "G"); //G
+  bl.i16("ay",    ahr.ay * 1000,   1e-3, "G"); //G
+  bl.i16("az",    ahr.az * 1000,   1e-3, "G"); //G
+  bl.i16("gx",    ahr.gx * 10,     1e-1, "deg/s"); //dps
+  bl.i16("gy",    ahr.gy * 10,     1e-1, "deg/s"); //dps
+  bl.i16("gz",    ahr.gz * 10,     1e-1, "deg/s"); //dps
+  bl.i16("mx",    ahr.mx * 100,    1e-2, "uT"); //uT
+  bl.i16("my",    ahr.my * 100,    1e-2, "uT"); //uT
+  bl.i16("mz",    ahr.mz * 100,    1e-2, "uT"); //uT
+  bl.i16("roll",  ahr.roll * 100,  1e-2, "deg"); //deg -180 to 180
+  bl.i16("pitch", ahr.pitch * 100, 1e-2, "deg"); //deg -90 to 90
+  bl.i16("yaw",   ahr.yaw * 100,   1e-2, "deg"); //deg -180 to 180
 }
 
+/*
 void Bbx::log_att() {
   BinLog bl("ATT");
   bl.TimeUS();
@@ -232,68 +256,131 @@ void Bbx::log_att() {
   bl.u16x100("ErrYaw",0);
   bl.u8 ("AEKF",3);
 }
+*/
 
-//raw (unfiltered but corrected) IMU data
+//IMU raw (unfiltered but corrected) IMU data
 void Bbx::log_imu() {
-  //log at max cfg.bbx_log_imu Hz
+  //limit logging frequency to max configured Hz
   static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_imu);
   if(!schedule.expired()) return;
 
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
   bl.TimeUS(imu.ts);
-  bl.i16("ax",(imu.ax - cfg.imu_cal_ax)*1000, 1e-3, "G"); //G
-  bl.i16("ay",(imu.ay - cfg.imu_cal_ay)*1000, 1e-3, "G"); //G
-  bl.i16("az",(imu.az - cfg.imu_cal_az)*1000, 1e-3, "G"); //G
-  bl.i16("gx",(imu.gx - cfg.imu_cal_gx)*10, 1e-1, "deg/s"); //dps
-  bl.i16("gy",(imu.gy - cfg.imu_cal_gy)*10, 1e-1, "deg/s"); //dps
-  bl.i16("gz",(imu.gz - cfg.imu_cal_gz)*10, 1e-1, "deg/s"); //dps
+  bl.i16("ax", (imu.ax - cfg.imu_cal_ax) * 1000, 1e-3, "G"); //G
+  bl.i16("ay", (imu.ay - cfg.imu_cal_ay) * 1000, 1e-3, "G"); //G
+  bl.i16("az", (imu.az - cfg.imu_cal_az) * 1000, 1e-3, "G"); //G
+  bl.i16("gx", (imu.gx - cfg.imu_cal_gx) * 10,   1e-1, "deg/s"); //dps
+  bl.i16("gy", (imu.gy - cfg.imu_cal_gy) * 10,   1e-1, "deg/s"); //dps
+  bl.i16("gz", (imu.gz - cfg.imu_cal_gz) * 10,   1e-1, "deg/s"); //dps
   if(mag.installed()) {
-    bl.i16("mx",((mag.mx - cfg.mag_cal_x) * cfg.mag_cal_sx)*100, 1e-2, "uT"); //uT
-    bl.i16("my",((mag.my - cfg.mag_cal_y) * cfg.mag_cal_sy)*100, 1e-2, "uT"); //uT
-    bl.i16("mz",((mag.mz - cfg.mag_cal_z) * cfg.mag_cal_sz)*100, 1e-2, "uT"); //uT
+    bl.i16("mx", ((mag.mx - cfg.mag_cal_x) * cfg.mag_cal_sx) * 100, 1e-2, "uT"); //uT
+    bl.i16("my", ((mag.my - cfg.mag_cal_y) * cfg.mag_cal_sy) * 100, 1e-2, "uT"); //uT
+    bl.i16("mz", ((mag.mz - cfg.mag_cal_z) * cfg.mag_cal_sz) * 100, 1e-2, "uT"); //uT
   }
-  bl.i16("roll",ahr.roll*100, 1e-2, "deg"); //deg -180 to 180
-  bl.i16("pitch",ahr.pitch*100, 1e-2, "deg");; //deg -90 to 90
-  bl.i16("yaw",ahr.yaw*100, 1e-2, "deg");; //deg -180 to 180
 }
 
-void Bbx::log_mode(uint8_t fm, const char* name) {
+//MODE - flight mode
+void Bbx::log_mode() {
   BinLog bl("MODE");
   bl.TimeUS();
-  bl.u8flightmode("Mode",fm);
-  bl.u8("ModeNum",fm);
-  bl.u8("Rsn",1); //ModeReason
-  bl.char16("Name",name); //extenstion to "standard" ArduPilot BinLog
+  bl.u8flightmode("Mode", veh.flightmode_ap_id());
+  bl.u8          ("ModeNum", veh.flightmode_ap_id());
+  bl.u8          ("Rsn",1); //ModeReason
+  bl.char16      ("Name", veh.flightmode_name()); //extenstion to "standard" ArduPilot BinLog
 }
 
+//MSG - message
 void Bbx::log_msg(const char* msg) {
   BinLogWriter::log_msg(msg);
 }
 
+//PARM - parameer
 void Bbx::log_parm(const char* name, float value, float default_value) {
   BinLogWriter::log_parm(name, value, default_value);
 }
 
-//system status
+//SYS - system status
 void Bbx::log_sys() {
   BinLog bl("SYS");
   bl.TimeUS();
-  bl.u32("BBm",BinLogWriter::missCnt);
-  bl.u32("IMi",imu.interrupt_cnt);
-  bl.i32("IMm",imu.interrupt_cnt - imu.update_cnt);
+  bl.u32("BBm", BinLogWriter::missCnt);
+  bl.u32("IMi", imu.interrupt_cnt);
+  bl.i32("IMm", imu.interrupt_cnt - imu.update_cnt);
 }
 
-//motors
-void Bbx::log_mot() {
-  BinLog bl("MOT");
+//OUT - outputs (motors, servos)
+void Bbx::log_out() {
+  //log at max Hz
+  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_out);
+  if(!schedule.expired()) return;
+  
+  BinLog bl("OUT");
   bl.TimeUS();
-  bl.i16("m0", out.get(0) * 1000, 1e-3, "");
-  bl.i16("m1", out.get(1) * 1000, 1e-3, "");
-  bl.i16("m2", out.get(2) * 1000, 1e-3, "");
-  bl.i16("m3", out.get(3) * 1000, 1e-3, "");
-  bl.i16("rpm0", out.rpm(0), 1, "rpm");
-  bl.i16("rpm1", out.rpm(1), 1, "rpm");
-  bl.i16("rpm2", out.rpm(2), 1, "rpm");
-  bl.i16("rpm3", out.rpm(3), 1, "rpm");
+  char lbl[3] = {};
+  lbl[2] = 0;
+  for(int i = 0; i < 8; i++) {
+    lbl[1] = '0' + i;
+    switch(out.getType(i)) {
+      case 'M':
+        lbl[0] = 'm';
+        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        break;
+      case 'D':
+        lbl[0] = 'm';
+        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        lbl[0] = 'r';
+        bl.u16(lbl, out.rpm(i), 1, "rpm");
+        break;
+      case 'S':
+        lbl[0] = 's';
+        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        break;
+    }
+  }
+}
+
+//RDR - radar
+void Bbx::log_rdr() {
+  BinLog bl("RDR");
+  bl.TimeUS(rdr.update_ts);
+  bl.u32("dist", rdr.dist);
+  bl.u32("cnt",  rdr.update_cnt);
+}
+
+//OFL - optical flow
+void Bbx::log_ofl() {
+  BinLog bl("OFL");
+  bl.TimeUS(ofl.update_ts);
+  bl.i16("dx_raw", ofl.dx_raw);
+  bl.i16("dy_raw", ofl.dy_raw);
+  bl.flt("dx",     ofl.dx);
+  bl.flt("dy",     ofl.dy);
+  bl.flt("x",      ofl.x);
+  bl.flt("y",      ofl.y);
+  bl.u32("cnt",    ofl.update_cnt);
+}
+
+//RCL - remote control link
+void Bbx::log_rcl() {
+  //limit logging frequency to max configured Hz
+  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_rcl);
+  if(!schedule.expired()) return;
+
+  BinLog bl("RCL");
+  bl.TimeUS(rcl.ts);
+  bl.i16("rol", rcl.roll * 1000);
+  bl.i16("pit", rcl.pitch * 1000);
+  bl.i16("thr", rcl.throttle * 1000);
+  bl.i16("yaw", rcl.yaw * 1000);
+  bl.u8 ("arm", rcl.armed);
+  bl.u8 ("flt", rcl.flightmode);
+  bl.u16("ch1", rcl.pwm[0]);
+  bl.u16("ch2", rcl.pwm[1]);
+  bl.u16("ch3", rcl.pwm[2]);
+  bl.u16("ch4", rcl.pwm[3]);
+  bl.u16("ch5", rcl.pwm[4]);  
+  bl.u16("ch6", rcl.pwm[5]);
+  bl.u16("ch7", rcl.pwm[6]);
+  bl.u16("ch8", rcl.pwm[7]);
 }

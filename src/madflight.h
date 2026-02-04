@@ -78,7 +78,7 @@ void rcl_task(void *pvParameters) {
   const TickType_t interval_ticks = pdMS_TO_TICKS(MF_RCL_TASK_INTERVAL_MS);
   for(;;) {
     vTaskDelayUntil(&xLastWakeTime, interval_ticks);
-    rcl.update(); // get rc radio commands
+    if(rcl.update()) bbx.log_rcl(); // get rc radio commands
   }
 }
 
@@ -89,15 +89,14 @@ void sensor_task(void *pvParameters) {
   const TickType_t interval_ticks = pdMS_TO_TICKS(MF_SENSOR_TASK_INTERVAL_MS);
   for(;;) {
     vTaskDelayUntil(&xLastWakeTime, interval_ticks);
-    if(bar.update()) bbx.log_bar(); // barometer
+    if(bar.update()) bbx.log_baro(); // barometer
     mag.update(); // magnetometer (logging is done with imu together)
     if(gps.update()) bbx.log_gps(); // gps
     if(bat.update()) bbx.log_bat(); // battery consumption
-    rdr.update(); // radar
-    ofl.update(); // optical flow
+    if(rdr.update()) bbx.log_rdr(); // radar
+    if(ofl.update()) bbx.log_ofl(); // optical flow
 
     // Other logging
-    if(loop_cnt % 2 == 0) bbx.log_att();   // Attitude (125Hz)
     if(loop_cnt % 25 == 0) bbx.log_sys();  // System (10Hz)
 
     loop_cnt++;

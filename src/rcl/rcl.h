@@ -56,9 +56,6 @@ class RclGizmo {
   public:
     virtual ~RclGizmo() {}
     virtual bool update() = 0; //returns true if channel pwm data was updated
-    //virtual bool connected() = 0;
-    //virtual void calibrate() = 0; //interactive calibration
-    //virtual bool telem_statustext(uint8_t severity, char *text) {(void)severity; (void)text; return true;} //send MAVLink status text
 };
 
 class Rcl : public RclState {
@@ -66,7 +63,7 @@ class Rcl : public RclState {
     RclConfig config;
     RclGizmo *gizmo = nullptr;
     MsgTopic<RclState> topic = MsgTopic<RclState>("rcl");
-
+    
     int setup();   // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     int update_count() {return _update_count;} //Returns the number of channel packets the gizmo received
@@ -74,12 +71,13 @@ class Rcl : public RclState {
     void calibrate(); //interactive calibration
     bool telem_statustext(uint8_t severity, char *text); //send MAVLink status text
 
+    int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
+
   protected:
     friend void rcl_task(void *pvParameters);
     bool update();    // Returns true if state was updated
 
   private:
-    int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
     float _ChannelNormalize(int val, int min, int center, int max, int deadband);
     void _setupStick(int stickno, int ch, int left_pull, int mid, int right_push);
     

@@ -34,7 +34,6 @@ struct OflState {
     int dx_raw = 0;  // raw sensor reading in [pixels] (x-axis of sensor frame)
     int dy_raw = 0;  // raw sensor reading in [pixels] (y-axis of sensor frame)
 
-        
     // Ofl state vars
     float dx = 0;      // movement in N direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
     float dy = 0;      // movement in E direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)

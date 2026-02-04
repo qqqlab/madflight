@@ -436,12 +436,12 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
 
     case MSP_RC: //105 0x69 -> BF Receiver Tab
       //max 12 channels for betaflight: AERT + AUX1-8
-      r.writeU16(rcl.pwm[cfg.rcl_rol_ch-1]);
-      r.writeU16(rcl.pwm[cfg.rcl_pit_ch-1]);
-      r.writeU16(rcl.pwm[cfg.rcl_yaw_ch-1]);
-      r.writeU16(rcl.pwm[cfg.rcl_thr_ch-1]);
-      r.writeU16(rcl.pwm[cfg.rcl_arm_ch-1]);
-      r.writeU16(rcl.pwm[cfg.rcl_flt_ch-1]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_rol_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_pit_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_yaw_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_thr_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_arm_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_flt_ch) ]);
       for(size_t i = 6; i < 12; i++) {
         r.writeU16(rcl.pwm[i]);
       }

@@ -26,9 +26,7 @@ SOFTWARE.
 
 #define OUT_SIZE 16 //max number of outputs
 
-#include "../hal/hal.h" //class PWM, Dshot
-#include <stdint.h> //uint8_t
-#include "../tbx/msg.h"
+#include "../madflight_modules.h"
 
 struct OutState {
   public:
@@ -60,7 +58,6 @@ class Out : public OutState {
 
     char type[OUT_SIZE] = {};
     int pins[OUT_SIZE] = {};
-
 
     //PWM
     PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)

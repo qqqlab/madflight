@@ -37,8 +37,8 @@ MsgTopic<VehState> veh_topic = MsgTopic<VehState>("veh");
 bool Veh::setFlightmode(uint8_t flightmode) {
   if(_flightmode == flightmode) return false;
   _flightmode = flightmode;
-  bbx.log_mode(flightmode_ap_id(), flightmode_name());
   veh_topic.publish(this);
+  bbx.log_mode();
   return true;
 }
 
