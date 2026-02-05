@@ -122,7 +122,7 @@ class Imu : public ImuState {
     void _interrupt_handler();
 
   private:
-    RuntimeTrace runtimeTrace = RuntimeTrace("_IMU");
+    RuntimeTrace runtimeTrace = RuntimeTrace("IMU");
 };
 
 extern Imu imu;

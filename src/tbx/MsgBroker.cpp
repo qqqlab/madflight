@@ -28,6 +28,7 @@ SOFTWARE.
 // MsgBroker
 //=============================================================================
 MsgTopicBase* MsgBroker::topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
+uint32_t MsgBroker::ts_start = micros();
 
 void MsgBroker::add_topic(MsgTopicBase *topic) {
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
@@ -49,19 +50,29 @@ int MsgBroker::topic_count() {
 }
 
 void MsgBroker::top() {
-  Serial.println("\n=== TOPICS AND SUBSCRIBERS ===\n");
+  float dt = 1e-6 * (micros() - ts_start);
+  Serial.printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = topic_list[i];
     if(t) {
-      Serial.printf("topic:%-10s gen=%d subscribers=%d\n", t->name.c_str(), (int)t->generation, t->subscriber_count());
+      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d  subscribers:%d\n", t->name.c_str(), t->generation / dt, (int)t->generation, t->subscriber_count());
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->sub_list[j];
-        if(s) Serial.printf("  sub:%-10s gen=%d published=%d missed=%d\n", s->name.c_str(), (int)s->generation, (int)s->pull_cnt, (int)(t->generation - s->pull_cnt));
+        if(s) Serial.printf("  sub:%-10s freq:%4.0fHz  gen:%8d  pulls:%8d  missed:%8d\n", s->name.c_str(), s->pull_cnt / dt, (int)s->generation, (int)s->pull_cnt, (int)(t->generation - s->pull_cnt));
       } 
     }
   }
+  reset_stats();
 }
 
+void MsgBroker::reset_stats() {
+  for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
+    if(topic_list[i]) {
+      topic_list[i]->generation = 0;
+    }
+  }
+  ts_start = micros();
+}
 //=============================================================================
 // MsgTopicBase
 //=============================================================================

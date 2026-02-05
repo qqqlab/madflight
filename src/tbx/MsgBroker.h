@@ -45,12 +45,15 @@ class MsgBroker {
   public:
     static int topic_count();
     static void top();
+    static void reset_stats();
+
   protected:
     friend class MsgTopicBase;
 
     static void add_topic(MsgTopicBase *topic);
   private:
     static MsgTopicBase* topic_list[MF_MSGTOPIC_LIST_SIZE];
+    static uint32_t ts_start;
 };
 
 //=============================================================================

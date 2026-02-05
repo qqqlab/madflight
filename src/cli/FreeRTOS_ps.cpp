@@ -61,17 +61,21 @@ void freertos_ps()
     uint32_t ulTotalRunTime = 0;
   } taskarr[2];
   static uint8_t taskarrIdx = 0;
+  static uint32_t ts_start = 0;
 
   taskarr_s &taold = taskarr[taskarrIdx];
-  taskarrIdx = (taskarrIdx+1)%2;
+  taskarrIdx = (taskarrIdx + 1) % 2;
   taskarr_s &tanew = taskarr[taskarrIdx];
 
+  uint32_t now = micros();
+  float dt = 1e-6 * (now - ts_start);
+  ts_start = now;
   tanew.uxArraySize = uxTaskGetSystemState( tanew.pxTaskStatusArray, FREERTOS_PS_MAX_TASKS,  &tanew.ulTotalRunTime );
 
   uint32_t totalRunTime = tanew.ulTotalRunTime - taold.ulTotalRunTime;
   uint64_t tot = 0;
 
-  Serial.printf("\n=== FreeRTOS Tasks ===\n\n");
+  Serial.printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
   Serial.print("TID Name            CPU%  Free St Pr Ni");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
     Serial.print(" Core");

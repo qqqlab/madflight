@@ -18,11 +18,8 @@ void setup() {
 }
 
 void loop() {
-  // Optional runtime tracing - type 'ps' in CLI to see results
-  static RuntimeTrace runtimeTrace = RuntimeTrace("_loop");
-  runtimeTrace.start();
-  // Add your code here (Nothing to do here for madflight, the rtos tasks do the module updates)
-  runtimeTrace.stop(true);
+  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
+  delay(10);
 }
 
 // This function is called from the IMU task when fresh IMU data is available.

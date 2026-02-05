@@ -60,6 +60,7 @@ Highest resolution
 class BarGizmoBMP580 : public BarGizmo {
 private:
   MF_I2CDevice *dev = nullptr;
+  BarState *state = nullptr;
 
 public:
     const char* name() override {return "BMP580";}
@@ -70,7 +71,7 @@ public:
 
   static BarGizmoBMP580* create(BarConfig *config, BarState *state) {
     if(!config->i2c_bus) return nullptr;
-    BarGizmoBMP580 *gizmo = new BarGizmoBMP580(config->i2c_bus, config->i2c_adr);
+    BarGizmoBMP580 *gizmo = new BarGizmoBMP580(config->i2c_bus, config->i2c_adr, state);
     if(!gizmo->begin()) {
       delete gizmo;
       return nullptr;
@@ -79,55 +80,66 @@ public:
   }
 
 private:
-  BarGizmoBMP580(MF_I2C *i2c, uint8_t i2c_adr) {
+  BarGizmoBMP580(MF_I2C *i2c, uint8_t i2c_adr, BarState *state) : state{state} {
     i2c->setClockMax(1000000);
     if(i2c_adr == 0) i2c_adr = 0x47; // fixed: 0x47 or 0x46
     dev = new MF_I2CDevice(i2c, i2c_adr);
   }
 
   bool begin() {
-    //check who-am-i
+    // check who-am-i
     const uint8_t wai_exp = 0x50;
     uint8_t wai = dev->readReg(0x01);
     if( wai != wai_exp) {
       Serial.printf("BAR: WARNING: BMP580 got incorrect WAI 0x%02X, expected 0x%02X\n", wai, wai_exp);
     }
 
-    //software reset
+    // software reset
     dev->writeReg(0x7E, 0xB6); //reset
-    delay(4); //datasheet: 2 ms
+    delay(4); //datasheet: 2 ms    
+    
+    // interrupt
+    dev->writeReg(0x15, 0x00);       // INT_SOURCE: off
+    dev->readReg(0x27);              // INT_STATUS: clear status
+    dev->writeReg(0x14, 0b00111010); // INT_CONFIG: b7-4:0011=default drive strength, b3:1=enabled, b2:0=push-pull, b1:1=active high, b0:0=pulsed
+    dev->writeReg(0x15, 0b00000001); // INT_SOURCE: b0:drdy_data_reg_en
 
-    //configure 87Hz continuous mode
-    dev->writeReg(0x36, 0b01100000); // b6:pres enable, b5-3:OSR_P 100=16x, b2-0:OSR_T 000=1x
-    dev->writeReg(0x37, 0b10000011); // b7:deep standby disable, b6-2:odr, b1-0:11=continuous mode
+    // 87Hz continuous mode
+    dev->writeReg(0x36, 0b01100000); // OSR_CONFIG b7:0=res, b6:1=pres enable, b5-3:OSR_P 100=16x, b2-0:OSR_T 000=1x
+    dev->writeReg(0x37, 0b00000011); // ODR_CONFIG b7:1=deep standby disable, b6-2:odr, b1-0:11=continuous mode
 
-    //test sensor
+    // test sensor
     float p, t;
     uint32_t ts = micros();
-    while(micros() - ts < 20000) {
-      if(update(&p, &t)) return true;
+    while(micros() - ts < 50000) {
+      if(data_ready()) return true;
     }
-
     Serial.println("\nBAR: ERROR: BMP580 no samples received, disabling sensor\n\n");
     return false;
   }
 
+  bool data_ready() {
+    return dev->readReg(0x27) & 0x01; // INT_STATUS b0:data_ready
+  }
+
 public:
   bool update(float *press, float *temp) override {
-    
-    if(micros() - ((BarState*)this)->ts < 10000) return false; //sample rate is 85Hz, 11.7ms, bail out if last sample was less than 10 ms ago
+    // exit if far away from next sample time (don't read i2c status if we know the answer already)
+    if(micros() - state->ts < 10000) return false; //10ms - sample rate is 87Hz, 11.7ms, 
 
-    if(dev->readReg(0x27 & 0x01) == 0x00) return false; //exit if no new mag data
+    // exit if no new data
+    if(!data_ready()) return false;
 
+    // get new data
     uint8_t d[6];
-    if(dev->readReg(0x1D, d, sizeof(d)) != 6) return false;
+    if(dev->readReg(0x1D, d, sizeof(d)) != 6) return false; //0x1D = TEMP_DATA_XLSB
     int32_t t = d[0] | (d[1]<<8) | (d[2]<<16);
     if(d[2]&0x80) t |= 0xFF000000;
     float t_new = ((float)t) / 65536;
     int32_t p = d[3] | (d[4]<<8) | (d[5]<<16);
     float p_new = ((float)p) / 64;
 
-    //Spike filter
+    // spike filter
     static float p_last = 0;
     bool updated = fabs(p_new - p_last) < 50; //50Pa => 4m/12ms = 333m/s -> should not move vertically with speed of sound.
     if(updated) {

@@ -331,6 +331,8 @@ void madflight_setup() {
   led.color(0x00ff00); //switch color to green
   led.on();
 
+  // STATS - Reset
+  MsgBroker::reset_stats();
   RuntimeTraceGroup::reset();
 }
 

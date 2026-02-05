@@ -84,6 +84,10 @@ bool CfgClass::getOptionString(uint16_t param_idx, int32_t param_val, char out_o
 
 //print all parameters for module_name on single line
 void CfgClass::printModule(const char* module_name, printModuleMode mode) {
+  if(mode == printModuleMode::CFG_ERROR) {
+    Serial.println();
+  }
+  
   String modname = String(module_name);
   modname.toUpperCase();
   Serial.printf("%s: ", modname.c_str());
@@ -132,6 +136,10 @@ void CfgClass::printModule(const char* module_name, printModuleMode mode) {
     }
   }
   Serial.println();
+
+  if(mode == printModuleMode::CFG_ERROR) {
+    Serial.println();
+  }
 }
 
 //print "<name> <value> # options: <options>" for given param_index
