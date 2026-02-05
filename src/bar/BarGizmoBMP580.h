@@ -123,14 +123,18 @@ public:
     if(dev->readReg(0x1D, d, sizeof(d)) != 6) return false;
     int32_t t = d[0] | (d[1]<<8) | (d[2]<<16);
     if(d[2]&0x80) t |= 0xFF000000;
-    *temp = ((float)t) / 65536;
+    float t_new = ((float)t) / 65536;
     int32_t p = d[3] | (d[4]<<8) | (d[5]<<16);
-    *press = ((float)p) / 64;
+    float p_new = ((float)p) / 64;
 
     //Spike filter
     static float p_last = 0;
-    bool updated = fabs(*press - p_last) < 50; //50Pa => 4m/12ms = 333m/s -> should not move vertically with speed of sound.
-    p_last = *press;
+    bool updated = fabs(p_new - p_last) < 50; //50Pa => 4m/12ms = 333m/s -> should not move vertically with speed of sound.
+    if(updated) {
+      *temp = t_new;
+      *press = p_new;
+    }
+    p_last = p_new;
 
     return updated;
   }
