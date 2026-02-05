@@ -55,14 +55,6 @@ void hal_print_resources() {}
 
 void hal_setup()
 {
-  //print bus config
-  Serial.printf("HAL: SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", (int)cfg.pin_ser0_tx, (int)cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", (int)cfg.pin_ser1_tx, (int)cfg.pin_ser1_rx);
-  Serial.printf("HAL: I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c0_sda, (int)cfg.pin_i2c0_scl);
-  Serial.printf("HAL: I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c1_sda, (int)cfg.pin_i2c1_scl);
-  Serial.printf("HAL: SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi0_miso, (int)cfg.pin_spi0_sclk, (int)cfg.pin_spi0_mosi);
-  Serial.printf("HAL: SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
-
   //Serial BUS uses late binding (i.e. gets created when used)
 
   //I2C BUS (&Wire, &Wire1)
@@ -266,6 +258,20 @@ SPIClass* hal_get_spi_bus(int bus_id) {
   SPIClass *spi_bus = hal_spi[bus_id];
   if(!spi_bus) return nullptr;
   return spi_bus;
+}
+
+void hal_meminfo() {
+  Serial.printf("MEM: %d bytes minimum free RAM)\n", (int)esp_get_minimum_free_heap_size());
+}
+
+void hal_print_businfo() {
+  Serial.println("\n=== BUS INFO ===\n");
+  Serial.printf("SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", (int)cfg.pin_ser0_tx, (int)cfg.pin_ser0_rx);
+  Serial.printf("SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", (int)cfg.pin_ser1_tx, (int)cfg.pin_ser1_rx);
+  Serial.printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c0_sda, (int)cfg.pin_i2c0_scl);
+  Serial.printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c1_sda, (int)cfg.pin_i2c1_scl);
+  Serial.printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi0_miso, (int)cfg.pin_spi0_sclk, (int)cfg.pin_spi0_mosi);
+  Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
 }
 
 #endif //#ifdef ARDUINO_ARCH_ESP32

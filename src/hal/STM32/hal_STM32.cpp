@@ -59,21 +59,6 @@ void hal_print_resources() {}
 
 void hal_setup() 
 { 
-  //print bus config
-  Serial.printf("HAL: Notice: availability of hardware busses depends on chip used, and is not checked here.\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 0 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("HAL: SER bus 1 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
-  Serial.printf("HAL: SER bus 2 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
-  Serial.printf("HAL: SER bus 3 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
-  Serial.printf("HAL: SER bus 4 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
-  Serial.printf("HAL: SER bus 5 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
-  Serial.printf("HAL: SER bus 6 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser6_tx, cfg.pin_ser6_rx);
-  Serial.printf("HAL: SER bus 7 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser7_tx, cfg.pin_ser7_rx);
-  Serial.printf("HAL: I2C bus 0 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-  Serial.printf("HAL: I2C bus 1 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-  Serial.printf("HAL: SPI bus 0 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-  Serial.printf("HAL: SPI bus 1 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
-
   //Serial BUS late binding
 
   //NOTE: default serial buffer size is 64, and is defined in HardwareSerial.h
@@ -360,6 +345,26 @@ SPIClass* hal_get_spi_bus(int bus_id) {
   SPIClass *spi_bus = hal_spi[bus_id];
   if(!spi_bus) return nullptr;
   return spi_bus;
+}
+
+void hal_meminfo() {}
+
+void hal_print_businfo() {
+  Serial.println("\n=== BUS INFO ===\n");
+  Serial.printf("Notice: availability of hardware busses depends on chip used, and is not checked here.\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("SER bus 0 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  Serial.printf("SER bus 1 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+  Serial.printf("SER bus 2 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
+  Serial.printf("SER bus 3 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
+  Serial.printf("SER bus 4 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
+  Serial.printf("SER bus 5 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
+  Serial.printf("SER bus 6 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser6_tx, cfg.pin_ser6_rx);
+  Serial.printf("SER bus 7 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser7_tx, cfg.pin_ser7_rx);
+  Serial.printf("I2C bus 0 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+  Serial.printf("I2C bus 1 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+  Serial.printf("SPI bus 0 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+  Serial.printf("SPI bus 1 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+
 }
 
 #endif //#ifdef ARDUINO_ARCH_STM32

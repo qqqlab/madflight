@@ -62,17 +62,17 @@ SOFTWARE.
   MF_PARAM( bat_cal_v,         1, float, 'f') /*battery adc voltage scale calibration, value is actual_voltage_in_v / adc_reading*/ \
   MF_PARAM( bat_cal_i,         1, float, 'f') /*battery adc current scale calibration, value is actual_current_in_a / adc_reading, ina226: rshunt value in ohm*/ \
 \
-  MF_PARAM( rcl_thr_ch,        1, int32_t, 'i') /*1-based channel number*/ \
+  MF_PARAM( rcl_thr_ch,        3, int32_t, 'i') /*1-based channel number - default is AETR*/ \
   MF_PARAM( rcl_thr_pull,   1100, int32_t, 'i') \
   MF_PARAM( rcl_thr_mid,    1500, int32_t, 'i') \
   MF_PARAM( rcl_thr_push,   1900, int32_t, 'i') \
 \
-  MF_PARAM( rcl_rol_ch,        2, int32_t, 'i') \
+  MF_PARAM( rcl_rol_ch,        1, int32_t, 'i') \
   MF_PARAM( rcl_rol_left,   1100, int32_t, 'i') \
   MF_PARAM( rcl_rol_mid,    1500, int32_t, 'i') \
   MF_PARAM( rcl_rol_right,  1900, int32_t, 'i') \
 \
-  MF_PARAM( rcl_pit_ch,        3, int32_t, 'i') \
+  MF_PARAM( rcl_pit_ch,        2, int32_t, 'i') \
   MF_PARAM( rcl_pit_pull,   1100, int32_t, 'i') \
   MF_PARAM( rcl_pit_mid,    1500, int32_t, 'i') \
   MF_PARAM( rcl_pit_push,   1900, int32_t, 'i') \
@@ -258,6 +258,13 @@ SOFTWARE.
 \
   /*v2.2.0 additions */ \
   MF_PARAM( pin_imu_clkin,    -1, int32_t, 'p') /*CLKIN pin for ICM-42866-P - only tested for RP2 targets*/ \
+\
+  /*v2.3.0 additions */ \
+  MF_PARAM( bbx_log_imu,     100, int32_t, 'i') /* Max log interval in [Hz] for IMU*/ \
+  MF_PARAM( bbx_log_out,     100, int32_t, 'i') /* Max log interval in [Hz] for OUT*/ \
+  MF_PARAM( bbx_log_ahr,     100, int32_t, 'i') /* Max log interval in [Hz] for AHR*/ \
+  MF_PARAM( bbx_log_rcl,     100, int32_t, 'i') /* Max log interval in [Hz] for RCL*/ \
+\
 //end MF_PARAM_LIST
 
 
@@ -346,7 +353,8 @@ public:
   //print
   bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
   void printPins();
-  void printModule(const char* module_name);
+  enum class printModuleMode {GIZMO, CFG_ERROR, GIZMO_NO_CR};
+  void printModule(const char* module_name, printModuleMode mode = printModuleMode::GIZMO);
   void printNameAndValue(uint16_t i, const char* comment = nullptr);
   void printValue(uint16_t i);
 

@@ -83,7 +83,11 @@ bool CfgClass::getOptionString(uint16_t param_idx, int32_t param_val, char out_o
 }
 
 //print all parameters for module_name on single line
-void CfgClass::printModule(const char* module_name) {
+void CfgClass::printModule(const char* module_name, printModuleMode mode) {
+  if(mode == printModuleMode::CFG_ERROR) {
+    Serial.println();
+  }
+  
   String modname = String(module_name);
   modname.toUpperCase();
   Serial.printf("%s: ", modname.c_str());
@@ -97,8 +101,22 @@ void CfgClass::printModule(const char* module_name) {
     printValue(gizmo_i);
     Serial.print(" ");
   }
+
+  if(mode == printModuleMode::GIZMO) {
+    Serial.println();
+    return;
+  }
+
+  if(mode == printModuleMode::GIZMO_NO_CR) {
+    Serial.print("- ");
+    return;
+  }
+
+  if(mode == printModuleMode::CFG_ERROR) {
+    Serial.print("ERROR check pin/bus config: ");
+  }
+
   //print config
-  Serial.print("setup - ");
   for(int i = 0; i < paramCount(); i++) {
     if(strncmp(Cfg::param_list[i].name, modname_.c_str(), modname_.length()) == 0 && i != gizmo_i) { //starts with module_name + '_', omit gizmo
       Serial.print(Cfg::param_list[i].name);
@@ -118,6 +136,10 @@ void CfgClass::printModule(const char* module_name) {
     }
   }
   Serial.println();
+
+  if(mode == printModuleMode::CFG_ERROR) {
+    Serial.println();
+  }
 }
 
 //print "<name> <value> # options: <options>" for given param_index
@@ -198,11 +220,11 @@ void CfgClass::cli_diff(const char* filter) {
 
 //sort by pin number (using inefficient sort)
 void CfgClass::printPins() {
-  for(int pinno = 0; pinno<128; pinno++) {
+  Serial.println("\n=== PINOUT ===\n");
+  for(int pinno = 0; pinno < 128; pinno++) {
     int cnt = 0;
     for(int i = 0; i < paramCount(); i++) {
       if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && getValue(i) == pinno) {
-        Serial.print("PIN: ");
         if(cnt==0) {
           printNameAndValue(i);
         }else{

@@ -56,6 +56,54 @@ const uint8_t Veh::mav_type = VEH_TYPE; //mavlink vehicle type
 const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
+
+#define MF_CLI_TASK_INTERVAL_MS 4
+#define MF_RCL_TASK_INTERVAL_MS 1
+#define MF_SENSOR_TASK_INTERVAL_MS 4
+
+void cli_task(void *pvParameters) {
+  (void)pvParameters;
+  cli.begin();
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_CLI_TASK_INTERVAL_MS);
+  for(;;) {
+    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
+    cli.update(); // process CLI commands
+  }
+}
+
+void rcl_task(void *pvParameters) {
+  (void)pvParameters;
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_RCL_TASK_INTERVAL_MS);
+  for(;;) {
+    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
+    if(rcl.update()) bbx.log_rcl(); // get rc radio commands
+  }
+}
+
+void sensor_task(void *pvParameters) {
+  (void)pvParameters;
+  uint32_t loop_cnt = 0;
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_SENSOR_TASK_INTERVAL_MS);
+  for(;;) {
+    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
+    if(bar.update()) bbx.log_baro(); // barometer
+    mag.update(); // magnetometer (logging is done with imu together)
+    if(gps.update()) bbx.log_gps(); // gps
+    if(bat.update()) bbx.log_bat(); // battery consumption
+    if(rdr.update()) bbx.log_rdr(); // radar
+    if(ofl.update()) bbx.log_ofl(); // optical flow
+
+    // Other logging
+    if(loop_cnt % 25 == 0) bbx.log_sys();  // System (10Hz)
+
+    loop_cnt++;
+  }
+}
+
+
 void madflight_setup() {
   // HAL - Detach USB to until SDCARD is setup
   hal_startup();
@@ -89,7 +137,10 @@ void madflight_setup() {
   // USB - Start USB-CDC (Serial) and USB-MSC (if sdcard is inserted)
   hal_usb_setup();
 
-  // Serial - Start serial console
+  // CLI - Start CLI task early in setup, but after Serial is up, allows for CLI commands while booting
+  xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+
+  // Serial - Start USB serial console
   Serial.begin(115200);
 
   // Delay - 6 second startup delay
@@ -113,13 +164,13 @@ void madflight_setup() {
     Serial.println("Processor: " MF_MCU_NAME);
   #endif
 
-  // Rerun CFG to show output after startup delay
+  // INFO - Rerun CFG to show output after startup delay
   cfg.clear();
   cfg.loadFromEeprom(); //load parameters from EEPROM
   cfg.load_madflight(madflight_board, madflight_config); //load config
 
-  // Pins sorted by GPIO number
-  cfg.printPins();
+  // INFO - Pins sorted by GPIO number
+  //cfg.printPins();
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
@@ -137,6 +188,9 @@ void madflight_setup() {
   rcl.config.baud = cfg.rcl_baud; //baud rate
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.setup(); //Initialize radio communication.
+
+  // RCL - Start RCL task
+  xTaskCreate(rcl_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
 
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
@@ -190,6 +244,9 @@ void madflight_setup() {
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
 
+  // Start Sensor task after all sensor (except IMU) have been initialized
+  xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+
   // ALT - Altitude Estimator
   if(rdr.installed()) {
     alt.setup(rdr.dist);
@@ -221,7 +278,7 @@ void madflight_setup() {
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
   imu.config.pin_clkin = cfg.pin_imu_clkin; //CLKIN pin for ICM-42866-P - only tested for RP2 targets
 
-  // Some IMU sensors need a couple of tries...
+  // IMU - Some IMU sensors need a couple of tries...
   int tries = 10;
   while(true) {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
@@ -233,22 +290,23 @@ void madflight_setup() {
     madflight_panic("IMU install failed.");
   }
 
-  // connect imu internal magnetometer to mag
+  // IMU - Connect imu internal magnetometer to mag
   if(imu.config.has_mag && !mag.gizmo) {
     mag.gizmo = new MagGizmoIMU((MagState*)&mag);
     imu.config.pmag = &mag;
     Serial.println("IMU: magnetometer installed");
   }
 
-  // Start IMU update handler
+  // IMU - Start IMU update handler
   if(imu.installed()) {
     ahr.setInitalOrientation(); //do this before IMU update handler is started
 
-    if(!imu_loop) Serial.println("IMU: WARNING 'void imu_loop()' not defined.");
-    imu.onUpdate = imu_loop;
-    if(!imu.waitNewSample()) {
+    if(imu.topic.get_generation() == 0) {
       madflight_panic(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
     }
+
+    if(!imu_loop) Serial.println("IMU: WARNING 'void imu_loop()' not defined.");
+    imu.onUpdate = imu_loop;
 
     #ifndef MF_DEBUG
       // Switch off LED to signal calibration
@@ -261,25 +319,20 @@ void madflight_setup() {
     #endif
   }
 
-  // LUA - Start Lua script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
+  // LUA - Start Lua task and read script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();
 
-  //report I2C clock speeds
-  for(int i=0;i<2;i++) {
-    MF_I2C* i2c = hal_get_i2c_bus(i);
-    if(i2c) {
-      Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
-    }
-  }
-
-  // CLI - Command Line Interface
-  cli.begin();
+  // INFO - Command Line Interface banner
+  cli.banner();
+  Serial.println("CLI: Command Line Interface Started - Type 'help' for help, or 'diff' to debug");
 
   // LED - Enable and switch it to green to signal end of startup.
   led.enabled = true;
   led.color(0x00ff00); //switch color to green
   led.on();
 
+  // STATS - Reset
+  MsgBroker::reset_stats();
   RuntimeTraceGroup::reset();
 }
 

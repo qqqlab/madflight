@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include <stdint.h> //uint8_t
+#include "../tbx/MsgBroker.h"
 
 //Vehicle type (corresponding to mavlink MAV_TYPE)
 #define VEH_TYPE_GENERIC 0 //0 MAV_TYPE_GENERIC	Generic micro air vehicle
@@ -133,7 +134,13 @@ typedef enum {
     AP_SUB_FLIGHTMODE_MOTOR_DETECT = 20   // Automatically detect motors orientation
 } AP_SUB_FLIGHTMODE_ENUM;
 
-class Veh {
+struct VehState {
+    uint8_t _flightmode = 0; //current flight mode index
+};
+
+extern MsgTopic<VehState> veh_topic;
+
+class Veh : public VehState {
   public:
     static const uint8_t mav_type; //mavlink vehicle type
     static const uint8_t flightmode_ap_ids[6]; //mapping from flightmode to ArduPilot flight mode id
@@ -145,7 +152,6 @@ class Veh {
     const char* flightmode_name();
 
   private:
-    uint8_t _flightmode = 0; //current flight mode index
     const char* flightmode_name_unknown = "???";
 };
 

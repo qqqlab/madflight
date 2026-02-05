@@ -70,7 +70,7 @@ Blink interval longer than 1 second    imu_loop() is taking too much time
 Fast blinking                          Something is wrong, connect USB serial for info
 
 MIT license
-Copyright (c) 2024-2025 https://madflight.com
+MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
 //Vehicle specific madflight configuration
@@ -153,21 +153,8 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  //update all I2C sensors
-  if(bat.update()) bbx.log_bat(); //update battery, and log if battery was updated. 
-  if(bar.update()) bbx.log_bar(); //log if pressure updated
-  mag.update();
-
-  if(gps.update()) {bbx.log_gps(); bbx.log_att();} //update gps (and log GPS and ATT for plot.ardupilot.org visualization)
-
-  //logging
-  static uint32_t log_ts = 0;
-  if(millis() - log_ts > 100) {
-    log_ts = millis();
-    bbx.log_sys();
-  }
-
-  cli.update(); //process CLI commands
+  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
+  delay(10);
 }
 
 //========================================================================================================================//
@@ -182,8 +169,7 @@ void imu_loop() {
   //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
   ahr.update(); 
 
-  //Get radio commands - Note: don't do this in loop() because loop() is a lower priority task than imu_loop(), so in worst case loop() will not get any processor time.
-  rcl.update();
+  // Update flight mode.
   veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] ); //map rcl.flightmode (0 to 5) to vehicle flightmode
 
   //PID Controller
@@ -203,8 +189,6 @@ void imu_loop() {
 
   //Actuator mixing
   out_Mixer(); //Mixes PID outputs and sends command pulses to the motors, if mot.arm == true
-
-  //bbx.log_imu(); //full speed black box logging of IMU data, memory fills up quickly...
 }
 
 //========================================================================================================================

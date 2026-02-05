@@ -6,33 +6,27 @@ Upload, connect Serial Monitor at 115200 baud and send 'help' to see available c
 
 See http://madflight.com for detailed description
 
-MIT license
-Copyright (c) 2023-2025 https://madflight.com
+MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include <Arduino.h>
-#include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
-#include <madflight.h>
+#include "madflight_config.h" // Edit this header file to setup the pins, hardware, radio, etc. for madflight
+#include <madflight.h> // Include the library, do this after madflight_config 
 
 void setup() {
-  madflight_setup(); //setup madflight modules
+  // Setup madflight modules and start IMU, BBX, RCL, CLI, and SENSORS rtos tasks
+  madflight_setup(); 
 }
 
 void loop() {
-  rcl.update(); // get rc radio commands
-  bar.update(); // barometer
-  mag.update(); // magnetometer
-  gps.update(); // gps
-  bat.update(); // battery consumption
-  rdr.update(); // radar
-  ofl.update(); // optical flow
-  cli.update(); // process CLI commands
+  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
+  delay(10);
 }
 
-//This is __MAIN__ function of this program. It is called when new IMU data is available.
+// This function is called from the IMU task when fresh IMU data is available.
 void imu_loop() {
-  //toggle led on every 1000 samples (normally 1 second)
+  // Toggle led on every 1000 samples (E.g. 1 second peroid at 1000Hz sample rate)
   if(imu.update_cnt % 1000 == 0) led.toggle();
 
-  ahr.update(); //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data 
+  // AHRS sensor fusion -  type 'pahr' in CLI to see results
+  ahr.update();
 }

@@ -24,17 +24,10 @@ SOFTWARE.
 
 #define MF_MOD "AHR"
 
-#include <Arduino.h> //Serial
-#include "ahr.h"
+#include "../madflight_modules.h"
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
-
-#include "../mag/mag.h"
-#include "../imu/imu.h"
-#include "../cfg/cfg.h"
-#include "../tbx/common.h" //lowpass_to_beta
-#include "../tbx/RuntimeTrace.h"
 
 //create global module instance
 Ahr ahr;
@@ -121,17 +114,18 @@ bool Ahr::update() {
   //update euler angles
   computeAngles();
 
+  bbx.log_ahrs();
+
   runtimeTrace.stop(true);
   return true;
 }
 
 void Ahr::getQFromMag(float *q) {
-  //warm up mag by getting 100 samples (imu should be running already)
-  for(int i=0;i<100;i++) {
-    uint32_t start = micros();
-    config.pmag->update();
-    while(micros() - start < 1000000 / config.pimu->config.sample_rate); //wait until next sample time
-  }
+  //warm up mag by getting 100 samples within max 1 second (imu + mag should be running already)
+  uint32_t ts = millis();
+  do {
+    portYIELD();
+  } while( mag.topic.get_generation() < 100 && millis() - ts < 1000 );
 
   //update mx and my from mag or imu
   update();

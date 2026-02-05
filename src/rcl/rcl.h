@@ -27,8 +27,22 @@ SOFTWARE.
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/MsgBroker.h"
 
 #define RCL_MAX_CH 20 //maximum number of channels
+
+struct RclState {
+public:
+    uint32_t ts = 0; //sample timestamp [us]
+    uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
+    float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
+    float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
+    float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
+    float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
+    float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
+    bool armed = false; //armed state (triggered by arm switch or stick commands)
+    uint8_t flightmode = 0; //flightmode 0 to 5    
+};
 
 struct RclConfig {
   public:
@@ -42,38 +56,28 @@ class RclGizmo {
   public:
     virtual ~RclGizmo() {}
     virtual bool update() = 0; //returns true if channel pwm data was updated
-    //virtual bool connected() = 0;
-    //virtual void calibrate() = 0; //interactive calibration
-    //virtual bool telem_statustext(uint8_t severity, char *text) {(void)severity; (void)text; return true;} //send MAVLink status text
 };
 
-class Rcl {
+class Rcl : public RclState {
   public:
     RclConfig config;
-
     RclGizmo *gizmo = nullptr;
-
+    MsgTopic<RclState> topic = MsgTopic<RclState>("rcl");
+    
     int setup();   // Use config to setup gizmo, returns 0 on success, or error code
-    bool update(); // Returns true if channel pwm data was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     int update_count() {return _update_count;} //Returns the number of channel packets the gizmo received
-
     bool connected();
     void calibrate(); //interactive calibration
     bool telem_statustext(uint8_t severity, char *text); //send MAVLink status text
 
-    uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
+    int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
 
-    float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
-    float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
-    float pitch = 0; //pitch stick value -1.0 (pitch up/stick back) to 1.0 (pitch down/stick forward)
-    float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
-    float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
-    bool armed = false; //armed state (triggered by arm switch or stick commands)
-    uint8_t flightmode = 0; //flightmode 0 to 5
+  protected:
+    friend void rcl_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
-    int _getCh(int ch); //normalize 1-based parameter channel to 0-RCL_MAX_CH, where RCL_MAX_CH is used for invalid channels
     float _ChannelNormalize(int val, int min, int center, int max, int deadband);
     void _setupStick(int stickno, int ch, int left_pull, int mid, int right_push);
     

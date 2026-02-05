@@ -44,9 +44,7 @@ private:
 
 //update rcl, yield and check for cancel, return false if 'q' was pressed
 bool do_events(bool *event_key = nullptr) {
-  rcl.update();
-
-  taskYIELD();
+  taskYIELD(); //yield RCL (and other) tasks
 
   while(Serial.available()) {
     //set event_key flag
@@ -242,7 +240,7 @@ bool _calibrate() {
   Serial.printf("  ==> Flight Mode Switch: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
 
   //set config
-  cfg.rcl_thr_ch    = thr.ch + 1;
+  cfg.rcl_thr_ch    = thr.ch + 1; //config channels are 1-based
   cfg.rcl_thr_pull  = thr.left_pull;
   cfg.rcl_thr_mid   = thr.mid;
   cfg.rcl_thr_push  = thr.right_push;

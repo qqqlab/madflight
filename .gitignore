@@ -1,5 +1,5 @@
 .pio
 .vscode
 .private
-src/main.cpp
+src/main*.cpp
 src/madflight_config.h

@@ -34,6 +34,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/MsgBroker.h"
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -89,6 +90,7 @@ class Imu : public ImuState {
   public:
     ImuConfig config;
     ImuGizmo *gizmo = nullptr;
+    MsgTopic<ImuState> topic = MsgTopic<ImuState>("imu");
 
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if state was updated
@@ -113,7 +115,6 @@ class Imu : public ImuState {
     void (*onUpdate)(void) = NULL;
 
     //methods
-    bool waitNewSample(); //wait for new sample, returns false on fail
     void statReset();
     uint32_t getSampleRate() {return config.sample_rate;}  //sensor sample rate in Hz
 
@@ -121,7 +122,7 @@ class Imu : public ImuState {
     void _interrupt_handler();
 
   private:
-    RuntimeTrace runtimeTrace = RuntimeTrace("_IMU");
+    RuntimeTrace runtimeTrace = RuntimeTrace("IMU");
 };
 
 extern Imu imu;

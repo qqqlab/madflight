@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/MsgBroker.h"
 
 struct OflState {
   public:
@@ -33,7 +34,6 @@ struct OflState {
     int dx_raw = 0;  // raw sensor reading in [pixels] (x-axis of sensor frame)
     int dy_raw = 0;  // raw sensor reading in [pixels] (y-axis of sensor frame)
 
-        
     // Ofl state vars
     float dx = 0;      // movement in N direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
     float dy = 0;      // movement in E direction of vehicle NED frame in [radians] (dx_raw,dy_raw rotated by ofl_align, multiplied by ofl_cal_rad)
@@ -61,22 +61,17 @@ class OflGizmo {
 };
 
 class Ofl : public OflState {
-  private:
-    volatile bool updated = false;
-
   public:
     OflConfig config;
-
     OflGizmo *gizmo = nullptr;
+    MsgTopic<OflState> topic = MsgTopic<OflState>("ofl");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
-    bool is_updated() { // Returns true if gizmo was updated in another task
-      if(!updated) return false;
-      updated = false;
-      return true;
-    }
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("OFL");

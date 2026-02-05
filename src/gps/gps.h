@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/MsgBroker.h"
 
 /// GPS fix codes.  These are kept aligned with MAVLink
 enum GPS_Status {
@@ -69,6 +70,8 @@ struct GpsState {
     bool have_undulation = false;   // do we have a value for the undulation
 };
 
+extern MsgTopic<GpsState> gps_topic;
+
 struct GpsConfig {
   public:
     Cfg::gps_gizmo_enum gizmo = Cfg::gps_gizmo_enum::mf_NONE; //the gizmo to use
@@ -85,12 +88,15 @@ class GpsGizmo {
 class Gps : public GpsState {
   public:
     GpsConfig config;
-
     GpsGizmo *gizmo = nullptr;
+    MsgTopic<GpsState> topic = MsgTopic<GpsState>("gps");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("GPS");

@@ -87,31 +87,18 @@ void RuntimeTraceGroup::print() {
 
   Serial.printf("Module        Calls  Wallclock     Rt/call    Updates  Wallclock      Rt/upd\n");
 
-  //show traces with names NOT starting with _  
+  //show traces
   float perc_sum = 0;
   float perc_sum_t = 0;  
   for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
     RuntimeTrace *t = arr[i];
     if(!t) break;
-    if(t->name[0] == '_') continue;
     t->print(now);
     perc_sum += t->perc;
     perc_sum_t += t->perc_upd;
   }
 
-  Serial.printf("Other                %6.2f%%                           %6.2f%%              \n", 100.f - perc_sum, 0.f);
-
-  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", 100.f, perc_sum_t);
-
-  //show traces with names starting with _ 
-  for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
-    RuntimeTrace *t = arr[i];
-    if(!t) break;
-    if(t->name[0] != '_') continue;
-    t->print(now);
-    perc_sum += t->perc;
-    perc_sum_t += t->perc_upd;
-  }
+  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", perc_sum, perc_sum_t);
 
   reset();
 }

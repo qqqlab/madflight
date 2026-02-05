@@ -1,6 +1,26 @@
+/*==========================================================================================
+MIT License
 
+Copyright (c) 2023-2026 https://madflight.com
 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+===========================================================================================*/
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
 
@@ -23,15 +43,13 @@ namespace BinLogWriter {
   static void bbx_task(void *pvParameters);
   void FMT_sendFMT();
 
-
-  Command_t command = NONE;
   State_t state = READY;
   uint32_t startMicros = 0;
   uint32_t missCnt = 0;
 
   struct msg_t
   {
-      uint8_t buf[MAX_MSG_LEN]; //NOTE: first byte overwritten with msg len when stuffed in queue
+      uint8_t buf[MAX_MSG_LEN]; //NOTE: first byte overwritten with msg len when stuffed in queue, when len==0 then second byte is Command_t
   };
 
   QueueHandle_t queue = nullptr;
@@ -44,20 +62,15 @@ namespace BinLogWriter {
   uint32_t typeRegistry[LOG_TYPE_LEN] = {}; //MSB is FMT+FMTU written flag, 31 LSB is message name 
   uint8_t typeRegistry_len = 0;
 
-
-
-
   void stop() {
-    command = STOP;
     //send zero length message to wake up BB task to process command
-    uint8_t msg = 0;
+    uint8_t msg[] = {0, STOP};
     xQueueSend(queue, (void*)&msg, 0);
   }
 
   void start() {
-    command = START;
     //send zero length message to wake up BB task to process command
-    uint8_t msg = 0;
+    uint8_t msg[] = {0, START};
     xQueueSend(queue, (void*)&msg, 0);
   }
 
@@ -76,10 +89,12 @@ namespace BinLogWriter {
 
   //append message to queue
   bool queueSend(uint8_t *buf, uint8_t len, uint8_t keepfree) {
-    if(keepfree && uxQueueSpacesAvailable(queue) < keepfree) return false;
-    //NOTE: random data will pad the message - improve this?
+    if(keepfree && uxQueueSpacesAvailable(queue) < keepfree) {
+      missCnt++;
+      return false;
+    }
     buf[0] = len; //overwrite header1 with message length
-    bool ok = ( xQueueSend(queue, (void*)buf, 0) == pdPASS );
+    bool ok = ( xQueueSend(queue, (void*)buf, 0) == pdPASS ); //NOTE: random data will pad the message
     if(!ok) missCnt++;
     return ok;
   }
@@ -214,7 +229,7 @@ namespace BinLogWriter {
 
 
   void cmd_start() {
-    if(state!=READY) return;
+    if(state != READY) return;
     state = STARTING;
 
     //empty the queue
@@ -233,20 +248,20 @@ namespace BinLogWriter {
 
     //write headers (flush often)
     FMT_sendFMT(); //send FMT for FMT
-    queueSendFMTU(true,0,"",""); //send FMT for FMTU
+    queueSendFMTU(true, 0, "", ""); //send FMT for FMTU
     log_header_msg("ArduPlane"); //this sets the vehicle type -> which drives the translaton of flightmode codes to names (among other things probably)
     //log_header_msg("ArduCopter");  //gives problems with plot.ardupilot.org
     //TODO log_header_msg(MADFLIGHT_VERSION);
     queueFlush();
     
     //write multipliers
-    for(int i=0;i<_num_multipliers;i++) {
+    for(int i = 0; i < _num_multipliers; i++) {
       log_header_mult(log_Multipliers[i].ID, log_Multipliers[i].mult);
       queueFlush();
     }
     
     //write units
-    for(int i=0;i<_num_units;i++) {
+    for(int i = 0; i < _num_units; i++) {
       log_header_unit(log_Units[i].ID, log_Units[i].unit);
       queueFlush();
     }
@@ -263,6 +278,9 @@ namespace BinLogWriter {
 
     //allow logging
     state = STARTED;
+
+    //log flight mode
+    bbx.log_mode();
   }
   
   void cmd_stop() {
@@ -284,21 +302,22 @@ namespace BinLogWriter {
     static msg_t msg;
     for(;;) {
       bool updated = (xQueueReceive(queue, &msg, portMAX_DELAY) == pdPASS);
+      runtimeTrace.start();
       if(updated) {
-        runtimeTrace.start();
-        switch(command) {
-        case START:
-          command = NONE;
-          cmd_start();
-          break;
-        case STOP:
-          command = NONE;
-          cmd_stop();
-          break;
-        case NONE:
-          //extract message length and restore header1
-          uint8_t len = msg.buf[0];
-          msg.buf[0] = HEAD_BYTE1;
+        uint8_t len = msg.buf[0];
+        if(len == 0) {
+          //decode command
+          switch( (Command_t)msg.buf[1] ) {
+          case START:
+            cmd_start();
+            break;
+          case STOP:
+            cmd_stop();
+            break;
+          }
+        }else{
+          //write message
+          msg.buf[0] = HEAD_BYTE1; //restore header1
           if(bbx.gizmo) bbx.gizmo->write(msg.buf, len);
         }
       }

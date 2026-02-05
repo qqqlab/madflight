@@ -77,7 +77,7 @@ int Rdr::setup() {
 
   //check gizmo
   if(!installed() && config.gizmo != Cfg::rdr_gizmo_enum::mf_NONE) {
-    Serial.println("\n" MF_MOD ": ERROR check pin/bus config\n");
+    cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1001;
   }
 
@@ -92,6 +92,8 @@ bool Rdr::update() {
   if(updated) {
     update_ts = micros();
     update_cnt++;
+
+    topic.publish(this);
   }
 
   runtimeTrace.stop(updated);

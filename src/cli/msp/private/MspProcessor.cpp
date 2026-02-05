@@ -270,29 +270,29 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
   r.result = 1;
   switch(m.cmd)
   {
-    case MSP_API_VERSION:
+    case MSP_API_VERSION: //1 0x01
       r.writeU8(MSP_PROTOCOL_VERSION);
       r.writeU8(API_VERSION_MAJOR);
       r.writeU8(API_VERSION_MINOR);
       break;
 
-    case MSP_FC_VARIANT:
+    case MSP_FC_VARIANT: //2 0x02
       r.writeData(flightControllerIdentifier, FLIGHT_CONTROLLER_IDENTIFIER_LENGTH);
       break;
 
-    case MSP_FC_VERSION:
+    case MSP_FC_VERSION: //3 0x03
       r.writeU8(FC_VERSION_MAJOR);
       r.writeU8(FC_VERSION_MINOR);
       r.writeU8(FC_VERSION_PATCH_LEVEL);
       break;
 
-    case MSP_BUILD_INFO:
+    case MSP_BUILD_INFO: //5 0x05
       r.writeData(buildDate, BUILD_DATE_LENGTH);
       r.writeData(buildTime, BUILD_TIME_LENGTH);
       r.writeData(shortGitRevision, GIT_SHORT_REVISION_LENGTH);
       break;
 
-    case MSP_BOARD_INFO:
+    case MSP_BOARD_INFO: //4 0x04
       r.writeData(boardIdentifier, BOARD_IDENTIFIER_LENGTH);
       r.writeU16(0); // No other build targets currently have hardware revision detection.
       r.writeU8(0);  // 0 == FC
@@ -323,17 +323,17 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU8(0);  // spi dev count
       r.writeU8(0);  // i2c dev count
       break;
-                                //loop- err-- activ modemask--- pi load- ----- fm -- -----------  
-                                // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 
-    case MSP_STATUS_EX:  //150 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 04 00 00 1A 04 10 11 00 00 29 00
-    case MSP_STATUS:     //101 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 00 00 00 1A 04 10 10 00 00 29 00
+                                     //loop- err-- activ modemask--- pi load- ----- fm -- -----------  
+                                     // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 
+    case MSP_STATUS_EX:  //150 0x96 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 04 00 00 1A 04 10 11 00 00 29 00
+    case MSP_STATUS:     //101 0x65 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 00 00 00 1A 04 10 10 00 00 29 00
       r.writeU16(0x01e7); //0,1 _model.state.stats.loopTime());
       r.writeU16(0);  //2,3 _model.state.i2cErrorCount); // i2c error count
       //         acc,     baro,    mag,     gps,     sonar,   gyro
       r.writeU16(0x23); //4,5 _model.accelActive() | _model.baroActive() << 1 | _model.magActive() << 2 | _model.gpsActive() << 3 | 0 << 4 | _model.gyroActive() << 5);
       r.writeU32(0); //6,7,8,9 _model.state.mode.mask); // flight mode flags
       r.writeU8(0); //10 pid profile
-      r.writeU16(0x000c); //11,12 lrintf(_model.state.stats.getCpuLoad()));
+      r.writeU16(0); //11,12 cpu load in % - lrintf(_model.state.stats.getCpuLoad()));
       if (m.cmd == MSP_STATUS_EX) {
         r.writeU8(1); //13 max profile count
         r.writeU8(0); //14 current rate profile index
@@ -350,11 +350,11 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU32(0); //17,18,19,20 _model.state.mode.armingDisabledFlags);  // 4 bytes, flags
       r.writeU8(0); //21 reboot required
 
-      r.writeU8(0x29); //21 - cpu temperature in deg C
+      r.writeU8(0); //21 - cpu temperature in deg C
       r.writeU8(0x00); //22 - ???
       break;
 
-    case MSP_UID:
+    case MSP_UID: //99 0x63
       r.writeU32(getBoardId0);
       r.writeU32(getBoardId1);
       r.writeU32(getBoardId2);
@@ -378,17 +378,17 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       }
       break;
 
-    case MSP_ACC_TRIM:
+    case MSP_ACC_TRIM: //240 0xF0
       r.writeU16(0); // pitch
       r.writeU16(0); // roll
       break;
 
-    case MSP_MIXER_CONFIG:
+    case MSP_MIXER_CONFIG: //42 0x2A
       r.writeU8(FC_MIXERRTYPE);//_model.config.mixer.type); // mixerMode, QUAD_X
       r.writeU8(0);//_model.config.mixer.yawReverse); // yaw_motors_reversed
       break;
 
-    case MSP_ATTITUDE:
+    case MSP_ATTITUDE: //108 0x6C
     {
       static float roll = 0;
       roll+= 0.1;
@@ -402,7 +402,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       break;
     }
 
-    case MSP_SENSOR_ALIGNMENT:
+    case MSP_SENSOR_ALIGNMENT: //126 0x7E
       r.writeU8(3);//_model.config.gyro.align); // gyro align
       r.writeU8(3);//_model.config.gyro.align); // acc align, Starting with 4.0 gyro and acc alignment are the same
       r.writeU8(0);//_model.config.mag.align);  // mag align
@@ -413,7 +413,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU8(0); // gyro 2
       break;
 
-    case MSP_BATTERY_STATE:
+    case MSP_BATTERY_STATE: //130 0x82
       // battery characteristics
       r.writeU8(3); //_model.state.battery.cells); // cell count, 0 indicates battery not detected.
       r.writeU16(0); // capacity in mAh
@@ -426,7 +426,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(lrintf(bat.v * 100)); // vvoltage in 0.01V, this is the voltage shown in the configurator
       break;
 
-    case MSP_ANALOG:
+    case MSP_ANALOG: //110 0x6E
       r.writeU8(lrintf(bat.v * 10)); // voltage in 0.1V
       r.writeU16(lrintf(bat.mah)); // mah drawn
       r.writeU16(0);//_model.getRssi()); // rssi
@@ -434,13 +434,36 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(lrintf(bat.v * 100)); // voltage in 0.01V
       break;
 
-    case MSP_RC:
-      //max 12 channels for betaflight: //AERT + AUX1-8
-      for(size_t i = 0; i < 12; i++) {
-        r.writeU16(rcl.pwm[i]);//lrintf(_model.state.input.us[i]));
+    case MSP_RC: //105 0x69 -> BF Receiver Tab
+      //max 12 channels for betaflight: AERT + AUX1-8
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_rol_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_pit_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_yaw_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_thr_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_arm_ch) ]);
+      r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_flt_ch) ]);
+      for(size_t i = 6; i < 12; i++) {
+        r.writeU16(rcl.pwm[i]);
       }
       break;
 
+    case MSP_ALTITUDE: //109 0x6D -> BF Sensor Tab
+      r.writeU32(lrintf((bar.alt - bar.ground_level) * 100.f));  // alt [cm]
+      r.writeU16(lrintf(0 * 100.f));   //TODO vario [cm/s]
+      break;
+
+
+    case MSP_RAW_IMU:  //102 0x66 -> BF Sensor Tab
+      r.writeU16(lrintf(imu.ax * 2048)); //g / 2048
+      r.writeU16(lrintf(imu.ay * 2048));
+      r.writeU16(lrintf(imu.az * 2048));
+      r.writeU16(lrintf(imu.gx * 10)); //deg/s / 10 (?)
+      r.writeU16(lrintf(imu.gy * 10));
+      r.writeU16(lrintf(imu.gz * 10));
+      r.writeU16(lrintf(mag.mx * 100)); //_model.state.mag.adc[i] * 1090
+      r.writeU16(lrintf(mag.my * 100));
+      r.writeU16(lrintf(mag.mz * 100));
+      break;
 
 // ======= TODO ============
 #if 0
@@ -814,11 +837,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
           _model.config.blackbox.fieldsMask = ~m.readU32();
         }*/
       }
-      break;
-
-    case MSP_ALTITUDE:
-      r.writeU32(lrintf(_model.state.altitude.height * 100.f));  // alt [cm]
-      r.writeU16(lrintf(_model.state.altitude.vario * 100.f));   // vario [cm/s]
       break;
 
     case MSP_BEEPER_CONFIG:
@@ -1393,20 +1411,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       _model.reload();
       break;
 
-    case MSP_RAW_IMU:
-      for (int i = 0; i < AXIS_COUNT_RPY; i++)
-      {
-        r.writeU16(lrintf(_model.state.accel.adc[i] * ACCEL_G_INV * 2048.f));
-      }
-      for (int i = 0; i < AXIS_COUNT_RPY; i++)
-      {
-        r.writeU16(lrintf(Utils::toDeg(_model.state.gyro.adc[i])));
-      }
-      for (int i = 0; i < AXIS_COUNT_RPY; i++)
-      {
-        r.writeU16(lrintf(_model.state.mag.adc[i] * 1090));
-      }
-      break;
 
     case MSP_MOTOR:
       for (size_t i = 0; i < 8; i++)

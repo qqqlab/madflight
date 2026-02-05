@@ -89,7 +89,7 @@ class Ahr : public AhrState {
     void getQFromMag(float *q);
 
   private:
-    RuntimeTrace runtimeTrace = RuntimeTrace("_AHR");
+    RuntimeTrace runtimeTrace = RuntimeTrace("AHR");
 };
 
 //Global module instance

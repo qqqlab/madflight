@@ -28,6 +28,7 @@ SOFTWARE.
 #include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../tbx/MsgBroker.h"
 
 struct BarState {
   public:
@@ -57,13 +58,16 @@ public:
 class Bar : public BarState {
   public:
     BarConfig config;
-
     BarGizmo *gizmo = nullptr;
+    MsgTopic<BarState> topic = MsgTopic<BarState>("bar");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
-    bool update();    // Returns true if state was updated
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     const char* name() {return (gizmo ? gizmo->name() : "NONE");}
+
+  protected:
+    friend void sensor_task(void *pvParameters);
+    bool update();    // Returns true if state was updated
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("BAR");

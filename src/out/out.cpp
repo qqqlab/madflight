@@ -99,6 +99,7 @@ bool Out::setupServo(uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_
 
 void Out::set(uint8_t idx, float value) {
   if(idx >= OUT_SIZE) return;
+  bool updated = false;
   command[idx] = value;
   switch(type[idx]) {
     case 'D':
@@ -119,6 +120,7 @@ void Out::set(uint8_t idx, float value) {
           dshotbidir.set_throttle(throttle);
         }
       }
+      updated = true;
       break;
     case 'M':
     case 'S':
@@ -127,7 +129,13 @@ void Out::set(uint8_t idx, float value) {
       }else{
         if(type[idx] == 'M') pwm[idx].writeFactor(0);
       }
+      updated = true;
       break;
+  }
+
+  if(updated) {
+    topic.publish(this);
+    bbx.log_out();
   }
 }
 

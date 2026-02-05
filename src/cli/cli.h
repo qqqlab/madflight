@@ -43,16 +43,21 @@ bool cli_execute(String cmd, String arg1, String arg2) {
 
 class Cli {
 public:
-  void setup();
-  bool update(); //returns true if a command was processed (even an invalid one)
-  void begin();
+  uint32_t updated_cnt = 0;
+  Cli();
   void help();
-
   void ps();
+  void banner();
+  void print_resources();
+
+protected:
+  friend void cli_task(void *pvParameters);
+  void begin();
+  bool update(); //returns true if a command was processed (even an invalid one)
 
 private:
   RuntimeTrace runtimeTrace = RuntimeTrace("CLI");
-
+  int ser_buf_size = 0;
 //========================================================================================================================//
 //                                          COMMAND PROCESSING                                                            //
 //========================================================================================================================//
@@ -84,8 +89,6 @@ private:
   String getCmdPart(uint32_t &pos);
   void processCmd();
 
-
-
 public:
   void executeCmd(String cmd, String arg1 = "", String arg2 = "");
 
@@ -106,7 +109,6 @@ public:
   void calibrate_IMU2(bool gyro_only = false);
   void calibrate_Magnetometer();
 private:
-  bool _calibrate_Magnetometer_ReadMag(float *m);
   bool _calibrate_Magnetometer(float bias[3], float scale[3]);
   void calibrate_info(int seconds = 0);
 
@@ -116,7 +118,6 @@ private:
 public:
   //add custom print command, returns true if added
   bool add_print_command(const char *cmd, const char *info, void (*function)(void));
-
 
 private:
   uint32_t cli_print_time = 0;

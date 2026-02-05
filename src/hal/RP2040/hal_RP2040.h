@@ -35,7 +35,7 @@ SOFTWARE.
 #endif
 
 #ifndef IMU_FREERTOS_TASK_PRIORITY
-  #define IMU_FREERTOS_TASK_PRIORITY 7
+  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 2) // =6; prio 7 is used for IdleCode0,1 tasks for flash operations; prio4 is used for CORE0,1 (loop,loop1) tasks
 #endif
 
 #define HAL_SER_NUM 2
