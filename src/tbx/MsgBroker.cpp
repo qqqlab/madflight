@@ -111,7 +111,7 @@ void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
 
 void MsgTopicBase::remove_subscription(MsgSubscriptionBase *sub) {
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
-    if(sub_list[i] = sub) {
+    if(sub_list[i] == sub) {
       sub_list[i] = nullptr;
       return;
     }

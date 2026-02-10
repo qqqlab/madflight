@@ -8,14 +8,22 @@
 Cli cli;
 
 static void cli_spinmotors() {
+  //get motor indexes
   int mot_cnt = 0;
-  for(int i=0;i<OUT_SIZE;i++) {
-    if(out.getType(i) == 'M') mot_cnt++;
+  uint8_t mots[OUT_SIZE] = {};
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.is_motor(i)) {
+      mots[mot_cnt++] = i;
+    }
   }
-  if(mot_cnt==0) {
+
+  //exit if no motors found
+  if(mot_cnt == 0) {
      Serial.println("Spin motors - no motors configured, exiting");
      return;
   }
+
+  //prompt for 'go', exit on anything else
   Serial.println("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.");
   while(Serial.available()) Serial.read(); //clear input 
   char c;
@@ -25,53 +33,63 @@ static void cli_spinmotors() {
   while(!Serial.available());
   c = Serial.read();
   if(c!='o') return;
+  while(!Serial.available()); //get /n
+  Serial.read();
 
-  while(Serial.available()) Serial.read(); //clear input
+  //clear input
+  delay(1);
+  Serial.flush();
+  while(Serial.available()) Serial.read(); 
 
   //disable IMU interrupt
   void (*onUpdate_saved)(void) = imu.onUpdate;
   imu.onUpdate = nullptr;
 
-  out.armed = true;
   int i = -1;
   float speed = 0;
   const float maxspeed = 0.40;
   const float speedstep = maxspeed/3000; //3 second up / 3 second down
   int stage = 0;
-  while(!Serial.available()) {
+  out.testmode_enable(true);
+  while(1) {
     switch(stage) {
     case 0: //next motor
       do {
         i++;
-        if(i>=OUT_SIZE) i = 0;
-      } while(out.getType(i) != 'M');
-      Serial.printf("Spinning motor pin_out%d - press enter to exit\n", i);
+        if(i >= OUT_SIZE) i = 0;
+      } while(!out.is_motor(i));
+      Serial.printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.get_pin(i));
+      Serial.flush();
       speed = 0;
-      out.set(i, speed);
       stage = 1;
       break;
     case 1: //spin up
       speed += speedstep;
-      if(speed<maxspeed) {
-        out.set(i, speed);
-      }else{
+      if(speed >= maxspeed) {
         stage = 2;
       }
       break;
     case 2: //spin down
       speed -= speedstep;
-      if(speed>0) {
-        out.set(i, speed);
-      }else{
+      if(speed <= 0) {
         speed = 0;
-        out.set(i, speed);
         stage = 0;
       }
       break;
     }
+
+    //set outputs
+    float val[mot_cnt] = {};
+    val[i] = speed;
+    for(int j = 0; j < mot_cnt; j++) {
+      out.testmode_set(mots[j], val[j]);
+    }
+
+    //exit on key
     delay(1);
+    if(Serial.available()) break;
   }
-  out.armed = false;
+  out.testmode_enable(false);
 
   Serial.println("Spin motors - DONE");
 
@@ -122,7 +140,7 @@ static void cli_po() {
   Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
-  Serial.printf("out.%c%d%%:%1.0f\t", out.getType(0), 0, 100*out.get(0));
+  Serial.printf("out.%c%d%%:%1.0f\t", out.get_type(0), 0, 100*out.get(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
@@ -173,11 +191,11 @@ static void cli_ppid() {
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", out.armed);
+  Serial.printf("out.armed:%d\t", out.armed());
   for(int i=0;i<OUT_SIZE;i++) {
-    if(out.getType(i)) {
-      Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
-      if(out.eperiodEnabled[i]) {
+    if(out.get_type(i)) {
+      Serial.printf("%c%d%%:%1.0f\t", out.get_type(i), i, 100*out.get(i));
+      if(out.eperiod_enabled[i]) {
         Serial.printf("rpm%d:%d\t", i, out.rpm(i));
       }
     }

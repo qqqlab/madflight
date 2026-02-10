@@ -75,6 +75,7 @@ void MspResponse::writeString(const char * v)
 
 void MspResponse::writeU8(uint8_t v)
 {
+  if(len >= MSP_BUF_OUT_SIZE) return;
   data[len++] = v;
 }
 

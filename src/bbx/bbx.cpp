@@ -321,7 +321,7 @@ void Bbx::log_out() {
   lbl[2] = 0;
   for(int i = 0; i < 8; i++) {
     lbl[1] = '0' + i;
-    switch(out.getType(i)) {
+    switch(out.get_type(i)) {
       case 'M':
         lbl[0] = 'm';
         bl.i16(lbl, out.get(i) * 1000, 1e-3, "");

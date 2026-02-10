@@ -8,7 +8,7 @@
 //betaflight msp flow
 
 setup:
-//OK:   MSP_API_VERSION: //1 -> reply 1.46 or 1.47 works (1.44 does not work)
+//OK:   MSP_API_VERSION: //1 -> pc config: 1.46 works, 1.47 does not work,  web app: 1.44 does not work, 1.46, 1.47 works
 //OK:   MSP_FC_VARIANT                  2    // out message: Get flight controller variant
 //OK:   MSP_FC_VERSION                  3    // out message: Get flight controller version
 //OK:   MSP_BUILD_INFO                  5    // out message: Get build information
@@ -326,11 +326,11 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
                                      //loop- err-- activ modemask--- pi load- ----- fm -- -----------  
                                      // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 
     case MSP_STATUS_EX:  //150 0x96 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 04 00 00 1A 04 10 11 00 00 29 00
-    case MSP_STATUS:     //101 0x65 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 00 00 00 1A 04 10 10 00 00 29 00
+    case MSP_STATUS: {    //101 0x65 -> E7 10 00 00 23 00 00 00 00 00 00 0C 00 00 00 00 1A 04 10 10 00 00 29 00
       r.writeU16(0x01e7); //0,1 _model.state.stats.loopTime());
       r.writeU16(0);  //2,3 _model.state.i2cErrorCount); // i2c error count
-      //         acc,     baro,    mag,     gps,     sonar,   gyro
-      r.writeU16(0x23); //4,5 _model.accelActive() | _model.baroActive() << 1 | _model.magActive() << 2 | _model.gpsActive() << 3 | 0 << 4 | _model.gyroActive() << 5);
+      uint16_t sensors = (imu.installed()?0x01:0) | (bar.installed()?0x02:0) | (mag.installed()?0x04:0) | (gps.installed()?0x08:0) | (rdr.installed()?0x10:0) | (imu.installed()?0x20:0);
+      r.writeU16(sensors); //4,5 accel << 1 | baro << 1 | mag << 2 | gps << 3 | sonar << 4 | gyro << 5);
       r.writeU32(0); //6,7,8,9 _model.state.mode.mask); // flight mode flags
       r.writeU8(0); //10 pid profile
       r.writeU16(0); //11,12 cpu load in % - lrintf(_model.state.stats.getCpuLoad()));
@@ -353,6 +353,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU8(0); //21 - cpu temperature in deg C
       r.writeU8(0x00); //22 - ???
       break;
+    }
 
     case MSP_UID: //99 0x63
       r.writeU32(getBoardId0);
@@ -360,11 +361,11 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU32(getBoardId2);
       break;
 
-    case MSP_SET_ARMING_DISABLED:
-      {
-        const uint8_t cmd = m.readU8();
+    case MSP_SET_ARMING_DISABLED: {
+        const uint8_t cmd = m.readU8(); //0x00 = disarm, 0x01 = arm
+        (void)cmd;
         uint8_t disableRunawayTakeoff = 0;
-        if(m.remain()) {
+        if(m.remain()) { //BF config sends 0x00 when cmd=arm, 0x01 when cmd=disarm in motors tab
           disableRunawayTakeoff = m.readU8();
         }
         (void)disableRunawayTakeoff;
@@ -375,8 +376,8 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
 //      _model.setArmingDisabled(ARMING_DISABLED_MSP, cmd);
 //#endif
 //        if (_model.isModeActive(MODE_ARMED)) _model.disarm(DISARM_REASON_ARMING_DISABLED);
-      }
       break;
+    }
 
     case MSP_ACC_TRIM: //240 0xF0
       r.writeU16(0); // pitch
@@ -388,8 +389,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU8(0);//_model.config.mixer.yawReverse); // yaw_motors_reversed
       break;
 
-    case MSP_ATTITUDE: //108 0x6C
-    {
+    case MSP_ATTITUDE: {//108 0x6C
       static float roll = 0;
       roll+= 0.1;
       while(roll>=180) roll -= 360;
@@ -434,7 +434,14 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(lrintf(bat.v * 100)); // voltage in 0.01V
       break;
 
-    case MSP_RC: //105 0x69 -> BF Receiver Tab
+    case MSP_BOXNAMES: //116 0x74 out message: The aux switch names
+      //r.writeString("ARM;AIRMODE;ANGLE;ALTHOLD;BEEPER;FAILSAFE;BLACKBOX;BLACKBOXERASE;");
+      r.writeString("ARM;FLIGHTMODE;");
+      break;
+
+// === BF Receiver Tab
+
+    case MSP_RC: //105 0x69
       //max 12 channels for betaflight: AERT + AUX1-8
       r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_rol_ch) ]);
       r.writeU16(rcl.pwm[ rcl._getCh(cfg.rcl_pit_ch) ]);
@@ -447,23 +454,97 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       }
       break;
 
-    case MSP_ALTITUDE: //109 0x6D -> BF Sensor Tab
+// === BF Sensor Tab
+
+    case MSP_ALTITUDE: //109 0x6D
       r.writeU32(lrintf((bar.alt - bar.ground_level) * 100.f));  // alt [cm]
       r.writeU16(lrintf(0 * 100.f));   //TODO vario [cm/s]
       break;
 
-
-    case MSP_RAW_IMU:  //102 0x66 -> BF Sensor Tab
+    case MSP_RAW_IMU: { //102 0x66
       r.writeU16(lrintf(imu.ax * 2048)); //g / 2048
       r.writeU16(lrintf(imu.ay * 2048));
       r.writeU16(lrintf(imu.az * 2048));
-      r.writeU16(lrintf(imu.gx * 10)); //deg/s / 10 (?)
-      r.writeU16(lrintf(imu.gy * 10));
-      r.writeU16(lrintf(imu.gz * 10));
-      r.writeU16(lrintf(mag.mx * 100)); //_model.state.mag.adc[i] * 1090
+      r.writeU16(lrintf(imu.gx * 4));  //deg/s / 4
+      r.writeU16(lrintf(imu.gy * 4));
+      r.writeU16(lrintf(imu.gz * 4));
+      r.writeU16(lrintf(mag.mx * 100)); //dimensionless in BF with scale options 100 to 10000
       r.writeU16(lrintf(mag.my * 100));
       r.writeU16(lrintf(mag.mz * 100));
       break;
+    }
+
+    case MSP_DEBUG:
+      for (int i = 0; i < 8; i++) {
+        r.writeU16(i*100);
+      }
+      break;
+
+    case MSP_SONAR_ALTITUDE: //  58 0x3A out message: Get sonar altitude [cm]
+      r.writeU32(rdr.dist * 100);
+      break;
+
+
+// === BF Motor Tab, test motors
+
+    case MSP_SET_MOTOR: //214 0xD6
+      out.testmode_enable(true);
+      for(size_t i = 0; i < 4; i++) {
+        out.testmode_set(i, (m.readU16() - 1000) / 1024.f); //BF sends values 1000-2024
+      }
+      break;
+
+    case MSP_MOTOR:
+      for (size_t i = 0; i < 4; i++) {
+        r.writeU16(out.get(i) * 1024 + 1000);
+      }
+      for (size_t i = 0; i < 4; i++) {
+        r.writeU16(0);
+      }      
+      break;
+
+    case MSP_MOTOR_CONFIG:
+      r.writeU16(1000); // minthrottle
+      r.writeU16(2024); // maxthrottle
+      r.writeU16(1000);  // mincommand
+      r.writeU8(4);   // motor count
+      // 1.42+
+      r.writeU8(14); // motor pole count
+      r.writeU8(0); // dshot telemtery
+      r.writeU8(0); // esc sensor
+      break;
+
+    case MSP_MOTOR_TELEMETRY:
+      r.writeU8(4); //number of motors
+      for (size_t i = 0; i < 4; i++) {
+        r.writeU32(out.rpm(i)); //rpm
+        r.writeU16(0); //invalidPct telemetry.errors
+        r.writeU8(0); //escTemperature [degrees celcius]
+        r.writeU16(0);  //escVoltage [0.01V per unit]
+        r.writeU16(0);  //escCurent [0.01A per unit]
+        r.writeU16(0); //escConsumption [mAh]
+      }
+      break;
+
+
+/*
+    case MSP_SET_MOTOR_CONFIG:
+      _model.config.output.minThrottle = m.readU16(); // minthrottle
+      _model.config.output.maxThrottle = m.readU16(); // maxthrottle
+      _model.config.output.minCommand = m.readU16();  // mincommand
+      if(m.remain() >= 2)
+      {
+#ifdef ESPFC_DSHOT_TELEMETRY
+        _model.config.output.motorPoles = m.readU8();
+        _model.config.output.dshotTelemetry = m.readU8();
+#else
+        m.readU8();
+        m.readU8();
+#endif
+      }
+      _model.reload();
+      break;
+*/
 
 // ======= TODO ============
 #if 0
@@ -489,10 +570,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       {
         _model.config.modelName[i] = m.readU8();
       }
-      break;
-
-    case MSP_BOXNAMES:
-      r.writeString(F("ARM;AIRMODE;ANGLE;ALTHOLD;BEEPER;FAILSAFE;BLACKBOX;BLACKBOXERASE;"));
       break;
 
     case MSP_BOXIDS:
@@ -881,34 +958,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
 
     case MSP_SET_RSSI_CONFIG:
       _model.config.input.rssiChannel = m.readU8();
-      break;
-
-    case MSP_MOTOR_CONFIG:
-      r.writeU16(_model.config.output.minThrottle); // minthrottle
-      r.writeU16(_model.config.output.maxThrottle); // maxthrottle
-      r.writeU16(_model.config.output.minCommand);  // mincommand
-      r.writeU8(_model.state.currentMixer.count);   // motor count
-      // 1.42+
-      r.writeU8(_model.config.output.motorPoles); // motor pole count
-      r.writeU8(_model.config.output.dshotTelemetry); // dshot telemtery
-      r.writeU8(0); // esc sensor
-      break;
-
-    case MSP_SET_MOTOR_CONFIG:
-      _model.config.output.minThrottle = m.readU16(); // minthrottle
-      _model.config.output.maxThrottle = m.readU16(); // maxthrottle
-      _model.config.output.minCommand = m.readU16();  // mincommand
-      if(m.remain() >= 2)
-      {
-#ifdef ESPFC_DSHOT_TELEMETRY
-        _model.config.output.motorPoles = m.readU8();
-        _model.config.output.dshotTelemetry = m.readU8();
-#else
-        m.readU8();
-        m.readU8();
-#endif
-      }
-      _model.reload();
       break;
 
     case MSP_MOTOR_3D_CONFIG:
@@ -1412,58 +1461,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       break;
 
 
-    case MSP_MOTOR:
-      for (size_t i = 0; i < 8; i++)
-      {
-        if (i >= OUTPUT_CHANNELS || _model.config.pin[i + PIN_OUTPUT_0] == -1)
-        {
-          r.writeU16(0);
-          continue;
-        }
-        r.writeU16(_model.state.output.us[i]);
-      }
-      break;
-
-    case MSP_MOTOR_TELEMETRY:
-      r.writeU8(OUTPUT_CHANNELS);
-      for (size_t i = 0; i < OUTPUT_CHANNELS; i++)
-      {
-        int rpm = 0;
-        uint16_t invalidPct = 0;
-        uint8_t escTemperature = 0;  // degrees celcius
-        uint16_t escVoltage = 0;     // 0.01V per unit
-        uint16_t escCurrent = 0;     // 0.01A per unit
-        uint16_t escConsumption = 0; // mAh
-
-        if (_model.config.pin[i + PIN_OUTPUT_0] != -1)
-        {
-          rpm = lrintf(_model.state.output.telemetry.rpm[i]);
-          invalidPct = _model.state.output.telemetry.errors[i];
-          escTemperature = _model.state.output.telemetry.temperature[i];
-          escVoltage = _model.state.output.telemetry.voltage[i];
-          escCurrent = _model.state.output.telemetry.current[i];
-        }
-
-        r.writeU32(rpm);
-        r.writeU16(invalidPct);
-        r.writeU8(escTemperature);
-        r.writeU16(escVoltage);
-        r.writeU16(escCurrent);
-        r.writeU16(escConsumption);
-      }
-      break;
-
-    case MSP_SET_MOTOR:
-      if(_model.isFeatureActive(FEATURE_GPS) && _model.config.blackbox.mode > 0)
-      {
-        _model.setGpsHome(true);
-      }
-      for(size_t i = 0; i < OUTPUT_CHANNELS; i++)
-      {
-        _model.state.output.disarmed[i] = m.readU16();
-      }
-      break;
-
     case MSP_SERVO:
       for(size_t i = 0; i < OUTPUT_CHANNELS; i++)
       {
@@ -1611,11 +1608,6 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       }
       break;
 
-    case MSP_DEBUG:
-      for (int i = 0; i < 8; i++) {
-        r.writeU16(_model.state.debug[i]);
-      }
-      break;
 
     case MSP_SET_GPS_CONFIG:
       m.readU8(); // provider

@@ -106,16 +106,15 @@ void setup() {
   // STOP if imu is not installed
   if(!imu.installed()) madflight_panic("This program needs an IMU.");
 
-  // Setup 4 motors for the quadcopter
-  int motor_idxs[] = {0, 1, 2, 3}; //motor indexes
-  int motor_pins[] = {cfg.pin_out0, cfg.pin_out1, cfg.pin_out2, cfg.pin_out3}; //motor pins
+  // Setup 4 motor outputs for the quadcopter
+  int motor_outputs[] = {0, 1, 2, 3}; //pin_out0, pin_out1, pin_out2, pin_out3
 
   // Uncomment ONE line - select output type
-  bool success = out.setupMotors(4, motor_idxs, motor_pins, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
-  //bool success = out.setupMotors(4, motor_idxs, motor_pins, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
-  //bool success = out.setupDshot(4, motor_idxs, motor_pins, 300);             // Dshot300
-  //bool success = out.setupDshotBidir(4, motor_idxs, motor_pins, 300);        // Dshot300 Bi-Directional
-  //bool success = out.setupMotors(4, motor_idxs, motor_pins, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
+  //bool success = out.setup_motors(4, motor_pins, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
+  //bool success = out.setup_motors(4, motor_pins, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
+  bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
+  //bool success = out.setup_dshot_bidir(4, motor_pins, 300);        // Dshot300 Bi-Directional
+  //bool success = out.setup_motors(4, motor_pins, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
   if(!success) madflight_panic("Motor init failed.");
 
   // Set initial desired yaw
@@ -172,8 +171,8 @@ void led_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use CLI 'pimu' to investigate.
   //DISARMED: green long off, short on, ARMED: red long on, short off
   uint32_t modulus = imu.update_cnt % imu.getSampleRate();
-  if( modulus == 0) led.color( (out.armed ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
-  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
+  if( modulus == 0) led.color( (out.armed() ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
+  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed() ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
 //returns angle in range -180 to 180
@@ -313,15 +312,15 @@ void control_Rate(bool zero_integrators) {
 
 void out_KillSwitchAndFailsafe() {
   //Change to ARMED when rcl is armed (by switch or stick command)
-  if (!out.armed && rcl.armed) {
-    out.armed = true;
+  if (!out.armed() && rcl.armed) {
+    out.set_armed(true);
     Serial.println("OUT: ARMED");
     bbx.start(); //start blackbox logging
   }
 
   //Change to DISARMED when rcl is disarmed, or if radio lost connection
-  if (out.armed && (!rcl.armed || !rcl.connected())) {
-    out.armed = false;
+  if (out.armed() && (!rcl.armed || !rcl.connected())) {
+    out.set_armed(false);
     if(!rcl.armed) {
       Serial.println("OUT: DISARMED");
       bbx.stop(); //stop blackbox logging

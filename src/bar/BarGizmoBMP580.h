@@ -109,7 +109,6 @@ private:
     dev->writeReg(0x37, 0b00000011); // ODR_CONFIG b7:1=deep standby disable, b6-2:odr, b1-0:11=continuous mode
 
     // test sensor
-    float p, t;
     uint32_t ts = micros();
     while(micros() - ts < 50000) {
       if(data_ready()) return true;

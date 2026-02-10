@@ -69,7 +69,17 @@ SOFTWARE.
   #endif
 #endif
 
-//check FreeRTOS enabled in arduino-pico v5
-#if ARDUINO_PICO_MAJOR == 5 && !__FREERTOS
+//check arduino-pico v5
+#if ARDUINO_PICO_MAJOR < 5
+  #error "Arduino Pico version 5 or later is required"
+#endif
+
+//check FreeRTOS enabled
+#if !__FREERTOS
   #error "FreeRTOS required - Arduino IDE menu: Tools->Operating System = FreeRTOS SMP - PlatformIO add: build_flags = -DPIO_FRAMEWORK_ARDUINO_ENABLE_FREERTOS"
+#endif
+
+//check Adafruit TinyUSBS enabled
+#if !USE_TINYUSB
+  #error "Adafruit TinyUSB required - Arduino IDE menu: Tools->USB Stack = Adafruit TinyUSB - PlatformIO add: build_flags = -DUSE_TINYUSB"
 #endif

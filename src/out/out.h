@@ -25,13 +25,13 @@ SOFTWARE.
 #pragma once
 
 #define OUT_SIZE 16 //max number of outputs
+#define OUT_MOT_TIMEOUT 250000 //switch motors off 250ms after last set received
 
 #include "../madflight_modules.h"
 
 struct OutState {
   public:
-    //uint32_t ts; //TODO
-    bool armed = false; //output is enabled when armed == true
+    uint32_t ts = 0; //time of last set() or testmode_enable() call
     float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
 };
@@ -40,24 +40,36 @@ class Out : public OutState {
   public:
     MsgTopic<OutState> topic = MsgTopic<OutState>("out");
 
-    bool eperiodEnabled[OUT_SIZE] = {}; //ePeriod enabled flag
+    bool eperiod_enabled[OUT_SIZE] = {}; //ePeriod enabled flag
 
     void setup();
-    bool setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);
-    bool setupDshotBidir(uint8_t cnt, int* idxs, int* pins, int freq_khz = 300);    
-    bool setupMotors(uint8_t cnt, int* idxs, int* pins, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    bool setupMotor(uint8_t idx, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    bool setupServo(uint8_t idx, int pin, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool update();
+
+    bool armed();
+    void set_armed(bool set_armed);
+    void testmode_enable(bool set_testmode);
+    void testmode_set(uint8_t idx, float value);
+    bool is_motor(uint8_t idx);
+    bool is_servo(uint8_t idx);
+    void stop_all_motors(); //unconditionally stop all motors
+    bool setup_dshot(uint8_t cnt, int* idxs, int freq_khz = 300);
+    bool setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz = 300);    
+    bool setup_motors(uint8_t cnt, int* idxs, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setup_motor(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setup_servo(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     void set(uint8_t idx, float value); //set output (might not be output value because of armed == false)
     float get(uint8_t idx); //get last set value (might not be output value because of armed == false)
-    char getType(uint8_t idx); //type 'D', 'M', or 'S'
+    char get_type(uint8_t idx); //type 'D', 'B', 'M', or 'S'
     int rpm(uint8_t idx, int poles = 14); //get RPM
+    int8_t get_pin(uint8_t idx);
+    void set_pin(uint8_t idx, int pin);
 
   private:
-    bool _setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us);
+    bool _setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int pwm_max_us);
+    void _set(uint8_t idx, float value);  //unconditional set output - no armed check
 
     char type[OUT_SIZE] = {};
-    int pins[OUT_SIZE] = {};
+    int8_t pins[OUT_SIZE] = {};
 
     //PWM
     PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
@@ -67,6 +79,16 @@ class Out : public OutState {
     DshotBidir dshotbidir;
     int dshot_cnt = 0; //number of dshot pins
     int dshot_idxs[OUT_SIZE]; //dshot out indices
+    uint32_t _update_ts = 0;
+    uint32_t _watchdog_ts = 0;
+
+    enum mode_enum {
+      DISARMED = 0,
+      ARMED = 1,
+      TESTMODE = 2
+    } _mode = DISARMED;
 };
+
+
 
 extern Out out;

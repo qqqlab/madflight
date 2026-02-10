@@ -137,15 +137,15 @@ void setup() {
   madflight_setup();
 
   //Standard servo at 50Hz (set servos first just in case motors overwrite frequency of shared timers)
-  out.setupServo(1, cfg.pin_out1, 50, 1000, 2000); //Aileron
-  out.setupServo(2, cfg.pin_out2, 50, 1000, 2000); //Elevator
-  out.setupServo(3, cfg.pin_out3, 50, 1000, 2000); //Rudder
-  out.setupServo(4, cfg.pin_out4, 50, 1000, 2000); //Flaps
+  out.setup_servo(1, 50, 1000, 2000); //Aileron
+  out.setup_servo(2, 50, 1000, 2000); //Elevator
+  out.setup_servo(3, 50, 1000, 2000); //Rudder
+  out.setup_servo(4, 50, 1000, 2000); //Flaps
 
   //Motor
   //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
-  out.setupMotor(0, cfg.pin_out0, 400, 950, 2000); //Standard PWM: 400Hz, 950-2000 us
-  //out.setupMotor(0, cfg.pin_out0, 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
+  out.setup_motor(0, 400, 950, 2000); //Standard PWM: 400Hz, 950-2000 us
+  //out.setup_motor(0, 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
 }
 
 //========================================================================================================================//
@@ -199,8 +199,8 @@ void led_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use CLI 'pimu' to investigate.
   //DISARMED: green long off, short on, ARMED: red long on, short off
   uint32_t modulus = imu.update_cnt % imu.getSampleRate();
-  if( modulus == 0) led.color( (out.armed ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
-  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
+  if( modulus == 0) led.color( (out.armed() ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
+  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed() ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
 void control_FBWA(bool zero_integrators) {
@@ -308,15 +308,15 @@ Regular RC control, no stabilization. All RC inputs are passed through to the se
 
 void out_KillSwitchAndFailsafe() {
   //Change to ARMED when rcl is armed (by switch or stick command)
-  if (!out.armed && rcl.armed) {
-    out.armed = true;
+  if (!out.armed() && rcl.armed) {
+    out.set_armed(true);
     Serial.println("OUT: ARMED");
     bbx.start(); //start blackbox logging
   }
 
   //Change to DISARMED when rcl is disarmed, or if radio lost connection
-  if (out.armed && (!rcl.armed || !rcl.connected())) {
-    out.armed = false;
+  if (out.armed() && (!rcl.armed || !rcl.connected())) {
+    out.set_armed(false);
     if(!rcl.armed) {
       Serial.println("OUT: DISARMED");
       bbx.stop(); //stop blackbox logging
