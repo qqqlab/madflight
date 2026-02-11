@@ -55,10 +55,10 @@ void MsgBroker::top() {
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = topic_list[i];
     if(t) {
-      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d  subscribers:%d\n", t->name.c_str(), t->generation / dt, (int)t->generation, t->subscriber_count());
+      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d  subscribers:%d\n", t->name, t->generation / dt, (int)t->generation, t->subscriber_count());
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->sub_list[j];
-        if(s) Serial.printf("  sub:%-10s freq:%4.0fHz  gen:%8d  pulls:%8d  missed:%8d\n", s->name.c_str(), s->pull_cnt / dt, (int)s->generation, (int)s->pull_cnt, (int)(t->generation - s->pull_cnt));
+        if(s) Serial.printf("  sub:%-10s freq:%4.0fHz  gen:%8d  pulls:%8d  missed:%8d\n", s->name, s->pull_cnt / dt, (int)s->generation, (int)s->pull_cnt, (int)(t->generation - s->pull_cnt));
       } 
     }
   }
@@ -76,9 +76,9 @@ void MsgBroker::reset_stats() {
 //=============================================================================
 // MsgTopicBase
 //=============================================================================
-MsgTopicBase::MsgTopicBase(String name, int len) {
-  Serial.printf("cr topic %s %d\n",name.c_str(),len);Serial.flush();
-    this->name = name;
+MsgTopicBase::MsgTopicBase(const char *name, int len) {
+    strncpy(this->name, name, sizeof(this->name) - 1);
+    this->name[sizeof(this->name) - 1] = 0;
     queue = xQueueCreate(1, len);
     MsgBroker::add_topic(this);
 }
@@ -94,7 +94,6 @@ void MsgTopicBase::publishFromISR(void *msg) {
     (void)higherPriorityTaskWoken;
     generation++;
 }
-
 
 bool MsgTopicBase::pull(void *msg) {
     return (xQueuePeek(queue, msg, 0) == pdPASS);
@@ -135,8 +134,9 @@ bool MsgSubscriptionBase::updated() {
     return (generation != topic->generation);
 }
 
-MsgSubscriptionBase::MsgSubscriptionBase(String name, MsgTopicBase *topic) : topic{topic} {
-    this->name = name;
+MsgSubscriptionBase::MsgSubscriptionBase(const char *name, MsgTopicBase *topic) : topic{topic} {
+    strncpy(this->name, name, sizeof(this->name) - 1);
+    this->name[sizeof(this->name) - 1] = 0;
     topic->add_subscription(this);
 }
 

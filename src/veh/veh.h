@@ -138,10 +138,10 @@ struct VehState {
     uint8_t _flightmode = 0; //current flight mode index
 };
 
-extern MsgTopic<VehState> veh_topic;
-
 class Veh : public VehState {
   public:
+    MsgTopic<VehState> topic = MsgTopic<VehState>("veh");
+
     static const uint8_t mav_type; //mavlink vehicle type
     static const uint8_t flightmode_ap_ids[6]; //mapping from flightmode to ArduPilot flight mode id
     static const char* flightmode_names[6]; //define flightmode name strings for telemetry

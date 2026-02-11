@@ -468,9 +468,9 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
       r.writeU16(lrintf(imu.gx * 4));  //deg/s / 4
       r.writeU16(lrintf(imu.gy * 4));
       r.writeU16(lrintf(imu.gz * 4));
-      r.writeU16(lrintf(mag.mx * 100)); //dimensionless in BF with scale options 100 to 10000
-      r.writeU16(lrintf(mag.my * 100));
-      r.writeU16(lrintf(mag.mz * 100));
+      r.writeU16(lrintf(mag.mx * 10)); //dimensionless in BF with scale options 100 to 10000
+      r.writeU16(lrintf(mag.my * 10));
+      r.writeU16(lrintf(mag.mz * 10));
       break;
     }
 
