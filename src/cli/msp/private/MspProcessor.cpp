@@ -488,15 +488,15 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
 // === BF Motor Tab, test motors
 
     case MSP_SET_MOTOR: //214 0xD6
-      out.testmode_enable(true);
+      out.testmotor_enable(true);
       for(size_t i = 0; i < 4; i++) {
-        out.testmode_set(i, (m.readU16() - 1000) / 1024.f); //BF sends values 1000-2024
+        out.testmotor_set_output(i, (m.readU16() - 1000) / 1024.f); //BF sends values 1000-2024
       }
       break;
 
     case MSP_MOTOR:
       for (size_t i = 0; i < 4; i++) {
-        r.writeU16(out.get(i) * 1024 + 1000);
+        r.writeU16(out.get_output(i) * 1024 + 1000);
       }
       for (size_t i = 0; i < 4; i++) {
         r.writeU16(0);
@@ -517,7 +517,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
     case MSP_MOTOR_TELEMETRY:
       r.writeU8(4); //number of motors
       for (size_t i = 0; i < 4; i++) {
-        r.writeU32(out.rpm(i)); //rpm
+        r.writeU32(out.get_rpm(i)); //rpm
         r.writeU16(0); //invalidPct telemetry.errors
         r.writeU8(0); //escTemperature [degrees celcius]
         r.writeU16(0);  //escVoltage [0.01V per unit]

@@ -50,7 +50,7 @@ static void cli_spinmotors() {
   const float maxspeed = 0.40;
   const float speedstep = maxspeed/3000; //3 second up / 3 second down
   int stage = 0;
-  out.testmode_enable(true);
+  out.testmotor_enable(true);
   while(1) {
     switch(stage) {
     case 0: //next motor
@@ -82,14 +82,14 @@ static void cli_spinmotors() {
     float val[mot_cnt] = {};
     val[i] = speed;
     for(int j = 0; j < mot_cnt; j++) {
-      out.testmode_set(mots[j], val[j]);
+      out.testmotor_set_output(mots[j], val[j]);
     }
 
     //exit on key
     delay(1);
     if(Serial.available()) break;
   }
-  out.testmode_enable(false);
+  out.testmotor_enable(false);
 
   Serial.println("Spin motors - DONE");
 
@@ -140,7 +140,7 @@ static void cli_po() {
   Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
-  Serial.printf("out.%c%d%%:%1.0f\t", out.get_type(0), 0, 100*out.get(0));
+  Serial.printf("out.%c%d%%:%1.0f\t", out.get_type(0), 0, 100*out.get_output(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
@@ -191,12 +191,12 @@ static void cli_ppid() {
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", out.armed());
+  Serial.printf("out.armed:%d\t", out.is_armed());
   for(int i=0;i<OUT_SIZE;i++) {
     if(out.get_type(i)) {
-      Serial.printf("%c%d%%:%1.0f\t", out.get_type(i), i, 100*out.get(i));
+      Serial.printf("%c%d%%:%1.0f\t", out.get_type(i), i, 100*out.get_output(i));
       if(out.eperiod_enabled[i]) {
-        Serial.printf("rpm%d:%d\t", i, out.rpm(i));
+        Serial.printf("rpm%d:%d\t", i, out.get_rpm(i));
       }
     }
   }

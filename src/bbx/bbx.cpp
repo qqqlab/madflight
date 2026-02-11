@@ -324,17 +324,17 @@ void Bbx::log_out() {
     switch(out.get_type(i)) {
       case 'M':
         lbl[0] = 'm';
-        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
         break;
       case 'D':
         lbl[0] = 'm';
-        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
         lbl[0] = 'r';
-        bl.u16(lbl, out.rpm(i), 1, "rpm");
+        bl.u16(lbl, out.get_rpm(i), 1, "rpm");
         break;
       case 'S':
         lbl[0] = 's';
-        bl.i16(lbl, out.get(i) * 1000, 1e-3, "");
+        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
         break;
     }
   }

@@ -41,14 +41,15 @@ class Out : public OutState {
     MsgTopic<OutState> topic = MsgTopic<OutState>("out");
 
     bool eperiod_enabled[OUT_SIZE] = {}; //ePeriod enabled flag
+    int8_t publish_trigger_idx = -1; //this index triggers a publish in set_output() - updated by setup_xxx()
 
     void setup();
     bool update();
 
-    bool armed();
+    bool is_armed();
     void set_armed(bool set_armed);
-    void testmode_enable(bool set_testmode);
-    void testmode_set(uint8_t idx, float value);
+    void testmotor_enable(bool set_testmode);
+    void testmotor_set_output(uint8_t idx, float value);
     bool is_motor(uint8_t idx);
     bool is_servo(uint8_t idx);
     void stop_all_motors(); //unconditionally stop all motors
@@ -57,16 +58,17 @@ class Out : public OutState {
     bool setup_motors(uint8_t cnt, int* idxs, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     bool setup_motor(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     bool setup_servo(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    void set(uint8_t idx, float value); //set output (might not be output value because of armed == false)
-    float get(uint8_t idx); //get last set value (might not be output value because of armed == false)
+    void set_output(uint8_t idx, float value); //set output (when ARMED, ignored in DISARMED and TESTMOTOR mode)
+    float get_output(uint8_t idx); //get last output value
     char get_type(uint8_t idx); //type 'D', 'B', 'M', or 'S'
-    int rpm(uint8_t idx, int poles = 14); //get RPM
+    int get_rpm(uint8_t idx, int poles = 14); //get RPM
     int8_t get_pin(uint8_t idx);
     void set_pin(uint8_t idx, int pin);
+    const char* get_mode_string();
 
   private:
     bool _setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int pwm_max_us);
-    void _set(uint8_t idx, float value);  //unconditional set output - no armed check
+    void _set_output(uint8_t idx, float value);  //unconditional set output - no armed check
 
     char type[OUT_SIZE] = {};
     int8_t pins[OUT_SIZE] = {};
@@ -85,10 +87,8 @@ class Out : public OutState {
     enum mode_enum {
       DISARMED = 0,
       ARMED = 1,
-      TESTMODE = 2
+      TESTMOTOR = 2
     } _mode = DISARMED;
 };
-
-
 
 extern Out out;

@@ -10,7 +10,7 @@ MspResponse mspResponse;
 static uint8_t buf[256]; //TODO - remove me, integrate this into MspResponse::data buffer
 
 bool Msp::process_byte(uint8_t c) {
-    out.testmode_enable(true); //reset output disable watchdog
+    out.testmotor_enable(true); //reset output disable watchdog
     if(_msp.parse(c, mspRequest) && mspRequest.isReady() && mspRequest.isCmd()) {
         _msp.processCommand(mspRequest, mspResponse);
 
