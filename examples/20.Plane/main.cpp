@@ -351,80 +351,80 @@ void out_Mixer() {
 
   //motor: full throttle on rcl.throttle
   #ifdef OUT_MOTOR //full throttle on high pwm
-    out.set(OUT_MOTOR-1, +rcl.throttle);
+    out.set_output(OUT_MOTOR-1, +rcl.throttle);
   #endif
   #ifdef OUT_MOTOR1_REVERSED //reversed: idle throttle on high pwm
-    out.set(OUT_MOTOR1_REVERSED-1, 1.0 - rcl.throttle);
+    out.set_output(OUT_MOTOR1_REVERSED-1, 1.0 - rcl.throttle);
   #endif  
   #ifdef OUT_MOTOR2 //full throttle on high pwm
-    out.set(OUT_MOTOR2-1, +rcl.throttle);
+    out.set_output(OUT_MOTOR2-1, +rcl.throttle);
   #endif  
   #ifdef OUT_MOTOR2_REVERSED //reversed: idle throttle on high pwm
-    out.set(OUT_MOTOR2_REVERSED-1, 1.0 - rcl.throttle);
+    out.set_output(OUT_MOTOR2_REVERSED-1, 1.0 - rcl.throttle);
   #endif 
 
   //aileron: when pid.roll positive -> roll right -> deflect left aileron down, deflect right aileron up
   #ifdef OUT_LEFT_AILERON_DOWN //left aileron deflects down on high pwm
-    out.set(OUT_LEFT_AILERON_DOWN-1, 0.5 +pid.roll/2.0);
+    out.set_output(OUT_LEFT_AILERON_DOWN-1, 0.5 +pid.roll/2.0);
   #endif
   #ifdef OUT_RIGHT_AILERON_UP //right aileron deflects up on high pwm
-    out.set(OUT_RIGHT_AILERON_UP-1, 0.5 +pid.roll/2.0);
+    out.set_output(OUT_RIGHT_AILERON_UP-1, 0.5 +pid.roll/2.0);
   #endif
   #ifdef OUT_LEFT_AILERON_UP //reversed: left aileron deflects up on high pwm
-    out.set(OUT_LEFT_AILERON_UP-1, 0.5 -pid.roll/2.0);
+    out.set_output(OUT_LEFT_AILERON_UP-1, 0.5 -pid.roll/2.0);
   #endif
   #if defined(OUT_RIGHT_AILERON_DOWN) //reversed: right aileron deflects down on high pwm
-    out.set(OUT_RIGHT_AILERON_DOWN-1, 0.5 -pid.roll/2.0);
+    out.set_output(OUT_RIGHT_AILERON_DOWN-1, 0.5 -pid.roll/2.0);
   #endif
 
   //elevator: when pid.pitch is positive -> pitch up -> deflect elevator down 
   #ifdef OUT_ELEVATOR_DOWN //elevator deflects down on high pwm
-    out.set(OUT_ELEVATOR_UP-1, +pid.pitch/2.0 + 0.5);
+    out.set_output(OUT_ELEVATOR_UP-1, +pid.pitch/2.0 + 0.5);
   #endif
   #ifdef OUT_ELEVATOR_UP //reversed: elevator deflects up on high pwm
-    out.set(OUT_ELEVATOR_UP-1, -pid.pitch/2.0 + 0.5);
+    out.set_output(OUT_ELEVATOR_UP-1, -pid.pitch/2.0 + 0.5);
   #endif
 
   //rudder: when pid.yaw is positive -> yaw right -> deflect rudder right
   #ifdef OUT_RUDDER_RIGHT //rudder deflects right on high pwm 
-    out.set(OUT_RUDDER_RIGHT-1, +pid.yaw/2.0 + 0.5);
+    out.set_output(OUT_RUDDER_RIGHT-1, +pid.yaw/2.0 + 0.5);
   #endif  
   #ifdef OUT_RUDDER_LEFT //reversed: rudder deflects left on high pwm
-    out.set(OUT_RUDDER_LEFT-1, -pid.yaw/2.0 + 0.5);
+    out.set_output(OUT_RUDDER_LEFT-1, -pid.yaw/2.0 + 0.5);
   #endif
 
   //flaps: (rcin_flaps 0.0:up, 1.0:full down)
   #ifdef OUT_FLAPS_DOWN //flaps deflect down on high pwm (flaps use full servo range 0.0 to 1.0)
     float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_DOWN-1, +rcin_flaps);
+    out.set_output(OUT_FLAPS_DOWN-1, +rcin_flaps);
   #endif
   #ifdef OUT_FLAPS_DOWN_HALF //flaps deflect down on high pwm (flaps only use servo range 0.5 to 1.0)
     float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_DOWN_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_DOWN_HALF-1, 0.5 + rcin_flaps/2.0);
+    out.set_output(OUT_FLAPS_DOWN_HALF-1, 0.5 + rcin_flaps/2.0);
   #endif  
   #ifdef OUT_FLAPS_UP //reversed: flaps deflect up on high pwm (flaps use full servo range 0.0 to 1.0)
     float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_UP-1, -rcin_flaps);
+    out.set_output(OUT_FLAPS_UP-1, -rcin_flaps);
   #endif
   #ifdef OUT_FLAPS_UP_HALF //reversed: flaps deflect up on high pwm (flaps only use servo range 0.5 to 1.0)
     float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
-    out.set(OUT_FLAPS_UP_HALF-1, 0.5 - rcin_flaps/2.0);
+    out.set_output(OUT_FLAPS_UP_HALF-1, 0.5 - rcin_flaps/2.0);
   #endif 
 
   //delta wing:
   // when pid.roll positive -> roll right -> deflect left elevon down, deflect right elevon up
   // when pid.pitch is positive -> pitch up -> deflect left elevon down, deflect right elevon down 
   #ifdef OUT_LEFT_ELEVON_DOWN //left elevon deflects down on high input
-    out.set(OUT_LEFT_ELEVON_DOWN-1, 0.5 +pid.roll/2.0 +pid.pitch/2.0);
+    out.set_output(OUT_LEFT_ELEVON_DOWN-1, 0.5 +pid.roll/2.0 +pid.pitch/2.0);
   #endif
   #ifdef OUT_RIGHT_ELEVON_UP //right elevon deflects up on high input
-    out.set(OUT_RIGHT_ELEVON_UP-1, 0.5 +pid.roll/2.0 -pid.pitch/2.0);
+    out.set_output(OUT_RIGHT_ELEVON_UP-1, 0.5 +pid.roll/2.0 -pid.pitch/2.0);
   #endif
   #ifdef OUT_LEFT_ELEVON_UP //reversed: left elevon deflects down on high input
-    out.set(OUT_LEFT_ELEVON_UP-1, 0.5 -pid.roll/2.0 -pid.pitch/2.0);
+    out.set_output(OUT_LEFT_ELEVON_UP-1, 0.5 -pid.roll/2.0 -pid.pitch/2.0);
   #endif  
   #ifdef OUT_RIGHT_ELEVON_DOWN //reversed: right elevon deflects down on high input
-    out.set(OUT_RIGHT_ELEVON_DOWN-1, 0.5 -pid.roll/2.0 +pid.pitch/2.0);
+    out.set_output(OUT_RIGHT_ELEVON_DOWN-1, 0.5 -pid.roll/2.0 +pid.pitch/2.0);
   #endif 
 
   //0.0 is zero throttle if connecting to ESC for conventional PWM, 1.0 is max throttle
