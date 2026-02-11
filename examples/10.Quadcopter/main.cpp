@@ -101,11 +101,11 @@ void setup() {
   int motor_outputs[] = {0, 1, 2, 3}; //pin_out0, pin_out1, pin_out2, pin_out3
 
   // Uncomment ONE line - select output type
-  //bool success = out.setup_motors(4, motor_pins, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
-  //bool success = out.setup_motors(4, motor_pins, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
-  bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
-  //bool success = out.setup_dshot_bidir(4, motor_pins, 300);        // Dshot300 Bi-Directional
-  //bool success = out.setup_motors(4, motor_pins, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
+ bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
+  //bool success = out.setup_motors(4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
+  //bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
+  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);        // Dshot300 Bi-Directional
+  //bool success = out.setup_motors(4, motor_outputs, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
   if(!success) madflight_panic("Motor init failed.");
 
   //set initial desired yaw
@@ -345,7 +345,7 @@ Yaw right               (CCW+ CW-)       -++-
 */
 
   // IMPORTANT: This is a safety feature to remind the pilot to disarm.
-  // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed == false
+  // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.is_armed == false
   float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
 
   if(rcl.throttle == 0) {

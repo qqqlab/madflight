@@ -52,7 +52,8 @@ class Out : public OutState {
     void testmotor_set_output(uint8_t idx, float value);
     bool is_motor(uint8_t idx);
     bool is_servo(uint8_t idx);
-    void stop_all_motors(); //unconditionally stop all motors
+    void stop_all_motors(); //unconditionally stop all motors, but does not change mode
+    void emergency_stop(); //unconditionally disarm
     bool setup_dshot(uint8_t cnt, int* idxs, int freq_khz = 300);
     bool setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz = 300);    
     bool setup_motors(uint8_t cnt, int* idxs, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);

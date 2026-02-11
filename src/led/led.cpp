@@ -56,7 +56,12 @@ int Led::setup() {
 }
 
 void Led::color(uint32_t rgb) {
-  if(!gizmo || !enabled) return;
+  if(!enabled) return;
+  color_override(rgb);
+}
+
+void Led::color_override(uint32_t rgb) {
+  if(!gizmo) return;
   if(rgb) {
     last_color = rgb;
     is_on = true;

@@ -194,6 +194,11 @@ bool Out::is_armed() {
   return (_mode == mode_enum::ARMED);
 }
 
+void Out::emergency_stop() {
+  _mode = mode_enum::DISARMED;
+  stop_all_motors();
+}
+
 void Out::set_armed(bool set_armed) {
   if(set_armed && _mode == mode_enum::DISARMED) {
     _mode = mode_enum::ARMED;

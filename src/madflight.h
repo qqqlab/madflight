@@ -148,6 +148,9 @@ void madflight_setup() {
     xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, 0, &cli_task_handle); //create with idle priority (i.e. task will not run yet)
     vTaskCoreAffinitySet(cli_task_handle, (1<<1)); //run on core1
     vTaskPrioritySet(cli_task_handle, uxTaskPriorityGet(NULL)); //raise priority
+  #elif defined ARDUINO_ARCH_ESP32
+    //run cli task on same core as setup() otherwise Serial output drops a lot of characters....
+    xTaskCreatePinnedToCore(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num()); //[ESP32 only]
   #else
     xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
   #endif
