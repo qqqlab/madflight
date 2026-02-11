@@ -27,8 +27,8 @@ SOFTWARE.
 //global module class instance
 Out out;
 
-char Out::get_type(uint8_t idx) {
-  if(idx >= OUT_SIZE) return 0;
+Out::type_enum Out::get_type(uint8_t idx) {
+  if(idx >= OUT_SIZE) return type_enum::UNUSED;
   return type[idx];
 }
 
@@ -39,7 +39,7 @@ float Out::get_output(uint8_t idx) {//get last set value (might not be output be
 
 void Out::setup() {}
 
-bool Out::_setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int pwm_max_us){
+bool Out::_setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us){
   if(idx >= OUT_SIZE) return false;
   if(publish_trigger_idx <= idx) publish_trigger_idx = idx;
   type[idx] = typ;
@@ -47,12 +47,13 @@ bool Out::_setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int 
   eperiod[idx] = -1;
   eperiod_enabled[idx] = (type[idx] == 'B');
   switch(type[idx]) {
-    case 'D':
-    case 'B':
+    case type_enum::DSHOT:
+    case type_enum::DSHOTBIDIR:
       //do nothing
       break;
-    case 'M':
-    case 'S':
+    case type_enum::MOTPWM:
+    case type_enum::BRUSHED:
+    case type_enum::SERVO:
       pwm[idx].begin(pins[idx], freq_hz, pwm_min_us, pwm_max_us);
       pwm[idx].writeFactor(command[idx]);
       break;
@@ -65,7 +66,7 @@ bool Out::_setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int 
 bool Out::setup_dshot(uint8_t cnt, int* idxs, int freq_khz) {
   int dshot_pins[OUT_SIZE];
   for(int i = 0; i < cnt; i++) {
-    if(!_setup_output(idxs[i], 'D', 0, 0, 0)) return false;
+    if(!_setup_output(idxs[i], type_enum::DSHOT, 0, 0, 0)) return false;
     dshot_idxs[i] = idxs[i];
     dshot_pins[i] = pins[ idxs[i] ];
   }
@@ -77,13 +78,20 @@ bool Out::setup_dshot(uint8_t cnt, int* idxs, int freq_khz) {
 bool Out::setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz) {
   int dshot_pins[cnt];
   for(int i = 0; i < cnt; i++) {
-    if(!_setup_output(idxs[i], 'B', 0, 0, 0)) return false;
+    if(!_setup_output(idxs[i], type_enum::DSHOTBIDIR, 0, 0, 0)) return false;
     dshot_idxs[i] = idxs[i];
     dshot_pins[i] = pins[ idxs[i] ];
   }
   if(!dshotbidir.setup(dshot_pins, cnt, freq_khz)) return false;
   dshot_cnt = cnt;
   return true; 
+}
+
+bool Out::setup_brushed(uint8_t cnt, int* idxs, int freq_hz) {
+  for(int i = 0; i < cnt; i++) {  
+    if(!_setup_output(idxs[i], type_enum::BRUSHED, freq_hz, 0, 1e6f / freq_hz)) return false;
+  }
+  return true;
 }
 
 bool Out::setup_motors(uint8_t cnt, int* idxs, int freq_hz, int pwm_min_us, int pwm_max_us) {
@@ -94,11 +102,11 @@ bool Out::setup_motors(uint8_t cnt, int* idxs, int freq_hz, int pwm_min_us, int 
 }
 
 bool Out::setup_motor(uint8_t idx, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setup_output(idx, 'M', freq_hz, pwm_min_us, pwm_max_us);
+  return _setup_output(idx, type_enum::MOTPWM, freq_hz, pwm_min_us, pwm_max_us);
 }
 
 bool Out::setup_servo(uint8_t idx, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setup_output(idx, 'S', freq_hz, pwm_min_us, pwm_max_us);
+  return _setup_output(idx, type_enum::SERVO, freq_hz, pwm_min_us, pwm_max_us);
 }
 
 void Out::set_output(uint8_t idx, float value) {
@@ -130,8 +138,8 @@ void Out::set_output(uint8_t idx, float value) {
 void Out::_set_output(uint8_t idx, float value) {
   command[idx] = value;
   switch(type[idx]) {
-    case 'D':
-    case 'B':
+    case type_enum::DSHOT:
+    case type_enum::DSHOTBIDIR:
       //only send throttle values on last mot index
       if(idx == dshot_idxs[dshot_cnt - 1]) {
         uint16_t throttle[OUT_SIZE];
@@ -147,8 +155,9 @@ void Out::_set_output(uint8_t idx, float value) {
         }
       }
       break;
-    case 'M':
-    case 'S':
+    case type_enum::MOTPWM:
+    case type_enum::BRUSHED:
+    case type_enum::SERVO:
       pwm[idx].writeFactor(value);
       break;
     default:
@@ -225,19 +234,18 @@ void Out::testmotor_enable(bool set_testmode) {
 void Out::testmotor_set_output(uint8_t idx, float value) {
   if(_mode != mode_enum::TESTMOTOR) return;
   if(idx >= OUT_SIZE) return;
-  //Serial1.printf("testmode_set %d %f tm=%d\n",idx,value,_testmode);
   _set_output(idx, value);
   _watchdog_ts = micros(); //reset watchdog timer
 }
 
 bool Out::is_motor(uint8_t idx) {
   if(idx >= OUT_SIZE) return false;
-  return (type[idx] == 'M' || type[idx] == 'D' || type[idx] == 'B');
+  return (type[idx] == type_enum::MOTPWM || type[idx] == type_enum::DSHOT || type[idx] == type_enum::DSHOTBIDIR || type[idx] == type_enum::BRUSHED);
 }
 
 bool Out::is_servo(uint8_t idx) {
   if(idx >= OUT_SIZE) return false;
-  return (type[idx] == 'S');
+  return (type[idx] == type_enum::SERVO);
 }
 
 //unconditionally stop all motors
@@ -264,4 +272,19 @@ const char* Out::get_mode_string() {
     case mode_enum::TESTMOTOR: return "TESTMODE";
     default: return "UNKNOWN";
   }
+}
+
+void Out::print() {
+  Serial.printf("OUT: idx:gpio:type = ");
+  for(int i = 0; i < OUT_SIZE; i++) {
+    switch(type[i]) {
+      case type_enum::DSHOT: Serial.printf("%d:G%d:Dshot ",i,pins[i]); break;
+      case type_enum::DSHOTBIDIR: Serial.printf("%d:G%d:DshotBidir ",i,pins[i]); break;
+      case type_enum::MOTPWM: Serial.printf("%d:G%d:PWM ",i,pins[i]); break;
+      case type_enum::BRUSHED: Serial.printf("%d:G%d:Brushed ",i,pins[i]); break;
+      case type_enum::SERVO: Serial.printf("%d:G%d:Servo ",i,pins[i]); break;
+      case type_enum::UNUSED: if(pins[i]>=0) Serial.printf("%d:G%d:Unused ",i,pins[i]);
+    }
+  }
+  Serial.println();
 }

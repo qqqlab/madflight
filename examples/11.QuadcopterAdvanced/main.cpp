@@ -106,15 +106,17 @@ void setup() {
   // STOP if imu is not installed
   if(!imu.installed()) madflight_panic("This program needs an IMU.");
 
-  // Setup 4 motor outputs for the quadcopter
-  int motor_outputs[] = {0, 1, 2, 3}; //pin_out0, pin_out1, pin_out2, pin_out3
+  // Enter here the 4 output indices for the motors (default is {0, 1, 2, 3} i.e. pin_out0, pin_out1, pin_out2, pin_out3)
+  int motor_outputs[] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front motor
 
   // Uncomment ONE line - select output type
   bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
   //bool success = out.setup_motors(4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
   //bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
-  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);        // Dshot300 Bi-Directional
-  //bool success = out.setup_motors(4, motor_outputs, 5000, 0, 1000000/5000);   // Brushed motors: 5000Hz PWM frequency with 0-100% duty cycle (duty cycle is 0 to 1000000/5000 = 200 us)
+  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);       // Dshot300 Bi-Directional
+  //bool success = out.setup_brushed(4, motor_outputs, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
+
+  out.print(); //print motor configuration
   if(!success) madflight_panic("Motor init failed.");
 
   // Set initial desired yaw

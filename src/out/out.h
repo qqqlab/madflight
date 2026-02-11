@@ -35,10 +35,18 @@ struct OutState {
     float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
 };
-
 class Out : public OutState {
   public:
     MsgTopic<OutState> topic = MsgTopic<OutState>("out");
+
+    enum type_enum {
+      UNUSED = 0,
+      BRUSHED = 'm',
+      MOTPWM = 'M',
+      DSHOT = 'D',
+      DSHOTBIDIR = 'B',
+      SERVO = 'S'
+    };
 
     bool eperiod_enabled[OUT_SIZE] = {}; //ePeriod enabled flag
     int8_t publish_trigger_idx = -1; //this index triggers a publish in set_output() - updated by setup_xxx()
@@ -55,23 +63,25 @@ class Out : public OutState {
     void stop_all_motors(); //unconditionally stop all motors, but does not change mode
     void emergency_stop(); //unconditionally disarm
     bool setup_dshot(uint8_t cnt, int* idxs, int freq_khz = 300);
-    bool setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz = 300);    
+    bool setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz = 300);
     bool setup_motors(uint8_t cnt, int* idxs, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
+    bool setup_brushed(uint8_t cnt, int* idxs, int freq_khz);
     bool setup_motor(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     bool setup_servo(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     void set_output(uint8_t idx, float value); //set output (when ARMED, ignored in DISARMED and TESTMOTOR mode)
     float get_output(uint8_t idx); //get last output value
-    char get_type(uint8_t idx); //type 'D', 'B', 'M', or 'S'
+    type_enum get_type(uint8_t idx); //type 'D', 'B', 'M', or 'S'
     int get_rpm(uint8_t idx, int poles = 14); //get RPM
     int8_t get_pin(uint8_t idx);
     void set_pin(uint8_t idx, int pin);
     const char* get_mode_string();
+    void print();
 
   private:
-    bool _setup_output(uint8_t idx, char typ, int freq_hz, int pwm_min_us, int pwm_max_us);
+    bool _setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us);
     void _set_output(uint8_t idx, float value);  //unconditional set output - no armed check
 
-    char type[OUT_SIZE] = {};
+    type_enum type[OUT_SIZE] = {};
     int8_t pins[OUT_SIZE] = {};
 
     //PWM
