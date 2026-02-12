@@ -253,20 +253,6 @@ void madflight_setup() {
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
 
-  // OUT - Outputs
-  int last_out;
-  for(last_out = 15; last_out >= 0; last_out--) {
-    int pin = (&cfg.pin_out0)[last_out];
-    if(pin >= 0) break;
-  }
-  Serial.printf("OUT: count:%d gpio:", last_out + 1);
-  for(int i = 0; i < 16; i++) {
-    int pin = (&cfg.pin_out0)[i];
-    out.set_pin(i, pin);
-    if(i <= last_out) Serial.printf("%d ", out.get_pin(i));
-  }
-  Serial.println();
-
   // Start Sensor task after all sensor (except IMU) have been initialized
   xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
 
@@ -347,7 +333,6 @@ void madflight_setup() {
 
   // INFO - Command Line Interface banner
   cli.banner();
-  Serial.println("CLI: Command Line Interface Started - Type 'help' for help, or 'diff' to debug");
 
   // LED - Enable and switch it to green to signal end of startup.
   led.enabled = true;

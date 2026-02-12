@@ -74,7 +74,7 @@ class Out : public OutState {
     int8_t pin(uint8_t idx);
     void set_pin(uint8_t idx, int pin);
     const char* get_mode_string();
-    void print(Print &serial = Serial);
+    void print(Print &p = Serial);
 
   private:
     bool _setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us);

@@ -144,8 +144,13 @@ void setup() {
 
   //Motor
   //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
-  out.setup_motor(0, 400, 950, 2000); //Standard PWM: 400Hz, 950-2000 us
-  //out.setup_motor(0, 2000, 125, 250); //Oneshot125: 2000Hz, 125-250 us
+  out.setup_motor(0, 400, 950, 2000);                   // Standard PWM: 400Hz, 950-2000 us
+  //out.setup_motor(0, 2000, 125, 250);                 // Oneshot125: 2000Hz, 125-250 us
+  //bool success = out.setup_dshot(1, {0}, 300);        // Dshot300
+  //bool success = out.setup_dshot_bidir(1, {0}, 300);  // Dshot300 Bi-Directional
+  //bool success = out.setup_brushed(1, {0}, 5000);     // Brushed motors: 5000Hz with 0-100% duty cycle
+
+  Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }
 
 //========================================================================================================================//

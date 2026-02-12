@@ -121,6 +121,8 @@ void setup() {
 
   // Set initial desired yaw
   yaw_desired = ahr.yaw;
+
+  Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }
 
 //========================================================================================================================//
