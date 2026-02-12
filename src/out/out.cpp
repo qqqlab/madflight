@@ -27,34 +27,34 @@ SOFTWARE.
 //global module class instance
 Out out;
 
-char Out::getType(uint8_t idx) {
-  if(idx >= OUT_SIZE) return 0;
-  return type[idx];
+Out::type_enum Out::type(uint8_t idx) {
+  if(idx >= OUT_SIZE) return type_enum::UNUSED;
+  return _type[idx];
 }
 
-float Out::get(uint8_t idx) {//get last set value (might not be output because of armed == false)
+float Out::get_output(uint8_t idx) {//get last set value (might not be output because of armed == false)
   if(idx >= OUT_SIZE) return 0;
   return command[idx];
 }
 
 void Out::setup() {}
 
-bool Out::_setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us){
+bool Out::_setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us){
   if(idx >= OUT_SIZE) return false;
-  type[idx] = typ;
-  pins[idx] = pin;
+  if(publish_trigger_idx <= idx) publish_trigger_idx = idx;
+  _type[idx] = typ;
   command[idx] = 0.0f;
   eperiod[idx] = -1;
-  eperiodEnabled[idx] = (type[idx] == 'B');
-  switch(type[idx]) {
-    case 'D':
-    case 'B':
+  switch(_type[idx]) {
+    case type_enum::DSHOT:
+    case type_enum::DSHOTBIDIR:
       //do nothing
       break;
-    case 'M':
-    case 'S':
-      pwm[idx].begin(pin, freq_hz, pwm_min_us, pwm_max_us);
-      pwm[idx].writeFactor(command[idx]);
+    case type_enum::MOTPWM:
+    case type_enum::BRUSHED:
+    case type_enum::SERVO:
+      _pwm[idx].begin(_pin[idx], freq_hz, pwm_min_us, pwm_max_us);
+      _pwm[idx].writeFactor(command[idx]);
       break;
     default:
       return false;
@@ -62,86 +62,229 @@ bool Out::_setupOutput(char typ, uint8_t idx, int pin, int freq_hz, int pwm_min_
   return true;
 }
 
-bool Out::setupDshot(uint8_t cnt, int* idxs, int* pins, int freq_khz) {
+bool Out::setup_dshot(uint8_t cnt, int* idxs, int freq_khz) {
+  int dshot_pins[OUT_SIZE];
   for(int i = 0; i < cnt; i++) {
-    if(!_setupOutput('D', idxs[i], pins[i], 0, 0, 0)) return false;
-    dshot_idxs[i] = idxs[i];
+    if(!_setup_output(idxs[i], type_enum::DSHOT, 0, 0, 0)) return false;
+    _dshot_idxs[i] = idxs[i];
+    dshot_pins[i] = _pin[ idxs[i] ];
   }
-  if(!dshot.setup(pins, cnt, freq_khz)) return false;
-  dshot_cnt = cnt;
+  if(!_dshot.setup(dshot_pins, cnt, freq_khz)) return false;
+  _dshot_cnt = cnt;
   return true; 
 }
 
-bool Out::setupDshotBidir(uint8_t cnt, int* idxs, int* pins, int freq_khz) {
+bool Out::setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz) {
+  int dshot_pins[cnt];
   for(int i = 0; i < cnt; i++) {
-    if(!_setupOutput('B', idxs[i], pins[i], 0, 0, 0)) return false;
-    dshot_idxs[i] = idxs[i];
+    if(!_setup_output(idxs[i], type_enum::DSHOTBIDIR, 0, 0, 0)) return false;
+    _dshot_idxs[i] = idxs[i];
+    dshot_pins[i] = _pin[ idxs[i] ];
   }
-  if(!dshotbidir.setup(pins, cnt, freq_khz)) return false;
-  dshot_cnt = cnt;
+  if(!_dshotbidir.setup(dshot_pins, cnt, freq_khz)) return false;
+  _dshot_cnt = cnt;
   return true; 
 }
 
-bool Out::setupMotors(uint8_t cnt, int* idxs, int* pins, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  for(int i = 0; i < cnt; i++) {
-    if(!setupMotor(idxs[i], pins[i], freq_hz, pwm_min_us, pwm_max_us)) return false;
+bool Out::setup_brushed(uint8_t cnt, int* idxs, int freq_hz) {
+  for(int i = 0; i < cnt; i++) {  
+    if(!_setup_output(idxs[i], type_enum::BRUSHED, freq_hz, 0, 1e6f / freq_hz)) return false;
   }
   return true;
 }
 
-bool Out::setupMotor(uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setupOutput('M', idx, pin, freq_hz, pwm_min_us, pwm_max_us);
+bool Out::setup_motors(uint8_t cnt, int* idxs, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  for(int i = 0; i < cnt; i++) {
+    if(!setup_motor(idxs[i], freq_hz, pwm_min_us, pwm_max_us)) return false;
+  }
+  return true;
 }
 
-bool Out::setupServo(uint8_t idx, int pin, int freq_hz, int pwm_min_us, int pwm_max_us) {
-  return _setupOutput('S', idx, pin, freq_hz, pwm_min_us, pwm_max_us);
+bool Out::setup_motor(uint8_t idx, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  return _setup_output(idx, type_enum::MOTPWM, freq_hz, pwm_min_us, pwm_max_us);
 }
 
-void Out::set(uint8_t idx, float value) {
+bool Out::setup_servo(uint8_t idx, int freq_hz, int pwm_min_us, int pwm_max_us) {
+  return _setup_output(idx, type_enum::SERVO, freq_hz, pwm_min_us, pwm_max_us);
+}
+
+void Out::set_output(uint8_t idx, float value) {
   if(idx >= OUT_SIZE) return;
-  bool updated = false;
-  command[idx] = value;
-  switch(type[idx]) {
-    case 'D':
-    case 'B':
-      //only send throttle values on last mot index
-      if(idx == dshot_idxs[dshot_cnt - 1]) {
-        uint16_t throttle[OUT_SIZE];
-        for(int i = 0; i < dshot_cnt; i++) {
-          int idx2 = dshot_idxs[i];
-          float v = constrain(command[idx2], 0.0f, 1.0f);
-          if(!armed) v = 0;
-          throttle[idx2] = v * 2000;
-        }
-        if(type[idx] == 'D') {
-          dshot.set_throttle(throttle);
-        }else{
-          dshotbidir.get_eperiod(eperiod);
-          dshotbidir.set_throttle(throttle);
-        }
-      }
-      updated = true;
-      break;
-    case 'M':
-    case 'S':
-      if(armed) {
-        pwm[idx].writeFactor(value);
-      }else{
-        if(type[idx] == 'M') pwm[idx].writeFactor(0);
-      }
-      updated = true;
-      break;
+
+  //do nothing in testmode
+  if(_mode == mode_enum::TESTMOTOR) return;
+
+  // handle disarmed
+  if(_mode == mode_enum::DISARMED) {
+    stop_all_motors();
+    return;
   }
 
-  if(updated) {
+  //set the output
+  _set_output(idx, value);
+
+  //report it
+  if(idx == publish_trigger_idx) {
     topic.publish(this);
     bbx.log_out();
   }
+
+  //reset watchdog timer
+  _watchdog_ts = micros(); 
+}
+
+//unconditional set - no armed check
+void Out::_set_output(uint8_t idx, float value) {
+  command[idx] = value;
+  switch(_type[idx]) {
+    case type_enum::DSHOT:
+    case type_enum::DSHOTBIDIR:
+      //only send throttle values on last mot index
+      if(idx == _dshot_idxs[_dshot_cnt - 1]) {
+        uint16_t throttle[OUT_SIZE];
+        for(int i = 0; i < _dshot_cnt; i++) {
+          float v = constrain(command[ _dshot_idxs[i] ], 0.0f, 1.0f);
+          throttle[i] = v * 2000;
+        }
+        if(_type[idx] == type_enum::DSHOT) {
+          _dshot.set_throttle(throttle);
+        }else{
+          _dshotbidir.get_eperiod(eperiod);
+          _dshotbidir.set_throttle(throttle);
+        }
+      }
+      break;
+    case type_enum::MOTPWM:
+    case type_enum::BRUSHED:
+    case type_enum::SERVO:
+      _pwm[idx].writeFactor(value);
+      break;
+    default:
+      return;
+  }
+
+  //record update timestamp
+  ts = micros();
 }
 
 int Out::rpm(uint8_t idx, int poles) {
   if(idx >= OUT_SIZE) return -1;
+  if(_type[idx] != type_enum::DSHOTBIDIR) return -1;
   if(eperiod[idx] < 0) return eperiod[idx];
   if(eperiod[idx] == 0) return 0;
   return 120000000 / poles / eperiod[idx];
+}
+
+bool Out::update() {
+  //disarm motors after timeout
+  if(_mode != mode_enum::DISARMED && micros() - _watchdog_ts >= OUT_MOT_TIMEOUT) {
+    _mode = mode_enum::DISARMED;
+    //TODO - publish disarm
+  }
+
+  //stop motors when disarmed
+  if(_mode == mode_enum::DISARMED) {
+    stop_all_motors();
+    return false;
+  }
+
+  //keep dshot alive even if no set() was called
+  if(micros() - _update_ts >= 10000) {
+    for(int i = 0; i < OUT_SIZE; i++) {
+      if(is_motor(i)) _set_output(i, command[i]); //all motors to current value
+    }
+    _update_ts = micros();
+  }
+
+  return true;
+}
+
+bool Out::armed() {
+  return (_mode == mode_enum::ARMED);
+}
+
+void Out::emergency_stop() {
+  _mode = mode_enum::DISARMED;
+  stop_all_motors();
+}
+
+void Out::set_armed(bool set_armed) {
+  if(set_armed && _mode == mode_enum::DISARMED) {
+    _mode = mode_enum::ARMED;
+    //TODO: publish changed armed status
+  }else if(!set_armed && _mode == mode_enum::ARMED) {
+    stop_all_motors();
+    _mode = mode_enum::DISARMED;
+    //TODO: publish changed armed status
+  }
+}
+
+//enable testmode
+void Out::testmotor_enable(bool set_testmode) {
+  if(set_testmode && _mode != mode_enum::TESTMOTOR) {
+    stop_all_motors(); //stop motors on changing to/from testmode
+    _mode = mode_enum::TESTMOTOR;
+  }else if(!set_testmode && _mode == mode_enum::TESTMOTOR) {
+    stop_all_motors(); //stop motors on changing to/from testmode
+    _mode = mode_enum::DISARMED;
+  }
+  _watchdog_ts = micros(); //reset watchdog timer
+}
+
+void Out::testmotor_set_output(uint8_t idx, float value) {
+  if(_mode != mode_enum::TESTMOTOR) return;
+  if(idx >= OUT_SIZE) return;
+  _set_output(idx, value);
+  _watchdog_ts = micros(); //reset watchdog timer
+}
+
+bool Out::is_motor(uint8_t idx) {
+  if(idx >= OUT_SIZE) return false;
+  return (_type[idx] == type_enum::MOTPWM || _type[idx] == type_enum::DSHOT || _type[idx] == type_enum::DSHOTBIDIR || _type[idx] == type_enum::BRUSHED);
+}
+
+bool Out::is_servo(uint8_t idx) {
+  if(idx >= OUT_SIZE) return false;
+  return (_type[idx] == type_enum::SERVO);
+}
+
+//unconditionally stop all motors
+void Out::stop_all_motors() {
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(is_motor(i)) _set_output(i, 0);
+  }
+}
+
+int8_t Out::pin(uint8_t idx) {
+  if(idx >= OUT_SIZE) return -1;
+  return _pin[idx];
+}
+
+void Out::set_pin(uint8_t idx, int pin) {
+  if(idx >= OUT_SIZE) return;
+  _pin[idx] = pin;
+}
+
+const char* Out::get_mode_string() {
+  switch(_mode) {
+    case mode_enum::DISARMED: return "DISARMED";
+    case mode_enum::ARMED: return"ARMED";
+    case mode_enum::TESTMOTOR: return "TESTMODE";
+    default: return "UNKNOWN";
+  }
+}
+
+void Out::print(Print &p) {
+  p.printf("OUT: idx:gpio:type = ");
+  for(int i = 0; i < OUT_SIZE; i++) {
+    switch(_type[i]) {
+      case type_enum::DSHOT:      p.printf("%d:G%d:Dshot ",i,_pin[i]); break;
+      case type_enum::DSHOTBIDIR: p.printf("%d:G%d:DshotBidir ",i,_pin[i]); break;
+      case type_enum::MOTPWM:     p.printf("%d:G%d:PWM ",i,_pin[i]); break;
+      case type_enum::BRUSHED:    p.printf("%d:G%d:Brushed ",i,_pin[i]); break;
+      case type_enum::SERVO:      p.printf("%d:G%d:Servo ",i,_pin[i]); break;
+      case type_enum::UNUSED: if(_pin[i]>=0) p.printf("%d:G%d:Unused ",i,_pin[i]);
+    }
+  }
+  p.println();
 }

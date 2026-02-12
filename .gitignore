@@ -2,4 +2,5 @@
 .vscode
 .private
 src/main*.cpp
+src/main*.h
 src/madflight_config.h

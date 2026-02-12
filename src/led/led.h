@@ -48,7 +48,10 @@ class Led {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
     bool enabled = true; //enable changes to led state
-    void color(uint32_t rgb); //set color
+    void color(uint32_t rgb); //set on to color
+    void color_override(uint32_t rgb); //set on to color even if enabled==false
+
+    //convienence functions, all call color
     void set(bool set_on);
     void on();
     void off();

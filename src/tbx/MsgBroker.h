@@ -31,7 +31,6 @@ SOFTWARE.
   #define MF_MSGSUB_LIST_SIZE 8 //max number of subscribers per topic. Used only for top() statistics
 #endif
 
-#include <Arduino.h> //String
 #include "../hal/hal.h" //STM32 FreeRTOS
 
 class MsgBroker;
@@ -65,11 +64,11 @@ class MsgTopicBase {
     friend class MsgBroker;
     friend class MsgSubscriptionBase;
 
-    String name;
+    char name[9] = {};
     uint32_t generation = 0; //counts messages published to this topic
     MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
 
-    MsgTopicBase(String name, int len);
+    MsgTopicBase(const char* name, int len);
     void publish(void *msg);
     void publishFromISR(void *msg);
     bool pull(void *msg);
@@ -90,11 +89,11 @@ class MsgSubscriptionBase {
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
 
-    String name;
+    char name[9] = {};
     uint32_t generation = 0; //last pulled topic generation 
     uint32_t pull_cnt = 0; //pull counter
 
-    MsgSubscriptionBase(String name, MsgTopicBase *topic); //start a new subscription
+    MsgSubscriptionBase(const char* name, MsgTopicBase *topic); //start a new subscription
     virtual ~MsgSubscriptionBase();
     bool pull(void *msg); //pull message: returns true if msg was pulled, returns false if no msg available
     bool pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
@@ -107,7 +106,7 @@ class MsgSubscriptionBase {
 template <class T>
 class MsgTopic : public MsgTopicBase {
   public:
-    MsgTopic(String name) : MsgTopicBase(name, sizeof(T)) {}
+    MsgTopic(const char* name) : MsgTopicBase(name, sizeof(T)) {}
     void publish(T *msg) { MsgTopicBase::publish(msg); }
     void publishFromISR(T *msg) { MsgTopicBase::publishFromISR(msg); }
   protected:
@@ -118,7 +117,7 @@ class MsgTopic : public MsgTopicBase {
 template <class T>
 class MsgSubscription : public MsgSubscriptionBase {
   public:
-    MsgSubscription(String name, MsgTopic<T> *topic) : MsgSubscriptionBase(name, topic) {}
+    MsgSubscription(const char* name, MsgTopic<T> *topic) : MsgSubscriptionBase(name, topic) {}
     bool pull(T *msg) { return MsgSubscriptionBase::pull(msg); }
     bool pull_updated(T *msg) { return MsgSubscriptionBase::pull_updated(msg); }
 };

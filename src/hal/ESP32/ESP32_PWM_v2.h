@@ -64,7 +64,7 @@ class PWM
 
       //find maximum number of bits, or exit if less than 7
       int act_freq;
-      int bits = LEDC_TIMER_BIT_MAX;
+      int bits = LEDC_TIMER_BIT_MAX - 1;
       while(1) {
         act_freq = ledcSetup(ch, freq, bits);
         if(act_freq > 0) break;

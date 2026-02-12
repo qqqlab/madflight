@@ -4,7 +4,7 @@ public:
     (void) pins;
     (void) cnt;
     (void) freq_khz;
-    Serial.printf("ERROR: Dshot not implemented"); 
+    Serial.printf("OUT: ERROR Dshot not implemented\n"); 
     return false;
   }
 

@@ -8,14 +8,22 @@
 Cli cli;
 
 static void cli_spinmotors() {
+  //get motor indexes
   int mot_cnt = 0;
-  for(int i=0;i<OUT_SIZE;i++) {
-    if(out.getType(i) == 'M') mot_cnt++;
+  uint8_t mots[OUT_SIZE] = {};
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.is_motor(i)) {
+      mots[mot_cnt++] = i;
+    }
   }
-  if(mot_cnt==0) {
+
+  //exit if no motors found
+  if(mot_cnt == 0) {
      Serial.println("Spin motors - no motors configured, exiting");
      return;
   }
+
+  //prompt for 'go', exit on anything else
   Serial.println("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.");
   while(Serial.available()) Serial.read(); //clear input 
   char c;
@@ -25,53 +33,63 @@ static void cli_spinmotors() {
   while(!Serial.available());
   c = Serial.read();
   if(c!='o') return;
+  while(!Serial.available()); //get /n
+  Serial.read();
 
-  while(Serial.available()) Serial.read(); //clear input
+  //clear input
+  delay(1);
+  Serial.flush();
+  while(Serial.available()) Serial.read(); 
 
   //disable IMU interrupt
   void (*onUpdate_saved)(void) = imu.onUpdate;
   imu.onUpdate = nullptr;
 
-  out.armed = true;
   int i = -1;
   float speed = 0;
   const float maxspeed = 0.40;
   const float speedstep = maxspeed/3000; //3 second up / 3 second down
   int stage = 0;
-  while(!Serial.available()) {
+  out.testmotor_enable(true);
+  while(1) {
     switch(stage) {
     case 0: //next motor
       do {
         i++;
-        if(i>=OUT_SIZE) i = 0;
-      } while(out.getType(i) != 'M');
-      Serial.printf("Spinning motor pin_out%d - press enter to exit\n", i);
+        if(i >= OUT_SIZE) i = 0;
+      } while(!out.is_motor(i));
+      Serial.printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.pin(i));
+      Serial.flush();
       speed = 0;
-      out.set(i, speed);
       stage = 1;
       break;
     case 1: //spin up
       speed += speedstep;
-      if(speed<maxspeed) {
-        out.set(i, speed);
-      }else{
+      if(speed >= maxspeed) {
         stage = 2;
       }
       break;
     case 2: //spin down
       speed -= speedstep;
-      if(speed>0) {
-        out.set(i, speed);
-      }else{
+      if(speed <= 0) {
         speed = 0;
-        out.set(i, speed);
         stage = 0;
       }
       break;
     }
+
+    //set outputs
+    float val[mot_cnt] = {};
+    val[i] = speed;
+    for(int j = 0; j < mot_cnt; j++) {
+      out.testmotor_set_output(mots[j], val[j]);
+    }
+
+    //exit on key
     delay(1);
+    if(Serial.available()) break;
   }
-  out.armed = false;
+  out.testmotor_enable(false);
 
   Serial.println("Spin motors - DONE");
 
@@ -122,7 +140,7 @@ static void cli_po() {
   Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
-  Serial.printf("out.%c%d%%:%1.0f\t", out.getType(0), 0, 100*out.get(0));
+  Serial.printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
@@ -173,13 +191,15 @@ static void cli_ppid() {
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", out.armed);
-  for(int i=0;i<OUT_SIZE;i++) {
-    if(out.getType(i)) {
-      Serial.printf("%c%d%%:%1.0f\t", out.getType(i), i, 100*out.get(i));
-      if(out.eperiodEnabled[i]) {
-        Serial.printf("rpm%d:%d\t", i, out.rpm(i));
-      }
+  Serial.printf("out.armed:%d\t", out.armed());
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.type(i)) {
+      Serial.printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
+    }
+  }
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.rpm(i) != -1) {
+      Serial.printf("rpm%d:%d\t", i, out.rpm(i));
     }
   }
 }
@@ -721,7 +741,7 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     cfg.imu_cal_az = az.mean();
   }
   
-  Serial.println("Use 'save' to save these values to flash");
+  Serial.println("Type 'save' to save these values to flash");
 }
 
 void Cli::calibrate_Magnetometer() {
@@ -736,7 +756,7 @@ void Cli::calibrate_Magnetometer() {
     Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
     Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
     Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
-    Serial.println("Note: use 'save' to save these values to flash");
+    Serial.println("Note: type 'save' to save these values to flash");
     Serial.println(" ");
     Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
     cfg.mag_cal_x = bias[0];

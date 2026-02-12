@@ -8,7 +8,7 @@ public:
     (void) pins;
     (void) cnt;
     (void) freq_khz;
-    Serial.printf("ERROR: DshotBidir not implemented");
+    Serial.printf("OUT: ERROR DshotBidir not implemented\n");
     return false;
   }
 

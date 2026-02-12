@@ -79,6 +79,7 @@ void rcl_task(void *pvParameters) {
   for(;;) {
     vTaskDelayUntil(&xLastWakeTime, interval_ticks);
     if(rcl.update()) bbx.log_rcl(); // get rc radio commands
+    out.update(); //stop motors on timeout
   }
 }
 
@@ -137,11 +138,22 @@ void madflight_setup() {
   // USB - Start USB-CDC (Serial) and USB-MSC (if sdcard is inserted)
   hal_usb_setup();
 
-  // CLI - Start CLI task early in setup, but after Serial is up, allows for CLI commands while booting
-  xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
-
   // Serial - Start USB serial console
   Serial.begin(115200);
+
+  // CLI - Start CLI (Serial) task early in setup, allows for CLI commands while booting
+  #ifdef ARDUINO_ARCH_RP2040
+    //hack for Adafruit TinyUSB in combination with FreeRTOS -> run Serial on core1
+    TaskHandle_t cli_task_handle;
+    xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, 0, &cli_task_handle); //create with idle priority (i.e. task will not run yet)
+    vTaskCoreAffinitySet(cli_task_handle, (1<<1)); //run on core1
+    vTaskPrioritySet(cli_task_handle, uxTaskPriorityGet(NULL)); //raise priority
+  #elif defined ARDUINO_ARCH_ESP32
+    //run cli task on same core as setup() otherwise Serial output drops a lot of characters....
+    xTaskCreatePinnedToCore(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num()); //[ESP32 only]
+  #else
+    xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+  #endif
 
   // Delay - 6 second startup delay
   for(int i = 12; i > 0; i--) {
@@ -168,9 +180,6 @@ void madflight_setup() {
   cfg.clear();
   cfg.loadFromEeprom(); //load parameters from EEPROM
   cfg.load_madflight(madflight_board, madflight_config); //load config
-
-  // INFO - Pins sorted by GPIO number
-  //cfg.printPins();
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
@@ -243,6 +252,13 @@ void madflight_setup() {
   gps.config.ser_bus_id = cfg.gps_ser_bus; //serial bus id
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
+
+  // OUT - Set GPIOs
+  int last_out;
+  for(int i = 0; i < 16; i++) {
+    int pin = (&cfg.pin_out0)[i]; //pin_out0..15
+    out.set_pin(i, pin);
+  }
 
   // Start Sensor task after all sensor (except IMU) have been initialized
   xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
@@ -324,7 +340,6 @@ void madflight_setup() {
 
   // INFO - Command Line Interface banner
   cli.banner();
-  Serial.println("CLI: Command Line Interface Started - Type 'help' for help, or 'diff' to debug");
 
   // LED - Enable and switch it to green to signal end of startup.
   led.enabled = true;

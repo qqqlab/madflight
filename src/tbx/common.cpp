@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../led/led.h"
 #include "../rcl/rcl.h"
 #include "../cli/cli.h"
+#include "../out/out.h"
 
 //lowpass frequency to filter beta constant
 float lowpass_to_beta(float f0, float fs) {
@@ -39,17 +40,14 @@ void madflight_die(String msg) {
 }
 
 void madflight_panic(String msg) {
-  bool do_print = true;
-  uint32_t updated_cnt = cli.updated_cnt;
-  led.enabled = true;
-  led.color(0xFF8C00); //dark orange
-  for(;;) {
-    if(do_print) Serial.print("FATAL ERROR: " + msg + " Press enter to start CLI...\n");
-    for(int i = 0; i < 20; i++) {
-      led.toggle();
-      if(updated_cnt != cli.updated_cnt) do_print = false; //stop error output after first CLI command
-      delay(50);
-    }
+  out.emergency_stop();
+  led.enabled = false;
+  Serial.print("\nFATAL ERROR: " + msg + " - Type 'help' for help...\n");
+  while(1) {
+    led.color_override(0xFF8C00); //dark orange
+    delay(50);
+    led.color_override(0); //off
+    delay(50);
   }
 }
 

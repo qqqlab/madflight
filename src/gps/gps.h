@@ -70,8 +70,6 @@ struct GpsState {
     bool have_undulation = false;   // do we have a value for the undulation
 };
 
-extern MsgTopic<GpsState> gps_topic;
-
 struct GpsConfig {
   public:
     Cfg::gps_gizmo_enum gizmo = Cfg::gps_gizmo_enum::mf_NONE; //the gizmo to use

@@ -14,7 +14,8 @@ MIT license - Copyright (c) 2023-2026 https://madflight.com
 
 void setup() {
   // Setup madflight modules and start IMU, BBX, RCL, CLI, and SENSORS rtos tasks
-  madflight_setup(); 
+  madflight_setup();
+  Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }
 
 void loop() {
