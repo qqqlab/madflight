@@ -318,24 +318,20 @@ void Bbx::log_out() {
   BinLog bl("OUT");
   bl.TimeUS();
   char lbl[3] = {};
-  lbl[2] = 0;
   for(int i = 0; i < 8; i++) {
-    lbl[1] = '0' + i;
-    switch(out.type(i)) {
-      case 'M':
-        lbl[0] = 'm';
-        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
-        break;
-      case 'D':
-        lbl[0] = 'm';
-        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
-        lbl[0] = 'r';
-        bl.u16(lbl, out.rpm(i), 1, "rpm");
-        break;
-      case 'S':
-        lbl[0] = 's';
-        bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
-        break;
+    if(out.type(i)) {
+      lbl[0] = out.type(i);
+      lbl[1] = '0' + i;
+      lbl[2] = 0;
+      bl.i16(lbl, out.get_output(i) * 1000, 1e-3, ""); //range -1000 to +1000
+    }
+  }
+  for(int i = 0; i < 8; i++) {
+    if(out.type(i) == Out::type_enum::DSHOTBIDIR) {
+      lbl[0] = 'R';
+      lbl[1] = '0' + i;
+      lbl[2] = 0;
+      bl.u16(lbl, out.rpm(i), 1, "rpm");
     }
   }
 }

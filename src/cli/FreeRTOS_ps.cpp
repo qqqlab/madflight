@@ -31,29 +31,23 @@ SOFTWARE.
 
 #if configUSE_TRACE_FACILITY != 1
 void freertos_ps() {
-  Serial.println("FreeRTOS_ps() needs configUSE_TRACE_FACILITY = 1 for uxTaskGetSystemState()");
+  p.println("FreeRTOS_ps() needs configUSE_TRACE_FACILITY = 1 for uxTaskGetSystemState()");
 }
 #else
 
 static char freertos_taskStatusChar(eTaskState eCurrentState) {
   switch(eCurrentState)
   {
-    case eRunning:
-      return 'X';
-    case eReady:
-      return 'R';
-    case eBlocked:
-      return 'B';
-    case eSuspended:
-      return 'S';
-    case eDeleted:
-      return 'D';
-    default:        // Should not get here, but it is included to prevent static checking errors.
-      return '-';
+    case eRunning:   return 'X';
+    case eReady:     return 'R';
+    case eBlocked:   return 'B';
+    case eSuspended: return 'S';
+    case eDeleted:   return 'D';
+    default:         return '-'; // Should not get here, but it is included to prevent static checking errors.
   }
 }
 
-void freertos_ps()
+void freertos_ps(Print &p)
 {
   static struct taskarr_s {
     TaskStatus_t pxTaskStatusArray[FREERTOS_PS_MAX_TASKS];
@@ -75,12 +69,12 @@ void freertos_ps()
   uint32_t totalRunTime = tanew.ulTotalRunTime - taold.ulTotalRunTime;
   uint64_t tot = 0;
 
-  Serial.printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
-  Serial.print("TID Name            CPU%  Free St Pr Ni");
+  p.printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
+  p.print("TID Name            CPU%  Free St Pr Ni");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
-    Serial.print(" Core");
+    p.print(" Core");
   #endif
-  Serial.println();
+  p.println();
 
   float perc_sum = 0;
   for( uint32_t i = 0; i < tanew.uxArraySize; i++ )
@@ -96,7 +90,7 @@ void freertos_ps()
     }
     float perc = (float)runtime / totalRunTime * 100;
     perc_sum += perc;
-    Serial.printf("%3d %-12s%7.2f%% %5d  %c %2d %2d",
+    p.printf("%3d %-12s%7.2f%% %5d  %c %2d %2d",
       (int)t.xTaskNumber,
       t.pcTaskName,
       (float)perc,
@@ -106,13 +100,13 @@ void freertos_ps()
       (int)t.uxCurrentPriority
     );
     #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
-      Serial.printf(" %2lX",
+      p.printf(" %2lX",
         t.uxCoreAffinityMask & ((1<<configNUMBER_OF_CORES)-1)
       );
     #endif
-    Serial.printf("\n");
+    p.printf("\n");
     tot += runtime;
   }
-  Serial.printf("    Total       %7.2f%%\n", perc_sum);
+  p.printf("    Total       %7.2f%%\n", perc_sum);
 }
 #endif //configUSE_TRACE_FACILITY != 1
