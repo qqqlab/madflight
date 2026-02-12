@@ -741,7 +741,7 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     cfg.imu_cal_az = az.mean();
   }
   
-  Serial.println("Use 'save' to save these values to flash");
+  Serial.println("Type 'save' to save these values to flash");
 }
 
 void Cli::calibrate_Magnetometer() {
@@ -756,7 +756,7 @@ void Cli::calibrate_Magnetometer() {
     Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
     Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
     Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
-    Serial.println("Note: use 'save' to save these values to flash");
+    Serial.println("Note: type 'save' to save these values to flash");
     Serial.println(" ");
     Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
     cfg.mag_cal_x = bias[0];

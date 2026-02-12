@@ -253,6 +253,13 @@ void madflight_setup() {
   gps.config.baud = cfg.gps_baud; //baud rate
   gps.setup();
 
+  // OUT - Set GPIOs
+  int last_out;
+  for(int i = 0; i < 16; i++) {
+    int pin = (&cfg.pin_out0)[i]; //pin_out0..15
+    out.set_pin(i, pin);
+  }
+
   // Start Sensor task after all sensor (except IMU) have been initialized
   xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
 

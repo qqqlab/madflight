@@ -42,7 +42,7 @@ void madflight_die(String msg) {
 void madflight_panic(String msg) {
   out.emergency_stop();
   led.enabled = false;
-  Serial.print("FATAL ERROR: " + msg + " - Type 'help' for help...\n");
+  Serial.print("\nFATAL ERROR: " + msg + " - Type 'help' for help...\n");
   while(1) {
     led.color_override(0xFF8C00); //dark orange
     delay(50);
