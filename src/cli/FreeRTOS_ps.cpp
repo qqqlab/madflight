@@ -30,7 +30,7 @@ SOFTWARE.
 #include "../hal/hal.h" //#include <FreeRTOS.h> and #include <task.h> (different platforms use different headers...)
 
 #if configUSE_TRACE_FACILITY != 1
-void freertos_ps() {
+void freertos_ps(Print &) {
   p.println("FreeRTOS_ps() needs configUSE_TRACE_FACILITY = 1 for uxTaskGetSystemState()");
 }
 #else
