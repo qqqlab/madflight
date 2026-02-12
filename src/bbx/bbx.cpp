@@ -321,7 +321,7 @@ void Bbx::log_out() {
   lbl[2] = 0;
   for(int i = 0; i < 8; i++) {
     lbl[1] = '0' + i;
-    switch(out.get_type(i)) {
+    switch(out.type(i)) {
       case 'M':
         lbl[0] = 'm';
         bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
@@ -330,7 +330,7 @@ void Bbx::log_out() {
         lbl[0] = 'm';
         bl.i16(lbl, out.get_output(i) * 1000, 1e-3, "");
         lbl[0] = 'r';
-        bl.u16(lbl, out.get_rpm(i), 1, "rpm");
+        bl.u16(lbl, out.rpm(i), 1, "rpm");
         break;
       case 'S':
         lbl[0] = 's';

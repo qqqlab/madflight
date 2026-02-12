@@ -58,7 +58,7 @@ static void cli_spinmotors() {
         i++;
         if(i >= OUT_SIZE) i = 0;
       } while(!out.is_motor(i));
-      Serial.printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.get_pin(i));
+      Serial.printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.pin(i));
       Serial.flush();
       speed = 0;
       stage = 1;
@@ -140,7 +140,7 @@ static void cli_po() {
   Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
-  Serial.printf("out.%c%d%%:%1.0f\t", out.get_type(0), 0, 100*out.get_output(0));
+  Serial.printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
   Serial.printf("gps.sats:%d\t", (int)gps.sat);
   Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
   Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
@@ -191,13 +191,15 @@ static void cli_ppid() {
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", out.is_armed());
-  for(int i=0;i<OUT_SIZE;i++) {
-    if(out.get_type(i)) {
-      Serial.printf("%c%d%%:%1.0f\t", out.get_type(i), i, 100*out.get_output(i));
-      if(out.eperiod_enabled[i]) {
-        Serial.printf("rpm%d:%d\t", i, out.get_rpm(i));
-      }
+  Serial.printf("out.armed:%d\t", out.armed());
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.type(i)) {
+      Serial.printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
+    }
+  }
+  for(int i = 0; i < OUT_SIZE; i++) {
+    if(out.rpm(i) != -1) {
+      Serial.printf("rpm%d:%d\t", i, out.rpm(i));
     }
   }
 }

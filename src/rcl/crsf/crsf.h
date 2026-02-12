@@ -140,7 +140,7 @@ private:
       if(millis() - telem_ts > 100) {
         telem_ts = millis();
         telem_cnt++;
-        String fm_str = String(out.is_armed() ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
+        String fm_str = String(out.armed() ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
         telem_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
         telem_attitude(ahr.pitch, ahr.roll, ahr.yaw);  
         if(telem_cnt % 10 == 0) telem_battery(bat.v, bat.i, bat.mah, 100);

@@ -188,7 +188,7 @@ bool RclGizmoMavlink::telem_heartbeat() {
   mavlink_msg_heartbeat_pack_status(1, MAV_COMP_ID_AUTOPILOT1, &mav_status, &msg
     , veh.mav_type // uint8_t type; /*<  Vehicle or component type. For a flight controller component the vehicle type (quadrotor, helicopter, etc.). For other components the component type (e.g. camera, gimbal, etc.). This should be used in preference to component id for identifying the component type.*/
     , MAV_AUTOPILOT_ARDUPILOTMEGA // uint8_t autopilot; /*<  Autopilot type / class. Use MAV_AUTOPILOT_INVALID for components that are not flight controllers.*/
-    , MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | (out.is_armed() ? MAV_MODE_FLAG_SAFETY_ARMED : 0) // uint8_t base_mode; /*<  System mode bitmap.*/
+    , MAV_MODE_FLAG_CUSTOM_MODE_ENABLED | MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | (out.armed() ? MAV_MODE_FLAG_SAFETY_ARMED : 0) // uint8_t base_mode; /*<  System mode bitmap.*/
     , veh.flightmode_ap_id() // uint32_t custom_mode; /*<  A bitfield for use for autopilot-specific flags*/
     , MAV_STATE_STANDBY // uint8_t system_status; /*<  System status flag.*/
   );

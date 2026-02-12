@@ -517,7 +517,7 @@ void MspProcessor::processCommand(MspMessage& m, MspResponse& r)
     case MSP_MOTOR_TELEMETRY:
       r.writeU8(4); //number of motors
       for (size_t i = 0; i < 4; i++) {
-        r.writeU32(out.get_rpm(i)); //rpm
+        r.writeU32(out.rpm(i)); //rpm
         r.writeU16(0); //invalidPct telemetry.errors
         r.writeU8(0); //escTemperature [degrees celcius]
         r.writeU16(0);  //escVoltage [0.01V per unit]

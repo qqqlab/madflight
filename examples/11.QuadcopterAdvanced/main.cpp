@@ -173,8 +173,8 @@ void led_Blink() {
   //Blink LED once per second, if LED blinks slower then the loop takes too much time, use CLI 'pimu' to investigate.
   //DISARMED: green long off, short on, ARMED: red long on, short off
   uint32_t modulus = imu.update_cnt % imu.getSampleRate();
-  if( modulus == 0) led.color( (out.is_armed() ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
-  if( modulus == imu.getSampleRate() / 10)  led.color( (out.is_armed() ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
+  if( modulus == 0) led.color( (out.armed() ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
+  if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed() ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
 }
 
 //returns angle in range -180 to 180
@@ -314,14 +314,14 @@ void control_Rate(bool zero_integrators) {
 
 void out_KillSwitchAndFailsafe() {
   //Change to ARMED when rcl is armed (by switch or stick command)
-  if (!out.is_armed() && rcl.armed) {
+  if (!out.armed() && rcl.armed) {
     out.set_armed(true);
     Serial.println("OUT: ARMED");
     bbx.start(); //start blackbox logging
   }
 
   //Change to DISARMED when rcl is disarmed, or if radio lost connection
-  if (out.is_armed() && (!rcl.armed || !rcl.connected())) {
+  if (out.armed() && (!rcl.armed || !rcl.connected())) {
     out.set_armed(false);
     if(!rcl.armed) {
       Serial.println("OUT: DISARMED");
@@ -367,7 +367,7 @@ Yaw right               (CCW+ CW-)       -++-
 */
 
   // IMPORTANT: This is a safety feature to remind the pilot to disarm.
-  // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.is_armed() == false
+  // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed() == false
   float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
 
   if(rcl.throttle == 0) {

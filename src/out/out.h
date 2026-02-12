@@ -40,21 +40,20 @@ class Out : public OutState {
     MsgTopic<OutState> topic = MsgTopic<OutState>("out");
 
     enum type_enum {
-      UNUSED = 0,
-      BRUSHED = 'm',
-      MOTPWM = 'M',
-      DSHOT = 'D',
-      DSHOTBIDIR = 'B',
-      SERVO = 'S'
+      UNUSED     = 0,
+      BRUSHED    = 'm', //use char for easy printing of type
+      MOTPWM     = 'M',
+      DSHOT      = 'D',
+      DSHOTBIDIR = 'd',
+      SERVO      = 'S'
     };
 
-    bool eperiod_enabled[OUT_SIZE] = {}; //ePeriod enabled flag
     int8_t publish_trigger_idx = -1; //this index triggers a publish in set_output() - updated by setup_xxx()
 
     void setup();
     bool update();
 
-    bool is_armed();
+    bool armed();
     void set_armed(bool set_armed);
     void testmotor_enable(bool set_testmode);
     void testmotor_set_output(uint8_t idx, float value);
@@ -70,28 +69,29 @@ class Out : public OutState {
     bool setup_servo(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     void set_output(uint8_t idx, float value); //set output (when ARMED, ignored in DISARMED and TESTMOTOR mode)
     float get_output(uint8_t idx); //get last output value
-    type_enum get_type(uint8_t idx); //type 'D', 'B', 'M', or 'S'
-    int get_rpm(uint8_t idx, int poles = 14); //get RPM
-    int8_t get_pin(uint8_t idx);
+    type_enum type(uint8_t idx);
+    int rpm(uint8_t idx, int poles = 14); //get RPM, returns -1 if not available
+    int8_t pin(uint8_t idx);
     void set_pin(uint8_t idx, int pin);
     const char* get_mode_string();
-    void print();
+    void print(Print &serial = Serial);
 
   private:
     bool _setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us);
     void _set_output(uint8_t idx, float value);  //unconditional set output - no armed check
 
-    type_enum type[OUT_SIZE] = {};
-    int8_t pins[OUT_SIZE] = {};
+    type_enum _type[OUT_SIZE] = {};
+    int8_t _pin[OUT_SIZE] = {};
 
     //PWM
-    PWM pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
+    PWM _pwm[OUT_SIZE]; //ESC and Servo outputs (values: 0.0 to 1.0)
 
     //Dshot
-    Dshot dshot;
-    DshotBidir dshotbidir;
-    int dshot_cnt = 0; //number of dshot pins
-    int dshot_idxs[OUT_SIZE]; //dshot out indices
+    Dshot _dshot;
+    DshotBidir _dshotbidir;
+    int _dshot_cnt = 0; //number of dshot pins
+    int _dshot_idxs[OUT_SIZE]; //dshot out indices
+
     uint32_t _update_ts = 0;
     uint32_t _watchdog_ts = 0;
 
