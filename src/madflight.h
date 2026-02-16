@@ -193,13 +193,14 @@ void madflight_setup() {
 
   // CLI - Start CLI (Serial) task early in setup, allows for CLI commands while booting
 
-  #if defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
-    // Hack for Adafruit TinyUSB in combination with FreeRTOS -> run Serial on core1
+  #ifdef defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
+    // Hack for Adafruit TinyUSB in combination with FreeRTOS: use core1
     int cli_core = 1;
   #else
-    // ESP32: run cli task on core0 otherwise Serial output drops a lot of characters
-    // Use core0 for all other configurations as well
-    int cli_core = hal_get_core_num();
+    // ESP32: use core0 otherwise Serial output drops a lot of characters
+    // RP2350 with Pico SDK USB: use core0
+    // Other platforms: use core0
+    int cli_core = 0;
   #endif
   hal_xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, cli_core); 
 
@@ -246,8 +247,8 @@ void madflight_setup() {
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.setup(); //Initialize radio communication.
 
-  // RCL - Start RCL task - run on core0
-  hal_xTaskCreate(cli_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num());
+  // RCL - Start RCL task on core0
+  hal_xTaskCreate(rcl_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
 
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
@@ -308,8 +309,8 @@ void madflight_setup() {
     out.set_pin(i, pin);
   }
 
-  // Start Sensor task after all sensor (except IMU) have been initialized - run on core0
-  hal_xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num());
+  // Start Sensor task on core0 after all sensor (except IMU) have been initialized
+  hal_xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
 
   // ALT - Altitude Estimator
   if(rdr.installed()) {

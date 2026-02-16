@@ -357,7 +357,8 @@ BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
     TaskHandle_t task_handle;
     BaseType_t rv = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, 0, &task_handle); //create with idle priority (i.e. task will not run yet)
     vTaskCoreAffinitySet(task_handle, (1<<xCoreID));
-    vTaskPrioritySet(task_handle, uxTaskPriorityGet(NULL)); //raise priority
+    vTaskPrioritySet(task_handle, uxPriority); //raise priority
+    if(pvCreatedTask) *pvCreatedTask = task_handle;
     return rv;
   }else{
     return xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
