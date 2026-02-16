@@ -100,9 +100,10 @@ void freertos_ps(Print &p)
       (int)t.uxCurrentPriority
     );
     #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
-      p.printf(" %2lX",
-        t.uxCoreAffinityMask & ((1<<configNUMBER_OF_CORES)-1)
-      );
+      p.printf("  ");
+      for(int core = 0; core < configNUMBER_OF_CORES; core++ ) {
+        p.printf("%c", (t.uxCoreAffinityMask & (1 << core) ? '0' + core : '_') );
+      }
     #endif
     p.printf("\n");
     tot += runtime;

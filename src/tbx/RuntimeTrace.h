@@ -33,21 +33,23 @@ class RuntimeTrace {
 public:
   RuntimeTrace(const char* name);
   void start();
-  void stop(bool updated);
+  void stop(bool updated = true);
 
 private:
   char name[9] = {};
   volatile uint32_t start_ts = 0; //start() timestamp
   uint32_t reset_ts = micros(); //counting since
-  uint32_t n = 0; //accumulated loops
-  uint32_t dt = 0; //accumulated runtime
-  uint32_t n_upd = 0; //accumulated updated loops
-  uint32_t dt_upd = 0; //accumulated updated runtime
-  float perc = 0; //for print
-  float perc_upd = 0; //for print
+
+  //stats for updated==false 
+  uint32_t n0 = 0; //accumulated loops
+  uint32_t dt0 = 0; //accumulated runtime
+
+  //stats for updated==true
+  uint32_t n1 = 0; //accumulated updated loops
+  uint32_t dt1 = 0; //accumulated updated runtime
 
   void reset(uint32_t now);
-  void print(uint32_t now);
+  void print(uint32_t now, float *prec, float *prec1);
 };
 
 class RuntimeTraceGroup {

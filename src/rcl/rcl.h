@@ -31,7 +31,7 @@ SOFTWARE.
 
 #define RCL_MAX_CH 20 //maximum number of channels
 
-struct RclState {
+struct __attribute__((aligned(4))) RclState {
 public:
     uint32_t ts = 0; //sample timestamp [us]
     uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks

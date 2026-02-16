@@ -274,4 +274,19 @@ void hal_print_businfo() {
   Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
 }
 
+BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
+                            const char * const pcName,
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pvCreatedTask,
+                            const int xCoreID) {
+  if(xCoreID >= 0) {
+    return xTaskCreatePinnedToCore(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask, xCoreID);
+  }else{
+    return xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
+  }
+}
+
+
 #endif //#ifdef ARDUINO_ARCH_ESP32

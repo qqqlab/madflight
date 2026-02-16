@@ -114,7 +114,7 @@ bool Ahr::update() {
   //update euler angles
   computeAngles();
 
-  bbx.log_ahrs();
+  topic.publish(this);
 
   runtimeTrace.stop(true);
   return true;

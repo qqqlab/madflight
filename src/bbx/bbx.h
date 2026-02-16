@@ -27,6 +27,11 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "BinLog.h"
 #include <SPI.h>
+#include "../tbx/RuntimeTrace.h"
+#include "../ahr/ahr.h"
+#include "../imu/imu.h"
+#include "../out/out.h"
+#include "../rcl/rcl.h"
 
 struct BbxConfig {
   public:
@@ -63,7 +68,6 @@ class Bbx {
 
   public:
     BbxConfig config;
-
     BbxGizmo *gizmo = nullptr;
 
   public:
@@ -82,18 +86,18 @@ class Bbx {
     void log_baro();
     void log_bat();
     void log_gps();
-    void log_imu();
+    void log_imu(ImuState *imu_s);
     void log_mode();
     void log_msg(const char* msg);
     void log_parm(const char* name, float value, float default_value);
     void log_pid();
 //    void log_att();
-    void log_ahrs();
+    void log_ahr(AhrState *ahr_s);
     void log_sys();
-    void log_out();
+    void log_out(OutState *out_s);
     void log_rdr();
     void log_ofl();
-    void log_rcl();
+    void log_rcl(RclState *rcl_s);
 };
 
 extern Bbx bbx;

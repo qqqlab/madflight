@@ -22,10 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+// adds approx 7us overhead on RP2350 @ 150Mhz with pico-arduino v5.5.0 - millis() = to_us_since_boot(get_absolute_time())
+// adds approx 4us overhead on RP2350 @ 150Mhz with pico-arduino v5.5.1 - millis() = time_us_32()
+
+#ifndef MF_USE_RUNTIMETRACE
+  #define MF_USE_RUNTIMETRACE 1
+#endif
+
 #include "RuntimeTrace.h"
 
-RuntimeTrace* RuntimeTraceGroup::arr[RUNTIMETRACE_NUM] = {};
-
+#if MF_USE_RUNTIMETRACE
+//-----------------------------------------------------------------------------
+// RuntimeTrace
+//-----------------------------------------------------------------------------
 RuntimeTrace::RuntimeTrace(const char* name) {
   strncpy(this->name, name, 8);
   RuntimeTraceGroup::add(this);
@@ -36,38 +45,38 @@ void RuntimeTrace::start() {
 }
 
 void RuntimeTrace::stop(bool updated) {
-  volatile uint32_t now = micros();
-  dt += (now - start_ts);
-  n++;
   if(updated) {
-    dt_upd += (now - start_ts);
-    n_upd++;
+    dt1 += (micros() - start_ts);
+    n1++;
+  }else{
+    dt0 += (micros() - start_ts);
+    n0++;
   }
 }
 
 void RuntimeTrace::reset(uint32_t now) {
   reset_ts = now;
-  dt = 0;
-  n = 0;
-  dt_upd = 0;
-  n_upd = 0;
+  dt0 = 0;
+  n0 = 0;
+  dt1 = 0;
+  n1 = 0;
 }
 
-void RuntimeTrace::print(uint32_t now) {
+void RuntimeTrace::print(uint32_t now, float *perc, float *perc1) {
   uint32_t reset_dt = (now - reset_ts);
-  float hz = 1e6f * n / reset_dt;
-  perc = 100.0f * dt / reset_dt;
-  float rt = (n == 0 ? 0 : (float)dt / n);
-  float hz_upd = 1e6f * n_upd / reset_dt;
-  perc_upd = 100.0f * dt_upd / reset_dt;
-  float rt_upd = (n_upd == 0 ? 0 : (float)dt_upd / n_upd);
-  Serial.printf("%-8s %8.0fHz  %6.2f%%   %9.2fus %8.0fHz  %6.2f%%   %9.2fus\n", name, hz, perc, rt,  hz_upd, perc_upd, rt_upd);
+  float hz = 1e6f * (n0 + n1) / reset_dt;
+  *perc = 100.0f * (dt0 + dt1) / reset_dt;
+  float rt = (n0 + n1 == 0 ? 0 : (float)(dt0 + dt1) / (n0 + n1));
+  float hz1 = 1e6f * n1 / reset_dt;
+  *perc1 = 100.0f * dt1 / reset_dt;
+  float rt1 = (n1 == 0 ? 0 : (float)dt1 / n1);
+  Serial.printf("%-8s %8.0fHz  %6.2f%%   %9.2fus %8.0fHz  %6.2f%%   %9.2fus\n", name, hz, *perc, rt,  hz1, *perc1, rt1);
 }
 
-
-
-
-
+//-----------------------------------------------------------------------------
+// RuntimeTraceGroup
+//-----------------------------------------------------------------------------
+RuntimeTrace* RuntimeTraceGroup::arr[RUNTIMETRACE_NUM] = {};
 
 int RuntimeTraceGroup::add(RuntimeTrace *item) {
   for(int i=0 ; i < RUNTIMETRACE_NUM; i++) {
@@ -89,16 +98,17 @@ void RuntimeTraceGroup::print() {
 
   //show traces
   float perc_sum = 0;
-  float perc_sum_t = 0;  
+  float perc1_sum = 0;  
   for(int i  = 0; i < RUNTIMETRACE_NUM; i++) {
     RuntimeTrace *t = arr[i];
     if(!t) break;
-    t->print(now);
-    perc_sum += t->perc;
-    perc_sum_t += t->perc_upd;
+    float perc, perc1;
+    t->print(now, &perc, &perc1);
+    perc_sum += perc;
+    perc1_sum += perc1;
   }
 
-  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", perc_sum, perc_sum_t);
+  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", perc_sum, perc1_sum);
 
   reset();
 }
@@ -111,3 +121,19 @@ void RuntimeTraceGroup::reset() {
     t->reset(now);
   }
 }
+
+#else //#if MF_USE_RUNTIMETRACE
+
+//-----------------------------------------------------------------------------
+// disable RuntimeTrace
+//-----------------------------------------------------------------------------
+RuntimeTrace::RuntimeTrace(const char* name) {}
+void RuntimeTrace::start() {}
+void RuntimeTrace::stop(bool updated) {}
+void RuntimeTrace::reset(uint32_t now) {}
+void RuntimeTrace::print(uint32_t now, float *perc, float *perc1) {}
+int RuntimeTraceGroup::add(RuntimeTrace *item) {return 0;}
+void RuntimeTraceGroup::print() {}
+void RuntimeTraceGroup::reset() {}
+
+#endif //#if MF_USE_RUNTIMETRACE

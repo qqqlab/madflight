@@ -28,7 +28,7 @@ SOFTWARE.
 // MsgBroker
 //=============================================================================
 MsgTopicBase* MsgBroker::topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
-uint32_t MsgBroker::ts_start = micros();
+uint32_t MsgBroker::stat_ts = micros();
 
 void MsgBroker::add_topic(MsgTopicBase *topic) {
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
@@ -50,15 +50,16 @@ int MsgBroker::topic_count() {
 }
 
 void MsgBroker::top() {
-  float dt = 1e-6 * (micros() - ts_start);
+  float dt = 1e-6 * (micros() - stat_ts);
   Serial.printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = topic_list[i];
     if(t) {
-      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d  subscribers:%d\n", t->name, t->generation / dt, (int)t->generation, t->subscriber_count());
+      uint32_t t_dgen = t->generation - t->stat_generation;
+      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->generation, (int)t_dgen);
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->sub_list[j];
-        if(s) Serial.printf("  sub:%-10s freq:%4.0fHz  gen:%8d  pulls:%8d  missed:%8d\n", s->name, s->pull_cnt / dt, (int)s->generation, (int)s->pull_cnt, (int)(t->generation - s->pull_cnt));
+        if(s) Serial.printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->stat_pull_cnt / dt, (int)s->generation, (int)s->stat_pull_cnt, (int)(t_dgen - s->stat_pull_cnt));
       } 
     }
   }
@@ -66,39 +67,22 @@ void MsgBroker::top() {
 }
 
 void MsgBroker::reset_stats() {
+  stat_ts = micros();
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
-    if(topic_list[i]) {
-      topic_list[i]->generation = 0;
+    MsgTopicBase *t = topic_list[i];
+    if(t) {
+      t->stat_generation = t->generation;
+      for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
+        MsgSubscriptionBase *s = t->sub_list[j];
+        if(s) s->stat_pull_cnt = 0;
+      }       
     }
   }
-  ts_start = micros();
 }
+
 //=============================================================================
 // MsgTopicBase
 //=============================================================================
-MsgTopicBase::MsgTopicBase(const char *name, int len) {
-    strncpy(this->name, name, sizeof(this->name) - 1);
-    this->name[sizeof(this->name) - 1] = 0;
-    queue = xQueueCreate(1, len);
-    MsgBroker::add_topic(this);
-}
-
-void MsgTopicBase::publish(void *msg) {
-    xQueueOverwrite(queue, msg);
-    generation++;
-}
-
-void MsgTopicBase::publishFromISR(void *msg) {
-    BaseType_t higherPriorityTaskWoken;
-    xQueueOverwriteFromISR(queue, msg, &higherPriorityTaskWoken);
-    (void)higherPriorityTaskWoken;
-    generation++;
-}
-
-bool MsgTopicBase::pull(void *msg) {
-    return (xQueuePeek(queue, msg, 0) == pdPASS);
-}
-
 void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
     if(!sub_list[i]) {
@@ -146,9 +130,9 @@ MsgSubscriptionBase::~MsgSubscriptionBase() {
 
 //pull message: returns true if msg was pulled, returns false if no msg available
 bool MsgSubscriptionBase::pull(void *msg) {
-    if(!topic->pull(msg)) return false; 
+    if(!topic->pull(msg)) return false;
     generation = topic->generation;
-    pull_cnt++;
+    stat_pull_cnt++;
     return true; //NOTE: retrieved msg might be older than this->generation
 }
 

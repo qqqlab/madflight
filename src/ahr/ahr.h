@@ -28,8 +28,9 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../imu/imu.h"
 #include "../mag/mag.h"
+#include "../tbx/MsgBroker.h"
 
-struct AhrState {
+struct __attribute__((aligned(4))) AhrState {
   public:
     float gx = 0, gy = 0, gz = 0; // corrected and filtered imu gyro measurements in [deg/sec]
     float ax = 0, ay = 0, az = 0; // corrected and filtered imu accel measurements in [g]
@@ -66,8 +67,8 @@ class AhrGizmo {
 class Ahr : public AhrState {
   public:
     AhrConfig config;
-
     AhrGizmo *gizmo = nullptr;
+    MsgTopic<AhrState> topic = MsgTopic<AhrState>("ahr");
 
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); //get imu+mag data, filter it, and call fusionUpdate() to update q. Returns true if state was updated

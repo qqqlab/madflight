@@ -57,39 +57,76 @@ const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from 
 const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
 
 
-#define MF_CLI_TASK_INTERVAL_MS 4
-#define MF_RCL_TASK_INTERVAL_MS 1
-#define MF_SENSOR_TASK_INTERVAL_MS 4
+//=============================================================================
+// Tasks
+//=============================================================================
+
+#if defined ARDUINO_ARCH_ESP32
+  #if ESP_ARDUINO_VERSION_MAJOR <= 2
+    #include <esp_task_wdt.h>
+    void hal_task_wdt_disable() {
+      esp_task_wdt_init(5, false); //disable task watchdog
+    }
+  #else
+    #include <esp_task_wdt.h>
+    void hal_task_wdt_disable() {
+      esp_task_wdt_config_t c;
+      c.timeout_ms = 5000;
+      c.idle_core_mask = 0x03;
+      c.trigger_panic = false;
+      esp_task_wdt_init(&c);
+    }
+  #endif
+#else
+  void hal_task_wdt_disable() {}
+#endif
+
+void rcl_task(void *pvParameters) {
+  (void)pvParameters;
+  for(;;) {
+    hal_task_wdt_disable();
+    rcl.update(); // get rc radio commands
+    out.update(); // stop motors on timeout
+
+    portYIELD();
+  }
+}
 
 void cli_task(void *pvParameters) {
   (void)pvParameters;
   cli.begin();
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_CLI_TASK_INTERVAL_MS);
   for(;;) {
-    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
     cli.update(); // process CLI commands
+
+    portYIELD();
   }
 }
 
-void rcl_task(void *pvParameters) {
-  (void)pvParameters;
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_RCL_TASK_INTERVAL_MS);
-  for(;;) {
-    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
-    if(rcl.update()) bbx.log_rcl(); // get rc radio commands
-    out.update(); //stop motors on timeout
-  }
-}
+struct {
+  ScheduleFreq sys_schedule = ScheduleFreq(10); // System log (10Hz)
+  //ahr
+  ScheduleFreq ahr_schedule = ScheduleFreq(cfg.bbx_log_ahr);
+  MsgSubscription<AhrState> ahr_sub = MsgSubscription<AhrState>("log_ahr", &ahr.topic);
+  AhrState ahr_state;
+  //imu
+  ScheduleFreq imu_schedule = ScheduleFreq(cfg.bbx_log_imu);
+  MsgSubscription<ImuState> imu_sub = MsgSubscription<ImuState>("log_imu", &imu.topic);
+  ImuState imu_state;
+  //out
+  ScheduleFreq out_schedule = ScheduleFreq(cfg.bbx_log_out);
+  MsgSubscription<OutState> out_sub = MsgSubscription<OutState>("log_out", &out.topic);
+  OutState out_state;
+  //rcl
+  ScheduleFreq rcl_schedule = ScheduleFreq(cfg.bbx_log_rcl);
+  MsgSubscription<RclState> rcl_sub = MsgSubscription<RclState>("log_rcl", &rcl.topic);
+  RclState rcl_state; 
+} g_sensor_task;
 
 void sensor_task(void *pvParameters) {
   (void)pvParameters;
-  uint32_t loop_cnt = 0;
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t interval_ticks = pdMS_TO_TICKS(MF_SENSOR_TASK_INTERVAL_MS);
+
   for(;;) {
-    vTaskDelayUntil(&xLastWakeTime, interval_ticks);
+    //sensors
     if(bar.update()) bbx.log_baro(); // barometer
     mag.update(); // magnetometer (logging is done with imu together)
     if(gps.update()) bbx.log_gps(); // gps
@@ -97,13 +134,26 @@ void sensor_task(void *pvParameters) {
     if(rdr.update()) bbx.log_rdr(); // radar
     if(ofl.update()) bbx.log_ofl(); // optical flow
 
-    // Other logging
-    if(loop_cnt % 25 == 0) bbx.log_sys();  // System (10Hz)
-
-    loop_cnt++;
+    //logging
+    if(g_sensor_task.sys_schedule.expired()) {
+      bbx.log_sys();
+    }
+    if(g_sensor_task.imu_schedule.expired() && g_sensor_task.imu_sub.pull_updated(&g_sensor_task.imu_state)) {
+      bbx.log_imu(&g_sensor_task.imu_state);
+    }
+    if(g_sensor_task.ahr_schedule.expired() && g_sensor_task.ahr_sub.pull_updated(&g_sensor_task.ahr_state)) {
+      bbx.log_ahr(&g_sensor_task.ahr_state);
+    }
+    if(g_sensor_task.out_schedule.expired() && g_sensor_task.out_sub.pull_updated(&g_sensor_task.out_state)) {
+      bbx.log_out(&g_sensor_task.out_state);
+    }
+    if(g_sensor_task.rcl_schedule.expired() && g_sensor_task.rcl_sub.pull_updated(&g_sensor_task.rcl_state)) {
+      bbx.log_rcl(&g_sensor_task.rcl_state);
+    }
+  
+    portYIELD();
   }
 }
-
 
 void madflight_setup() {
   // HAL - Detach USB to until SDCARD is setup
@@ -142,18 +192,16 @@ void madflight_setup() {
   Serial.begin(115200);
 
   // CLI - Start CLI (Serial) task early in setup, allows for CLI commands while booting
-  #ifdef ARDUINO_ARCH_RP2040
-    //hack for Adafruit TinyUSB in combination with FreeRTOS -> run Serial on core1
-    TaskHandle_t cli_task_handle;
-    xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, 0, &cli_task_handle); //create with idle priority (i.e. task will not run yet)
-    vTaskCoreAffinitySet(cli_task_handle, (1<<1)); //run on core1
-    vTaskPrioritySet(cli_task_handle, uxTaskPriorityGet(NULL)); //raise priority
-  #elif defined ARDUINO_ARCH_ESP32
-    //run cli task on same core as setup() otherwise Serial output drops a lot of characters....
-    xTaskCreatePinnedToCore(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num()); //[ESP32 only]
+
+  #if defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
+    // Hack for Adafruit TinyUSB in combination with FreeRTOS -> run Serial on core1
+    int cli_core = 1;
   #else
-    xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+    // ESP32: run cli task on core0 otherwise Serial output drops a lot of characters
+    // Use core0 for all other configurations as well
+    int cli_core = hal_get_core_num();
   #endif
+  hal_xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, cli_core); 
 
   // Delay - 6 second startup delay
   for(int i = 12; i > 0; i--) {
@@ -198,8 +246,8 @@ void madflight_setup() {
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.setup(); //Initialize radio communication.
 
-  // RCL - Start RCL task
-  xTaskCreate(rcl_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+  // RCL - Start RCL task - run on core0
+  hal_xTaskCreate(cli_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num());
 
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
@@ -260,8 +308,8 @@ void madflight_setup() {
     out.set_pin(i, pin);
   }
 
-  // Start Sensor task after all sensor (except IMU) have been initialized
-  xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL);
+  // Start Sensor task after all sensor (except IMU) have been initialized - run on core0
+  hal_xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, hal_get_core_num());
 
   // ALT - Altitude Estimator
   if(rdr.installed()) {

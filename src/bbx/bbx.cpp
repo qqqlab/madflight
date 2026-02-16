@@ -221,25 +221,21 @@ void Bbx::log_pos(float homeAlt, float OriginAlt) override {
 */
 
 //AHRS roll/pitch/yaw plus filtered+corrected IMU data
-void Bbx::log_ahrs() {  
-  //limit logging frequency to max configured Hz
-  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_ahr);
-  if(!schedule.expired()) return;
-
+void Bbx::log_ahr(AhrState *ahr_s) {
   BinLog bl("AHRS"); 
   bl.TimeUS();
-  bl.i16("ax",    ahr.ax * 1000,   1e-3, "G"); //G
-  bl.i16("ay",    ahr.ay * 1000,   1e-3, "G"); //G
-  bl.i16("az",    ahr.az * 1000,   1e-3, "G"); //G
-  bl.i16("gx",    ahr.gx * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gy",    ahr.gy * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gz",    ahr.gz * 10,     1e-1, "deg/s"); //dps
-  bl.i16("mx",    ahr.mx * 100,    1e-2, "uT"); //uT
-  bl.i16("my",    ahr.my * 100,    1e-2, "uT"); //uT
-  bl.i16("mz",    ahr.mz * 100,    1e-2, "uT"); //uT
-  bl.i16("roll",  ahr.roll * 100,  1e-2, "deg"); //deg -180 to 180
-  bl.i16("pitch", ahr.pitch * 100, 1e-2, "deg"); //deg -90 to 90
-  bl.i16("yaw",   ahr.yaw * 100,   1e-2, "deg"); //deg -180 to 180
+  bl.i16("ax",    ahr_s->ax * 1000,   1e-3, "G"); //G
+  bl.i16("ay",    ahr_s->ay * 1000,   1e-3, "G"); //G
+  bl.i16("az",    ahr_s->az * 1000,   1e-3, "G"); //G
+  bl.i16("gx",    ahr_s->gx * 10,     1e-1, "deg/s"); //dps
+  bl.i16("gy",    ahr_s->gy * 10,     1e-1, "deg/s"); //dps
+  bl.i16("gz",    ahr_s->gz * 10,     1e-1, "deg/s"); //dps
+  bl.i16("mx",    ahr_s->mx * 100,    1e-2, "uT"); //uT
+  bl.i16("my",    ahr_s->my * 100,    1e-2, "uT"); //uT
+  bl.i16("mz",    ahr_s->mz * 100,    1e-2, "uT"); //uT
+  bl.i16("roll",  ahr_s->roll * 100,  1e-2, "deg"); //deg -180 to 180
+  bl.i16("pitch", ahr_s->pitch * 100, 1e-2, "deg"); //deg -90 to 90
+  bl.i16("yaw",   ahr_s->yaw * 100,   1e-2, "deg"); //deg -180 to 180
 }
 
 /*
@@ -259,20 +255,16 @@ void Bbx::log_att() {
 */
 
 //IMU raw (unfiltered but corrected) IMU data
-void Bbx::log_imu() {
-  //limit logging frequency to max configured Hz
-  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_imu);
-  if(!schedule.expired()) return;
-
+void Bbx::log_imu(ImuState *imu_s) {
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-  bl.TimeUS(imu.ts);
-  bl.i16("ax", (imu.ax - cfg.imu_cal_ax) * 1000, 1e-3, "G"); //G
-  bl.i16("ay", (imu.ay - cfg.imu_cal_ay) * 1000, 1e-3, "G"); //G
-  bl.i16("az", (imu.az - cfg.imu_cal_az) * 1000, 1e-3, "G"); //G
-  bl.i16("gx", (imu.gx - cfg.imu_cal_gx) * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gy", (imu.gy - cfg.imu_cal_gy) * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gz", (imu.gz - cfg.imu_cal_gz) * 10,   1e-1, "deg/s"); //dps
+  bl.TimeUS(imu_s->ts);
+  bl.i16("ax", (imu_s->ax - cfg.imu_cal_ax) * 1000, 1e-3, "G"); //G
+  bl.i16("ay", (imu_s->ay - cfg.imu_cal_ay) * 1000, 1e-3, "G"); //G
+  bl.i16("az", (imu_s->az - cfg.imu_cal_az) * 1000, 1e-3, "G"); //G
+  bl.i16("gx", (imu_s->gx - cfg.imu_cal_gx) * 10,   1e-1, "deg/s"); //dps
+  bl.i16("gy", (imu_s->gy - cfg.imu_cal_gy) * 10,   1e-1, "deg/s"); //dps
+  bl.i16("gz", (imu_s->gz - cfg.imu_cal_gz) * 10,   1e-1, "deg/s"); //dps
   if(mag.installed()) {
     bl.i16("mx", ((mag.mx - cfg.mag_cal_x) * cfg.mag_cal_sx) * 100, 1e-2, "uT"); //uT
     bl.i16("my", ((mag.my - cfg.mag_cal_y) * cfg.mag_cal_sy) * 100, 1e-2, "uT"); //uT
@@ -310,11 +302,7 @@ void Bbx::log_sys() {
 }
 
 //OUT - outputs (motors, servos)
-void Bbx::log_out() {
-  //log at max Hz
-  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_out);
-  if(!schedule.expired()) return;
-  
+void Bbx::log_out(OutState *out_s) {
   BinLog bl("OUT");
   bl.TimeUS();
   char lbl[3] = {};
@@ -323,7 +311,7 @@ void Bbx::log_out() {
       lbl[0] = out.type(i);
       lbl[1] = '0' + i;
       lbl[2] = 0;
-      bl.i16(lbl, out.get_output(i) * 1000, 1e-3, ""); //range -1000 to +1000
+      bl.i16(lbl, out_s->command[i] * 1000, 1e-3, ""); //range -1000 to +1000
     }
   }
   for(int i = 0; i < 8; i++) {
@@ -331,7 +319,7 @@ void Bbx::log_out() {
       lbl[0] = 'R';
       lbl[1] = '0' + i;
       lbl[2] = 0;
-      bl.u16(lbl, out.rpm(i), 1, "rpm");
+      bl.u16(lbl, Out::eperiod_to_rpm(out_s->eperiod[i]), 1, "rpm");
     }
   }
 }
@@ -358,25 +346,21 @@ void Bbx::log_ofl() {
 }
 
 //RCL - remote control link
-void Bbx::log_rcl() {
-  //limit logging frequency to max configured Hz
-  static ScheduleFreq schedule = ScheduleFreq(cfg.bbx_log_rcl);
-  if(!schedule.expired()) return;
-
+void Bbx::log_rcl(RclState *rcl_s) {
   BinLog bl("RCL");
-  bl.TimeUS(rcl.ts);
-  bl.i16("rol", rcl.roll * 1000);
-  bl.i16("pit", rcl.pitch * 1000);
-  bl.i16("thr", rcl.throttle * 1000);
-  bl.i16("yaw", rcl.yaw * 1000);
-  bl.u8 ("arm", rcl.armed);
-  bl.u8 ("flt", rcl.flightmode);
-  bl.u16("ch1", rcl.pwm[0]);
-  bl.u16("ch2", rcl.pwm[1]);
-  bl.u16("ch3", rcl.pwm[2]);
-  bl.u16("ch4", rcl.pwm[3]);
-  bl.u16("ch5", rcl.pwm[4]);  
-  bl.u16("ch6", rcl.pwm[5]);
-  bl.u16("ch7", rcl.pwm[6]);
-  bl.u16("ch8", rcl.pwm[7]);
+  bl.TimeUS(rcl_s->ts);
+  bl.i16("rol", rcl_s->roll * 1000);
+  bl.i16("pit", rcl_s->pitch * 1000);
+  bl.i16("thr", rcl_s->throttle * 1000);
+  bl.i16("yaw", rcl_s->yaw * 1000);
+  bl.u8 ("arm", rcl_s->armed);
+  bl.u8 ("flt", rcl_s->flightmode);
+  bl.u16("ch1", rcl_s->pwm[0]);
+  bl.u16("ch2", rcl_s->pwm[1]);
+  bl.u16("ch3", rcl_s->pwm[2]);
+  bl.u16("ch4", rcl_s->pwm[3]);
+  bl.u16("ch5", rcl_s->pwm[4]);  
+  bl.u16("ch6", rcl_s->pwm[5]);
+  bl.u16("ch7", rcl_s->pwm[6]);
+  bl.u16("ch8", rcl_s->pwm[7]);
 }
