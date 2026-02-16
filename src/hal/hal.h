@@ -57,3 +57,12 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud = 115200, MF_SerialMode mode = M
 void hal_print_resources();
 void hal_meminfo();
 void hal_print_businfo();
+
+// Create task pinned to core (when xCoreID >= 0), or for all cores (when xCoreID < 0)
+BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
+                            const char * const pcName,
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pvCreatedTask,
+                            const int xCoreID);

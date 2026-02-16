@@ -30,7 +30,7 @@ SOFTWARE.
 #include "../tbx/RuntimeTrace.h"
 #include "../tbx/MsgBroker.h"
 
-struct MagState {
+struct __attribute__((aligned(4))) MagState {
   public:
     float mx = 0; //"North" magnetic flux [uT]
     float my = 0; //"East" magnetic flux [uT]

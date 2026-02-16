@@ -29,7 +29,7 @@ SOFTWARE.
 #include "../tbx/RuntimeTrace.h"
 #include "../tbx/MsgBroker.h"
 
-struct BatState {
+struct __attribute__((aligned(4))) BatState {
   public:
     float i = 0;     // Battery current [A]
     float v = 0;     // Battery voltage [V]

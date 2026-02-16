@@ -346,4 +346,23 @@ void hal_print_businfo() {
   Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
 }
 
+BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
+                            const char * const pcName,
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pvCreatedTask,
+                            const int xCoreID) {
+  if(xCoreID >= 0) {
+    TaskHandle_t task_handle;
+    BaseType_t rv = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, 0, &task_handle); //create with idle priority (i.e. task will not run yet)
+    vTaskCoreAffinitySet(task_handle, (1<<xCoreID));
+    vTaskPrioritySet(task_handle, uxPriority); //raise priority
+    if(pvCreatedTask) *pvCreatedTask = task_handle;
+    return rv;
+  }else{
+    return xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
+  }
+}
+
 #endif //#ifdef ARDUINO_ARCH_RP2040

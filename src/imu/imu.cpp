@@ -220,13 +220,7 @@ bool Imu::update() {
     this->ts = update_ts;
     this->update_cnt++;
 
-    #if IMU_EXEC == IMU_EXEC_IRQ
-        topic.publishFromISR(this);
-    #else
-        topic.publish(this);
-    #endif
-
-    bbx.log_imu();
+    topic.publish(this);
   }
   runtimeTrace.stop(updated);
   return updated;

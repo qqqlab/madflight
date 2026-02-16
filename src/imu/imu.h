@@ -64,7 +64,7 @@ struct ImuConfig {
 };
 
 //imu sample data (raw, uncorrected and unfiltered) 
-struct ImuState {
+struct __attribute__((aligned(4))) ImuState {
 public:
     uint32_t ts = 0; //sample low level interrupt trigger timestamp [us]
     float dt = 0; //time since last sample [seconds]

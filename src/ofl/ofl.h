@@ -28,7 +28,7 @@ SOFTWARE.
 #include "../tbx/RuntimeTrace.h"
 #include "../tbx/MsgBroker.h"
 
-struct OflState {
+struct __attribute__((aligned(4))) OflState {
   public:
     // Sensor state vars
     int dx_raw = 0;  // raw sensor reading in [pixels] (x-axis of sensor frame)

@@ -30,7 +30,7 @@ SOFTWARE.
 #include "../tbx/RuntimeTrace.h"
 #include "../tbx/MsgBroker.h"
 
-struct BarState {
+struct __attribute__((aligned(4))) BarState {
   public:
     float press = 0;  // Pressure in [Pascal]
     float alt = 0;    // Approximate International Standard Atmosphere (ISA) Altitude in [m]

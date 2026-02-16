@@ -28,7 +28,7 @@ SOFTWARE.
 #include "../tbx/RuntimeTrace.h"
 #include "../tbx/MsgBroker.h"
 
-struct RdrState {
+struct __attribute__((aligned(4))) RdrState {
   public:
     // Sensor state vars
     float dist = -1; //distance in m, or negative error code (-1: no data, -2: invalid data)

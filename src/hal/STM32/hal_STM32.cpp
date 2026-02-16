@@ -367,4 +367,14 @@ void hal_print_businfo() {
 
 }
 
+BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
+                            const char * const pcName,
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pvCreatedTask,
+                            const int xCoreID) {
+  return xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
+}
+
 #endif //#ifdef ARDUINO_ARCH_STM32

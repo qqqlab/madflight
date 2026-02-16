@@ -27,14 +27,16 @@ SOFTWARE.
 #define OUT_SIZE 16 //max number of outputs
 #define OUT_MOT_TIMEOUT 250000 //switch motors off 250ms after last set received
 
-#include "../madflight_modules.h"
+#include "../hal/hal.h"
+#include "../tbx/MsgBroker.h"
 
-struct OutState {
+struct __attribute__((aligned(4))) OutState {
   public:
     uint32_t ts = 0; //time of last set() or testmode_enable() call
     float command[OUT_SIZE] = {}; //last commanded outputs (values: 0.0 to 1.0)
     int eperiod[OUT_SIZE] = {}; //ePeriod in [us], 0 when motor stopped, negative on error
 };
+
 class Out : public OutState {
   public:
     MsgTopic<OutState> topic = MsgTopic<OutState>("out");
@@ -71,14 +73,23 @@ class Out : public OutState {
     float get_output(uint8_t idx); //get last output value
     type_enum type(uint8_t idx);
     int rpm(uint8_t idx, int poles = 14); //get RPM, returns -1 if not available
+    static int eperiod_to_rpm(int eperiod, int poles = 14);
     int8_t pin(uint8_t idx);
     void set_pin(uint8_t idx, int pin);
     const char* get_mode_string();
     void print(Print &p = Serial);
 
   private:
+    enum mode_enum {
+      DISARMED = 0,
+      ARMED = 1,
+      TESTMOTOR = 2
+    } _mode = DISARMED;
+
     bool _setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us);
     void _set_output(uint8_t idx, float value);  //unconditional set output - no armed check
+
+    bool _set_mode(mode_enum mode); // returns true on changed
 
     type_enum _type[OUT_SIZE] = {};
     int8_t _pin[OUT_SIZE] = {};
@@ -95,11 +106,7 @@ class Out : public OutState {
     uint32_t _update_ts = 0;
     uint32_t _watchdog_ts = 0;
 
-    enum mode_enum {
-      DISARMED = 0,
-      ARMED = 1,
-      TESTMOTOR = 2
-    } _mode = DISARMED;
+
 };
 
 extern Out out;

@@ -40,7 +40,7 @@ enum GPS_Status {
     GPS_OK_FIX_3D_RTK_FIXED = 6, ///< Receiving valid messages and 3D RTK Fixed
 };
 
-struct GpsState {
+struct __attribute__((aligned(4))) GpsState {
   public:
     // all the following fields must all be filled by the backend driver
     GPS_Status fix = NO_GPS;        // driver fix status

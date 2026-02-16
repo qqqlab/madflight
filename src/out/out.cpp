@@ -114,19 +114,12 @@ void Out::set_output(uint8_t idx, float value) {
   //do nothing in testmode
   if(_mode == mode_enum::TESTMOTOR) return;
 
-  // handle disarmed
-  if(_mode == mode_enum::DISARMED) {
-    stop_all_motors();
-    return;
-  }
-
   //set the output
   _set_output(idx, value);
 
   //report it
   if(idx == publish_trigger_idx) {
     topic.publish(this);
-    bbx.log_out();
   }
 
   //reset watchdog timer
@@ -170,9 +163,12 @@ void Out::_set_output(uint8_t idx, float value) {
 int Out::rpm(uint8_t idx, int poles) {
   if(idx >= OUT_SIZE) return -1;
   if(_type[idx] != type_enum::DSHOTBIDIR) return -1;
-  if(eperiod[idx] < 0) return eperiod[idx];
-  if(eperiod[idx] == 0) return 0;
-  return 120000000 / poles / eperiod[idx];
+  return eperiod_to_rpm(eperiod[idx], poles);
+}
+
+int Out::eperiod_to_rpm(int eperiod, int poles) {
+  if(eperiod <= 0) return eperiod;
+  return 120000000 / poles / eperiod;
 }
 
 bool Out::update() {
@@ -199,35 +195,38 @@ bool Out::update() {
   return true;
 }
 
+//returns true on changed
+bool Out::_set_mode(mode_enum mode_new) {
+  if(_mode == mode_new) return false;
+  //stop motors on disarm, or switch to/from testmotor
+  if(mode_new == mode_enum::DISARMED || mode_new == mode_enum::TESTMOTOR || _mode == mode_enum::TESTMOTOR) {
+    stop_all_motors();
+  }
+  //TODO: publish mode change
+  _mode = mode_new;
+  return true;
+}
+
 bool Out::armed() {
   return (_mode == mode_enum::ARMED);
 }
 
 void Out::emergency_stop() {
-  _mode = mode_enum::DISARMED;
-  stop_all_motors();
+  _set_mode(mode_enum::DISARMED);
+  stop_all_motors(); //execute regardless of current _mode
 }
 
 void Out::set_armed(bool set_armed) {
   if(set_armed && _mode == mode_enum::DISARMED) {
-    _mode = mode_enum::ARMED;
-    //TODO: publish changed armed status
+    _set_mode(mode_enum::ARMED);
   }else if(!set_armed && _mode == mode_enum::ARMED) {
-    stop_all_motors();
-    _mode = mode_enum::DISARMED;
-    //TODO: publish changed armed status
+    _set_mode(mode_enum::DISARMED);
   }
 }
 
 //enable testmode
 void Out::testmotor_enable(bool set_testmode) {
-  if(set_testmode && _mode != mode_enum::TESTMOTOR) {
-    stop_all_motors(); //stop motors on changing to/from testmode
-    _mode = mode_enum::TESTMOTOR;
-  }else if(!set_testmode && _mode == mode_enum::TESTMOTOR) {
-    stop_all_motors(); //stop motors on changing to/from testmode
-    _mode = mode_enum::DISARMED;
-  }
+  _set_mode( set_testmode ? mode_enum::TESTMOTOR : mode_enum::DISARMED);
   _watchdog_ts = micros(); //reset watchdog timer
 }
 

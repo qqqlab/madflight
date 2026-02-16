@@ -48,37 +48,107 @@ class MsgBroker {
 
   protected:
     friend class MsgTopicBase;
+    template <class T> friend class MsgTopic;
 
     static void add_topic(MsgTopicBase *topic);
   private:
     static MsgTopicBase* topic_list[MF_MSGTOPIC_LIST_SIZE];
-    static uint32_t ts_start;
+    static uint32_t stat_ts;
 };
 
 //=============================================================================
 class MsgTopicBase {
   public:
     uint32_t get_generation() {return generation;}
+    inline void publish_generation_only() {generation++;}
 
   protected:
     friend class MsgBroker;
     friend class MsgSubscriptionBase;
+    template <class T> friend class MsgTopic;
+    template <class T> friend class MsgTopicQueue;
 
     char name[9] = {};
-    uint32_t generation = 0; //counts messages published to this topic
+    volatile uint32_t generation = 0; //counts messages published to this topic
+    uint32_t stat_generation = 0; //starting generation for statistics
     MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
 
-    MsgTopicBase(const char* name, int len);
-    void publish(void *msg);
-    void publishFromISR(void *msg);
-    bool pull(void *msg);
+    virtual ~MsgTopicBase() {}
+    MsgTopicBase(const char* name) {
+      strncpy(this->name, name, sizeof(this->name) - 1);
+      this->name[sizeof(this->name) - 1] = 0;
+    }
+  
+    virtual bool pull(void* msg) = 0;
+
+    //subscription
     void add_subscription(MsgSubscriptionBase *sub);
     void remove_subscription(MsgSubscriptionBase *sub);
     int subscriber_count();
-    virtual ~MsgTopicBase() {}
+};
+
+//=============================================================================
+//single publisher, multi subscriber - double buffer for storage
+template <class T>
+class MsgTopic : public MsgTopicBase {
+  public:
+    MsgTopic(const char* name) : MsgTopicBase(name) {
+      buflen = sizeof(T);
+      active_buf = aligned_alloc(4, buflen);
+      inactive_buf = aligned_alloc(4, buflen);
+      memset(active_buf, 0, buflen);
+      MsgBroker::add_topic(this);
+    }
+
+    void publish(T *msg) { 
+      memcpy(inactive_buf, msg, buflen);
+      void *temp = active_buf;
+      active_buf = inactive_buf;
+      inactive_buf = temp;
+      generation++;
+    }
+
+    bool pull(void* msg) override {
+      if(!generation) return false; //will miss a pull every 4,000,000,000 publishes...
+      memcpy(msg, active_buf, buflen);
+      return true;
+    }
+
   private:
-    MsgTopicBase() {}
-    QueueHandle_t queue;
+    int buflen = 0;
+    void *active_buf = nullptr;
+    void *inactive_buf = nullptr;
+};
+
+
+//=============================================================================
+//multi publisher, multi subscriber - uses FreeRTOS Queue for storage
+template <class T>
+class MsgTopicQueue : public MsgTopicBase {
+  public:
+    MsgTopicQueue(const char* name, int len) : MsgTopicBase(name) {
+      queue = xQueueCreate(1, len);
+      MsgBroker::add_topic(this);
+    }
+
+    void publish(void *msg) {
+      xQueueOverwrite(queue, msg);
+      generation++;
+    }
+
+    void publishFromISR(void *msg) {
+      BaseType_t higherPriorityTaskWoken;
+      xQueueOverwriteFromISR(queue, msg, &higherPriorityTaskWoken);
+      (void)higherPriorityTaskWoken;
+      generation++;
+    }
+
+    bool pull(void *msg) override {
+      return (xQueuePeek(queue, msg, 0) == pdPASS);
+    }
+
+  private:
+    QueueHandle_t queue = nullptr;
 };
 
 //=============================================================================
@@ -91,33 +161,24 @@ class MsgSubscriptionBase {
 
     char name[9] = {};
     uint32_t generation = 0; //last pulled topic generation 
-    uint32_t pull_cnt = 0; //pull counter
+    uint32_t stat_pull_cnt = 0; //pull counter
 
-    MsgSubscriptionBase(const char* name, MsgTopicBase *topic); //start a new subscription
     virtual ~MsgSubscriptionBase();
+    MsgSubscriptionBase(const char* name, MsgTopicBase *topic); //start a new subscription
+
     bool pull(void *msg); //pull message: returns true if msg was pulled, returns false if no msg available
     bool pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
-  private:
-    MsgTopicBase *topic;
-    MsgSubscriptionBase() {}
-};
 
-//=============================================================================
-template <class T>
-class MsgTopic : public MsgTopicBase {
-  public:
-    MsgTopic(const char* name) : MsgTopicBase(name, sizeof(T)) {}
-    void publish(T *msg) { MsgTopicBase::publish(msg); }
-    void publishFromISR(T *msg) { MsgTopicBase::publishFromISR(msg); }
-  protected:
-    bool pull(T *msg) { return MsgTopicBase::pull(msg); }
+  private:
+    MsgSubscriptionBase() {}
+    MsgTopicBase *topic;
 };
 
 //=============================================================================
 template <class T>
 class MsgSubscription : public MsgSubscriptionBase {
   public:
-    MsgSubscription(const char* name, MsgTopic<T> *topic) : MsgSubscriptionBase(name, topic) {}
+    MsgSubscription(const char* name, MsgTopicBase *topic) : MsgSubscriptionBase(name, topic) {}
     bool pull(T *msg) { return MsgSubscriptionBase::pull(msg); }
-    bool pull_updated(T *msg) { return MsgSubscriptionBase::pull_updated(msg); }
+    bool pull_updated(T *msg) { return MsgSubscriptionBase::pull_updated(msg); }  
 };
