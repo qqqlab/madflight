@@ -50,12 +50,12 @@ NOTE: on RP2350/RP2040 the 32bit trace timer is running at F_CPU, with wraps in 
 TID Name           CPU%  Free St Pr Ni Core
   8 IMU          557.2%   425  X  7  7  _1
   2 CORE0        289.2%   592  X  4  4  0_
-  5 IDLE0         70.5%   230  R  0  0  12
-  6 IDLE1         68.4%   230  R  0  0  12
+  5 IDLE0         70.5%   230  R  0  0  01
+  6 IDLE1         68.4%   230  R  0  0  01
   1 USB           81.0%   192  B  6  6  0_
   4 IdleCore1      0.0%    96  B  7  7  _1
   3 IdleCore0      0.0%    96  B  7  7  0_
-  7 Tmr Svc        0.0%   992  B  2  2  12
+  7 Tmr Svc        0.0%   992  B  2  2  01
 
 */
 
