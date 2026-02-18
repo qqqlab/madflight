@@ -50,11 +50,18 @@ class Out : public OutState {
       SERVO      = 'S'
     };
 
+    enum mode_enum {
+      DISARMED = 0,
+      ARMED = 1,
+      TESTMOTOR = 2
+    } _mode = DISARMED;
+
     int8_t publish_trigger_idx = -1; //this index triggers a publish in set_output() - updated by setup_xxx()
 
     void setup();
     bool update();
 
+    mode_enum mode() {return _mode;}
     bool armed();
     void set_armed(bool set_armed);
     void testmotor_enable(bool set_testmode);
@@ -80,11 +87,7 @@ class Out : public OutState {
     void print(Print &p = Serial);
 
   private:
-    enum mode_enum {
-      DISARMED = 0,
-      ARMED = 1,
-      TESTMOTOR = 2
-    } _mode = DISARMED;
+
 
     bool _setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min_us, float pwm_max_us);
     void _set_output(uint8_t idx, float value);  //unconditional set output - no armed check

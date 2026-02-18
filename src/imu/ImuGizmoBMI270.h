@@ -27,7 +27,7 @@ SOFTWARE.
 #pragma once
 
 #include "imu.h"
-#include <SPI.h> //TODO remove this
+#include <SPI.h>
 
 
 //Global array that stores the configuration file of BMI270

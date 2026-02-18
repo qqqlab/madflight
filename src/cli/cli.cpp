@@ -191,7 +191,7 @@ static void cli_ppid() {
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", out.armed());
+  Serial.printf("out.armed:%d\t", (int)out.mode());
   for(int i = 0; i < OUT_SIZE; i++) {
     if(out.type(i)) {
       Serial.printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
@@ -344,7 +344,7 @@ bool Cli::update_MODE_CLI() {
     // MSP check
     //---------------------------
     //switch to MSP if we received a MSP command
-    if(Msp::process_byte(c)) {
+    if(Msp::process_byte(c, false)) {
       cli_mode = MODE_MSP;
       return update_MODE_MSP(); //process remaining chars in serial buffer
     }
@@ -392,7 +392,7 @@ bool Cli::update_MODE_MSP() {
     }
 
     //process MSP character
-    rv = Msp::process_byte(c);
+    rv = Msp::process_byte(c, true);
     last_msp_rv = rv;
   }
   return rv;

@@ -286,7 +286,7 @@ void _imu_ll_interrupt_handler();
         int callcore = hal_get_core_num();
         int othercore = (callcore + 1) % 2;
         
-        //TODO move this to hal
+        //MF_TODO move this to hal
         #if defined ARDUINO_ARCH_ESP32
           //note: probably don't what to use this because of single FPU context switching issues...
           xTaskCreatePinnedToCore(_imu_ll_task, "mf_IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]

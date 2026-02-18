@@ -13,21 +13,22 @@ MIT license - Copyright (c) 2023-2026 https://madflight.com
 #include <madflight.h> // Include the library, do this after madflight_config 
 
 void setup() {
-  // Setup madflight modules and start IMU, BBX, RCL, CLI, and SENSORS rtos tasks
+  // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
   madflight_setup();
+
   Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }
 
 void loop() {
-  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
-  delay(10);
+  // Nothing to do here for madflight, you can add your code here.
+  delay(1000); //this delay() prevents empty loop wasting processor time, give this time to other tasks
 }
 
 // This function is called from the IMU task when fresh IMU data is available.
 void imu_loop() {
-  // Toggle led on every 1000 samples (E.g. 1 second peroid at 1000Hz sample rate)
+  // Toggle led on every 1000 samples (E.g. 1 second period at 1000Hz sample rate)
   if(imu.update_cnt % 1000 == 0) led.toggle();
 
-  // AHRS sensor fusion -  type 'pahr' in CLI to see results
+  // AHRS sensor fusion - type 'pahr' in CLI to see results
   ahr.update();
 }
