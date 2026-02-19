@@ -83,6 +83,11 @@ void MsgBroker::reset_stats() {
 //=============================================================================
 // MsgTopicBase
 //=============================================================================
+MsgTopicBase::MsgTopicBase(const char* name) {
+  strncpy(this->name, name, sizeof(this->name) - 1);
+  this->name[sizeof(this->name) - 1] = 0;
+}
+
 void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
     if(!sub_list[i]) {
@@ -114,9 +119,6 @@ int MsgTopicBase::subscriber_count() {
 //=============================================================================
 // MsgSubscriptionBase
 //=============================================================================
-bool MsgSubscriptionBase::updated() {
-    return (generation != topic->generation);
-}
 
 MsgSubscriptionBase::MsgSubscriptionBase(const char *name, MsgTopicBase *topic) : topic{topic} {
     strncpy(this->name, name, sizeof(this->name) - 1);
@@ -128,16 +130,29 @@ MsgSubscriptionBase::~MsgSubscriptionBase() {
     topic->remove_subscription(this);
 }
 
+
+//returns true if new msg available
+bool MsgSubscriptionBase::updated() { 
+  return (generation != topic->generation);
+}
+
 //pull message: returns true if msg was pulled, returns false if no msg available
 bool MsgSubscriptionBase::pull(void *msg) {
-    if(!topic->pull(msg)) return false;
-    generation = topic->generation;
+    if(!topic->pull(msg, &generation)) return false;
     stat_pull_cnt++;
-    return true; //NOTE: retrieved msg might be older than this->generation
+    return true;
 }
 
 //pull updated message: returns true when updated msg available, else returns false and does not update msg 
 bool MsgSubscriptionBase::pull_updated(void *msg) {
     if(!updated()) return false;
     return pull(msg);
+}
+
+//pull last message: returns true if msg was pulled, returns false if no msg available
+bool MsgSubscriptionBase::pull_last(void *msg) {
+    generation = topic->generation - 1;
+    if(!topic->pull(msg, &generation)) return false;
+    stat_pull_cnt++;
+    return true;
 }

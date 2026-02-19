@@ -90,7 +90,7 @@ class Imu : public ImuState {
   public:
     ImuConfig config;
     ImuGizmo *gizmo = nullptr;
-    MsgTopic<ImuState> topic = MsgTopic<ImuState>("imu");
+    MsgTopic<ImuState> topic = MsgTopic<ImuState>("imu", 10); //10-deep fifo
 
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if state was updated
