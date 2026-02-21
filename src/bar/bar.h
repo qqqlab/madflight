@@ -25,10 +25,8 @@ SOFTWARE.
 #pragma once
 
 #include "../hal/MF_I2C.h"
-#include "../hal/MF_Schedule.h"
 #include "../cfg/cfg.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //MF_Schedule, RuntimeTrace, MsgBroker
 
 struct __attribute__((aligned(4))) BarState {
   public:

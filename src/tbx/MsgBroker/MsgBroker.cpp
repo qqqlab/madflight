@@ -55,8 +55,8 @@ void MsgBroker::top() {
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = topic_list[i];
     if(t) {
-      uint32_t t_dgen = t->generation - t->stat_generation;
-      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->generation, (int)t_dgen);
+      uint32_t t_dgen = t->get_generation() - t->stat_generation;
+      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->get_generation(), (int)t_dgen);
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->sub_list[j];
         if(s) Serial.printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->stat_pull_cnt / dt, (int)s->generation, (int)s->stat_pull_cnt, (int)(t_dgen - s->stat_pull_cnt));
@@ -71,7 +71,7 @@ void MsgBroker::reset_stats() {
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = topic_list[i];
     if(t) {
-      t->stat_generation = t->generation;
+      t->stat_generation = t->get_generation();
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->sub_list[j];
         if(s) s->stat_pull_cnt = 0;
@@ -86,6 +86,7 @@ void MsgBroker::reset_stats() {
 MsgTopicBase::MsgTopicBase(const char* name) {
   strncpy(this->name, name, sizeof(this->name) - 1);
   this->name[sizeof(this->name) - 1] = 0;
+  MsgBroker::add_topic(this);
 }
 
 void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
@@ -133,12 +134,12 @@ MsgSubscriptionBase::~MsgSubscriptionBase() {
 
 //returns true if new msg available
 bool MsgSubscriptionBase::updated() { 
-  return (generation != topic->generation);
+  return (generation != topic->get_generation());
 }
 
 //pull message: returns true if msg was pulled, returns false if no msg available
-bool MsgSubscriptionBase::pull(void *msg) {
-    if(!topic->pull(msg, &generation)) return false;
+bool MsgSubscriptionBase::pull_next(void *msg) {
+    if(!topic->pull_next(msg, &generation)) return false;
     stat_pull_cnt++;
     return true;
 }
@@ -146,13 +147,13 @@ bool MsgSubscriptionBase::pull(void *msg) {
 //pull updated message: returns true when updated msg available, else returns false and does not update msg 
 bool MsgSubscriptionBase::pull_updated(void *msg) {
     if(!updated()) return false;
-    return pull(msg);
+    return pull_next(msg);
 }
 
 //pull last message: returns true if msg was pulled, returns false if no msg available
 bool MsgSubscriptionBase::pull_last(void *msg) {
-    generation = topic->generation - 1;
-    if(!topic->pull(msg, &generation)) return false;
+    generation = topic->get_generation() - 1;
+    if(!topic->pull_next(msg, &generation)) return false;
     stat_pull_cnt++;
     return true;
 }

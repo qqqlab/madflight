@@ -33,8 +33,7 @@ SOFTWARE.
 #include <SPI.h>
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 //default settings
 #ifndef IMU_GYRO_DPS

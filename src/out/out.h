@@ -28,7 +28,7 @@ SOFTWARE.
 #define OUT_MOT_TIMEOUT 250000 //switch motors off 250ms after last set received
 
 #include "../hal/hal.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 struct __attribute__((aligned(4))) OutState {
   public:
