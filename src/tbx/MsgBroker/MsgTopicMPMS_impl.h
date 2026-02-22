@@ -36,13 +36,13 @@ template <typename T>
 class MsgTopicMPMS : public MsgTopicBase {
 private:
   struct cell_t {
-    std::atomic<uint32_t>   seq;
+    std::atomic<uint32_t>   gen; //cell generation
     T                       msg;
   };
 
   cell_t* const             buf;
   uint32_t const            buf_mask;
-  std::atomic<uint32_t>     wpos;
+  std::atomic<uint32_t>     topic_gen; //topic generation
 
   static inline uint32_t nextPowerOfTwo(uint32_t buffer_size) {
     uint32_t result = buffer_size - 1;
@@ -53,17 +53,18 @@ private:
   }
 
 public:
-  MsgTopicMPMS(uint32_t buffer_size)
+  MsgTopicMPMS(char * name, uint32_t buffer_size)
     : buf(new cell_t [nextPowerOfTwo(buffer_size)])
     , buf_mask(nextPowerOfTwo(buffer_size) - 1)
+    , MsgTopicBase(name)
   {
     buffer_size = buf_mask + 1;
     assert((buffer_size >= 2) && ((buffer_size & (buffer_size - 1)) == 0));
-    //set seq to -4, -3, -2, 1 for size==4
+    //write valid gen: i.e. buf[0].gen=-4, [1]=-3, [2]=-2, [3]=-1 for size==4
     for (uint32_t i = 0; i != buffer_size; i += 1) {
-      buf[i].seq.store(i - buffer_size, std::memory_order_relaxed); 
+      buf[i].gen.store(i - buffer_size, std::memory_order_relaxed); 
     }
-    wpos.store(0, std::memory_order_relaxed);
+    topic_gen.store(0, std::memory_order_relaxed);
   }
 
   ~MsgTopicMPMS() {
@@ -75,73 +76,50 @@ public:
   }
 
   uint32_t get_generation() override {
-    return wpos.load(std::memory_order_relaxed);
+    return topic_gen.load(std::memory_order_relaxed);
   }
 
   //publish a message, returns the published message generation
   uint32_t publish(void* msg) override {
     for (;;) {
-      uint32_t pos = wpos.load(std::memory_order_relaxed);
-      cell_t* cell = &buf[pos & buf_mask];
-      uint32_t seq = cell->seq.load(std::memory_order_acquire);
-      if (seq + buf_mask + 1 == pos) { //seq is size behind pos (buf_mask + 1 = size)
-        if (wpos.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)) {
-          cell->seq.store(pos + 1, std::memory_order_release); //invalidate seq
-          memcpy(&cell->msg, msg, sizeof(T));
-          cell->seq.store(pos, std::memory_order_release);
-          return pos + 1;
+      uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
+      cell_t* cell = &buf[tgen & buf_mask];
+      uint32_t cgen = cell->gen.load(std::memory_order_acquire);
+      if (cgen + buf_mask + 1 == tgen) { //cgen should be buf_size behind tgen (buf_size = buf_mask + 1), if not then another thread published while we read tgen and cgen
+        if (topic_gen.compare_exchange_weak(tgen, tgen + 1, std::memory_order_relaxed)) { //increase topic_gen, this invalidates buf[tgen].gen
+          memcpy(&cell->msg, msg, sizeof(T)); //write msg data to cell
+          cell->gen.store(tgen, std::memory_order_release); //write valid buf[tgen].gen
+          return tgen + 1; //return the topic_gen
         };
       }
     }
   }
 
-  //pull next message from fifo buffer (subscriber_gen+1), if not found then pull closest gen in fifo buffer
-  //returns false if no message in buffer, otherwise returns true, msg, and updated subscriber_gen
+  //pull message with topic_gen == subscriber_gen+1, if not found then pull closest topic_gen available in buffer
+  //returns true, msg, and updated subscriber_gen if publish() was called at least once, else returns false and unmodified msg, subscriber_gen
   bool pull_next(void* msg, uint32_t *subscriber_gen) override {
     for (;;) {
-      //find pos for generation
-      uint32_t pos = wpos.load(std::memory_order_relaxed);
-      if(pos == 0) return false; //will miss a pull every 4,000,000,000 publishes...
+      uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
+      if(tgen == 0) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
 
-      //find pos for generation
-      uint32_t depth = pos - (*subscriber_gen + 1);
-      if( (int32_t)depth < 0) depth = 0; 
-      if( depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET;
-      pos -= depth + 1; //pos is post-incremented on publish
+      //find tgen for subscriber_gen+1
+      uint32_t depth = tgen - (*subscriber_gen + 1);
+      if( (int32_t)depth < 0) depth = 0; //subscriber_gen+1 > topic_gen -> look for depth = 0 (newest topic_gen in buffer)
+      if( depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET; //subscriber_gen+1 <= topic_gen-buf_size -> look for depth = buf_size-1 (oldest topic_gen in buffer)
+      tgen -= depth + 1; //tgen is post-incremented on publish, so decrement tgen by 1 here
 
-      //pull msg from cell at pos
-      cell_t* cell = &buf[pos & buf_mask]; 
-      uint32_t seq1 = cell->seq.load(std::memory_order_acquire);
-      if(seq1 == pos) {
-        memcpy(msg, &cell->msg, sizeof(T));
-        uint32_t seq2 = cell->seq.load(std::memory_order_acquire);
-        if(seq2 == pos) { //exit if msg is consistent
-          *subscriber_gen = pos + 1; //set subscriber_gen to the generation we retrieved
+      //pull msg from buf[tgen]
+      cell_t* cell = &buf[tgen & buf_mask]; 
+      uint32_t cgen1 = cell->gen.load(std::memory_order_acquire);
+      if(cgen1 == tgen) { //check cell.gen
+        memcpy(msg, &cell->msg, sizeof(T)); //retrieve msg data from cell
+        uint32_t cgen2 = cell->gen.load(std::memory_order_acquire);
+        if(cgen2 == tgen) { //if cell.gen did not change, then msg is consistent
+          *subscriber_gen = tgen + 1; //set subscriber_gen to the topic_gen we retrieved
           return true; 
         }
       }
     }
   }
-
-/*
-  bool pull(T& msg, uint32_t generation) {
-    for (;;) {
-      //find pos for generation
-      uint32_t pos = wpos.load(std::memory_order_relaxed);
-      uint32_t depth = pos - generation;
-      if( (int32_t)depth < 0 || depth > buf_mask ) return false; //generation not available in buffer
-      pos -= depth + 1; //pos is post-incremented on publish
-
-      //pull msg from cell at pos
-      cell_t* cell = &buf[pos & buf_mask]; 
-      uint32_t seq1 = cell->seq.load(std::memory_order_acquire);
-      if(seq1 == pos) {
-        memcpy(&msg, &cell->msg, sizeof(T));
-        uint32_t seq2 = cell->seq.load(std::memory_order_acquire);
-        if(seq2 == pos) return true; //exit if msg is consistent
-      }
-    }
-  }
-*/
 
 };
