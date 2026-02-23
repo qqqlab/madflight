@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2026 https://madflight.com
+Copyright (c) 2023-2025 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +22,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//Driver for LSM6DSV, LSM6DSV16X gyroscope/accelometer
+/* simple scheduler, keeping exact sampling period
+
+example usage:
+
+MF_Schedule schedule;
+
+if(schedule.interval(1000)) {
+  //this code is called every 1000 us
+}
+
+*/
 
 #pragma once
 
-#include <SPI.h>
-#include "../common/SensorDevice.h"
+#include <Arduino.h>
 
-class LSM6DSV {
+class MF_Schedule {
+private:
+  uint32_t ts = 0;
+
 public:
-  const int actual_sample_rate_hz = 1000; //MF_TODO: allow variable sample rate
-  const float acc_scale = 1.0 / 2048.0; //Accel scale +/-16g, 16bit, 2048 LSB/g
-  const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
-
-  static bool detect(SensorDevice* dev) {
-    return (dev->readReg(0x0F) == 0x70);
+  MF_Schedule() {
+    ts = micros();
   }
-  int begin(SensorDevice* dev); //returns negative error code, positive warning code, or 0 on success
-  void readraw(int16_t *raw); //read gyr[3],acc[3]
 
-  SensorDevice* dev = nullptr;
+  bool interval(uint32_t interval_us)
+  {
+    uint32_t now = micros();
+    if(now - ts < interval_us) return false;
+    if(now - ts < 2 * interval_us) {
+      ts += interval_us; //keep exact interval_us timing
+    }else{
+      ts = now; //unless we missed an interval
+    }
+    return true;
+  }
 };

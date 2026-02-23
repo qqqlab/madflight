@@ -27,7 +27,7 @@ DTS6012M_UART::DTS6012M_UART()
  */
 bool DTS6012M_UART::begin(MF_Serial *serialPort, int baudRate)
 {
-  baudRate = 921600; //TODO: baud rate change does not work....
+  baudRate = 921600; //MF_TODO: baud rate change does not work....
 
   _serial = serialPort;
 

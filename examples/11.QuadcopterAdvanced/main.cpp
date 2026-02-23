@@ -100,7 +100,7 @@ float yaw_desired = 0;
 //========================================================================================================================//
 
 void setup() {
-  // Setup madflight modules: cli Serial.begin(115200), imu, radio link, led, etc.
+  // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
   madflight_setup();
 
   // STOP if imu is not installed
@@ -130,8 +130,8 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
-  delay(10);
+  // Nothing to do here for madflight, you can add your code here.
+  delay(1000); //this delay() prevents empty loop wasting processor time, give this time to other tasks
 }
 
 //========================================================================================================================//

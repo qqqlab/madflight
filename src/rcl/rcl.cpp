@@ -31,7 +31,7 @@ SOFTWARE.
 //the gizmos
 #include "RclGizmoMavlink.h"
 #include "RclGizmoCrsf.h"
-#include "RclGizmoSbus.h" //TODO need SERIAL_8E2
+#include "RclGizmoSbus.h"
 #include "RclGizmoDsm.h"
 #include "RclGizmoPpm.h"
 #include "RclGizmoIbus.h"

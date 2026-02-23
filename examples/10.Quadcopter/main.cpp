@@ -94,8 +94,8 @@ float yaw_desired = 0;
 //========================================================================================================================//
 
 void setup() {
-  //setup madflight components: Serial.begin(115200), imu, rcin, led, etc. See src/madflight/interface.h for full interface description of each component. 
-  madflight_setup();  
+  // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
+  madflight_setup();
 
   // Enter here the 4 output indices for the motors (default is {0, 1, 2, 3} i.e. pin_out0, pin_out1, pin_out2, pin_out3)
   int motor_outputs[] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front motor
@@ -121,8 +121,8 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
-  delay(10);
+  // Nothing to do here for madflight, you can add your code here.
+  delay(1000); //this delay() prevents empty loop wasting processor time, give this time to other tasks
 }
 
 //========================================================================================================================//

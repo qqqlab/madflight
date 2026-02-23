@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2025 https://madflight.com
+Copyright (c) 2023-2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,39 +21,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
-
-/* simple scheduler, keeping exact sampling period
-
-example usage:
-
-MF_Schedule schedule;
-
-if(schedule.interval(1000)) {
-  //this code is called every 1000 us
-}
-
-*/
-
 #pragma once
 
-class MF_Schedule {
-private:
-  uint32_t ts = 0;
+#include <atomic>
 
-public:
-  MF_Schedule() {
-    ts = micros();
-  }
-
-  bool interval(uint32_t interval_us)
-  {
-    uint32_t now = micros();
-    if(now - ts < interval_us) return false;
-    if(now - ts < 2 * interval_us) {
-      ts += interval_us; //keep exact interval_us timing
-    }else{
-      ts = now; //unless we missed an interval
+class MF_Mutex
+{
+  private:
+    std::atomic_flag lockflag{};
+ 
+  public:
+    bool try_lock() {
+        return !lockflag.test_and_set(std::memory_order_acquire);
     }
-    return true;
-  }
+    void unlock() {
+        lockflag.clear(std::memory_order_release);
+    }
+    bool lock(uint32_t timeout_us) {
+        if(try_lock()) return true;
+        uint32_t ts = millis();
+        while(!try_lock()) {
+          if(millis() - ts >= timeout_us) return false;
+        }
+        return true;
+    }
 };

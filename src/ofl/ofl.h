@@ -25,8 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include "../cfg/cfg.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 struct __attribute__((aligned(4))) OflState {
   public:

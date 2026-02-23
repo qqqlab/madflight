@@ -114,10 +114,15 @@ void Out::set_output(uint8_t idx, float value) {
   //do nothing in testmode
   if(_mode == mode_enum::TESTMOTOR) return;
 
+  //if disarmed set motor to 0
+  if(_mode == mode_enum::DISARMED && is_motor(idx)) {
+    value = 0;
+  }
+
   //set the output
   _set_output(idx, value);
 
-  //report it
+  //publish output message
   if(idx == publish_trigger_idx) {
     topic.publish(this);
   }
@@ -174,8 +179,7 @@ int Out::eperiod_to_rpm(int eperiod, int poles) {
 bool Out::update() {
   //disarm motors after timeout
   if(_mode != mode_enum::DISARMED && micros() - _watchdog_ts >= OUT_MOT_TIMEOUT) {
-    _mode = mode_enum::DISARMED;
-    //TODO - publish disarm
+     _set_mode(mode_enum::DISARMED);
   }
 
   //stop motors when disarmed
@@ -202,7 +206,6 @@ bool Out::_set_mode(mode_enum mode_new) {
   if(mode_new == mode_enum::DISARMED || mode_new == mode_enum::TESTMOTOR || _mode == mode_enum::TESTMOTOR) {
     stop_all_motors();
   }
-  //TODO: publish mode change
   _mode = mode_new;
   return true;
 }

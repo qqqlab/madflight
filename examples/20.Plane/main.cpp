@@ -133,7 +133,7 @@ float rcin_flaps; //flaps 0.0:up, 1.0:full down
 //========================================================================================================================//
 
 void setup() {
-  //setup madflight components: Serial.begin(115200), imu, rcin, led, etc. See src/madflight/interface.h for full interface description of each component. 
+  // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
   madflight_setup();
 
   //Standard servo at 50Hz (set servos first just in case motors overwrite frequency of shared timers)
@@ -150,6 +150,8 @@ void setup() {
   //bool success = out.setup_dshot_bidir(1, {0}, 300);  // Dshot300 Bi-Directional
   //bool success = out.setup_brushed(1, {0}, 5000);     // Brushed motors: 5000Hz with 0-100% duty cycle
 
+  out.print(); //print servo + motor configuration
+
   Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }
 
@@ -158,8 +160,8 @@ void setup() {
 //========================================================================================================================//
 
 void loop() {
-  // Nothing to do here for madflight, delay() yields to Idle Task for clearer CPU usage statistics
-  delay(10);
+  // Nothing to do here for madflight, you can add your code here.
+  delay(1000); //this delay() prevents empty loop wasting processor time, give this time to other tasks
 }
 
 //========================================================================================================================//

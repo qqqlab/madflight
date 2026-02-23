@@ -28,7 +28,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../imu/imu.h"
 #include "../mag/mag.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 struct __attribute__((aligned(4))) AhrState {
   public:

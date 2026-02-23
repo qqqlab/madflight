@@ -29,7 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include <stdint.h> //uint8_t
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 //Vehicle type (corresponding to mavlink MAV_TYPE)
 #define VEH_TYPE_GENERIC 0 //0 MAV_TYPE_GENERIC	Generic micro air vehicle

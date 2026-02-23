@@ -27,7 +27,6 @@ SOFTWARE.
 #include <Arduino.h> //String
 #include "MF_I2C.h"
 #include "MF_Serial.h"
-#include "MF_Schedule.h"
 #include <SPI.h> //Replace this with MF_SPI - but not really needed as RP2,ESP32,STM32 Arduino implementations are compatible
 #if defined ARDUINO_ARCH_ESP32
   #include "ESP32/hal_ESP32.h"

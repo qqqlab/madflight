@@ -193,7 +193,7 @@ void madflight_setup() {
 
   // CLI - Start CLI (Serial) task early in setup, allows for CLI commands while booting
 
-  #ifdef defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
+  #if defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
     // Hack for Adafruit TinyUSB in combination with FreeRTOS: use core1
     int cli_core = 1;
   #else

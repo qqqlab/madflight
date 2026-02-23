@@ -33,8 +33,7 @@ SOFTWARE.
 #include <SPI.h>
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 //default settings
 #ifndef IMU_GYRO_DPS
@@ -90,7 +89,7 @@ class Imu : public ImuState {
   public:
     ImuConfig config;
     ImuGizmo *gizmo = nullptr;
-    MsgTopic<ImuState> topic = MsgTopic<ImuState>("imu");
+    MsgTopic<ImuState> topic = MsgTopic<ImuState>("imu", 10); //10-deep fifo
 
     int setup(); // Use config to setup gizmo, returns 0 on success, or error code
     bool update(); // Returns true if state was updated

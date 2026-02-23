@@ -26,8 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_I2C.h"
 #include "../cfg/cfg.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 struct __attribute__((aligned(4))) BatState {
   public:

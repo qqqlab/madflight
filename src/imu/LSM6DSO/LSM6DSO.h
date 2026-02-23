@@ -31,7 +31,7 @@ SOFTWARE.
 
 class LSM6DSO {
 public:
-  const int actual_sample_rate_hz = 1000; //TODO: allow variable sample rate
+  const int actual_sample_rate_hz = 1000; //MF_TODO: allow variable sample rate
   const float acc_scale = 16.0 / 32768.0; //Accel scale +/-16g, 16bit, 2048 LSB/g
   const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
 

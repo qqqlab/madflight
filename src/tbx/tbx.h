@@ -28,4 +28,5 @@ SOFTWARE.
 #include "RuntimeTrace.h"
 #include "ScheduleFreq.h"
 #include "tbx_crc.h"
-#include "MsgBroker.h"
+#include "MsgBroker/MsgBroker.h"
+#include "MF_Schedule.h"

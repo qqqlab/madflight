@@ -26,8 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_Serial.h"
 #include "../cfg/cfg.h"
-#include "../tbx/RuntimeTrace.h"
-#include "../tbx/MsgBroker.h"
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 /// GPS fix codes.  These are kept aligned with MAVLink
 enum GPS_Status {
