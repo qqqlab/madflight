@@ -305,10 +305,11 @@ void Bbx::log_sys() {
 void Bbx::log_out(OutState *out_s) {
   BinLog bl("OUT");
   bl.TimeUS();
+  bl.u8("armed", out.mode());
   char lbl[3] = {};
   for(int i = 0; i < 8; i++) {
     if(out.type(i)) {
-      lbl[0] = out.type(i);
+      lbl[0] = (out.is_motor(i) ? 'm' : 's');
       lbl[1] = '0' + i;
       lbl[2] = 0;
       bl.i16(lbl, out_s->command[i] * 1000, 1e-3, ""); //range -1000 to +1000
