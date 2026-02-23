@@ -692,10 +692,10 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     if(imu_sub.pull_updated(&imu_s)) {
       ax.append(imu_s.ax);
       ay.append(imu_s.ay);
-      az.append(imu_s.az);
+      az.append(imu_s.az - 1.0); //remove gravitation
       gx.append(imu_s.gx);
       gy.append(imu_s.gy);
-      gz.append(imu_s.gz - 1.0); //remove gravitation
+      gz.append(imu_s.gz); 
     }
   }
 
