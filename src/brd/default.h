@@ -1,5 +1,5 @@
 #if defined ARDUINO_ARCH_ESP32
-  #ifdef CONFIG_IDF_TARGET_ESP32S3
+  #if CONFIG_IDF_TARGET_ESP32S3
     #include "default_ESP32-S3.h"
   #else
     #include "default_ESP32.h"

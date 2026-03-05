@@ -26,6 +26,9 @@ SOFTWARE.
 
 //#pragma once //don't use here, we want to get an error if this file is included twice
 
+#include "madflight_modules.h"
+#include "mag/MagGizmoIMU.h"
+
 extern const char madflight_config[];
 
 #ifdef MF_BOARD
@@ -34,9 +37,6 @@ extern const char madflight_config[];
 #else
   const char madflight_board[] = "";
 #endif
-
-#include "madflight_modules.h"
-#include "mag/MagGizmoIMU.h"
 
 //===============================================================================================
 // madflight_setup()
@@ -61,30 +61,9 @@ const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode
 // Tasks
 //=============================================================================
 
-#if defined ARDUINO_ARCH_ESP32
-  #if ESP_ARDUINO_VERSION_MAJOR <= 2
-    #include <esp_task_wdt.h>
-    void hal_task_wdt_disable() {
-      esp_task_wdt_init(5, false); //disable task watchdog
-    }
-  #else
-    #include <esp_task_wdt.h>
-    void hal_task_wdt_disable() {
-      esp_task_wdt_config_t c;
-      c.timeout_ms = 5000;
-      c.idle_core_mask = 0x03;
-      c.trigger_panic = false;
-      esp_task_wdt_init(&c);
-    }
-  #endif
-#else
-  void hal_task_wdt_disable() {}
-#endif
-
 void rcl_task(void *pvParameters) {
   (void)pvParameters;
   for(;;) {
-    hal_task_wdt_disable();
     rcl.update(); // get rc radio commands
     out.update(); // stop motors on timeout
 
@@ -155,10 +134,13 @@ void sensor_task(void *pvParameters) {
   }
 }
 
+#define mf_xstr(s)              #s
+#define mf_str(s)               mf_xstr(s)
+
 void madflight_setup() {
   // HAL - Detach USB to until SDCARD is setup
   hal_startup();
-  
+
   // CFG - Configuration parameters (execute before delay to start LED + SDCARD)
   cfg.begin();
   #ifdef MF_CONFIG_CLEAR
@@ -215,14 +197,50 @@ void madflight_setup() {
     #endif
   } 
 
-  Serial.printf("Arduino library: " HAL_ARDUINO_STR "\n");
-
+  Serial.println("Arduino library: " HAL_ARDUINO_STR);
   #ifdef MF_BOARD_NAME
     Serial.println("Board: " MF_BOARD_NAME);
   #endif
-
   #ifdef MF_MCU_NAME
     Serial.println("Processor: " MF_MCU_NAME);
+  #endif
+
+  //arduino defines
+  #ifdef ARDUINO_BOARD
+    Serial.println("-D ARDUINO_BOARD=" ARDUINO_BOARD );
+  #endif
+  #ifdef ARDUINO_VARIANT
+    Serial.println("-D ARDUINO_VARIANT=" ARDUINO_VARIANT );
+  #endif
+  #ifdef ARDUINO_HOST_OS
+    Serial.println("-D ARDUINO_HOST_OS=" ARDUINO_HOST_OS ); //only arduino IDE, not PlatformIO
+  #endif
+  #ifdef ARDUINO_FQBN
+    Serial.println("-D ARDUINO_FQBN=" ARDUINO_FQBN ); //only arduino IDE, not PlatformIO
+  #endif
+  #ifdef ARDUINO
+    Serial.println("-D ARDUINO=" mf_str(ARDUINO));
+  #endif
+  #ifdef CORE_DEBUG_LEVEL
+    Serial.println("-D CORE_DEBUG_LEVEL=" mf_str(CORE_DEBUG_LEVEL));
+  #endif
+  #ifdef ARDUINO_RUNNING_CORE
+    Serial.println("-D ARDUINO_RUNNING_CORE=" mf_str(ARDUINO_RUNNING_CORE));
+  #endif
+  #ifdef ARDUINO_EVENT_RUNNING_CORE
+    Serial.println("-D ARDUINO_EVENT_RUNNING_CORE=" mf_str(ARDUINO_EVENT_RUNNING_CORE));
+  #endif
+  #ifdef ARDUINO_USB_MODE
+    Serial.println("-D ARDUINO_USB_MODE=" mf_str(ARDUINO_USB_MODE));
+  #endif
+  #ifdef ARDUINO_USB_CDC_ON_BOOT
+    Serial.println("-D ARDUINO_USB_CDC_ON_BOOT=" mf_str(ARDUINO_USB_CDC_ON_BOOT));
+  #endif
+  #ifdef ARDUINO_USB_MSC_ON_BOOT
+    Serial.println("-D ARDUINO_USB_MSC_ON_BOOT=" mf_str(ARDUINO_USB_MSC_ON_BOOT));
+  #endif
+  #ifdef ARDUINO_USB_DFU_ON_BOOT
+    Serial.println("-D ARDUINO_USB_DFU_ON_BOOT=" mf_str(ARDUINO_USB_DFU_ON_BOOT));
   #endif
 
   // INFO - Rerun CFG to show output after startup delay
@@ -303,7 +321,6 @@ void madflight_setup() {
   gps.setup();
 
   // OUT - Set GPIOs
-  int last_out;
   for(int i = 0; i < 16; i++) {
     int pin = (&cfg.pin_out0)[i]; //pin_out0..15
     out.set_pin(i, pin);

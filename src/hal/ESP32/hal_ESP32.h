@@ -46,11 +46,11 @@
 #define HAL_ARDUINO_STR "Arduino-ESP32 v" mf_df2str(ESP_ARDUINO_VERSION_MAJOR) "." mf_df2str(ESP_ARDUINO_VERSION_MINOR) "." mf_df2str(ESP_ARDUINO_VERSION_PATCH)
 
 #ifndef MF_MCU_NAME
-  #ifdef CONFIG_IDF_TARGET_ESP32S3
+  #if CONFIG_IDF_TARGET_ESP32S3
     #define MF_MCU_NAME "ESP32-S3"
-  #elif defined CONFIG_IDF_TARGET_ESP32
+  #elif CONFIG_IDF_TARGET_ESP32
     #define MF_MCU_NAME "ESP32"
   #else
-    #define MF_MCU_NAME "ESP32 (unsupported type)"
+    #define MF_MCU_NAME "ESP32 (unknown type)"
   #endif
 #endif

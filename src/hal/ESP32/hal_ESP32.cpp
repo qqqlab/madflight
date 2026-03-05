@@ -33,6 +33,7 @@ SOFTWARE.
 #else
   #include <Wire.h>
 #endif
+#include <esp_task_wdt.h> //esp_task_wdt_deinit
 
 //Bus Setup
 MF_I2C    *hal_i2c[HAL_I2C_NUM] = {};
@@ -49,7 +50,22 @@ SPIClass spi1 = SPIClass(VSPI); // VSPI(default) or HSPI
 void hal_eeprom_begin();
 void startLoop1Task();
 
-void hal_startup() {} // USB MSC not implemented for ESP32
+void hal_startup() {
+  // USB MSC not implemented for ESP32
+
+  //disable task watchdog timer
+  esp_err_t x = esp_task_wdt_deinit(); //this should work for arduino-esp32 v3 / IDF 5
+  if(x != ESP_OK) {
+    //this should work for arduino-esp32 v2 / IDF 4
+    TaskHandle_t h = xTaskGetHandle("IDLE0");
+    esp_task_wdt_delete(h);
+    h = xTaskGetHandle("IDLE1");
+    esp_task_wdt_delete(h);    
+    x = esp_task_wdt_deinit();
+    //if(x != ESP_OK) ...failed...
+  }
+}
+
 void hal_usb_setup() {}
 void hal_print_resources() {}
 
