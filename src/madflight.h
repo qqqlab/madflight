@@ -165,6 +165,8 @@ void madflight_setup() {
   bbx.config.pin_mmc_dat = cfg.pin_mmc_dat;
   bbx.config.pin_mmc_clk = cfg.pin_mmc_clk;
   bbx.config.pin_mmc_cmd = cfg.pin_mmc_cmd;
+  bbx.config.bbx_ser_bus = cfg.bbx_ser_bus;
+  bbx.config.bbx_baud = cfg.bbx_baud;
   bbx.setup();
 
   // USB - Start USB-CDC (Serial) and USB-MSC (if sdcard is inserted)
