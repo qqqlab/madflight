@@ -22,24 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
-//Driver for LSM6DSV, LSM6DSV16X gyroscope/accelometer
+//Driver for LSM6DSV16B, LSM6DSV16BX gyroscope/accelometer
 
 #pragma once
 
 #include <SPI.h>
 #include "../common/SensorDevice.h"
 
-class LSM6DSV {
+class LSM6DSV16B {
 public:
   const int actual_sample_rate_hz = 1000; //MF_TODO: allow variable sample rate
   const float acc_scale = 1.0 / 2048.0; //Accel scale +/-16g, 16bit, 2048 LSB/g
   const float gyr_scale = 0.070; // From datasheet: 70mdps/LSB for FS = ±2000 dps (so, actual FS = ±2294)
 
   static bool detect(SensorDevice* dev) {
-    return (dev->readReg(0x0F) == 0x70);
+    return (dev->readReg(0x0F) == 0x71);
   }
   int begin(SensorDevice* dev); //returns negative error code, positive warning code, or 0 on success
-  void readraw(int16_t *raw); //read gx,gy,gz,ax,ay,az
-
+  void readraw(int16_t *raw); //read gx,gy,gz,az,ay,ax - note swapped az,ax
   SensorDevice* dev = nullptr;
 };
