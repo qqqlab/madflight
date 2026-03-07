@@ -29,6 +29,7 @@ SOFTWARE.
 #include "ImuGizmoICM45686.h"
 #include "ImuGizmoICM426XX.h"
 #include "ImuGizmoLSM6DSV.h"
+#include "ImuGizmoLSM6DSV16B.h"
 #include "ImuGizmoLSM6DSO.h"
 #include "ImuGizmoBMI270.h"
 #include "ImuGizmoMPUXXXX.h"
@@ -49,6 +50,7 @@ class ImuGizmoAuto : public ImuGizmo {
           if(!gizmo) gizmo = ImuGizmoICM45686::create(config, state);
           if(!gizmo) gizmo = ImuGizmoICM426XX::create(config, state);
           if(!gizmo) gizmo = ImuGizmoLSM6DSV::create(config, state);
+          if(!gizmo) gizmo = ImuGizmoLSM6DSV16B::create(config, state);
           if(!gizmo) gizmo = ImuGizmoLSM6DSO::create(config, state);
           if(!gizmo) gizmo = ImuGizmoBMI270::create(config, state);
           if(!gizmo) gizmo = ImuGizmoMPUXXXX::create(config, state);
