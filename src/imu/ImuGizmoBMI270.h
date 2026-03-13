@@ -203,8 +203,6 @@ class ImuGizmoBMI270 : public ImuGizmo {
       _spi = spi;
       _csPin = csPin;
 
-      if(who_am_i() != 0x24) return false;
-
       set_gyro_scale_dps(gyro_scale_dps);
       set_acc_scale_g(acc_scale_g);
       set_rate(rate_hz);
@@ -219,6 +217,8 @@ class ImuGizmoBMI270 : public ImuGizmo {
       delay(1);
       digitalWrite(_csPin, HIGH);
       delay(10);
+
+      if(who_am_i() != 0x24) return false;
 
       // Perform a soft reset to set all configuration to default
       // Delay 100ms before continuing configuration
