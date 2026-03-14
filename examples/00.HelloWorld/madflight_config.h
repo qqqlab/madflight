@@ -60,7 +60,7 @@ const char madflight_config[] = R""(
 //bar_i2c_bus   -1
 
 //--- MAG --- Magnetometer
-//mag_gizmo      NONE  // options: NONE, QMC6309, QMC5883L, QMC5883P, RM3100
+//mag_gizmo      NONE  // options: NONE, QMC6309, QMC5883L, QMC5883P, RM3100, BMM150
 //mag_align      CW0   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 //mag_i2c_adr    0
 //mag_i2c_bus   -1
