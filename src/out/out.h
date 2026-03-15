@@ -73,7 +73,7 @@ class Out : public OutState {
     bool setup_dshot(uint8_t cnt, int* idxs, int freq_khz = 300);
     bool setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz = 300);
     bool setup_motors(uint8_t cnt, int* idxs, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
-    bool setup_brushed(uint8_t cnt, int* idxs, int freq_khz);
+    bool setup_brushed(uint8_t cnt, int* idxs, int freq_hz);
     bool setup_motor(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     bool setup_servo(uint8_t idx, int freq_hz = 400, int pwm_min_us = 950, int pwm_max_us = 2000);
     void set_output(uint8_t idx, float value); //set output (when ARMED, ignored in DISARMED and TESTMOTOR mode)
