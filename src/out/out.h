@@ -107,7 +107,7 @@ class Out : public OutState {
     int _dshot_idxs[OUT_SIZE]; //dshot out indices
 
     uint32_t _update_ts = 0;
-    uint32_t _watchdog_ts = 0;
+    volatile uint32_t _watchdog_ts = 0;
 
 
 };

@@ -178,7 +178,11 @@ int Out::eperiod_to_rpm(int eperiod, int poles) {
 
 bool Out::update() {
   //disarm motors after timeout
-  if(_mode != mode_enum::DISARMED && micros() - _watchdog_ts >= OUT_MOT_TIMEOUT) {
+  //snapshot _watchdog_ts before reading micros() - if set_output() updates _watchdog_ts
+  //between these two reads, micros() - wd_ts underflows as unsigned and spuriously trips the timeout
+  uint32_t wd_ts = _watchdog_ts;
+  uint32_t now = micros();
+  if(_mode != mode_enum::DISARMED && now - wd_ts >= OUT_MOT_TIMEOUT) {
      _set_mode(mode_enum::DISARMED);
   }
 
