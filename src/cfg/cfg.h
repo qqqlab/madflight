@@ -196,7 +196,7 @@ SOFTWARE.
   MF_PARAM( bat_i2c_adr,       0, int32_t, 'i') \
 \
   /*BBX - Black Box Data Logger*/ \
-  MF_PARAM( bbx_gizmo,         0, int32_t, 'e', mf_NONE,mf_SDSPI,mf_SDMMC) \
+  MF_PARAM( bbx_gizmo,         0, int32_t, 'e', mf_NONE,mf_SDSPI,mf_SDMMC,mf_OPENLOG) \
   MF_PARAM( bbx_spi_bus,      -1, int32_t, 'i') \
 \
   /*GPS*/ \
@@ -264,6 +264,10 @@ SOFTWARE.
   MF_PARAM( bbx_log_out,     100, int32_t, 'i') /* Max log interval in [Hz] for OUT*/ \
   MF_PARAM( bbx_log_ahr,     100, int32_t, 'i') /* Max log interval in [Hz] for AHR*/ \
   MF_PARAM( bbx_log_rcl,     100, int32_t, 'i') /* Max log interval in [Hz] for RCL*/ \
+\
+  /*v2.3.1 additions */ \
+  MF_PARAM( bbx_ser_bus,      -1, int32_t, 'i') \
+  MF_PARAM( bbx_baud,          0, int32_t, 'i') \
 \
 //end MF_PARAM_LIST
 

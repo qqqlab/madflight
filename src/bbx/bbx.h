@@ -42,12 +42,14 @@ struct BbxConfig {
     int32_t pin_mmc_dat = -1;
     int32_t pin_mmc_clk = -1;
     int32_t pin_mmc_cmd = -1;
+    int32_t bbx_ser_bus = -1;
+    int32_t bbx_baud = 0;
 };
 
 class BbxGizmo {
 public:
   virtual ~BbxGizmo() {}
-  virtual void setup() = 0; //setup the file system (can be called multiple times)
+  virtual void setup() = 0; //setup the gizmo
   
   virtual bool writeOpen() = 0; //create new file for writing (closes previously opened file first)
   virtual void write(const uint8_t *buf, const uint8_t len) = 0; //write to file
@@ -64,7 +66,7 @@ public:
 
 class Bbx {
   private:
-    int gizmo_create();
+    void gizmo_create_sd();
 
   public:
     BbxConfig config;
