@@ -32,9 +32,20 @@ class RclGizmoIbus : public RclGizmo {
         for (uint8_t i=0; i<IBus::MAX_CHANNELS; i++) {
           pwm[i] = ibus.get_channel_value(i);
         }
+        ibus.done_reading_data();
         count++;
-        return true;
       }
-      return false;
+
+      // !!HACK!!
+      // FlySky FS-i6 firmware (https://github.com/qba667/FlySkyI6) failsafe
+      // doesn't seem to actually change channels 1-6 even when set to
+      // failsafe. But channel 9-12 become > 1500 when they are 1500 if unused and
+      // we lost radio link. Just hardcode that and hope no one will ever be in a
+      // situation where all these are > 1500 except on losing radio link in failsafe!
+      // !!HACK!!
+      if (pwm[9] > 1500 && pwm[10] > 1500 && pwm[11] >1500 && pwm[12] > 1500) {
+        return false;
+      }
+      return true;
     }
 };

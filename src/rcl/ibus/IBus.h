@@ -151,6 +151,11 @@ public:
     bool has_new_data() const;
 
     /**
+     * @brief Reset new data available after read is complete
+     */
+    void done_reading_data() { m_data_available_flag = false; }
+
+    /**
      * @brief Get communication statistics
      *
      * @return Statistics structure with various counters
