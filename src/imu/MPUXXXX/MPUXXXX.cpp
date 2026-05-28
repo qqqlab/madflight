@@ -68,8 +68,8 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
         Serial.printf("IMU: WARNING: MPU60X0 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
         _type = AUTO;
     }    
-    if(_type == MPU6500 && wai != 0x70) {
-        Serial.printf("IMU: WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70, attempting autodetect\n",wai);
+    if(_type == MPU6500 && (wai != 0x70 && wai != 0x30)) {
+        Serial.printf("IMU: WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70 or 0x30, attempting autodetect\n",wai);
         _type = AUTO;
     }
     if(_type == MPU9150 && wai != 0x68) {
