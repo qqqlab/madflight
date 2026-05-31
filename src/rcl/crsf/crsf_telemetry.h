@@ -10,6 +10,7 @@ enum class crsf_frame_type_t : uint8_t {
 	rc_channels_packed = 0x16,
 	attitude = 0x1E,
 	flight_mode = 0x21,
+	baro_altitude = 0x09,
 
 	// Extended Header Frames, range: 0x28 to 0x96
 	device_ping = 0x28,
@@ -26,10 +27,33 @@ enum class crsf_payload_size_t : uint8_t {
 	link_statistics = 10,
 	rc_channels = 22, ///< 11 bits per channel * 16 channels = 22 bytes.
 	attitude = 6,
+	baro_altitude = 4,
 };
 
 class CRSF_Telemetry {
 public:
+
+
+/*
+0x09 Barometric altitude
+Payload:
+uint16_t  	Altitude + 10000 ( dm )
+int16_t		Vertical Speed ( cm/s )
+*/
+static int telemetry_altitude(uint8_t *buf, float altitude_m, float vspd_mps)
+{
+	int offset = 0;
+	write_frame_header(buf, offset, crsf_frame_type_t::baro_altitude, (uint8_t)crsf_payload_size_t::baro_altitude);
+        // EdgeTX expects: (alt_m * 10) + 10000
+        uint16_t alt_dm = (uint16_t)((altitude_m * 10.0f) + 10000.0f);
+        write_uint16_t(buf, offset, alt_dm);
+        
+        int16_t vspd_dmps = (int16_t)(vspd_mps * 100.0f);
+        write_uint16_t(buf, offset, (uint16_t) vspd_dmps);
+        
+	write_frame_crc(buf, offset);
+	return offset;
+}
 
 
 /*
