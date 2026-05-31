@@ -48,8 +48,8 @@ static int telemetry_altitude(uint8_t *buf, float altitude_m, float vspd_mps)
         uint16_t alt_dm = (uint16_t)((altitude_m * 10.0f) + 10000.0f);
         write_uint16_t(buf, offset, alt_dm);
         
-        int16_t vspd_dmps = (int16_t)(vspd_mps * 100.0f);
-        write_uint16_t(buf, offset, (uint16_t) vspd_dmps);
+        int16_t vspd_cmps = (int16_t)(vspd_mps * 100.0f);
+        write_uint16_t(buf, offset, (uint16_t) vspd_cmps);
         
 	write_frame_crc(buf, offset);
 	return offset;
