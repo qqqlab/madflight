@@ -10,5 +10,10 @@ jobs:
             - name: rp2040:rp2040
               source-url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
           fqbn: rp2040:rp2040:rpipico:os=freertos,usbstack=tinyusb
+          sketch-paths: |
+            - examples/00.HelloWorld
+            - examples/10.Quadcopter
+            - examples/11.QuadcopterAdvanced
+            - examples/20.Plane
 
 # see https://forum.arduino.cc/t/example-of-core-log-level-using-compile-sketch-github-action/1036161
