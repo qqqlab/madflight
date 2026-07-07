@@ -67,7 +67,7 @@ class PWM
       if(ch < 0) return false;
 
       //calc maximum number of bits
-      int maxbits = log(PWM_CLK_FREQ / freq) / log(2);
+      int maxbits = log(PWM_CLK_FREQ / freq) / log(2) - 1;
       if(maxbits > LEDC_TIMER_BIT_MAX - 1) maxbits = LEDC_TIMER_BIT_MAX - 1;
       //Serial.printf("maxbits=%d\n",maxbits);
 
