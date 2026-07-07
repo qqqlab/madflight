@@ -1,6 +1,6 @@
 /* configuration for M5Stamp Fly v1.0 / v1.1 quadcopter
 
-Specifications:
+Specifications and Pinout:
 
 MCU: ESP32-S3 with 8 MB flash and 0 MB psram
 IMU: BMI270
@@ -8,13 +8,17 @@ BAR: BMP280
 BAT: INA3221AIRGVR (not implemented)
 MAG: BMM150
 BBX: none
-RDR: 2x VL53L3C (not implemented)
-Motors: 4x 716-17600kv
-Buzzer:  (not implemented)
+LED: 2x WS2812 (RGB G39)
+RDR: 2x VL53L3C (not implemented, needs update for enable+shutdown pins: INT_GI G6, INT_XSHUT G7, EXT_GI G8, EXT_XSHUT G9)
+OFL: PMW3901MB-TXQT (not implemented, needs update for shared SPI bus with IMU: CS G12)
+Motors: 4x 716-17600kv (G41, G42, G10, G5)
+Buzzer: (not implemented, BEEP G40)
+Button: (not implented, USER_A G0)
 
 Setup:
 
-Connect your receiver to the Black Grove JST port
+Connect CRSF receiver to the RED Grove port: GND(black) - 5V(red) - ReceiverTX(white) - ReceiverRX(yellow)
+Connect Openlog to the BLACK Grove port: GND(black) - 5V(red) - OpenlogTX(white) - OpenlogRX(yellow)
 
 */
 
@@ -41,7 +45,7 @@ imu_i2c_adr    0       // i2c: enter decimal i2c address, not hex (use 0 for def
 
 //--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
 rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_ser_bus    1     // serial
+rcl_ser_bus    0     // serial
 pin_rcl_ppm   -1     // ppm
 rcl_num_ch     8     // serial and ppm: number of channels
 rcl_deadband   0     // serial and ppm: center stick deadband
@@ -101,12 +105,12 @@ pin_led       39
 ahr_gizmo     MAHONY // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 
 //--- Serial bus 0 ---
-pin_ser0_rx   -1
-pin_ser0_tx   -1
+pin_ser0_rx   13 // Radio Control Link TX (Red Grove SCL - pin 1 - yellow)
+pin_ser0_tx   15 // Radio Control Link RX (Red Grove SDA - pin 2 - white)
 
 //--- Serial bus 1 ---
-pin_ser1_rx   2 // Serial1/uart1 (Radio Control Link) (Black Grove JST - I)
-pin_ser1_tx   1 // Serial1/uart1 (Radio Control Link) (Black Grove JST - O)
+pin_ser1_rx   1 // Openlog TX (Black Grove I - pin 1 - yellow)
+pin_ser1_tx   2 // Openlog RX (Black Grove O - pin 2 - white)
 
 //--- SPI bus 0 ---
 pin_spi0_miso 43
@@ -127,10 +131,10 @@ pin_i2c1_sda  -1
 pin_i2c1_scl  -1
 
 //--- OUT Pins ---
-pin_out0      41
-pin_out1      42
-pin_out2      10
-pin_out3      5
+pin_out0      41 // R-Down (Right Rear Motor)
+pin_out1      42 // L-Up (Right Front Motor)
+pin_out2      10 // L-Down (Left Rear Motor)
+pin_out3      5  // L-Up (Left Front Motor)
 pin_out4      -1
 pin_out5      -1
 pin_out6      -1

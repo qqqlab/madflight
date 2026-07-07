@@ -38,8 +38,8 @@ void loop() {
   #error ESP32_PWM_v3.h needs Arduino-ESP32 version 3 or later, please use Boards Manager to update "esp32"
 #endif  
 
-//Maximum number of PWM outputs - NOTE: some ESP32 chips have less than this
-#define PWM_MAX 16
+//Maximum number of PWM outputs
+#define PWM_MAX LEDC_CHANNEL_MAX //ESP32:16 ESP32-S3:8
 #define PWM_CLK_FREQ 80000000
 
 #include "esp32-hal-ledc.h"
@@ -64,11 +64,11 @@ class PWM
 
       //exit if no free channel
       int ch = findFreeChannel(freq);
-      if(ch<0) return false;
+      if(ch < 0) return false;
 
       //calc maximum number of bits
       int maxbits = log(PWM_CLK_FREQ / freq) / log(2);
-      if(maxbits>LEDC_TIMER_BIT_MAX - 1) maxbits = LEDC_TIMER_BIT_MAX - 1;
+      if(maxbits > LEDC_TIMER_BIT_MAX - 1) maxbits = LEDC_TIMER_BIT_MAX - 1;
       //Serial.printf("maxbits=%d\n",maxbits);
 
       //find maximum number of bits, or exit if less than 7
@@ -84,11 +84,11 @@ class PWM
       ledcWriteChannel(ch, 0);
 
       //store configuration
-      this->ch = ch;
       this->bits = bits;
       this->act_freq = act_freq;
       this->max_duty =  (1<<bits) - 1;
       this->inv_duty_resolution_us = 1.0e-6 * act_freq * (max_duty+1);
+      this->ch = ch; //set ch last, this enables writeMicroseconds()
       channels[ch] = this;
 
       //Serial.printf("-->OK ch=%d bits=%d max_duty=%d resolution=%d ns\n",this->ch,this->bits,this->max_duty,(int)(1e9/((float)this->act_freq*this->max_duty)));
@@ -97,13 +97,14 @@ class PWM
     
     void writeMicroseconds(float us) {
       //Serial.printf("PWM::writeMicroseconds(us=%f))",us);
+      if(ch < 0) return; //exit if channel not configured
       if(us < min_us) us = min_us;
       if(us > max_us) us = max_us;
       int duty = us * inv_duty_resolution_us;
       if(duty < 0) duty = 0;
       if(duty > max_duty) duty = max_duty;
       ledcWriteChannel(ch, duty);
-      //Serial.printf(" --> us=%f duty=%d/%d)\n", us, duty, max_duty);
+      //Serial.printf("out.writeMicroseconds --> ch=%d us=%f duty=%d/%d)\n", ch, us, duty, max_duty);
     };
     
     void writeFactor(float f) {
@@ -120,7 +121,7 @@ class PWM
   private:
     static PWM *channels[PWM_MAX];
     int pin;
-    int ch;
+    int ch = -1;
     int bits;
     int max_duty;
     float min_us;
@@ -134,7 +135,7 @@ class PWM
     //if not found, then find first free timer
     static int findFreeChannel(int freq) {
       //find free channel with other channel in same group with same req_freq
-      for(int i=0;i<PWM_MAX;i++){
+      for(int i = 0; i < PWM_MAX; i++) {
         if(!channels[i]) {
           int other_i = (i % 2 == 0 ? i+1 : i-1);
           PWM *other_ch = channels[other_i];
@@ -144,7 +145,7 @@ class PWM
         }
       }
       //no free channel with matching freq found -> find first free group
-      for(int i=0;i<PWM_MAX;i++){
+      for(int i = 0; i < PWM_MAX; i++) {
         if(!channels[i]) {
           int other_i = (i % 2 == 0 ? i+1 : i-1);
           PWM *other_ch = channels[other_i];

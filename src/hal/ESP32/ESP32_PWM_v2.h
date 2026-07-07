@@ -36,8 +36,8 @@ void loop() {
   #error ESP32_PWM_v2.h needs Arduino-ESP32 version 2 (not a later version), please use Boards Manager to update "esp32"
 #endif  
 
-//Maximum number of PWM outputs - NOTE: some ESP32 chips have less than this
-#define PWM_MAX 16
+//Maximum number of PWM outputs
+#define PWM_MAX 8 //default to 8 (ESP32:16, ESP32-S3:8)
 
 #include "esp32-hal-ledc.h"
 #include "Arduino.h"
@@ -75,17 +75,18 @@ class PWM
       ledcWrite(ch, 0); //start with no output
       ledcAttachPin(pin, ch);
 
-      this->ch = ch;
       this->bits = bits;
       this->act_freq = act_freq;
       this->max_duty =  (1<<bits) - 1;
       this->inv_duty_resolution_us = 1.0e-6 * act_freq * (max_duty+1);
+      this->ch = ch; //set ch last, this enables writeMicroseconds()
       channels[ch] = this;
 
       return true;
     };
     
     void writeMicroseconds(float us) {
+      if(ch < 0) return; //exit if channel not configured
       if(us < min_us) us = min_us;
       if(us > max_us) us = max_us;
       int duty = us * inv_duty_resolution_us;
@@ -108,7 +109,7 @@ class PWM
   private:
     static PWM *channels[PWM_MAX];
     int pin;
-    int ch;
+    int ch = -1;
     int bits;
     int max_duty;
     float min_us;

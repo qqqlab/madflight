@@ -432,7 +432,7 @@ void Cli::help() {
   "-- TOOLS --\n"
   "help or ?           This info\n"
   "ps                  Task list\n"
-  "res                 Resources\n"
+  "res                 Resources (pinout, busses)\n"
   "i2c                 I2C scan\n"
   "serial <bus_id>     Dump serial data\n"
   "spinmotors          Spin each motor\n"

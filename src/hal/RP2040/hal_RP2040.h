@@ -51,7 +51,7 @@ SOFTWARE.
 #include "DshotBidir/DshotBidir.h"
 #include "pio_registry.h"
 
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 512 //stack size in 32bit words
+#define MF_FREERTOS_DEFAULT_STACK_SIZE 1024 //stack size in 32bit words
 
 //Arduino-pico version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR

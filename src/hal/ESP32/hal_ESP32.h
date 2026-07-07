@@ -29,7 +29,7 @@
 #include "Dshot/Dshot.h"
 #include "DshotBidir/DshotBidir.h"
 
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 2048 //stack size on ESP32 is in bytes, not in 32bit words
+#define MF_FREERTOS_DEFAULT_STACK_SIZE 4096 //stack size on ESP32 is in bytes, not in 32bit words
 
 //Arduino version string
 #ifndef ESP_ARDUINO_VERSION_MAJOR
