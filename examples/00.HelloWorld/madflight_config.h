@@ -80,12 +80,14 @@ const char madflight_config[] = R""(
 //gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-//bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC
+//bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC, OPENLOG
 //pin_bbx_cs    -1     // spi
 //bbx_spi_bus   -1     // spi
 //pin_mmc_dat   -1     // mmc
 //pin_mmc_clk   -1     // mmc
 //pin_mmc_cmd   -1     // mmc
+//bbx_ser_bus   -1     // openlog
+//bbx_baud       0     // openlog, use 0 for default 115200 baud
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
 //rdr_gizmo      NONE  // options: NONE, DTS6012M, LD2411S, LD2413, SR04, USD1

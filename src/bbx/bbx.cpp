@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "../madflight_modules.h"
 #include "BinLogWriter.h"
+#include "BbxGizmoOpenlog.h"
 
 //create global module instance
 Bbx bbx;
@@ -38,12 +39,8 @@ Bbx bbx;
   #include "BbxGizmoSdcard_RP2.h"
   #include "../hal/RP2040/pio_registry.h"
 
-  int Bbx::gizmo_create() {
-    //create gizmo
-    delete gizmo;
+  void Bbx::gizmo_create_sd() {
     switch(config.gizmo) {
-      case Cfg::bbx_gizmo_enum::mf_NONE :
-        break;
       case Cfg::bbx_gizmo_enum::mf_SDSPI :
       case Cfg::bbx_gizmo_enum::mf_SDMMC :
         pio_registry_name_unclaimed("1Sdcard");
@@ -51,7 +48,6 @@ Bbx bbx;
         pio_registry_name_unclaimed("Sdcard");
         break;
     }
-    return 0;
   }
 
 #elif defined ARDUINO_ARCH_ESP32
@@ -61,33 +57,22 @@ Bbx bbx;
     #undef BBX_USE_MMC
     #include "BbxGizmoSdspi+Sdmmc_ESP32.h"
 
-  int Bbx::gizmo_create() {
-    //create gizmo
+  void Bbx::gizmo_create_sd() {
     switch(config.gizmo) {
-      case Cfg::bbx_gizmo_enum::mf_NONE :
-        break;
       case Cfg::bbx_gizmo_enum::mf_SDSPI :
         gizmo = new BbxGizmoSdspi(&config);
         break;
       case Cfg::bbx_gizmo_enum::mf_SDMMC :
         gizmo = new BbxGizmoSdmmc(&config);
         break;
-      return -1001;
-        break;
     }
-    return 0;
   }
 
 #else
-  int Bbx::gizmo_create() {
-    if(config.gizmo != Cfg::bbx_gizmo_enum::mf_NONE) {
-      Serial.println("\n" MF_MOD ": ERROR BBX not available for this processor\n");
-      return -1001;
-    }
-    return 0;
+  void Bbx::gizmo_create_sd() {
+    Serial.println("\n" MF_MOD ": ERROR BBX not available for this processor\n");
   }
 #endif
-
 
 int Bbx::setup() {
   cfg.printModule(MF_MOD);
@@ -95,8 +80,17 @@ int Bbx::setup() {
   //create gizmo
   delete gizmo;
   gizmo = nullptr;
-  int rv = gizmo_create();
-  if(rv!=0) return rv;
+  switch(config.gizmo) {
+    case Cfg::bbx_gizmo_enum::mf_NONE :
+      break;
+    case Cfg::bbx_gizmo_enum::mf_SDSPI :
+    case Cfg::bbx_gizmo_enum::mf_SDMMC :
+      gizmo_create_sd();
+      break;
+    case Cfg::bbx_gizmo_enum::mf_OPENLOG :
+      gizmo = BbxGizmoOpenlog::create(&config);
+      break;
+  }
 
   //setup BinLogWriter
   BinLogWriter::setup();

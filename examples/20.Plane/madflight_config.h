@@ -61,6 +61,7 @@ const char madflight_config[] = R""(
 
 //--- MAG --- Magnetometer
 //mag_gizmo      NONE  // options: NONE, QMC6309, QMC5883L, QMC5883P, RM3100, BMM150
+
 //mag_align      CW0   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 //mag_i2c_adr    0
 //mag_i2c_bus   -1
@@ -80,12 +81,14 @@ const char madflight_config[] = R""(
 //gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-//bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC
+//bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC, OPENLOG
 //pin_bbx_cs    -1     // spi
 //bbx_spi_bus   -1     // spi
 //pin_mmc_dat   -1     // mmc
 //pin_mmc_clk   -1     // mmc
 //pin_mmc_cmd   -1     // mmc
+//bbx_ser_bus   -1     // openlog
+//bbx_baud       0     // openlog, use 0 for default 115200 baud
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
 //rdr_gizmo      NONE  // options: NONE, DTS6012M, LD2411S, LD2413, SR04, USD1
