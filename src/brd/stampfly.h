@@ -15,11 +15,6 @@ Motors: 4x 716-17600kv (G41, G42, G10, G5)
 Buzzer: (not implemented, BEEP G40)
 Button: (not implented, USER_A G0)
 
-Setup:
-
-Connect CRSF receiver to the RED Grove port: GND(black) - 5V(red) - ReceiverTX(white) - ReceiverRX(yellow)
-Connect GPS/Openlog to the BLACK Grove port: GND(black) - 5V(red) - OpenlogTX(white)  - OpenlogRX(yellow)
-
 */
 
 #if !ARDUINO_ARCH_ESP32
