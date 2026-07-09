@@ -8,8 +8,6 @@ See http://madflight.com for detailed description (this example is based on the 
 
 NOTE: This program does not work with the M5Stack Joystick and ESP-NOW, you need to connect a separate CRSF/ELRS/SBUS/DSM/PPM radio receiver
 
-Connect radio receiver to the RED Grove port: GND(black) - 5V(red) - ReceiverTX(white) - ReceiverRX(yellow)
-
 Arming/disarming with dedicated switch
 
     Arm: Set throttle low, then flip arm switch from DISARMED to ARMED.
@@ -32,10 +30,32 @@ Fast blinking                          Something is wrong, connect USB serial fo
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-const char madflight_config[] = R""(
-rcl_gizmo CRSF  // configure receiver type (options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM)
-)""; // End of madflight_config
+/*Configuration of the Grove Ports
 
+Grove Port Pinout:
+    pin1 black : GND
+    pin2 red   : 5V
+    pin3 white : Device_TX -> StampFly_RX
+    pin4 yellow: Device_RX <- StampFly_TX
+
+ser_bus 0 is the RED Grove port with 4.7k pullups - DOES NOT WORK with OPENLOG, might work with other devices
+ser_bus 1 is the BLACK Grove port without pullups - should work with all serial devices
+*/
+const char madflight_config[] = R""(
+rcl_gizmo      CRSF // Set receiver type: MAVLINK, CRSF, SBUS, DSM, PPM
+rcl_ser_bus    1    // 0=RED 1=BLACK Grove
+
+//--- Black Box Data Logger --- (uncomment bbx_*** to enable GPS)
+//bbx_gizmo      OPENLOG 
+//bbx_ser_bus    0    // use 0=RED Grove only, does not work with BLACK Grove with pullups
+//bbx_baud       0    // use 0 for default 115200 baud
+
+//--- GPS --- (uncomment gps_*** to enable GPS)
+//gps_gizmo      UBLOX
+//gps_ser_bus    0    // 0=RED 1=BLACK Grove
+//gps_baud       0    // use 0 for auto baud
+
+)""; // End of madflight_config
 #define MF_BOARD "brd/stampfly.h"
 #include <madflight.h>
 
