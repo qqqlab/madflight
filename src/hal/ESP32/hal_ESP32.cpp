@@ -71,39 +71,7 @@ void hal_print_resources() {}
 
 void hal_setup()
 {
-  //Serial BUS uses late binding (i.e. gets created when used)
-
-  //I2C BUS (&Wire, &Wire1)
-  if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
-    #ifdef USE_ESP32_SOFTWIRE
-      SoftWire *i2c = new SoftWire();  //create a ESP32_SoftWire instance
-    #else
-      TwoWire *i2c = &Wire;
-    #endif
-    i2c->begin(cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-    hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
-  }
-  if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
-    #ifdef USE_ESP32_SOFTWIRE
-      SoftWire *i2c = new SoftWire();  //create a ESP32_SoftWire instance
-    #else
-      TwoWire *i2c = &Wire1; 
-    #endif
-    i2c->begin(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-    hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
-  }
-
-  //SPI BUS
-  if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
-    spi0.begin(cfg.pin_spi0_sclk, cfg.pin_spi0_miso, cfg.pin_spi0_mosi);
-    hal_spi[0] = &spi0;
-  }
-  if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
-    spi1.begin(cfg.pin_spi1_sclk, cfg.pin_spi1_miso, cfg.pin_spi1_mosi);
-    hal_spi[1] = &spi1;
-  }
+  //SPI/I2C/Serial busses use late binding (i.e. get created when first used)
 
   hal_eeprom_begin();
 
@@ -207,6 +175,7 @@ void hal_print_pin_name(int pinnum) {
 */
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
+  //exit on invalid bus_id
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
 
   uint32_t config;
@@ -262,18 +231,66 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
   return hal_ser[bus_id];
 }
 
-MF_I2C* hal_get_i2c_bus(int bus_id) { 
-  if(bus_id < 0 || bus_id >= HAL_I2C_NUM) return nullptr;
-  MF_I2C *i2c_bus = hal_i2c[bus_id];
-  if(!i2c_bus) return nullptr;
-  return i2c_bus;
+MF_I2C* hal_get_i2c_bus(int bus_id) {
+  //exit on invalid bus_id
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  //exit when exists
+  if(hal_i2c[bus_id]) hal_i2c[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
+        #ifdef USE_ESP32_SOFTWIRE
+          SoftWire *i2c = new SoftWire();  //create a ESP32_SoftWire instance
+        #else
+          TwoWire *i2c = &Wire;
+        #endif
+        i2c->begin(cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+        hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
+      }
+      break;
+    case 1:
+      if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
+        #ifdef USE_ESP32_SOFTWIRE
+          SoftWire *i2c = new SoftWire();  //create a ESP32_SoftWire instance
+        #else
+          TwoWire *i2c = &Wire1; 
+        #endif
+        i2c->begin(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+        hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
+      }
+      break;
+  }
+  return hal_i2c[bus_id];
 }
 
 SPIClass* hal_get_spi_bus(int bus_id) {
+  //exit on invalid bus_id
   if(bus_id < 0 || bus_id >= HAL_SPI_NUM) return nullptr;
-  SPIClass *spi_bus = hal_spi[bus_id];
-  if(!spi_bus) return nullptr;
-  return spi_bus;
+
+  //exit when exists
+  if(hal_spi[bus_id]) return hal_spi[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
+        spi0.begin(cfg.pin_spi0_sclk, cfg.pin_spi0_miso, cfg.pin_spi0_mosi);
+        hal_spi[0] = &spi0;
+      }
+      break;
+    case 1:
+      if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
+        spi1.begin(cfg.pin_spi1_sclk, cfg.pin_spi1_miso, cfg.pin_spi1_mosi);
+        hal_spi[1] = &spi1;
+      }
+      break;
+  }
+  return hal_spi[bus_id];
 }
 
 void hal_meminfo() {
