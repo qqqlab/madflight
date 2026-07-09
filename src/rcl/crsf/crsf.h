@@ -64,6 +64,8 @@ C8 0C 14 33 00 64 0D 00 04 01 00 00 00 96 --> 0x0c:len 12 bytes (frame len is 14
 #include "../../gps/gps.h"
 #include "../../out/out.h"
 #include "../../veh/veh.h"
+#include "../../bar/bar.h"
+#include "../../alt/alt.h"
 
 #define CRSF_BAUD 420000
 #define CRSF_FRAME_SIZE_MAX 64 //max number of bytes of a frame
@@ -143,6 +145,7 @@ private:
         String fm_str = String(out.armed() ? "*" : "") + (gps.sat>0 ?  String(gps.sat) :  String("")) + veh.flightmode_name();
         telem_flight_mode(fm_str.c_str());  //only first 14 char get transmitted
         telem_attitude(ahr.pitch, ahr.roll, ahr.yaw);  
+        telem_altitude(alt.getH(), alt.getV());
         if(telem_cnt % 10 == 0) telem_battery(bat.v, bat.i, bat.mah, 100);
         if(telem_cnt % 10 == 5) telem_gps(gps.lat, gps.lon, gps.sog/278, gps.cog/1000, (gps.alt<0 ? 0 : gps.alt/1000), gps.sat); // sog/278 is conversion from mm/s to km/h 
       }
@@ -173,6 +176,12 @@ private:
     void telem_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining) {
         uint8_t buf[65];
         int len = CRSF_Telemetry::telemetry_battery(buf, voltage_V, current_A, fuel_mAh, remaining);
+        if((int)ser_bus->availableForWrite() >= len) ser_bus->write(buf, len);
+    }
+    
+    void telem_altitude(float alt, float vs) {
+        uint8_t buf[65];
+        int len = CRSF_Telemetry::telemetry_altitude(buf, alt, vs);
         if((int)ser_bus->availableForWrite() >= len) ser_bus->write(buf, len);
     }
 

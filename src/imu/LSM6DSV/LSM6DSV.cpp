@@ -45,43 +45,46 @@ int LSM6DSV::begin(SensorDevice* dev) {
     // Autoincrement register address when doing block SPI reads and update continuously
     dev->writeReg(LSM6DSV_CTRL3, LSM6DSV_CTRL3_IF_INC | LSM6DSV_CTRL3_BDU);      /*BDU bit need to be set*/
 
-    // Select high-accuracy ODR mode 1
+    // Select high-accuracy ODR mode 1 - 0x62 = 0x01
+    // Note: HAODR mode has to be enabled / disabled when the device is in power-down mode.
     dev->writeReg(LSM6DSV_HAODR_CFG,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_HAODR_MODE1,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_MASK,
                                     LSM6DSV_HAODR_CFG_HAODR_SEL_SHIFT));
 
-    // Enable the accelerometer in high accuracy
+    // Enable the accelerometer in high accuracy - 0x10 = 0x10
+    // Note: HAODR mode has to be enabled / disabled when the device is in power-down mode.
     dev->writeReg(LSM6DSV_CTRL1,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_OP_MODE_XL_HIGH_ACCURACY,
                                     LSM6DSV_CTRL1_OP_MODE_XL_MASK,
                                     LSM6DSV_CTRL1_OP_MODE_XL_SHIFT));
 
-    // Enable the gyro in high accuracy
+    // Enable the gyro in high accuracy - 0x11 = 0x10
+    // Note: HAODR mode has to be enabled / disabled when the device is in power-down mode.
     dev->writeReg(LSM6DSV_CTRL2,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_OP_MODE_G_HIGH_ACCURACY,
                                     LSM6DSV_CTRL2_OP_MODE_G_MASK,
                                     LSM6DSV_CTRL2_OP_MODE_G_SHIFT));
 
-    // Enable 16G sensitivity
+    // Enable 16G sensitivity - 0x17 = 0x03
     dev->writeReg(LSM6DSV_CTRL8,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL8_FS_XL_16G,
                                     LSM6DSV_CTRL8_FS_XL_MASK,
                                     LSM6DSV_CTRL8_FS_XL_SHIFT));
 
-    // Enable the accelerometer odr at 1kHz
+    // Enable the accelerometer odr at 1kHz - 0x10 = 0x09
     dev->writeReg(LSM6DSV_CTRL1,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL1_ODR_XL_1000HZ,
                                     LSM6DSV_CTRL1_ODR_XL_MASK,
                                     LSM6DSV_CTRL1_ODR_XL_SHIFT));
 
-    // Enable the gyro odr at 1kHz
+    // Enable the gyro odr at 1kHz - 0x11 = 0x09
     dev->writeReg(LSM6DSV_CTRL2,
                 LSM6DSV_ENCODE_BITS(LSM6DSV_CTRL2_ODR_G_1000HZ,
                                     LSM6DSV_CTRL2_ODR_G_MASK,
                                     LSM6DSV_CTRL2_ODR_G_SHIFT));
 
-    // Set the LPF1 filter bandwidth - Enable 2000 deg/s sensitivity and selected LPF1 filter setting
+    // Set the LPF1 filter bandwidth - Enable 2000 deg/s sensitivity and selected LPF1 filter setting - 0x15 = 0x04
 /*  filter options
     [LPF_NORMAL] = LSM6DSV_CTRL6_FS_G_BW_288HZ,
     [LPF_OPTION_1] = LSM6DSV_CTRL6_FS_G_BW_157HZ,
@@ -96,13 +99,13 @@ int LSM6DSV::begin(SensorDevice* dev) {
                                     LSM6DSV_CTRL6_FS_G_MASK,
                                     LSM6DSV_CTRL6_FS_G_SHIFT));
 
-    // Enable the gyro digital LPF1 filter
+    // Enable the gyro digital LPF1 filter - 0x16 = 0x01
     dev->writeReg(LSM6DSV_CTRL7, LSM6DSV_CTRL7_LPF1_G_EN);
 
-    // Generate pulse on interrupt line, not requiring a read to clear
+    // Generate pulse on interrupt line, not requiring a read to clear - 0x13 = 0x02
     dev->writeReg(LSM6DSV_CTRL4, LSM6DSV_CTRL4_DRDY_PULSED);
 
-    // Enable the INT1 output to interrupt when new gyro data is ready
+    // Enable the INT1 output to interrupt when new gyro data is ready - 0x0D = 0x02
     dev->writeReg(LSM6DSV_INT1_CTRL, LSM6DSV_INT1_CTRL_INT1_DRDY_G);
 
     // Set full speed
@@ -112,5 +115,5 @@ int LSM6DSV::begin(SensorDevice* dev) {
 }
 
 void LSM6DSV::readraw(int16_t *raw) {
-  dev->readRegs(LSM6DSV_OUTX_L_G, (uint8_t*)raw, 12); //ax,ay,az,gx,gy,gz little endian, no byte juggling needed for RP2,ESP32,STM32
+  dev->readRegs(LSM6DSV_OUTX_L_G, (uint8_t*)raw, 12); //reg 0x22 - gx,gy,gz,ax,ay,az little endian, no byte juggling needed for RP2,ESP32,STM32
 }

@@ -1,23 +1,14 @@
 /*#########################################################################################################################
 
-Minimal quadcopter demo program for madflight Arduino ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32 Flight Controller
+Minimal quadcopter demo program for madflight on a M5Stack StampFly v1.0/v1.1 Quadcopter
 
 ###########################################################################################################################
 
-See http://madflight.com for detailed description
+See http://madflight.com for detailed description (this example is based on the QuadcopterAdvanced example)
 
-Required Hardware
+NOTE: This program does not work with the M5Stack Joystick and ESP-NOW, you need to connect a separate CRSF/ELRS/SBUS/DSM/PPM radio receiver
 
-    IMU sensor (SPI or I2C)
-    RC receiver with 5 channels (CRSF/ELRS preferred)
-    4 brushless motors with ESCs
-
-Connecting Hardware
-
-    SPI IMU: connect pin_imu_int, pin_imu_cs, pin_spi0_miso, pin_spi0_mosi, pin_spi0_sclk
-    or for I2C IMU: connect pin_imu_int, pin_i2c1_scl, pin_i2c1_sda
-    RC receiver: connect pin_ser0_rx to receiver TX pin
-    ESCs: pin_out0 ... pin_out3 to the ESC inputs of motor1 ... motor4
+Connect radio receiver to the RED Grove port: GND(black) - 5V(red) - ReceiverTX(white) - ReceiverRX(yellow)
 
 Arming/disarming with dedicated switch
 
@@ -41,7 +32,11 @@ Fast blinking                          Something is wrong, connect USB serial fo
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
+const char madflight_config[] = R""(
+rcl_gizmo CRSF  // configure receiver type (options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM)
+)""; // End of madflight_config
+
+#define MF_BOARD "brd/stampfly.h"
 #include <madflight.h>
 
 //prototypes (for PlatformIO, not needed for Arduino IDE)
@@ -57,7 +52,7 @@ void out_Mixer();
 //========================================================================================================================//
 
 //IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
-const float armed_min_throttle = 0.20; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
+const float armed_min_throttle = 0.03; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
 
 //Flight Mode: Uncommment only one
 #define FLIGHTMODE_RATE   //control rate - stick centered will keep current roll/pitch angle
@@ -101,11 +96,11 @@ void setup() {
   int motor_outputs[] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front motor
 
   // Uncomment ONE line - select output type
-  bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
+  //bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
   //bool success = out.setup_motors(4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
   //bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
   //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);       // Dshot300 Bi-Directional
-  //bool success = out.setup_brushed(4, motor_outputs, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
+  bool success = out.setup_brushed(4, motor_outputs, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
 
   out.print(); //print motor configuration
   if(!success) madflight_panic("Motor init failed.");

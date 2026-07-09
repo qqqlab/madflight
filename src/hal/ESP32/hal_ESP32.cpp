@@ -277,7 +277,7 @@ SPIClass* hal_get_spi_bus(int bus_id) {
 }
 
 void hal_meminfo() {
-  Serial.printf("MEM: %d bytes minimum free RAM)\n", (int)esp_get_minimum_free_heap_size());
+  Serial.printf("MEM: %d bytes minimum free RAM\n", (int)esp_get_minimum_free_heap_size());
 }
 
 void hal_print_businfo() {

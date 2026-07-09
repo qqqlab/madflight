@@ -25,8 +25,8 @@ class MagGizmoBMM150: public MagGizmo {
 
       //configure sensor
       BMM150_I2C *sensor = new BMM150_I2C(i2c, config->i2c_adr);
-      if(!sensor->begin()) {
-        Serial.printf("RDR: BMM150 init failed.\n");
+      if(sensor->begin() != 0) {
+        Serial.printf("MAG: BMM150 init failed.\n");
         delete sensor;
         return nullptr;
       }

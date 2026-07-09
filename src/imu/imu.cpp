@@ -107,6 +107,10 @@ int Imu::setup() {
       gizmo = ImuGizmoLSM6DSO::create(&config, (ImuState*)this);
       break;
     }
+    case Cfg::imu_gizmo_enum::mf_LSM6DSV16B : {
+      gizmo = ImuGizmoLSM6DSV16B::create(&config, (ImuState*)this);
+      break;
+    }
   }
 
   //check gizmo

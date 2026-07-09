@@ -31,10 +31,17 @@ SOFTWARE.
 
 extern const char madflight_config[];
 
+#ifdef MF_BOARD_OVERRIDE
+  #ifdef MF_BOARD
+    #undef MF_BOARD
+  #endif
+  #define MF_BOARD MF_BOARD_OVERRIDE
+#endif
 #ifdef MF_BOARD
   //the board header file must define const char madflight_board[] and should define MF_BOARD_NAME, MF_MCU_NAME
   #include MF_BOARD
 #else
+  #define MF_BOARD "<NONE>"
   const char madflight_board[] = "";
 #endif
 
@@ -186,7 +193,7 @@ void madflight_setup() {
     // Other platforms: use core0
     int cli_core = 0;
   #endif
-  hal_xTaskCreate(cli_task, "mf_CLI", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, cli_core); 
+  hal_xTaskCreate(cli_task, "mf_CLI", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, cli_core); 
 
   // Delay - 6 second startup delay
   for(int i = 12; i > 0; i--) {
@@ -200,11 +207,14 @@ void madflight_setup() {
   } 
 
   Serial.println("Arduino library: " HAL_ARDUINO_STR);
+  #ifdef MF_BOARD
+    Serial.println("Board File (MF_BOARD): " MF_BOARD);
+  #endif
   #ifdef MF_BOARD_NAME
-    Serial.println("Board: " MF_BOARD_NAME);
+    Serial.println("Board Name (MF_BOARD_NAME): " MF_BOARD_NAME);
   #endif
   #ifdef MF_MCU_NAME
-    Serial.println("Processor: " MF_MCU_NAME);
+    Serial.println("Processor (MF_MCU_NAME): " MF_MCU_NAME);
   #endif
 
   //arduino defines
@@ -268,7 +278,7 @@ void madflight_setup() {
   rcl.setup(); //Initialize radio communication.
 
   // RCL - Start RCL task on core0
-  hal_xTaskCreate(rcl_task, "mf_RCL", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
+  hal_xTaskCreate(rcl_task, "mf_RCL", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
 
   // BAR - Barometer
   bar.config.gizmo = (Cfg::bar_gizmo_enum)cfg.bar_gizmo; //the gizmo to use
@@ -329,7 +339,7 @@ void madflight_setup() {
   }
 
   // Start Sensor task on core0 after all sensor (except IMU) have been initialized
-  hal_xTaskCreate(sensor_task, "mf_SENSOR", 2 * MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
+  hal_xTaskCreate(sensor_task, "mf_SENSOR", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), NULL, 0);
 
   // ALT - Altitude Estimator
   if(rdr.installed()) {

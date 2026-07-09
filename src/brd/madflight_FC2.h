@@ -2,7 +2,7 @@
 
 Specifications:
 
-MCU: ESP32-S3 with 4 MB flash and 2MB psram
+MCU: ESP32-S3-FH4R2 with 4 MB flash and 2MB psram
 IMU: ICM-42688-P (spi)
 BAR: HP203B (spi)
 BAT: INA226 (spi)
@@ -25,7 +25,7 @@ S1-S4 (GPIO1-4) as ESC outputs
 #if !ARDUINO_ARCH_ESP32
   #error "Invalid Arduino Architecture: Select ESP32-Arduino"
 #elif !CONFIG_IDF_TARGET_ESP32S3
-  #error "Invalid board: Select board 'ESP32S3 Dev Module'"
+  #error "Invalid board: Select board 'ESP32S3 Dev Module' in Arduino IDE, or set 'board=esp32-s3-fh4r' for platformio/pioarduino"
 #endif
 
 #define MF_BOARD_NAME "madflight FC2"

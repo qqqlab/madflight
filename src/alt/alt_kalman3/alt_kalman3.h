@@ -35,9 +35,15 @@ protected:
 public:
   void setup(float alt) {
     //default parameters (see usage.txt)
-    float altCov = 0.2;  //measured stdev BME280 = 0.4 [m] -> cov = 0.4*0.4 = 0.16
-    float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G] = 0.03 [m/s2] -> cov = 0.03*0.03 = 0.0009
-    float biasCov = 0.1; //estimated 3% * 9.81 = 0.3 [m/s2]  -> cov = 0.3*0.3 = 0.09
+    //float altCov = 0.2;  //measured stdev BME280 = 0.4 [m] -> cov = 0.4*0.4 = 0.16
+    //float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G] = 0.03 [m/s2] -> cov = 0.03*0.03 = 0.0009
+    //float biasCov = 0.1; //estimated 3% * 9.81 = 0.3 [m/s2]  -> cov = 0.3*0.3 = 0.09
+    
+    // The following values work substantially better for altitude estimation for a BMP280/MPU6500 combo
+    // resulting in vertical speeds noise within 0.3 m/s, compared to ~2m/s.
+    float altCov = 40;   
+    float accCov = 0.05;  
+    float biasCov = 0.0005; 
 
     Serial.printf("ALT: KALMAN3  altCov=%f accCov=%f biasCov=%f\n", altCov, accCov, biasCov);
 
