@@ -243,32 +243,32 @@ private:
     #ifdef BBX_USE_MMC
       if (config->pin_mmc_clk < 0 || config->pin_mmc_cmd < 0 || config->pin_mmc_dat < 0) {
         Serial.println("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins");
-        return setup_done;
+        return false;
       }
       _BB_SDFS.setPins(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat);
       if (!_BB_SDFS.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
         Serial.println("BBX: SDMMC Card Mount Failed");
-        return setup_done;
+        return false;
       }
     #else
       if (config->spi_cs <= 0 || !config->spi_bus) {
         Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
-        return setup_done;
+        return false;
       }
       if (!_BB_SDFS.begin(config->spi_cs, *config->spi_bus)) {
         Serial.println("BBX: SDSPI Card Mount Failed");
-        return setup_done;
+        return false;
       }
     #endif
 
     uint8_t cardType = _BB_SDFS.cardType();
     if(cardType == CARD_NONE){
       Serial.println("BBX:   No SD card attached");
-      return setup_done;
+      return false;
     }
 
     setup_done = true;
-    return setup_done;
+    return true;
   }
 
   bool sd_listDir(const char * dirname, uint8_t levels = 0){
