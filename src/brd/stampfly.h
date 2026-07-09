@@ -18,7 +18,7 @@ Button: (not implented, USER_A G0)
 Setup:
 
 Connect CRSF receiver to the RED Grove port: GND(black) - 5V(red) - ReceiverTX(white) - ReceiverRX(yellow)
-Connect Openlog to the BLACK Grove port: GND(black) - 5V(red) - OpenlogTX(white) - OpenlogRX(yellow)
+Connect GPS/Openlog to the BLACK Grove port: GND(black) - 5V(red) - OpenlogTX(white)  - OpenlogRX(yellow)
 
 */
 
@@ -44,8 +44,8 @@ imu_i2c_bus    -1      // i2c
 imu_i2c_adr    0       // i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
 //--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_ser_bus    0     // serial
+rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
+rcl_ser_bus   -1     // serial
 pin_rcl_ppm   -1     // ppm
 rcl_num_ch     8     // serial and ppm: number of channels
 rcl_deadband   0     // serial and ppm: center stick deadband
@@ -76,12 +76,14 @@ gps_baud       0     // use 0 for auto baud
 gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC
+bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC, OPENLOG
 pin_bbx_cs    -1     // spi
 bbx_spi_bus   -1     // spi
 pin_mmc_dat   -1     // mmc
 pin_mmc_clk   -1     // mmc
 pin_mmc_cmd   -1     // mmc
+bbx_ser_bus   -1     // openlog
+bbx_baud       0     // openlog, use 0 for default 115200 baud
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
 rdr_gizmo      NONE  // options: NONE, DTS6012M, LD2411S, LD2413, SR04, USD1
@@ -91,11 +93,11 @@ pin_rdr_trig  -1     // trig+echo
 pin_rdr_echo  -1     // trig+echo
 
 //--- OFL --- Optical FLow (use serial bus -OR- spi bus)
-ofl_gizmo      PMW3901  // options: NONE, PMW3901, PMW3901U
+ofl_gizmo      NONE //XXX TODO PMW3901  // options: NONE, PMW3901, PMW3901U
 ofl_ser_bus    -1       // serial
 ofl_baud       0        // serial, use 0 for default baud
-ofl_spi_bus    0        // spi
-pin_ofl_cs     12       // spi
+ofl_spi_bus    -1   //XXX TODO 0       // spi
+pin_ofl_cs     -1   //XXX TODO 12       // spi
 
 //--- LED ---
 led_gizmo     RGB   // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
@@ -105,12 +107,12 @@ pin_led       39
 ahr_gizmo     MAHONY // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 
 //--- Serial bus 0 ---
-pin_ser0_rx   13 // Radio Control Link TX (Red Grove SCL - pin 1 - yellow)
-pin_ser0_tx   15 // Radio Control Link RX (Red Grove SDA - pin 2 - white)
+pin_ser0_rx   13 // RED Grove "SDA" with 4.7k pullup - connector pin 3 - white
+pin_ser0_tx   15 // RED Grove "SCL" with 4.7k pullup - connector pin 4 - yellow
 
 //--- Serial bus 1 ---
-pin_ser1_rx   1 // Openlog TX (Black Grove I - pin 1 - yellow)
-pin_ser1_tx   2 // Openlog RX (Black Grove O - pin 2 - white)
+pin_ser1_rx   2 // BLACK Grove "O" - connector pin 3 - white
+pin_ser1_tx   1 // BLACK Grove "I" - connector pin 4 - yellow
 
 //--- SPI bus 0 ---
 pin_spi0_miso 43

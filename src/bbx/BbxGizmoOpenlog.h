@@ -32,6 +32,7 @@ private:
   BbxConfig *config;
   MF_Serial *ser;
   BbxGizmoOpenlog() {} //private constructor
+  int bytesWritten = 0;
 
 public:
   static BbxGizmoOpenlog* create(BbxConfig *config) {
@@ -49,10 +50,11 @@ public:
 
   void write(const uint8_t *buf, const uint8_t len) override {
     ser->write((uint8_t*)buf, len);
+    bytesWritten += len;
   }
 
   void printSummary() override {
-    Serial.printf("BBX: Openlog on serial%d at %d baud\n", config->bbx_ser_bus, config->bbx_baud);
+    Serial.printf("BBX: OPENLOG - bus:serial%d baud:%d written:%d bytes\n", config->bbx_ser_bus, config->bbx_baud, bytesWritten);
   }
 
   void info() override {
@@ -63,10 +65,31 @@ public:
     return true;
   }
 
-  void setup() override {}
-  void close() override {}
-  void erase() override {}
-  void dir() override {}
-  void bench() override {}
-  int read(const char* filename, uint8_t **data) override {return 0;}
+  void setup() override {
+  }
+
+  void close() override {
+  }
+
+  void erase() override {
+    notSupported();
+  }
+
+  void dir() override {
+    notSupported();
+  }
+
+  void bench() override {
+    notSupported();
+  }
+
+  int read(const char* filename, uint8_t **data) override {
+    return 0;
+  }
+
+private:
+  void notSupported() {
+    printSummary();
+    Serial.printf("BBX: OPENLOG - command not supported\n");
+  }
 };
