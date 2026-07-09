@@ -30,10 +30,15 @@ def convert(filename) :
             return 0
     
     #in and output files
-    infile           = source_dirname + "/" + filename
+    filename         = os.path.basename(filename)
+    infile           = os.path.realpath(os.path.join(source_dirname, filename))
+    if not infile.startswith(os.path.realpath(source_dirname) + os.sep):
+        return
     strippedfilename = re.sub(r"(.config$)", r"", filename)
     outfilename      = destination_prefix + strippedfilename + ".h"
-    outfile          = destination_path + outfilename
+    outfile          = os.path.realpath(os.path.join(destination_path, outfilename))
+    if not outfile.startswith(os.path.realpath(destination_path) + os.sep):
+        return
 
     #read lines from infile
     f = open(infile,"r")
