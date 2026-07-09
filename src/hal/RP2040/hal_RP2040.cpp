@@ -71,39 +71,7 @@ void hal_print_resources() {
 #endif
 
 void hal_setup() {
-  //SER BUS - is configured on demand
-
-  //I2C BUS
-  if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
-    auto *i2c = &Wire; //type is TwoWire
-    i2c->setSDA(cfg.pin_i2c0_sda);
-    i2c->setSCL(cfg.pin_i2c0_scl);
-    //i2c->setClock(1000000);
-    i2c->setTimeout(25, true); //timeout, reset_with_timeout
-    i2c->begin();
-    hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
-  }
-  if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
-    auto *i2c = &Wire1; //type is TwoWire
-    i2c->setSDA(cfg.pin_i2c1_sda);
-    i2c->setSCL(cfg.pin_i2c1_scl);
-    //i2c->setClock(1000000);
-    i2c->setTimeout(25, true); //timeout, reset_with_timeout
-    i2c->begin();
-    hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
-  }
-
-  //SPI BUS
-  if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
-    hal_spi[0] = new SPIClassRP2040(spi0, cfg.pin_spi0_miso, -1, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-    hal_spi[0]->begin();
-  }
-  if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
-    hal_spi[1] = new SPIClassRP2040(spi1, cfg.pin_spi1_miso, -1, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
-    hal_spi[1]->begin();
-  }
+  //SPI/I2C/Serial busses use late binding (i.e. get created when first used)
 
   hal_eeprom_begin();
 
@@ -304,17 +272,65 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 }
 
 MF_I2C* hal_get_i2c_bus(int bus_id) { 
-  if(bus_id < 0 || bus_id >= HAL_I2C_NUM) return nullptr;
-  MF_I2C *i2c_bus = hal_i2c[bus_id];
-  if(!i2c_bus) return nullptr;
-  return i2c_bus;
+  //exit on invalid bus_id
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  //exit when exists
+  if(hal_i2c[bus_id]) hal_i2c[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
+        auto *i2c = &Wire; //type is TwoWire
+        i2c->setSDA(cfg.pin_i2c0_sda);
+        i2c->setSCL(cfg.pin_i2c0_scl);
+        //i2c->setClock(1000000);
+        i2c->setTimeout(25, true); //timeout, reset_with_timeout
+        i2c->begin();
+        hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
+      }
+      break;
+    case 1:
+      if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
+        auto *i2c = &Wire1; //type is TwoWire
+        i2c->setSDA(cfg.pin_i2c1_sda);
+        i2c->setSCL(cfg.pin_i2c1_scl);
+        //i2c->setClock(1000000);
+        i2c->setTimeout(25, true); //timeout, reset_with_timeout
+        i2c->begin();
+        hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
+      }
+      break;
+  }
+  return hal_i2c[bus_id];
 }
 
 SPIClass* hal_get_spi_bus(int bus_id) {
+  //exit on invalid bus_id
   if(bus_id < 0 || bus_id >= HAL_SPI_NUM) return nullptr;
-  SPIClass *spi_bus = hal_spi[bus_id];
-  if(!spi_bus) return nullptr;
-  return spi_bus;
+
+  //exit when exists
+  if(hal_spi[bus_id]) return hal_spi[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
+        hal_spi[0] = new SPIClassRP2040(spi0, cfg.pin_spi0_miso, -1, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+        hal_spi[0]->begin();
+      }
+      break;
+    case 1:
+      if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
+        hal_spi[1] = new SPIClassRP2040(spi1, cfg.pin_spi1_miso, -1, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+        hal_spi[1]->begin();
+      }
+      break;
+  }
+  return hal_spi[bus_id];
 }
 
 void hal_meminfo() {

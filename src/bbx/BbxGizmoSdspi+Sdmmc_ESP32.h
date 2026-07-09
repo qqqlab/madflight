@@ -241,12 +241,20 @@ private:
     _BB_SDFS.end(); //force begin() to re-initialize
  
     #ifdef BBX_USE_MMC
+      if (config->pin_mmc_clk < 0 || config->pin_mmc_cmd < 0 || config->pin_mmc_dat < 0) {
+        Serial.println("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins");
+        return setup_done;
+      }
       _BB_SDFS.setPins(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat);
       if (!_BB_SDFS.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
         Serial.println("BBX: SDMMC Card Mount Failed");
         return setup_done;
       }
     #else
+      if (config->spi_cs <= 0 || !config->spi_bus) {
+        Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
+        return setup_done;
+      }
       if (!_BB_SDFS.begin(config->spi_cs, *config->spi_bus)) {
         Serial.println("BBX: SDSPI Card Mount Failed");
         return setup_done;
