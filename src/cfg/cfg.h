@@ -265,7 +265,7 @@ SOFTWARE.
   MF_PARAM( bbx_log_ahr,     100, int32_t, 'i') /* Max log interval in [Hz] for AHR*/ \
   MF_PARAM( bbx_log_rcl,     100, int32_t, 'i') /* Max log interval in [Hz] for RCL*/ \
 \
-  /*v2.3.1 additions */ \
+  /*v2.3.2 additions */ \
   MF_PARAM( bbx_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( bbx_baud,          0, int32_t, 'i') \
 \
