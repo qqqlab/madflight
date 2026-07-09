@@ -41,7 +41,7 @@ static bool sdcard_begin(BbxConfig *config) {
     case Cfg::bbx_gizmo_enum::mf_SDSPI :
       if (config->spi_cs <= 0 || !config->spi_bus) {
         Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
-        return setup_done;
+        return false;
       }
       if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
       break;
