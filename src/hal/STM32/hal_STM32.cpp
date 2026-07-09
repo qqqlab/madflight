@@ -51,16 +51,12 @@ MF_Serial *hal_ser[HAL_SER_NUM] = {};
 SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 
 //prototype
-void hal_eeprom_begin();
-
 void hal_startup() {} // USB MSC not implemented for STM32
 void hal_usb_setup() {}
 void hal_print_resources() {}
 
 void hal_setup() 
 { 
-  //Serial BUS late binding
-
   //NOTE: default serial buffer size is 64, and is defined in HardwareSerial.h
   //SERIAL_RX_BUFFER_SIZE and SERIAL_TX_BUFFER_SIZE
   //can't set that here :-(
@@ -68,42 +64,6 @@ void hal_setup()
   #if SERIAL_RX_BUFFER_SIZE<256 || SERIAL_TX_BUFFER_SIZE<256
     #warning "RCL/GPS might need larger buffers. Set SERIAL_RX_BUFFER_SIZE 256 and SERIAL_TX_BUFFER_SIZE 256 in HardwareSerial.h"
   #endif
-
-  //I2C BUS
-  if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
-    auto *i2c = &Wire;
-    i2c->setSDA(cfg.pin_i2c0_sda);
-    i2c->setSCL(cfg.pin_i2c0_scl);
-    //i2c->setClock(1000000);
-    i2c->begin();
-    hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
-  }
-  if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
-    TwoWire *i2c = new TwoWire(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-    //i2c->setClock(1000000);
-    i2c->begin();
-    hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
-    hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed 
-  }
-
-  //SPI
-  if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
-    SPIClass *spi = &SPI;
-    spi->setMISO(cfg.pin_spi0_miso);
-    spi->setSCLK(cfg.pin_spi0_sclk);
-    spi->setMOSI(cfg.pin_spi0_mosi);
-    //spi->setSSEL(PIN_IMU_CS); //don't set CS here, it is done in the driver to be compatible with other hardware platforms
-    spi->begin();
-    hal_spi[0] = spi;
-  }
-  if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
-    SPIClass *spi = new SPIClass(cfg.pin_spi1_mosi, cfg.pin_spi1_miso, cfg.pin_spi1_sclk);
-    spi->begin();
-    hal_spi[1] = spi;
-  }
-  
-  hal_eeprom_begin();
 }
 
 //======================================================================================================================//
@@ -116,6 +76,9 @@ void hal_setup()
   #include <EEPROM.h>
 
   void hal_eeprom_begin() {
+    static bool begin_called = false;
+    if(begin_called) return;
+    begin_called = true;
     Serial.println("EEPROM: using Unbuffered IO");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
@@ -142,6 +105,8 @@ void hal_setup()
 
   void hal_eeprom_begin() {
     (void)(EEPROM); //keep compiler happy
+    static bool begin_called = false;
+    if(begin_called) return;
     Serial.println("EEPROM: using Buffered IO");
     //Serial.println("START reading from flash");Serial.flush();
     eeprom_buffer_fill(); //Copy the data from the flash to the buffer
@@ -334,17 +299,67 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 }
 
 MF_I2C* hal_get_i2c_bus(int bus_id) { 
-  if(bus_id < 0 || bus_id >= HAL_I2C_NUM) return nullptr;
-  MF_I2C *i2c_bus = hal_i2c[bus_id];
-  if(!i2c_bus) return nullptr;
-  return i2c_bus;
+  //exit on invalid bus_id
+  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+
+  //exit when exists
+  if(hal_i2c[bus_id]) hal_i2c[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_i2c0_sda >= 0 && cfg.pin_i2c0_scl >= 0) {
+        auto *i2c = &Wire;
+        i2c->setSDA(cfg.pin_i2c0_sda);
+        i2c->setSCL(cfg.pin_i2c0_scl);
+        //i2c->setClock(1000000);
+        i2c->begin();
+        hal_i2c[0] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[0]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed
+      }
+      break;
+    case 1:
+      if(cfg.pin_i2c1_sda >= 0 && cfg.pin_i2c1_scl >= 0) {
+        TwoWire *i2c = new TwoWire(cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+        //i2c->setClock(1000000);
+        i2c->begin();
+        hal_i2c[1] = new MF_I2CPtrWrapper<decltype(i2c)>( i2c );
+        hal_i2c[1]->setClock(1000000); //set clock here so that MF_I2C wrapper knows the clock speed 
+      }
+      break;
+  }
+  return hal_i2c[bus_id];
 }
 
 SPIClass* hal_get_spi_bus(int bus_id) {
+  //exit on invalid bus_id
   if(bus_id < 0 || bus_id >= HAL_SPI_NUM) return nullptr;
-  SPIClass *spi_bus = hal_spi[bus_id];
-  if(!spi_bus) return nullptr;
-  return spi_bus;
+
+  //exit when exists
+  if(hal_spi[bus_id]) return hal_spi[bus_id];
+
+  //create bus
+  switch(bus_id) {
+    case 0:
+      if(cfg.pin_spi0_miso >= 0 && cfg.pin_spi0_mosi >= 0 && cfg.pin_spi0_sclk >= 0) {
+        SPIClass *spi = &SPI;
+        spi->setMISO(cfg.pin_spi0_miso);
+        spi->setSCLK(cfg.pin_spi0_sclk);
+        spi->setMOSI(cfg.pin_spi0_mosi);
+        //spi->setSSEL(PIN_IMU_CS); //don't set CS here, it is done in the driver to be compatible with other hardware platforms
+        spi->begin();
+        hal_spi[0] = spi;
+      }
+      break;
+    case 1:
+      if(cfg.pin_spi1_miso >= 0 && cfg.pin_spi1_mosi >= 0 && cfg.pin_spi1_sclk >= 0) {
+        SPIClass *spi = new SPIClass(cfg.pin_spi1_mosi, cfg.pin_spi1_miso, cfg.pin_spi1_sclk);
+        spi->begin();
+        hal_spi[1] = spi;
+      }
+      break;
+  }
+  return hal_spi[bus_id];
 }
 
 void hal_meminfo() {}

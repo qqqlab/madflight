@@ -39,10 +39,18 @@ static bool sdcard_begin(BbxConfig *config) {
   //begin sdcard
   switch(config->gizmo) {
     case Cfg::bbx_gizmo_enum::mf_SDSPI :
-       if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
-       break;
+      if (config->spi_cs <= 0 || !config->spi_bus) {
+        Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
+        return false;
+      }
+      if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
+      break;
     case Cfg::bbx_gizmo_enum::mf_SDMMC :
-       if (!sd.begin( SdioConfig(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat) )) return false;
+      if (config->pin_mmc_clk < 0 || config->pin_mmc_cmd < 0 || config->pin_mmc_dat < 0) {
+       Serial.println("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins");
+       return false;
+      }
+      if (!sd.begin( SdioConfig(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat) )) return false;
       break;
     default:
       return false;
