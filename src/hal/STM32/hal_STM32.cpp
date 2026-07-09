@@ -51,16 +51,12 @@ MF_Serial *hal_ser[HAL_SER_NUM] = {};
 SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 
 //prototype
-void hal_eeprom_begin();
-
 void hal_startup() {} // USB MSC not implemented for STM32
 void hal_usb_setup() {}
 void hal_print_resources() {}
 
 void hal_setup() 
 { 
-  //SPI/I2C/Serial busses use late binding (i.e. get created when first used)
-
   //NOTE: default serial buffer size is 64, and is defined in HardwareSerial.h
   //SERIAL_RX_BUFFER_SIZE and SERIAL_TX_BUFFER_SIZE
   //can't set that here :-(
@@ -68,8 +64,6 @@ void hal_setup()
   #if SERIAL_RX_BUFFER_SIZE<256 || SERIAL_TX_BUFFER_SIZE<256
     #warning "RCL/GPS might need larger buffers. Set SERIAL_RX_BUFFER_SIZE 256 and SERIAL_TX_BUFFER_SIZE 256 in HardwareSerial.h"
   #endif
-
-  hal_eeprom_begin();
 }
 
 //======================================================================================================================//
@@ -82,6 +76,9 @@ void hal_setup()
   #include <EEPROM.h>
 
   void hal_eeprom_begin() {
+    static bool begin_called = false;
+    if(begin_called) return;
+    begin_called = true;
     Serial.println("EEPROM: using Unbuffered IO");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
@@ -108,6 +105,8 @@ void hal_setup()
 
   void hal_eeprom_begin() {
     (void)(EEPROM); //keep compiler happy
+    static bool begin_called = false;
+    if(begin_called) return;
     Serial.println("EEPROM: using Buffered IO");
     //Serial.println("START reading from flash");Serial.flush();
     eeprom_buffer_fill(); //Copy the data from the flash to the buffer

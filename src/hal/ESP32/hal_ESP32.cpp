@@ -47,7 +47,6 @@ SPIClass spi0 = SPIClass(HSPI); // VSPI or HSPI(default)
 SPIClass spi1 = SPIClass(VSPI); // VSPI(default) or HSPI
 
 //prototypes
-void hal_eeprom_begin();
 void startLoop1Task();
 
 void hal_startup() {
@@ -71,10 +70,6 @@ void hal_print_resources() {}
 
 void hal_setup()
 {
-  //SPI/I2C/Serial busses use late binding (i.e. get created when first used)
-
-  hal_eeprom_begin();
-
   startLoop1Task();
 }
 
@@ -119,6 +114,9 @@ void startLoop1Task() {
 #include <EEPROM.h>
 
 void hal_eeprom_begin() {
+  static bool begin_called = false;
+  if(begin_called) return;
+  begin_called = true;
   EEPROM.begin(4096);
 }
 

@@ -41,7 +41,6 @@ MF_Serial *hal_ser[HAL_SER_NUM] = {};
 SPIClass  *hal_spi[HAL_SPI_NUM] = {};
 
 //prototypes
-void hal_eeprom_begin();
 void bbx_rp2_usb_detach(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 void bbx_rp2_usb_setup(); //defined in bbx/BbxGizmoSdcard_RP2.cpp
 
@@ -71,10 +70,6 @@ void hal_print_resources() {
 #endif
 
 void hal_setup() {
-  //SPI/I2C/Serial busses use late binding (i.e. get created when first used)
-
-  hal_eeprom_begin();
-
   //IMU
   if(cfg.pin_imu_int >= 0) {
     pinMode(cfg.pin_imu_int, INPUT); //apparently needed for RP2350, should not hurt for RP2040
@@ -89,6 +84,9 @@ void hal_setup() {
 //#define DEBUG_EEPROM
 
 void hal_eeprom_begin() {
+  static bool begin_called = false;
+  if(begin_called) return;
+  begin_called = true;
   #ifdef DEBUG_EEPROM
     Serial.printf("hal_eeprom_begin()\n");
   #endif 
