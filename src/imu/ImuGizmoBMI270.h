@@ -387,7 +387,7 @@ class ImuGizmoBMI270 : public ImuGizmo {
     }
 
     int8_t spi_read(const uint8_t reg, uint8_t * data, const uint32_t count) {
-        _spi->beginTransaction(SPISettings(spi_freq, MSBFIRST, SPI_MODE3));
+        _spi->beginTransaction(SPISettings(spi_freq, MSBFIRST, SPI_MODE0)); //bmi270 works with mode0+3, mode3 is buggy on esp32
         digitalWrite(_csPin, LOW);
         _spi->transfer(0x80 | reg);
         _spi->transfer(0); //dummy byte --- BMI270 specific ---
@@ -400,7 +400,7 @@ class ImuGizmoBMI270 : public ImuGizmo {
     }
 
     int8_t spi_write(uint8_t reg, const uint8_t *data, uint32_t count) {
-        _spi->beginTransaction(SPISettings(spi_freq, MSBFIRST, SPI_MODE3));
+        _spi->beginTransaction(SPISettings(spi_freq, MSBFIRST, SPI_MODE0)); //bmi270 works with mode0+3, mode3 is buggy on esp32
         digitalWrite(_csPin, LOW);
         _spi->transfer(reg);
         for (uint32_t k=0; k<count; k++) {

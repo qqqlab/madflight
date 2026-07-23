@@ -71,7 +71,7 @@ class SensorDeviceSPI : public SensorDevice {
     uint8_t _spi_mode;
 
   public:
-    SensorDeviceSPI(SPIClass *spi, uint8_t cs, uint8_t spi_mode = SPI_MODE3) {
+    SensorDeviceSPI(SPIClass *spi, uint8_t cs, uint8_t spi_mode = SPI_MODE0) {
       _spi = spi; 
       _spi_cs = cs;
       _spi_mode = spi_mode;

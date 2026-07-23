@@ -276,7 +276,7 @@ int8_t Bmp3::SpiWriteRegisters(uint8_t reg, const uint8_t * data,
     return BMP3_E_INVALID_LEN;
   }
   SpiIntf *iface = static_cast<SpiIntf *>(intf);
-  iface->spi->beginTransaction(SPISettings(SPI_CLK_, MSBFIRST, SPI_MODE3));
+  iface->spi->beginTransaction(SPISettings(SPI_CLK_, MSBFIRST, SPI_MODE0));
   #if defined(TEENSYDUINO)
   digitalWriteFast(iface->cs, LOW);
   #else
@@ -306,7 +306,7 @@ int8_t Bmp3::SpiReadRegisters(uint8_t reg, uint8_t * data, uint32_t len,
     return BMP3_E_INVALID_LEN;
   }
   SpiIntf *iface = static_cast<SpiIntf *>(intf);
-  iface->spi->beginTransaction(SPISettings(SPI_CLK_, MSBFIRST, SPI_MODE3));
+  iface->spi->beginTransaction(SPISettings(SPI_CLK_, MSBFIRST, SPI_MODE0));
   #if defined(TEENSYDUINO)
   digitalWriteFast(iface->cs, LOW);
   #else
