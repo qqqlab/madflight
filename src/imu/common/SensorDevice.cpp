@@ -33,13 +33,8 @@ SensorDevice* SensorDevice::createImuDevice(ImuConfig *config) {
     SensorDevice *dev = nullptr;
     if(config->spi_bus) {
         if(config->spi_cs >= 0) {
-            #ifdef ESP32
-            // Force Mode 0 on ESP32 to bypass hardware clock-glitch corruption (https://esp32.com/viewtopic.php?t=36723)
+            // Use Mode0 (Mode3 is buggy on ESP32 https://esp32.com/viewtopic.php?t=36723)
             dev = new SensorDeviceSPI(config->spi_bus, config->spi_cs, SPI_MODE0);
-            #else
-            // Fallback to standard Mode 3 for other platforms
-            dev = new SensorDeviceSPI(config->spi_bus, config->spi_cs, SPI_MODE3);
-            #endif
         }
     }else if(config->i2c_bus) {
         dev = new SensorDeviceI2C(config->i2c_bus, config->i2c_adr);

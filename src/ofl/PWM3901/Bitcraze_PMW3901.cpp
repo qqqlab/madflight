@@ -79,6 +79,8 @@ void pmw3901ReadMotion(uint32_t csPin, motionBurst_t *motion)
 
 #define CHIP_ID         0x49  // 01001001
 #define CHIP_ID_INVERSE 0xB6  // 10110110
+#define PWM3901_SPI_MODE SPI_MODE0 //not specified in datasheet, assume mode0+3, mode3 buggy on esp32
+#define PWM3901_SPI_FREQ 4000000 //datasheet 2MHz
 
 Bitcraze_PMW3901::Bitcraze_PMW3901(SPIClass* spi, uint8_t cspin)
   : _spi(spi), _cs(cspin)
@@ -88,7 +90,7 @@ bool Bitcraze_PMW3901::begin(void) {
   // Setup SPI port
   _spi->begin();
   pinMode(_cs, OUTPUT);
-  _spi->beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE3));
+  _spi->beginTransaction(SPISettings(PWM3901_SPI_FREQ, MSBFIRST, PWM3901_SPI_MODE));
 
   // Make sure the SPI bus is reset
   digitalWrite(_cs, HIGH);
@@ -202,7 +204,7 @@ void Bitcraze_PMW3901::readFrameBuffer(char *FBuffer)
 void Bitcraze_PMW3901::registerWrite(uint8_t reg, uint8_t value) {
   reg |= 0x80u;
 
-  _spi->beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE3));
+  _spi->beginTransaction(SPISettings(PWM3901_SPI_FREQ, MSBFIRST, PWM3901_SPI_MODE));
 
   digitalWrite(_cs, LOW);
 
@@ -221,7 +223,7 @@ void Bitcraze_PMW3901::registerWrite(uint8_t reg, uint8_t value) {
 uint8_t Bitcraze_PMW3901::registerRead(uint8_t reg) {
   reg &= ~0x80u;
 
-  _spi->beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE3));
+  _spi->beginTransaction(SPISettings(PWM3901_SPI_FREQ, MSBFIRST, PWM3901_SPI_MODE));
 
   digitalWrite(_cs, LOW);
 

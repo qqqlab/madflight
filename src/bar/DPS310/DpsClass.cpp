@@ -599,9 +599,7 @@ int16_t DpsClass::readByteSPI(uint8_t regAddress)
     // mask regAddress
     regAddress &= ~DPS3xx__SPI_RW_MASK;
     // reserve and initialize bus
-    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ,
-                                           MSBFIRST,
-                                           SPI_MODE3));
+    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ, MSBFIRST, SPI_MODE3)); //dps310 does not support SPI_MODE0
     // enable ChipSelect for Dps3xx
     digitalWrite(m_chipSelect, LOW);
     // send address with read command to Dps3xx
@@ -633,9 +631,7 @@ int16_t DpsClass::readBlockSPI(RegBlock_t regBlock, uint8_t *buffer)
     // mask regAddress
     regBlock.regAddress &= ~DPS3xx__SPI_RW_MASK;
     // reserve and initialize bus
-    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ,
-                                           MSBFIRST,
-                                           SPI_MODE3));
+    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ, MSBFIRST, SPI_MODE3)); //dps310 does not support SPI_MODE0
     // enable ChipSelect for Dps3xx
     digitalWrite(m_chipSelect, LOW);
     // send address with read command to Dps3xx
@@ -703,9 +699,7 @@ int16_t DpsClass::writeByteSpi(uint8_t regAddress, uint8_t data, uint8_t check)
     // mask regAddress
     regAddress &= ~DPS3xx__SPI_RW_MASK;
     // reserve and initialize bus
-    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ,
-                                           MSBFIRST,
-                                           SPI_MODE3));
+    m_spibus->beginTransaction(SPISettings(DPS3xx__SPI_MAX_FREQ, MSBFIRST, SPI_MODE3)); //dps310 does not support SPI_MODE0
     // enable ChipSelect for Dps3xx
     digitalWrite(m_chipSelect, LOW);
     // send address with read command to Dps3xx
