@@ -201,6 +201,12 @@ IRQn_Type hal_get_irqn_from_pin(int pin) {
 }
 #endif //MF_HACK_STM32_INTERRUPT_PRIORITY
 
+#if STM32_CORE_VERSION_MAJOR >= 3
+  #define MF_STM32_HWSERIAL Uart
+#else
+  #define MF_STM32_HWSERIAL HardwareSerial
+#endif
+
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
   if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
 
@@ -280,12 +286,12 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 
   //create new MF_SerialPtrWrapper
   if(!hal_ser[bus_id]) {
-    HardwareSerial *ser = new HardwareSerial(pin_rx, pin_tx);
+    MF_STM32_HWSERIAL *ser = new MF_STM32_HWSERIAL(pin_rx, pin_tx);
     hal_ser[bus_id] = new MF_SerialPtrWrapper<decltype(ser)>( ser );
   }
 
   //get ser from MF_SerialPtrWrapper, and configure it
-  HardwareSerial *ser = ((MF_SerialPtrWrapper<HardwareSerial*>*)hal_ser[bus_id])->_serial;
+  MF_STM32_HWSERIAL *ser = ((MF_SerialPtrWrapper<MF_STM32_HWSERIAL*>*)hal_ser[bus_id])->_serial;
   ser->begin(baud, config);
   if(pin_inv >= 0) {
     pinMode(pin_inv, OUTPUT);
