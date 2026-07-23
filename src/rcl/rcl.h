@@ -32,7 +32,7 @@ SOFTWARE.
 
 struct __attribute__((aligned(4))) RclState {
 public:
-    uint32_t ts = 0; //sample timestamp [us]
+    uint32_t update_ts = 0; //update timestamp [us]
     uint16_t pwm[RCL_MAX_CH + 1] = {}; //pwm channel data. regular range: 988-2012, pwm[RCL_MAX_CH] is used for non assigned sticks
     float throttle = 0; //throttle stick value 0.0 (zero throttle/stick back) to 1.0 (full throttle/stick forward)
     float roll = 0; //roll stick value -1.0 (left) to 1.0 (right)
@@ -80,8 +80,6 @@ class Rcl : public RclState {
     float _ChannelNormalize(int val, int min, int center, int max, int deadband);
     void _setupStick(int stickno, int ch, int left_pull, int mid, int right_push);
     
-    uint32_t update_time = 0;
-
     enum stick_enum {THR,ROL,PIT,YAW,ARM,FLT};
 
     struct stick_t{
