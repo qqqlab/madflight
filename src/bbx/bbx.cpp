@@ -343,7 +343,7 @@ void Bbx::log_ofl() {
 //RCL - remote control link
 void Bbx::log_rcl(RclState *rcl_s) {
   BinLog bl("RCL");
-  bl.TimeUS(rcl_s->ts);
+  bl.TimeUS(rcl_s->update_ts);
   bl.i16("rol", rcl_s->roll * 1000);
   bl.i16("pit", rcl_s->pitch * 1000);
   bl.i16("thr", rcl_s->throttle * 1000);

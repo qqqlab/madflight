@@ -38,8 +38,8 @@ SOFTWARE.
 //#include "RclGizmoPwm.h" //not implemented
 
 //set defaults
-#ifndef RCL_TIMEOUT
-  #define RCL_TIMEOUT 3000 // lost connection timeout in milliseconds
+#ifndef RCL_TIMEOUT_US
+  #define RCL_TIMEOUT_US 3000000 // lost connection timeout in microseconds
 #endif
 #ifndef RCL_THROTTLE_DEADBAND
   #define RCL_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle in microseconds
@@ -213,7 +213,7 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     }
 
     //set update timestamp
-    update_time = millis();
+    update_ts = micros();
 
     topic.publish(this);
   }
@@ -223,7 +223,7 @@ bool Rcl::update() { //returns true if channel pwm data was updated
 }
 
 bool Rcl::connected() {
-  return ((uint32_t)millis() - update_time <= (RCL_TIMEOUT) );
+  return ((uint32_t)micros() - update_ts <= (RCL_TIMEOUT_US) );
 }
 
 //helper to nomalize a channel based on min,center,max calibration
