@@ -23,7 +23,7 @@ Note that holding level pitch does not mean the plane will hold altitude. How mu
 particular pitch depends on its airspeed, which is primarily controlled by throttle. So to gain altitude you should raise 
 the throttle, and to lose altitude you should lower the throttle.
 
-In FBWA mode the rudder is under manual control.
+In FBWA mode yaw is under manual control.
 
 ## Setup Procedure
 
@@ -98,12 +98,43 @@ void out_Mixer();
 //define outputs and their 1-based channel (NOTE: pin names are 0-based)
 //select output name based on what the output does when pwm is high. For example: If the right aileron goes down on high 
 //pwm and is connected to output channel 2 use #define OUT_RIGHT_AILERON_DOWN 2
+
+//Motors:
 #define OUT_MOTOR 1 //full throttle on high pwm (motor should be first channel)
+//#define OUT_MOTOR1_REVERSED 1 //reversed: idle throttle on high pwm
+//#define OUT_MOTOR2 6 //full throttle on high pwm (motor should be first channel)
+//#define OUT_MOTOR2_REVERSED 6 //reversed: idle throttle on high pwm
+
+//Plane with conventional wing:
 #define OUT_LEFT_AILERON_UP 2 //left aileron deflects up on high pwm (and right aileron down, otherwise use two servo channels)
+//#define OUT_LEFT_AILERON_DOWN 2 //left aileron deflects down on high pwm (and right aileron up, otherwise use two servo channels)
 //#define OUT_RIGHT_AILERON_DOWN 3 //right aileron deflects down on high pwm
+//#define OUT_RIGHT_AILERON_UP 3 //right aileron deflects up on high pwm
+
+//Conventional tail:
 #define OUT_ELEVATOR_UP 3 //elevator deflects up on high pwm
+//#define OUT_ELEVATOR_DOWN 3 //elevator deflects down on high pwm
+
 #define OUT_RUDDER_LEFT 4 //rudder deflects left on high pwm
-#define OUT_FLAPS_UP_HALF 5 //flaps deflect up on high pwm, but only use 0.5 to 1.0 servo range
+//#define OUT_RUDDER_RIGHT 4 //rudder deflects right on high pwm
+
+//V-tail:
+//#define OUT_LEFT_RUDDERVATOR_DOWN 3
+//#define OUT_LEFT_RUDDERVATOR_UP 3
+//#define OUT_RIGHT_RUDDERVATOR_DOWN 4
+//#define OUT_RIGHT_RUDDERVATOR_UP 4
+
+//Flaps:
+//#define OUT_FLAPS_UP 5 //flaps deflect up on high pwm
+//#define OUT_FLAPS_DOWN 5 //flaps deflect down on high pwm
+//#define OUT_FLAPS_UP_HALF 5 //flaps deflect up on high pwm, but only use 0.5 to 1.0 servo range
+//#define OUT_FLAPS_DOWN_HALF 5 //flaps deflect down on high pwm, but only use 0.5 to 1.0 servo range
+
+//Delta wing:
+//#define OUT_LEFT_ELEVON_DOWN 2 //left elevon deflects up on high pwm
+//#define OUT_LEFT_ELEVON_UP 2 //left elevon deflects down on high pwm
+//#define OUT_RIGHT_ELEVON_DOWN 3 //right elevon deflects up on high pwm
+//#define OUT_RIGHT_ELEVON_UP 3 //right elevon deflects down on high pwm
 
 //========================================================================================================================//
 //                                               USER-SPECIFIED VARIABLES                                                 //
@@ -137,10 +168,10 @@ void setup() {
   madflight_setup();
 
   //Standard servo at 50Hz (set servos first just in case motors overwrite frequency of shared timers)
-  out.setup_servo(1, 50, 1000, 2000); //Aileron
+  out.setup_servo(1, 50, 1000, 2000); //Ailerons
   out.setup_servo(2, 50, 1000, 2000); //Elevator
   out.setup_servo(3, 50, 1000, 2000); //Rudder
-  out.setup_servo(4, 50, 1000, 2000); //Flaps
+  //out.setup_servo(4, 50, 1000, 2000); //Flaps
 
   //Motor
   //uncomment one line - sets pin, frequency (Hz), minimum (us), maximum (us)
@@ -380,7 +411,7 @@ void out_Mixer() {
   #ifdef OUT_LEFT_AILERON_UP //reversed: left aileron deflects up on high pwm
     out.set_output(OUT_LEFT_AILERON_UP-1, 0.5 -pid.roll/2.0);
   #endif
-  #if defined(OUT_RIGHT_AILERON_DOWN) //reversed: right aileron deflects down on high pwm
+  #ifdef OUT_RIGHT_AILERON_DOWN //reversed: right aileron deflects down on high pwm
     out.set_output(OUT_RIGHT_AILERON_DOWN-1, 0.5 -pid.roll/2.0);
   #endif
 
@@ -416,6 +447,22 @@ void out_Mixer() {
   #ifdef OUT_FLAPS_UP_HALF //reversed: flaps deflect up on high pwm (flaps only use servo range 0.5 to 1.0)
     float rcin_flaps = constrain( ((float)(rcl.pwm[OUT_FLAPS_UP_HALF-1] - 1100)) / (1900 - 1100), 0.0, 1.0); //output: 0.0 to 1.0
     out.set_output(OUT_FLAPS_UP_HALF-1, 0.5 - rcin_flaps/2.0);
+  #endif 
+
+  //v-tail:
+  // when pid.yaw positive -> yaw right -> deflect left ruddervator down, deflect right ruddervator up
+  // when pid.pitch is positive -> pitch up -> deflect left ruddervator down, deflect right ruddervator down 
+  #ifdef OUT_LEFT_RUDDERVATOR_DOWN //left ruddervator deflects down on high input
+    out.set_output(OUT_LEFT_RUDDERVATOR_DOWN-1, 0.5 +pid.yaw/2.0 +pid.pitch/2.0);
+  #endif
+  #ifdef OUT_RIGHT_RUDDERVATOR_UP //right ruddervator deflects up on high input
+    out.set_output(OUT_RIGHT_RUDDERVATOR_UP-1, 0.5 +pid.yaw/2.0 -pid.pitch/2.0);
+  #endif
+  #ifdef OUT_LEFT_RUDDERVATOR_UP //reversed: left ruddervator deflects down on high input
+    out.set_output(OUT_LEFT_RUDDERVATOR_UP-1, 0.5 -pid.yaw/2.0 -pid.pitch/2.0);
+  #endif  
+  #ifdef OUT_RIGHT_RUDDERVATOR_DOWN //reversed: right ruddervator deflects down on high input
+    out.set_output(OUT_RIGHT_RUDDERVATOR_DOWN-1, 0.5 -pid.yaw/2.0 +pid.pitch/2.0);
   #endif 
 
   //delta wing:
