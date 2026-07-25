@@ -269,6 +269,16 @@ SOFTWARE.
   MF_PARAM( bbx_ser_bus,      -1, int32_t, 'i') \
   MF_PARAM( bbx_baud,          0, int32_t, 'i') \
 \
+  /*v2.3.3 additions */ \
+  MF_PARAM( rcl_rol_sens,    0.1, float, 'f') /*stick center sensitivity 0.0 (very curvy) - 1.0 (straight line) */\
+  MF_PARAM( rcl_pit_sens,    0.1, float, 'f')\
+  MF_PARAM( rcl_yaw_sens,    0.1, float, 'f')\
+  MF_PARAM( rcl_vsp_sens,    0.1, float, 'f')\
+  MF_PARAM( rcl_rol_expo,    0.0, float, 'f') /*stick expo 0.0 (smooth transition from center sensitity to max sensitity) - 1.0 (center sensitivity until approx 50% deflection) */\
+  MF_PARAM( rcl_pit_expo,    0.0, float, 'f')\
+  MF_PARAM( rcl_yaw_expo,    0.0, float, 'f')\
+  MF_PARAM( rcl_vsp_expo,    0.0, float, 'f')\
+\
 //end MF_PARAM_LIST
 
 

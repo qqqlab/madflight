@@ -157,8 +157,19 @@ static void cli_prcl() {
   Serial.printf("yaw:%+.2f\t", rcl.yaw);
   Serial.printf("armed:%d\t", rcl.armed);
   Serial.printf("flightmode:%d\t", rcl.flightmode);
-  Serial.printf("upd_count:%d\t", rcl.update_count());
   Serial.printf("connected:%d\t",rcl.connected());
+  Serial.printf("upd_count:%d\t", rcl.update_count());
+
+  static uint32_t ts_last = 0;
+  static int cnt_last = 0;
+  int cnt = rcl.update_count();
+  uint32_t ts = micros();
+  float dt = 1e-6 * (ts - ts_last);
+  float hz = 0;
+  if(dt>0) hz = (float)(cnt - cnt_last)/dt;
+  cnt_last = cnt;
+  ts_last = ts;
+  Serial.printf("upd_freq:%d\t",(int)hz);
 }
 
 static void cli_pgyr() {
