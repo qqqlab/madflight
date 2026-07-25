@@ -275,6 +275,9 @@ void madflight_setup() {
   rcl.config.ser_bus_id = cfg.rcl_ser_bus; //serial bus id
   rcl.config.baud = cfg.rcl_baud; //baud rate
   rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
+  rcl.config.sens = &cfg.rcl_rol_sens; //pointer to float[4] roll/pitch/yaw/vspeed - allows for CLI manipulation of config values
+  rcl.config.expo = &cfg.rcl_rol_expo; //pointer to float[4] roll/pitch/yaw/vspeed - allows for CLI manipulation of config values
+
   rcl.setup(); //Initialize radio communication.
 
   // RCL - Start RCL task on core0

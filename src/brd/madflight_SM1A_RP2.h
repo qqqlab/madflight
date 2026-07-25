@@ -13,7 +13,7 @@ LED: WS2812B
 #pragma once
 
 #define MF_BOARD_NAME "madflight SM1A + RP2350-Zero / RP2040-Zero"
-#define MF_MCU_NAME "RP2350/RP2040"
+//#define MF_MCU_NAME "RP2350/RP2040" //this is set by hal_RP2040.h
 
 const char madflight_board[] = R""(
 

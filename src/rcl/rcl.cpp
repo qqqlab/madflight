@@ -167,10 +167,14 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     throttle = constrain( ((float)(pwm[st[THR].ch] - tlow)) / (st[THR].max - tlow), 0.0, 1.0);
 
     //roll,pitch,yaw
-    vspeed =  st[THR].inv * _ChannelNormalize(pwm[st[THR].ch], st[THR].min, st[THR].mid, st[THR].max, cfg.rcl_deadband); // output: -1 (descent, st back) to 1 (ascent, st forward)
-    roll   =  st[ROL].inv * _ChannelNormalize(pwm[st[ROL].ch], st[ROL].min, st[ROL].mid, st[ROL].max, cfg.rcl_deadband); // output: -1 (roll left, st left) to 1 (roll right, st right)
-    pitch  = -st[PIT].inv * _ChannelNormalize(pwm[st[PIT].ch], st[PIT].min, st[PIT].mid, st[PIT].max, cfg.rcl_deadband); // output: -1 (pitch down, st back) to 1 (pitch up, st forward)
-    yaw    =  st[YAW].inv * _ChannelNormalize(pwm[st[YAW].ch], st[YAW].min, st[YAW].mid, st[YAW].max, cfg.rcl_deadband); // output: -1 (yaw left, st left) to 1 (yaw right, st right)
+    const float _roll   =  st[ROL].inv * _ChannelNormalize(pwm[st[ROL].ch], st[ROL].min, st[ROL].mid, st[ROL].max, cfg.rcl_deadband); // output: -1 (roll left, st left) to 1 (roll right, st right)
+    const float _pitch  = -st[PIT].inv * _ChannelNormalize(pwm[st[PIT].ch], st[PIT].min, st[PIT].mid, st[PIT].max, cfg.rcl_deadband); // output: -1 (pitch down, st back) to 1 (pitch up, st forward)
+    const float _yaw    =  st[YAW].inv * _ChannelNormalize(pwm[st[YAW].ch], st[YAW].min, st[YAW].mid, st[YAW].max, cfg.rcl_deadband); // output: -1 (yaw left, st left) to 1 (yaw right, st right)
+    const float _vspeed =  st[THR].inv * _ChannelNormalize(pwm[st[THR].ch], st[THR].min, st[THR].mid, st[THR].max, cfg.rcl_deadband); // output: -1 (descent, st back) to 1 (ascent, st forward)
+    roll = _applyExpo(0, _roll);
+    pitch = _applyExpo(1, _pitch);
+    yaw = _applyExpo(2, _yaw);
+    vspeed = _applyExpo(3, _vspeed);
 
     //armed state
     if(st[ARM].ch < RCL_MAX_CH) {
@@ -254,4 +258,12 @@ void Rcl::_setupStick(int stickno, int ch, int left_pull, int mid, int right_pus
     st[stickno].max = left_pull;
     st[stickno].inv = -1;
   }
+}
+
+float Rcl::_applyExpo(const int axis, float x)
+{
+    const float expo = config.expo[axis];
+    const float centerSensitivity = config.sens[axis];
+    //this is the Betaflight ActualRate expo formula (with maxRate = 1.0)
+    return x * (centerSensitivity + ( 1 - centerSensitivity) * fabs(x) * (x*x*x*x * expo + 1 - expo));
 }

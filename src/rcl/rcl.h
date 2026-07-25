@@ -49,7 +49,9 @@ struct RclConfig {
     int ser_bus_id = -1; //Serial bus id
     int baud = 0; //baud rate. 0=autobaud
     int ppm_pin = -1; //pin for PPM receiver
-};
+    float *sens; //pointer to float[4] roll/pitch/yaw/vspeed stick center sensitivity 0.0 (very curvy) - 1.0 (straight line)
+    float *expo; //pointer to float[4] roll/pitch/yaw/vspeed stick expo 0.0 (smooth transition from center sensitity to max sensitity) - 1.0 (center sensitivity until approx 50% deflection) 
+  };
 
 class RclGizmo {
   public:
@@ -79,6 +81,7 @@ class Rcl : public RclState {
   private:
     float _ChannelNormalize(int val, int min, int center, int max, int deadband);
     void _setupStick(int stickno, int ch, int left_pull, int mid, int right_push);
+    float _applyExpo(const int axis, float rcCommandf);
     
     enum stick_enum {THR,ROL,PIT,YAW,ARM,FLT};
 
