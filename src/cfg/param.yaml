@@ -1,0 +1,889 @@
+# =========================================================================================
+#  Parameter List
+# =========================================================================================
+# This list is used to generate the cfg parametes, e.g. cfg.imu_cal_ax
+#
+# IMPORTANT
+#
+#  - ONLY add new parameters/options at end of the list (when reading an old config without the parameter, the new parameter will be set to the default defined here)
+#  - NEVER rename, delete, insert or move parameters/options
+#  - USE float or to 24 bit integers to stay compatible with MAVLink which always uses float (a float can represent all 24 bit integers plus sign: i.e. -16,777,216 to +16,777,216 inclusive)
+#
+#   name:     Parameter name - max 16 char long - lowercase a-z plus '_' only [required]
+#   default:  Default value [required]
+#   datatype: Only use float or int32_t [required]
+#   type:     f=float, i=int32_t, e=enum, p=pin (numeric for ESP32/RP2, pinname e.g. PB3 for STM32)  [required]
+#   options:  List of options for e(enum) - no spaces, max 16 char per option  [required for type=e]
+#   comment:  Single line comment [optional]
+#   since:    Parameter exist since madflight version [optional]
+
+
+param:
+  imu_cal_ax:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: accel x zero offset calibration
+  imu_cal_ay:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: accel y zero offset calibration
+  imu_cal_az:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: accel z zero offset calibration
+  imu_cal_gx:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: gyro x zero offset calibration
+  imu_cal_gy:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: gyro y zero offset calibration
+  imu_cal_gz:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: gyro z zero offset calibration
+
+  mag_cal_x:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: magnetometer x zero offset calibration
+  mag_cal_y:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: magnetometer y zero offset calibration
+  mag_cal_z:
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: magnetometer z zero offset calibration
+  mag_cal_sx:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: magnetometer x scale calibration
+  mag_cal_sy:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: magnetometer y scale calibration
+  mag_cal_sz:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: magnetometer z scale calibration
+
+  bat_cal_v:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: battery adc voltage scale calibration, value is actual_voltage_in_v / adc_reading
+  bat_cal_i:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "battery adc current scale calibration, value is actual_current_in_a / adc_reading, ina226: rshunt value in ohm"
+
+  rcl_thr_ch:
+    default: 3
+    datatype: int32_t
+    type: 'i'
+    comment: 1-based channel number - default is AETR
+  rcl_thr_pull:
+    default: 1100
+    datatype: int32_t
+    type: 'i'
+  rcl_thr_mid:
+    default: 1500
+    datatype: int32_t
+    type: 'i'
+  rcl_thr_push:
+    default: 1900
+    datatype: int32_t
+    type: 'i'
+  rcl_rol_ch:
+    default: 1
+    datatype: int32_t
+    type: 'i'
+  rcl_rol_left:
+    default: 1100
+    datatype: int32_t
+    type: 'i'
+  rcl_rol_mid:
+    default: 1500
+    datatype: int32_t
+    type: 'i'
+  rcl_rol_right:
+    default: 1900
+    datatype: int32_t
+    type: 'i'
+  rcl_pit_ch:
+    default: 2
+    datatype: int32_t
+    type: 'i'
+  rcl_pit_pull:
+    default: 1100
+    datatype: int32_t
+    type: 'i'
+  rcl_pit_mid:
+    default: 1500
+    datatype: int32_t
+    type: 'i'
+  rcl_pit_push:
+    default: 1900
+    datatype: int32_t
+    type: 'i'
+  rcl_yaw_ch:
+    default: 4
+    datatype: int32_t
+    type: 'i'
+  rcl_yaw_left:
+    default: 1100
+    datatype: int32_t
+    type: 'i'
+  rcl_yaw_mid:
+    default: 1500
+    datatype: int32_t
+    type: 'i'
+  rcl_yaw_right:
+    default: 1900
+    datatype: int32_t
+    type: 'i'
+  rcl_arm_ch:
+    default: 5
+    datatype: int32_t
+    type: 'i'
+  rcl_arm_min:
+    default: 1600
+    datatype: int32_t
+    type: 'i'
+    comment: armed pwm range min
+  rcl_arm_max:
+    default: 2500
+    datatype: int32_t
+    type: 'i'
+    comment: armed pwm range max
+  rcl_flt_ch:
+    default: 6
+    datatype: int32_t
+    type: 'i'
+  rcl_flt_min:
+    default: 1165
+    datatype: int32_t
+    type: 'i'
+    comment: 6-pos switch lowest pwm (flight mode 0)
+  rcl_flt_max:
+    default: 1815
+    datatype: int32_t
+    type: 'i'
+    comment: 6-pos switch lowest pwm (flight mode 5)
+
+# v2.0.0 additions
+  pin_ser0_rx:
+    since: v2.0.0
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser1_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser2_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser3_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser4_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser5_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser6_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser7_rx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser0_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser1_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser2_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser3_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser4_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser5_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser6_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser7_tx:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser0_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser1_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser2_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser3_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser4_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser5_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser6_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_ser7_inv:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: I2C pins
+  pin_i2c0_sda:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c1_sda:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c2_sda:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c3_sda:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c0_scl:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c1_scl:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c2_scl:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_i2c3_scl:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: SPI pins
+  pin_spi0_miso:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi1_miso:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi2_miso:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi3_miso:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi0_mosi:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi1_mosi:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi2_mosi:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi3_mosi:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi0_sclk:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi1_sclk:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi2_sclk:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_spi3_sclk:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: OUT pins
+  pin_out0:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out1:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out2:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out3:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out4:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out5:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out6:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out7:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out8:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out9:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out10:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out11:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out12:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out13:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out14:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_out15:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: Other pins
+  pin_bbx_cs:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_bat_i:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_bat_v:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_imu_cs:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_imu_int:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_led:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_mmc_dat:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_mmc_clk:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_mmc_cmd:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_rcl_ppm:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: AHR - AHRS
+  ahr_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - MAHONY
+      - MAHONY_BF
+      - MADGWICK
+      - VQF
+      
+# BAR - Barometer
+  bar_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - BMP280
+      - BMP388
+      - BMP390
+      - MS5611
+      - HP203B
+      - BMP580
+      - DPS310
+  bar_i2c_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  bar_i2c_adr:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  bar_rate:
+    default: 100
+    datatype: float
+    type: 'f'
+    comment: Barometer sample rate in Hz (default 100)
+
+# BAT - Battery Monitor
+  bat_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - ADC
+      - INA226
+      - INA228
+  bat_i2c_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  bat_i2c_adr:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+
+# BBX - Black Box Data Logger
+  bbx_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - SDSPI
+      - SDMMC
+      - OPENLOG
+  bbx_spi_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+    comment: GPS
+
+# GPS
+  gps_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - UBLOX
+  gps_ser_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  gps_baud:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+
+# IMU - Inertial Measurement Unit (acc/gyro)
+  imu_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - BMI270
+      - MPU6000
+      - MPU6050
+      - MPU6500
+      - MPU9150
+      - MPU9250
+      - ICM45686
+      - ICM42688
+      - ICM42688P
+      - AUTO
+      - LSM6DSV
+      - LSM6DSO
+      - LSM6DSV16B
+  imu_spi_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  imu_i2c_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  imu_i2c_adr:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  imu_align:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - CW0
+      - CW90
+      - CW180
+      - CW270
+      - CW0FLIP
+      - CW90FLIP
+      - CW180FLIP
+      - CW270FLIP
+
+  imu_rate:
+    default: 1000
+    datatype: float
+    type: 'f'
+    comment: "IMU sample rate in Hz (default 1000) NOTE: not all IMU drivers support a different rate"
+  imu_acc_lp:
+    default: 70
+    datatype: float
+    type: 'f'
+    comment: Accelerometer Low Pass Filter cutoff frequency in Hz 
+  imu_gyr_lp:
+    default: 60
+    datatype: float
+    type: 'f'
+    comment: Gyro Low Pass Filter cutoff frequency in Hz 
+
+# LED
+  led_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - HIGH_IS_ON
+      - LOW_IS_ON
+      - RGB
+
+# MAG - Magnetometer
+  mag_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - QMC5883
+      - QMC6309
+      - RM3100
+      - QMC5883L
+      - QMC5883P
+      - MMC5603
+      - BMM150
+  mag_i2c_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  mag_i2c_adr:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  mag_lp:
+    default: 1e10
+    datatype: float
+    type: 'f'
+    comment: Magnetometer Gyro Low Pass Filter cutoff frequency in Hz (default 1e10Hz, i.e. no filtering) 
+
+# RCL - Remote Control Link
+  rcl_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - MAVLINK
+      - CRSF
+      - SBUS
+      - SBUS_NOT_INV
+      - DSM
+      - PPM
+      - IBUS
+  rcl_ser_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  rcl_baud:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  rcl_num_ch:
+    default: 8
+    datatype: int32_t
+    type: 'i'
+    comment: max 20
+  rcl_deadband:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+
+# RDR - Radar
+  rdr_gizmo:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - LD2411S
+      - LD2413
+      - USD1
+      - SR04
+      - DTS6012M
+      - VL53L3CX
+  rdr_ser_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  rdr_baud:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+    
+# v2.0.1 additions 
+  pin_rdr_trig:
+    since: v2.0.1
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  pin_rdr_echo:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  imu_bus_type:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - SPI
+      - I2C
+
+# v2.1.1 additions 
+  mag_align:
+    since: v2.1.1
+    default: 0
+    datatype: int32_t
+    type: 'e' 
+    options:
+      - CW0
+      - CW90
+      - CW180
+      - CW270
+      - CW0FLIP
+      - CW90FLIP
+      - CW180FLIP
+      - CW270FLIP
+
+# v2.1.3 additions 
+  ofl_gizmo:
+    since: v2.1.3
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NONE
+      - PMW3901
+      - PMW3901U
+  ofl_spi_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  pin_ofl_cs:
+    default: -1
+    datatype: int32_t
+    type: 'p'
+  ofl_ser_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  ofl_baud:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  rdr_i2c_bus:
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  rdr_i2c_adr:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+  ofl_align:
+    default: 0
+    datatype: int32_t
+    type: 'e'
+    options:
+      - NE
+      - NW
+      - ES
+      - EN
+      - SW
+      - SE
+      - WN
+      - WS
+    comment: "xy-axis orientation. Example: ES means positive x-axis points East (right) and positive y-axis points South (back)"
+    
+# v2.1.4 additions 
+  ofl_cal_rad:
+    since: v2.1.4
+    default: 0
+    datatype: float
+    type: 'f'
+    comment: manual calibration factor from pixels to radians, leave at 0 to use calibration from gizmo
+    
+# v2.2.0 additions 
+  pin_imu_clkin:
+    since: v2.2.0
+    default: -1
+    datatype: int32_t
+    type: 'p'
+    comment: CLKIN pin for ICM-42866-P - only tested for RP2 targets
+
+# v2.3.0 additions 
+  bbx_log_imu:
+    since: v2.3.0
+    default: 100
+    datatype: int32_t
+    type: 'i'
+    comment:  Max log interval in [Hz] for IMU
+  bbx_log_out:
+    default: 100
+    datatype: int32_t
+    type: 'i'
+    comment:  Max log interval in [Hz] for OUT
+  bbx_log_ahr:
+    default: 100
+    datatype: int32_t
+    type: 'i'
+    comment:  Max log interval in [Hz] for AHR
+  bbx_log_rcl:
+    default: 100
+    datatype: int32_t
+    type: 'i'
+    comment:  Max log interval in [Hz] for RCL
+
+# v2.3.2 additions 
+  bbx_ser_bus:
+    since: v2.3.2
+    default: -1
+    datatype: int32_t
+    type: 'i'
+  bbx_baud:
+    default: 0
+    datatype: int32_t
+    type: 'i'
+    
+# v2.3.3 additions 
+  rcl_rol_sens:
+    since: v2.3.3
+    default: 0.1
+    datatype: float
+    type: 'f'
+    comment: stick center sensitivity 0.0 (very curvy) - 1.0 (straight line)
+  rcl_pit_sens:
+    default: 0.1
+    datatype: float
+    type: 'f'
+  rcl_yaw_sens:
+    default: 0.1
+    datatype: float
+    type: 'f'
+  rcl_vsp_sens:
+    default: 0.1
+    datatype: float
+    type: 'f'
+  rcl_rol_expo:
+    default: 0.0
+    datatype: float
+    type: 'f'
+    comment: stick expo 0.0 (smooth transition from center sensitity to max sensitity) - 1.0 (center sensitivity until approx 50% deflection) 
+  rcl_pit_expo:
+    default: 0.0
+    datatype: float
+    type: 'f'
+  rcl_yaw_expo:
+    default: 0.0
+    datatype: float
+    type: 'f'
+  rcl_vsp_expo:
+    default: 0.0
+    datatype: float
+    type: 'f'
