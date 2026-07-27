@@ -137,7 +137,7 @@ static void cli_po() {
   Serial.printf("rcl.roll:%+.2f\t", rcl.roll);
   Serial.printf("ahr.gx:%+.2f\t", ahr.gx);
   Serial.printf("ahr.ax:%+.2f\t", ahr.ax);
-  Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
+  Serial.printf("mag.mx:%+.2f\t", mag.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
   Serial.printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
@@ -181,7 +181,7 @@ static void cli_pacc() {
 }
 
 static void cli_pmag() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\tmtot:%+.2f\t", ahr.mx, ahr.my, ahr.mz, sqrtf(ahr.mx*ahr.mx + ahr.my*ahr.my + ahr.mz*ahr.mz)); 
+  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\tmtot:%+.2f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz)); 
 }
 
 static void cli_pahr() {

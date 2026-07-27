@@ -295,9 +295,9 @@ void madflight_setup() {
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
   mag.config.sample_rate = 100; //sample rate [Hz]
-  mag.config.mag_cal_x = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
-  mag.config.mag_cal_sx = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]  
-  mag.config.mag_align = &(cfg.mag_align); //alignment
+  mag.config.mag_cal_x = &(cfg.mag_cal_x); //mag offset[3] (by reference)
+  mag.config.mag_cal_sx = &(cfg.mag_cal_sx); //mag scale[3] (by reference)
+  mag.config.mag_align = &(cfg.mag_align); //alignment (by reference)
   mag.setup(); 
 
   // BAT - Battery Monitor

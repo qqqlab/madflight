@@ -184,7 +184,6 @@ void Mag::cli_calibrate() {
 // finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
 // Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
 bool Mag::_calibrate(float bias[3], float scale[3]) {
-  const int sample_interval = 10000; //in us
   const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
   const float count_reduction_factor = 0.7; // reduce counter when a min/max changed by at least 10% of current min-max range
 
