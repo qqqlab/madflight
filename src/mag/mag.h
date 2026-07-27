@@ -33,6 +33,7 @@ struct __attribute__((aligned(4))) MagState {
     float mx = 0; //"North" magnetic flux [uT]
     float my = 0; //"East" magnetic flux [uT]
     float mz = 0; //"Down" magnetic flux [uT]
+    float raw[3]; //raw readings - not calibrated, not aligned
     uint32_t ts = 0; //last sample time in [us]
 };
 
@@ -42,8 +43,8 @@ struct MagConfig {
     Cfg::mag_gizmo_enum gizmo = Cfg::mag_gizmo_enum::mf_NONE; //the gizmo to use
     MF_I2C *i2c_bus = nullptr; //i2c bus
     uint8_t i2c_adr = 0; //i2c address. 0=default address
-    float* mag_cal_x = nullptr; //mag offset[3] [adc_lsb]
-    float* mag_cal_sx = nullptr; //mag scale[3] [uT/adc_lsb]
+    float* mag_cal_x = nullptr; //raw mag offset[3]
+    float* mag_cal_sx = nullptr; //raw mag scale[3]
     Cfg::mag_align_enum* mag_align = nullptr; //mag alignment
 };
 
@@ -63,6 +64,7 @@ class Mag : public MagState {
     int setup();      // Use config to setup gizmo, returns 0 on success, or error code
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
     const char* name() {return (gizmo ? gizmo->name() : "NONE");}
+    void cli_calibrate();
 
   protected:
     friend void sensor_task(void *pvParameters);
@@ -75,6 +77,7 @@ class Mag : public MagState {
     
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("MAG");
+    bool _calibrate(float bias[3], float scale[3]);
 };
 
 //Global module instance
