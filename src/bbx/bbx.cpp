@@ -260,9 +260,9 @@ void Bbx::log_imu(ImuState *imu_s) {
   bl.i16("gy", (imu_s->gy - cfg.imu_cal_gy) * 10,   1e-1, "deg/s"); //dps
   bl.i16("gz", (imu_s->gz - cfg.imu_cal_gz) * 10,   1e-1, "deg/s"); //dps
   if(mag.installed()) {
-    bl.i16("mx", ((mag.mx - cfg.mag_cal_x) * cfg.mag_cal_sx) * 100, 1e-2, "uT"); //uT
-    bl.i16("my", ((mag.my - cfg.mag_cal_y) * cfg.mag_cal_sy) * 100, 1e-2, "uT"); //uT
-    bl.i16("mz", ((mag.mz - cfg.mag_cal_z) * cfg.mag_cal_sz) * 100, 1e-2, "uT"); //uT
+    bl.i16("mx", mag.mx * 100, 1e-2, "uT"); //uT
+    bl.i16("my", mag.my * 100, 1e-2, "uT"); //uT
+    bl.i16("mz", mag.mz * 100, 1e-2, "uT"); //uT
   }
 }
 

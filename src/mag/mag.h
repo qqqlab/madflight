@@ -42,6 +42,8 @@ struct MagConfig {
     Cfg::mag_gizmo_enum gizmo = Cfg::mag_gizmo_enum::mf_NONE; //the gizmo to use
     MF_I2C *i2c_bus = nullptr; //i2c bus
     uint8_t i2c_adr = 0; //i2c address. 0=default address
+    float* mag_cal_x = nullptr; //mag offset[3] [adc_lsb]
+    float* mag_cal_sx = nullptr; //mag scale[3] [uT/adc_lsb]
 };
 
 class MagGizmo {

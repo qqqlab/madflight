@@ -93,33 +93,56 @@ bool Mag::update() {
   runtimeTrace.start();
   bool updated = (gizmo != nullptr);
   updated = updated && schedule.interval(_samplePeriod); //wait for next sample interval
-  updated = updated && gizmo->update(&mx, &my, &mz);
+  float _mx, _my, _mz;
+  updated = updated && gizmo->update(&_mx, &_my, &_mz);
+
+    //Correct the mag values with the calibration values
+  _mx = (_mx - config.mag_cal_x[0]) * config.mag_cal_sx[0];
+  _my = (_my - config.mag_cal_x[1]) * config.mag_cal_sx[1];
+  _mz = (_mz - config.mag_cal_x[2]) * config.mag_cal_sx[2];
 
   if(updated) {
     //handle rotation for different mounting positions
     switch((Cfg::mag_align_enum)cfg.mag_align) {
       case Cfg::mag_align_enum::mf_CW0 :
+        mx = +_mx; 
+        my = +_my; 
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW90 :
-        { float tmp; tmp=mx; mx=-my; my=tmp; }
+        mx = -_my;
+        my = +_mx; 
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW180 :
-        { mx=-mx; my=-my; }
+        mx = -_mx;
+        my = -_my;
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW270 :
-        { float tmp; tmp=mx; mx=my; my=-tmp; }
+        mx = +_my;
+        my = -_mx;
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW0FLIP :
-        { my=-my; mz=-mz; }
+        mx = +_mx;
+        my = -_my; 
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW90FLIP :
-        { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
+        mx = +_my;
+        my = +_mx;
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW180FLIP :
-        { mx=-mx; mz=-mz; }
+        mx = -_mx;
+        my = +_my;
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW270FLIP :
-        { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+        mx = -_my;
+        my = -_mx;
+        mz = -_mz;
         break;
     }
 

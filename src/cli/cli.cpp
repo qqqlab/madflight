@@ -181,7 +181,7 @@ static void cli_pacc() {
 }
 
 static void cli_pmag() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahr.mx, ahr.my, ahr.mz); 
+  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\tmtot:%+.2f\t", ahr.mx, ahr.my, ahr.mz, sqrtf(ahr.mx*ahr.mx + ahr.my*ahr.my + ahr.mz*ahr.mz)); 
 }
 
 static void cli_pahr() {
@@ -758,6 +758,16 @@ void Cli::calibrate_IMU2(bool gyro_only) {
 void Cli::calibrate_Magnetometer() {
   float bias[3], scale[3];
 
+  //save + zero calibration values
+  float *cfg_mag_cal = &cfg.mag_cal_x;
+  float *cfg_mag_cal_s = &cfg.mag_cal_sx;
+  for(int axis = 0; axis < 3; axis++) {
+    bias[axis] = cfg_mag_cal[axis];
+    cfg_mag_cal[axis] = 0;
+    scale[axis] = cfg_mag_cal_s[axis];
+    cfg_mag_cal_s[axis] = 0;
+  }
+
   Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
   if ( _calibrate_Magnetometer(bias, scale) ) {
     Serial.println("Calibration Successful!");
@@ -770,15 +780,14 @@ void Cli::calibrate_Magnetometer() {
     Serial.println("Note: type 'save' to save these values to flash");
     Serial.println(" ");
     Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-    cfg.mag_cal_x = bias[0];
-    cfg.mag_cal_y = bias[1];
-    cfg.mag_cal_z = bias[2];
-    cfg.mag_cal_sx = scale[0];
-    cfg.mag_cal_sy = scale[1];
-    cfg.mag_cal_sz = scale[2];
-  }
-  else {
+  } else {
     Serial.println("ERROR: No magnetometer");
+  }
+
+  //save updated (or restore unchanged) calibration values
+  for(int axis = 0; axis < 3; axis++) {
+    cfg_mag_cal[axis] = bias[axis];
+    cfg_mag_cal_s[axis] = scale[axis];
   }
 }
 

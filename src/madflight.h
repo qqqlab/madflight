@@ -295,6 +295,8 @@ void madflight_setup() {
   mag.config.i2c_bus = hal_get_i2c_bus(cfg.mag_i2c_bus); //i2c bus
   mag.config.i2c_adr = cfg.mag_i2c_adr; //i2c address. 0=default address
   mag.config.sample_rate = 100; //sample rate [Hz]
+  mag.config.mag_cal_x = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
+  mag.config.mag_cal_sx = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]  
   mag.setup(); 
 
   // BAT - Battery Monitor
@@ -360,8 +362,6 @@ void madflight_setup() {
   ahr.config.pmag = &mag; //pointer to Mag to use
   ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
   ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
-  ahr.config.mag_offset = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
-  ahr.config.mag_scale = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]
   ahr.setup();
 
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
