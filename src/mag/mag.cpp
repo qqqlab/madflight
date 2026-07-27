@@ -103,7 +103,7 @@ bool Mag::update() {
 
   if(updated) {
     //handle rotation for different mounting positions
-    switch((Cfg::mag_align_enum)cfg.mag_align) {
+    switch(*config.mag_align) {
       case Cfg::mag_align_enum::mf_CW0 :
         mx = +_mx; 
         my = +_my; 

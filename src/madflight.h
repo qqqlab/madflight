@@ -297,6 +297,7 @@ void madflight_setup() {
   mag.config.sample_rate = 100; //sample rate [Hz]
   mag.config.mag_cal_x = &(cfg.mag_cal_x); //mag offset[3] [adc_lsb]
   mag.config.mag_cal_sx = &(cfg.mag_cal_sx); //mag scale[3] [uT/adc_lsb]  
+  mag.config.mag_align = &(cfg.mag_align); //alignment
   mag.setup(); 
 
   // BAT - Battery Monitor

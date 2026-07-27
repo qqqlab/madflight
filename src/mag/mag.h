@@ -44,6 +44,7 @@ struct MagConfig {
     uint8_t i2c_adr = 0; //i2c address. 0=default address
     float* mag_cal_x = nullptr; //mag offset[3] [adc_lsb]
     float* mag_cal_sx = nullptr; //mag scale[3] [uT/adc_lsb]
+    Cfg::mag_align_enum* mag_align = nullptr; //mag alignment
 };
 
 class MagGizmo {

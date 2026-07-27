@@ -474,7 +474,7 @@ param:
     type: 'p'
     comment: AHR - AHRS
   ahr_gizmo:
-    default: 0
+    default: MAHONY
     datatype: int32_t
     type: 'e'
     options:
@@ -485,7 +485,7 @@ param:
       
 # BAR - Barometer
   bar_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -513,7 +513,7 @@ param:
 
 # BAT - Battery Monitor
   bat_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -532,7 +532,7 @@ param:
 
 # BBX - Black Box Data Logger
   bbx_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -548,7 +548,7 @@ param:
 
 # GPS
   gps_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -565,7 +565,7 @@ param:
 
 # IMU - Inertial Measurement Unit (acc/gyro)
   imu_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -596,7 +596,7 @@ param:
     datatype: int32_t
     type: 'i'
   imu_align:
-    default: 0
+    default: CW0
     datatype: int32_t
     type: 'e'
     options:
@@ -627,7 +627,7 @@ param:
 
 # LED
   led_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -638,7 +638,7 @@ param:
 
 # MAG - Magnetometer
   mag_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -666,7 +666,7 @@ param:
 
 # RCL - Remote Control Link
   rcl_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -698,7 +698,7 @@ param:
 
 # RDR - Radar
   rdr_gizmo:
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -729,7 +729,7 @@ param:
     datatype: int32_t
     type: 'p'
   imu_bus_type:
-    default: 0
+    default: SPI
     datatype: int32_t
     type: 'e'
     options:
@@ -739,7 +739,7 @@ param:
 # v2.1.1 additions 
   mag_align:
     since: v2.1.1
-    default: 0
+    default: CW0
     datatype: int32_t
     type: 'e' 
     options:
@@ -755,7 +755,7 @@ param:
 # v2.1.3 additions 
   ofl_gizmo:
     since: v2.1.3
-    default: 0
+    default: NONE
     datatype: int32_t
     type: 'e'
     options:
@@ -787,7 +787,7 @@ param:
     datatype: int32_t
     type: 'i'
   ofl_align:
-    default: 0
+    default: NE
     datatype: int32_t
     type: 'e'
     options:

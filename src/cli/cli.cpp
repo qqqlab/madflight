@@ -759,13 +759,11 @@ void Cli::calibrate_Magnetometer() {
   float bias[3], scale[3];
 
   //save + zero calibration values
-  float *cfg_mag_cal = &cfg.mag_cal_x;
-  float *cfg_mag_cal_s = &cfg.mag_cal_sx;
   for(int axis = 0; axis < 3; axis++) {
-    bias[axis] = cfg_mag_cal[axis];
-    cfg_mag_cal[axis] = 0;
-    scale[axis] = cfg_mag_cal_s[axis];
-    cfg_mag_cal_s[axis] = 0;
+    bias[axis] = mag.config.mag_cal_x[axis];
+    mag.config.mag_cal_x[axis] = 0;
+    scale[axis] = mag.config.mag_cal_sx[axis];
+    mag.config.mag_cal_sx[axis] = 0;
   }
 
   Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
@@ -786,8 +784,8 @@ void Cli::calibrate_Magnetometer() {
 
   //save updated (or restore unchanged) calibration values
   for(int axis = 0; axis < 3; axis++) {
-    cfg_mag_cal[axis] = bias[axis];
-    cfg_mag_cal_s[axis] = scale[axis];
+    mag.config.mag_cal_x[axis] = bias[axis];
+    mag.config.mag_cal_sx[axis] = scale[axis];
   }
 }
 
