@@ -58,6 +58,9 @@ class MsgBroker {
 
 //=============================================================================
 class MsgTopicBase {
+  public:
+    char name[9] = {};
+
   protected:
     friend class MsgBroker;
     friend class MsgSubscriptionBase;
@@ -65,7 +68,6 @@ class MsgTopicBase {
     template <class T> friend class MsgTopicQueue;
     template <typename T> friend class MsgTopicMPMS;
 
-    char name[9] = {};
     uint32_t stat_generation = 0; //starting generation for statistics
     MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
 
@@ -91,12 +93,13 @@ class MsgTopicBase {
 class MsgSubscriptionBase {
   public:
     bool updated(); //returns true if new msg available
+    char name[9] = {};
+    uint32_t get_generation() {return generation;}
 
   protected:
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
 
-    char name[9] = {};
     uint32_t generation = 0; //last pulled topic generation 
     uint32_t stat_pull_cnt = 0; //pull counter
 

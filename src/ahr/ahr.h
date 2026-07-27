@@ -53,8 +53,6 @@ struct AhrConfig {
     Mag* pmag = nullptr; //pointer to Mag to use
     float* gyr_offset = nullptr; //gyro offset[3] [deg/sec]
     float* acc_offset = nullptr; //acc offset[3] [G]
-    float* mag_offset = nullptr; //mag offset[3] [adc_lsb]
-    float* mag_scale = nullptr; //mag scale[3] [uT/adc_lsb]
 };
 
 class AhrGizmo {

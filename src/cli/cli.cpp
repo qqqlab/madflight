@@ -137,7 +137,7 @@ static void cli_po() {
   Serial.printf("rcl.roll:%+.2f\t", rcl.roll);
   Serial.printf("ahr.gx:%+.2f\t", ahr.gx);
   Serial.printf("ahr.ax:%+.2f\t", ahr.ax);
-  Serial.printf("ahr.mx:%+.2f\t", ahr.mx);
+  Serial.printf("mag.mx:%+.2f\t", mag.mx);
   Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
   Serial.printf("pid.roll:%+.3f\t", pid.roll);
   Serial.printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
@@ -181,7 +181,7 @@ static void cli_pacc() {
 }
 
 static void cli_pmag() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\t", ahr.mx, ahr.my, ahr.mz); 
+  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\tmtot:%+.2f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz)); 
 }
 
 static void cli_pahr() {
@@ -627,7 +627,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_print_all(false);
     calibrate_IMU();
   }else if (cmd == "calmag") {
-    calibrate_Magnetometer();
+    mag.cli_calibrate();
   }else if (cmd == "calradio") {
     cli_print_all(false);
     RclCalibrate::calibrate();
@@ -753,132 +753,6 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   }
   
   Serial.println("Type 'save' to save these values to flash");
-}
-
-void Cli::calibrate_Magnetometer() {
-  float bias[3], scale[3];
-
-  Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
-  if ( _calibrate_Magnetometer(bias, scale) ) {
-    Serial.println("Calibration Successful!");
-    Serial.printf("set mag_cal_x  %+f #config %+f\n", bias[0], cfg.mag_cal_x);
-    Serial.printf("set mag_cal_y  %+f #config %+f\n", bias[1], cfg.mag_cal_y);
-    Serial.printf("set mag_cal_z  %+f #config %+f\n", bias[2], cfg.mag_cal_z);
-    Serial.printf("set mag_cal_sx %+f #config %+f\n", scale[0], cfg.mag_cal_sx);
-    Serial.printf("set mag_cal_sy %+f #config %+f\n", scale[1], cfg.mag_cal_sy);
-    Serial.printf("set mag_cal_sz %+f #config %+f\n", scale[2], cfg.mag_cal_sz);
-    Serial.println("Note: type 'save' to save these values to flash");
-    Serial.println(" ");
-    Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-    cfg.mag_cal_x = bias[0];
-    cfg.mag_cal_y = bias[1];
-    cfg.mag_cal_z = bias[2];
-    cfg.mag_cal_sx = scale[0];
-    cfg.mag_cal_sy = scale[1];
-    cfg.mag_cal_sz = scale[2];
-  }
-  else {
-    Serial.println("ERROR: No magnetometer");
-  }
-}
-
-static MsgSubscription<MagState> * mag_subription;
-
-//get a reading from the magnetometer
-static bool _calibrate_Magnetometer_ReadMag(float *m) {
-  MagState mag_s;
-  bool updated = mag_subription->pull_updated(&mag_s);
-  m[0] = mag_s.mx;
-  m[1] = mag_s.my;
-  m[2] = mag_s.mz;
-  return updated;
-}
-
-// finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
-// Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
-bool Cli::_calibrate_Magnetometer(float bias[3], float scale[3]) 
-{
-  const int sample_interval = 10000; //in us
-  const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
-  const float deltaThresh = 0.3f; //uT
-  const float B_coeff = 0.125;
-
-  float mlast[3] = {0};
-  float m[3] = {0};
-  int counter;
-  float m_filt[3];
-  float m_max[3];
-  float m_min[3];
-
-  //exit if no mag present
-  if(!mag.installed()) return false;
-
-  //start subscription
-  mag_subription = new MsgSubscription<MagState>("calmag", &mag.topic);
-
-  // get starting set of data
-  for(int i=0;i<50;i++) {
-    _calibrate_Magnetometer_ReadMag(mlast);
-    delayMicroseconds(sample_interval);
-    _calibrate_Magnetometer_ReadMag(m);
-    delayMicroseconds(sample_interval);
-    if ( abs(m[0] - mlast[0]) < 20 && abs(m[1] - mlast[1]) && abs(m[2] - mlast[2]) && m[0] != 0  && m[1] != 0 && m[2] != 0) break;
-  }
-  for(int i=0;i<3;i++) mlast[i] = m[i];
-  
-  //save starting data
-  for(int i=0;i<3;i++) {
-    m_max[i] = m[i];
-    m_min[i] = m[i];
-    m_filt[i] = m[i];
-  }
-
-  // collect data to find max / min in each channel
-  // sample counter times, restart sampling when a min/max changed at least deltaThresh uT
-  uint32_t start_time = millis()-1000;
-  counter = 0;
-  uint32_t sample_time = micros();
-  while (counter < maxCounts) {
-    while(micros() - sample_time < sample_interval); //sample at 100Hz
-    sample_time = micros();
-    _calibrate_Magnetometer_ReadMag(m);
-    if ( abs(m[0] - mlast[0]) < 20 && abs(m[1] - mlast[1]) && abs(m[2] - mlast[2]) && m[0] != 0  && m[1] != 0 && m[2] != 0) {
-      for(int i=0;i<3;i++) mlast[i] = m[i];
-      for(int i=0;i<3;i++) {
-        m_filt[i] = m_filt[i] * (1 - B_coeff) + m[i] * B_coeff;
-        if (m_max[i] < m_filt[i]) {
-          float delta =  m_filt[i] - m_max[i];
-          if (delta > deltaThresh) counter = 0;
-          m_max[i] = m_filt[i];
-        }
-        if (m_min[i] > m_filt[i]) {
-          float delta = m_min[i] - m_filt[i];
-          if (delta > deltaThresh) counter = 0;
-          m_min[i] = m_filt[i];
-        }
-      }
-      counter++;
-    }
-    
-    //print progress
-    if (millis() - start_time > 1000) {
-      start_time = millis();
-      Serial.printf("cnt:%d\txmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", counter, m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
-    }
-  }
-
-  // find the magnetometer bias and scale
-  float avg_scale = 0;
-  for(int i=0;i<3;i++) { 
-    bias[i] = (m_max[i] + m_min[i]) / 2;
-    scale[i] = (m_max[i] - m_min[i]) / 2;
-    avg_scale += scale[i];
-  }
-  for(int i=0;i<3;i++) {
-    scale[i] = (avg_scale / 3) / scale[i];
-  }
-
-  return true;
 }
 
 void Cli::calibrate_info(int seconds) {

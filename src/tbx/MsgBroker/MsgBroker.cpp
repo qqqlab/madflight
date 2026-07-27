@@ -24,6 +24,13 @@ SOFTWARE.
 
 #include "MsgBroker.h"
 
+
+//#define DEBUG_PRINTF(...) Serial.printf( __VA_ARGS__ )
+
+#ifndef DEBUG_PRINTF
+  #define DEBUG_PRINTF(...)
+#endif
+
 //=============================================================================
 // MsgBroker
 //=============================================================================
@@ -31,6 +38,7 @@ MsgTopicBase* MsgBroker::topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
 uint32_t MsgBroker::stat_ts = micros();
 
 void MsgBroker::add_topic(MsgTopicBase *topic) {
+  DEBUG_PRINTF("MsgBroker::add_topic(%d)", topic->name);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     if(!topic_list[i]) {
       topic_list[i] = topic;
@@ -84,12 +92,14 @@ void MsgBroker::reset_stats() {
 // MsgTopicBase
 //=============================================================================
 MsgTopicBase::MsgTopicBase(const char* name) {
+  DEBUG_PRINTF("MsgTopicBase::new topic=%s\n", name);
   strncpy(this->name, name, sizeof(this->name) - 1);
   this->name[sizeof(this->name) - 1] = 0;
   MsgBroker::add_topic(this);
 }
 
 void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
+  DEBUG_PRINTF("MsgTopicBase::add_subscription sub=%s topic=%s\n", sub->name, name);
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
     if(!sub_list[i]) {
       sub_list[i] = sub;
@@ -99,6 +109,7 @@ void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
 }
 
 void MsgTopicBase::remove_subscription(MsgSubscriptionBase *sub) {
+  DEBUG_PRINTF("MsgTopicBase::remove_subscription sub=%s topic=%s\n", sub->name, name);
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
     if(sub_list[i] == sub) {
       sub_list[i] = nullptr;

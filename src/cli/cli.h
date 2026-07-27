@@ -107,9 +107,7 @@ public:
   void calibrate_gyro();
   void calibrate_IMU();
   void calibrate_IMU2(bool gyro_only = false);
-  void calibrate_Magnetometer();
 private:
-  bool _calibrate_Magnetometer(float bias[3], float scale[3]);
   void calibrate_info(int seconds = 0);
 
 //========================================================================================================================//

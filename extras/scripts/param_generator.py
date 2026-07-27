@@ -34,20 +34,6 @@ def generate_config(outfilename, y):
     f.write("#include <stdint.h>\n")
     f.write("\n")
 
-    f.write("//all parameters with defaults\n")
-    f.write("struct CfgParam {\n")
-    for k in param:
-      p = param[k]
-      if 'since' in p:
-        f.write(f"  // {p['since']}\n")
-      if 'comment' in p: 
-        comment = " // " + p['comment']
-      else:
-        comment = ""
-      f.write(f"  {p['datatype']} {k} = {p['default']};{comment}\n")
-    f.write("}; //struct CfgParam\n")
-    f.write("\n")
-
     f.write("namespace Cfg {\n")
 
     f.write(f"  const uint16_t param_cnt = {len(param)}; //number of parameters\n")
@@ -57,7 +43,9 @@ def generate_config(outfilename, y):
     for k in param:
       p = param[k]
       if p['type'] == 'e':
-        f.write(f"  enum class {k}_enum {{ {mf_options[k]} }};\n")
+        f.write(f"  enum class {k}_enum : uint32_t {{ {mf_options[k]} }};\n")
+        param[k]['datatype'] = f"Cfg::{k}_enum" #change datatype to enum
+        param[k]['default'] =  f"Cfg::{k}_enum::mf_" + str(param[k]['default']) #expand default to enum key
     f.write("\n")
 
     f.write("  //list of parameters\n")
@@ -70,13 +58,24 @@ def generate_config(outfilename, y):
     f.write("  const param_list_t param_list[] = {\n")
     for k in param:
       p = param[k]
-      f.write(f"    {{ \"{k}\", {p['default']}, '{p['type']}', \"{mf_options[k]}\" }},\n")
+      f.write(f"    {{ \"{k}\", (float){p['default']}, '{p['type']}', \"{mf_options[k]}\" }},\n")
     f.write("  }; //const param_list_t param_list[]\n")
 
     f.write("}; //namespace Cfg\n")
     f.write("\n")
 
-
+    f.write("//all parameters with defaults\n")
+    f.write("struct CfgParam {\n")
+    for k in param:
+      p = param[k]
+      if 'since' in p:
+        f.write(f"  // {p['since']}\n")
+      comment = ""
+      if 'comment' in p: 
+        comment = " // " + p['comment']
+      f.write(f"  {p['datatype']} {k} = {p['default']};{comment}\n")
+    f.write("}; //struct CfgParam\n")
+    f.write("\n")
 
 
 

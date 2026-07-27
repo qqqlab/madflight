@@ -89,10 +89,6 @@ bool Ahr::update() {
     float _mz = config.pmag->mz;
     //update the mag values
     if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
-      //Correct the mag values with the calibration values
-      _mx = (_mx - config.mag_offset[0]) * config.mag_scale[0];
-      _my = (_my - config.mag_offset[1]) * config.mag_scale[1];
-      _mz = (_mz - config.mag_offset[2]) * config.mag_scale[2];
       //Low-pass filtered magnetometer data
       mx += B_mag * (_mx - mx);
       my += B_mag * (_my - my);

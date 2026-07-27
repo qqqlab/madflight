@@ -93,33 +93,56 @@ bool Mag::update() {
   runtimeTrace.start();
   bool updated = (gizmo != nullptr);
   updated = updated && schedule.interval(_samplePeriod); //wait for next sample interval
-  updated = updated && gizmo->update(&mx, &my, &mz);
+
+  updated = updated && gizmo->update(&raw[0], &raw[1], &raw[2]);
+
+  //Correct the mag values with the calibration values
+  float _mx = (raw[0] - config.mag_cal_x[0]) * config.mag_cal_sx[0];
+  float _my = (raw[1] - config.mag_cal_x[1]) * config.mag_cal_sx[1];
+  float _mz = (raw[2] - config.mag_cal_x[2]) * config.mag_cal_sx[2];
 
   if(updated) {
     //handle rotation for different mounting positions
-    switch((Cfg::mag_align_enum)cfg.mag_align) {
+    switch(*config.mag_align) {
       case Cfg::mag_align_enum::mf_CW0 :
+        mx = +_mx;
+        my = +_my; 
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW90 :
-        { float tmp; tmp=mx; mx=-my; my=tmp; }
+        mx = -_my;
+        my = +_mx; 
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW180 :
-        { mx=-mx; my=-my; }
+        mx = -_mx;
+        my = -_my;
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW270 :
-        { float tmp; tmp=mx; mx=my; my=-tmp; }
+        mx = +_my;
+        my = -_mx;
+        mz = +_mz;
         break;
       case Cfg::mag_align_enum::mf_CW0FLIP :
-        { my=-my; mz=-mz; }
+        mx = +_mx;
+        my = -_my; 
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW90FLIP :
-        { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
+        mx = +_my;
+        my = +_mx;
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW180FLIP :
-        { mx=-mx; mz=-mz; }
+        mx = -_mx;
+        my = +_my;
+        mz = -_mz;
         break;
       case Cfg::mag_align_enum::mf_CW270FLIP :
-        { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
+        mx = -_my;
+        my = -_mx;
+        mz = -_mz;
         break;
     }
 
@@ -130,4 +153,106 @@ bool Mag::update() {
 
   runtimeTrace.stop(updated);
   return updated;
+}
+
+void Mag::cli_calibrate() {
+  float bias[3], scale[3];
+
+  Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
+  if ( _calibrate(bias, scale) ) {
+    Serial.println("Calibration Successful!");
+    Serial.printf("set mag_cal_x  %+f #config was %+f\n", bias[0], config.mag_cal_x[0]);
+    Serial.printf("set mag_cal_y  %+f #config was %+f\n", bias[1], config.mag_cal_x[1]);
+    Serial.printf("set mag_cal_z  %+f #config was %+f\n", bias[2], config.mag_cal_x[2]);
+    Serial.printf("set mag_cal_sx %+f #config was %+f\n", scale[0], config.mag_cal_sx[0]);
+    Serial.printf("set mag_cal_sy %+f #config was %+f\n", scale[1], config.mag_cal_sx[1]);
+    Serial.printf("set mag_cal_sz %+f #config was %+f\n", scale[2], config.mag_cal_sx[2]);
+    Serial.println("Note: type 'save' to save these values to flash");
+    Serial.println(" ");
+    Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
+  } else {
+    Serial.println("ERROR: No magnetometer");
+  }
+
+  //save new calibration values
+  for(int axis = 0; axis < 3; axis++) {
+    config.mag_cal_x[axis] = bias[axis];
+    config.mag_cal_sx[axis] = scale[axis];
+  }
+}
+
+// finds bias and scale factor calibration for the magnetometer, the sensor should be rotated in a figure 8 motion until complete
+// Note: Earth's field ranges between approximately 25 and 65 uT. (Europe & USA: 45-55 uT, inclination 50-70 degrees)
+bool Mag::_calibrate(float bias[3], float scale[3]) {
+  const int maxCounts = 1000; //sample for at least 10 seconds @ 100Hz
+  const float count_reduction_factor = 0.7; // reduce counter when a min/max changed by at least 10% of current min-max range
+
+  float mlast[3] = {0};
+  int counter;
+  float m_max[3];
+  float m_min[3];
+
+  //exit if no mag present
+  if(!mag.installed()) return false;
+
+  //start subscription
+  auto mag_sub = MsgSubscription<MagState>("calmag", &mag.topic);
+  MagState state;
+  float *m = state.raw;
+
+  // get starting sample
+  uint32_t ts = millis();
+  while(millis() - ts < 1000) {
+    if(mag_sub.pull_updated(&state)) break;
+  }
+
+  //save starting data
+  for(int axis = 0; axis < 3; axis++) {
+    mlast[axis] = m[axis];
+    m_max[axis] = m[axis];
+    m_min[axis] = m[axis];
+  }
+
+  // collect data to find max / min in each channel
+  // sample counter times, reduce counter when a min/max changed by at least 10% of current min-max range
+  uint32_t progress_time = millis() - 1000;
+  counter = 0;
+  while (counter < maxCounts) {
+    if(mag_sub.pull_updated(&state)) {
+      if ( m[0] != mlast[0] && m[1] != mlast[1] && m[2] != mlast[2] && m[0] != 0  && m[1] != 0 && m[2] != 0) { //value changed and is not 0,0,0
+        for(int axis = 0; axis < 3; axis++) {
+          float range_limit = 0.1 * (m_max[axis] - m_min[axis]);
+          if(m_min[axis] > m[axis]) {
+            if(m_min[axis] - m[axis] > range_limit) counter *= count_reduction_factor;
+            m_min[axis] = m[axis];
+          }
+          if(m_max[axis] < m[axis]) {
+            if(m[axis] - m_max[axis] > range_limit) counter *= count_reduction_factor;
+            m_max[axis] = m[axis];
+          }
+          mlast[axis] = m[axis];
+        }
+        counter++;
+      }
+    }
+    
+    //print progress
+    if (millis() - progress_time > 1000) {
+      progress_time = millis();
+      Serial.printf("done:%2d%%\txmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", counter * 100 / maxCounts, m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
+    }
+  }
+
+  // find the magnetometer bias and scale
+  float avg_scale = 0;
+  for(int axis = 0; axis < 3; axis++) { 
+    bias[axis] = (m_max[axis] + m_min[axis]) / 2;
+    scale[axis] = (m_max[axis] - m_min[axis]) / 2;
+    avg_scale += scale[axis];
+  }
+  for(int axis = 0; axis < 3; axis++) {
+    scale[axis] = (avg_scale / 3) / scale[axis];
+  }
+
+  return true;
 }
