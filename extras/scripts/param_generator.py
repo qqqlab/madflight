@@ -72,7 +72,7 @@ def generate_config(outfilename, y):
         f.write(f"  // {p['since']}\n")
       comment = ""
       if 'comment' in p: 
-        comment = " // " + p['comment']
+        comment = " /* " + p['comment'] + " */"
       f.write(f"  {p['datatype']} {k} = {p['default']};{comment}\n")
     f.write("}; //struct CfgParam\n")
     f.write("\n")
