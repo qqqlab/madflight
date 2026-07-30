@@ -478,6 +478,23 @@ void CfgClass::loadFromString(const char *batch) {
 void CfgClass::load_madflight(const char *board, const char *config) {
   Serial.print("CFG: Loading config - ");
 
+  /* debug crc
+  if(board && board[0]) {
+    uint32_t crc = 0xFFFFFFFF;
+    crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);
+    Serial.printf("board:%04X %d \"", crc & 0xFFFF, strlen(board));
+    for(int i=0;i<10;i++) Serial.print(board[i]);
+    Serial.print("\" ");
+  }
+  if(config && config[0]) {
+    uint32_t crc = 0xFFFFFFFF;    
+    crc = tbx_crc32((const uint8_t*)config, strlen(config), crc);
+    Serial.printf("config:%04X %d \"",crc & 0xFFFF, strlen(config));
+    for(int i=0;i<10;i++) Serial.print(board[i]);
+    Serial.print("\" ");
+  }
+  //*/
+
   //calc crc
   uint32_t crc = 0xFFFFFFFF;
   if(board && board[0]) crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);

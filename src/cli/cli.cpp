@@ -449,7 +449,7 @@ void Cli::help() {
   "spinmotors          Spin each motor\n"
   "reboot              Reboot flight controller\n"
   "-- PRINT --\n"
-  "poff                Printing off\n"
+  "q / poff            Printing off\n"
   "pall                Print all\n"
   );
   for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
@@ -587,7 +587,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     print_i2cScan();
   }else if (cmd == "reboot") {
     hal_reboot();
-  }else if (cmd == "poff") {
+  }else if (cmd == "q" || cmd == "poff") {
     cli_print_all(false);
   }else if (cmd == "pall") {
     cli_print_all(true);
