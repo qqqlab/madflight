@@ -39,8 +39,8 @@ imu_i2c_bus    -1      // i2c
 imu_i2c_adr    0       // i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
 //--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_ser_bus   -1     // serial
+rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
+rcl_ser_bus    1     // 0=RED 1=BLACK Grove (use 1=BLACK and keep 0=RED for BBX/GPS)
 pin_rcl_ppm   -1     // ppm
 rcl_num_ch     8     // serial and ppm: number of channels
 rcl_deadband   0     // serial and ppm: center stick deadband
@@ -71,14 +71,14 @@ gps_baud       0     // use 0 for auto baud
 gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-bbx_gizmo      NONE  // options: NONE, SDSPI, SDMMC, OPENLOG
+bbx_gizmo      OPENLOG 
+bbx_ser_bus    0    // use 0=RED Grove only, openlog does not work with 1=BLACK Grove with pullups
+bbx_baud       0    // use 0 for default 115200 baud
 pin_bbx_cs    -1     // spi
 bbx_spi_bus   -1     // spi
 pin_mmc_dat   -1     // mmc
 pin_mmc_clk   -1     // mmc
 pin_mmc_cmd   -1     // mmc
-bbx_ser_bus   -1     // openlog
-bbx_baud       0     // openlog, use 0 for default 115200 baud
 
 //--- RDR --- Radar (use serial bus -OR- trig+echo pins)
 rdr_gizmo      NONE  // options: NONE, DTS6012M, LD2411S, LD2413, SR04, USD1
