@@ -33,7 +33,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build 10.Quadcopter
-        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter/madflight_config.h" "examples/10.Quadcopter/main.cpp"
+        run: pio ci --project-conf=".github/ci/ci_platformio.ini" --lib="." --exclude="examples" --lib="examples/10.Quadcopter/madflight_config.h" "examples/10.Quadcopter/main_quad.cpp"
 #Note: add -v for verbose: pio ci -v ...
 
       - name: PlatformIO prune
