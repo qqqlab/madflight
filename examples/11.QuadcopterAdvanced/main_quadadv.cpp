@@ -78,7 +78,7 @@ const float maxYawRate     = 160.0;  //Max yaw rate in deg/sec for angle and rat
 const float i_limit        = 25.0;   //Integrator saturation level, mostly for safety (default 25.0)
 
 //PID Angle Mode 
-const float Kp_ro_pi_angle = 0.2;    //Roll/Pitch P-gain
+const float Kp_ro_pi_angle = 0.4;    //Roll/Pitch P-gain
 const float Ki_ro_pi_angle = 0.1;    //Roll/Pitch I-gain
 const float Kd_ro_pi_angle = 0.05;   //Roll/Pitch D-gain
 const float Kp_yaw_angle   = 0.6;    //Yaw P-gain
@@ -94,9 +94,6 @@ const float Kd_yaw_rate    = 0.00015;//Yaw rate D-gain (be careful when increasi
 
 //Yaw to keep in ANGLE mode when yaw stick is centered
 float yaw_desired = 0;
-
-//Motor output definition, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
-const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
 
 //Motor Setup
 
