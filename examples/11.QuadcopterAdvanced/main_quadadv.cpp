@@ -98,6 +98,23 @@ float yaw_desired = 0;
 //Motor output definition, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
 const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
 
+//Motor Setup
+
+//Define motor outputs, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
+const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
+
+void setup_motors() {
+  // Uncomment ONE line - select output type
+  bool success = out.setup_motors     (4, motor_outputs, 400, 950, 2000); // Standard PWM: 400Hz, 950-2000 us
+  //bool success = out.setup_motors     (4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
+  //bool success = out.setup_dshot      (4, motor_outputs, 300);            // Dshot300
+  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);            // Dshot300 Bi-Directional
+  //bool success = out.setup_brushed    (4, motor_outputs, 5000);           // Brushed motors: 5000Hz with 0-100% duty cycle
+
+  out.print(); //print motor configuration
+  if(!success) madflight_panic("Motor init failed.");
+}
+
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
@@ -109,15 +126,7 @@ void setup() {
   // STOP if imu is not installed
   if(!imu.installed()) madflight_panic("This program needs an IMU.");
 
-  // Uncomment ONE line - select output type
-  bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
-  //bool success = out.setup_motors(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
-  //bool success = out.setup_dshot(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 300);             // Dshot300
-  //bool success = out.setup_dshot_bidir(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 300);       // Dshot300 Bi-Directional
-  //bool success = out.setup_brushed(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
-
-  out.print(); //print motor configuration
-  if(!success) madflight_panic("Motor init failed.");
+  setup_motors();
 
   // Set initial desired yaw
   yaw_desired = ahr.yaw;
