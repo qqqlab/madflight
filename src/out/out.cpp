@@ -62,7 +62,7 @@ bool Out::_setup_output(uint8_t idx, type_enum typ, float freq_hz, float pwm_min
   return true;
 }
 
-bool Out::setup_dshot(uint8_t cnt, int* idxs, int freq_khz) {
+bool Out::setup_dshot(uint8_t cnt, const int* idxs, int freq_khz) {
   int dshot_pins[OUT_SIZE];
   for(int i = 0; i < cnt; i++) {
     if(!_setup_output(idxs[i], type_enum::DSHOT, 0, 0, 0)) return false;
@@ -74,7 +74,7 @@ bool Out::setup_dshot(uint8_t cnt, int* idxs, int freq_khz) {
   return true; 
 }
 
-bool Out::setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz) {
+bool Out::setup_dshot_bidir(uint8_t cnt, const int* idxs, int freq_khz) {
   int dshot_pins[cnt];
   for(int i = 0; i < cnt; i++) {
     if(!_setup_output(idxs[i], type_enum::DSHOTBIDIR, 0, 0, 0)) return false;
@@ -86,14 +86,14 @@ bool Out::setup_dshot_bidir(uint8_t cnt, int* idxs, int freq_khz) {
   return true; 
 }
 
-bool Out::setup_brushed(uint8_t cnt, int* idxs, int freq_hz) {
+bool Out::setup_brushed(uint8_t cnt, const int* idxs, int freq_hz) {
   for(int i = 0; i < cnt; i++) {  
     if(!_setup_output(idxs[i], type_enum::BRUSHED, freq_hz, 0, 1e6f / freq_hz)) return false;
   }
   return true;
 }
 
-bool Out::setup_motors(uint8_t cnt, int* idxs, int freq_hz, int pwm_min_us, int pwm_max_us) {
+bool Out::setup_motors(uint8_t cnt, const int* idxs, int freq_hz, int pwm_min_us, int pwm_max_us) {
   for(int i = 0; i < cnt; i++) {
     if(!setup_motor(idxs[i], freq_hz, pwm_min_us, pwm_max_us)) return false;
   }

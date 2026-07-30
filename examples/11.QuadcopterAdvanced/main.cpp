@@ -95,6 +95,9 @@ const float Kd_yaw_rate    = 0.00015;//Yaw rate D-gain (be careful when increasi
 //Yaw to keep in ANGLE mode when yaw stick is centered
 float yaw_desired = 0;
 
+//Motor output definition, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
+const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
+
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
 //========================================================================================================================//
@@ -106,15 +109,12 @@ void setup() {
   // STOP if imu is not installed
   if(!imu.installed()) madflight_panic("This program needs an IMU.");
 
-  // Enter here the 4 output indices for the motors (default is {0, 1, 2, 3} i.e. pin_out0, pin_out1, pin_out2, pin_out3)
-  int motor_outputs[] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front motor
-
   // Uncomment ONE line - select output type
   bool success = out.setup_motors(4, motor_outputs, 400, 950, 2000);   // Standard PWM: 400Hz, 950-2000 us
-  //bool success = out.setup_motors(4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
-  //bool success = out.setup_dshot(4, motor_outputs, 300);             // Dshot300
-  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);       // Dshot300 Bi-Directional
-  //bool success = out.setup_brushed(4, motor_outputs, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
+  //bool success = out.setup_motors(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
+  //bool success = out.setup_dshot(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 300);             // Dshot300
+  //bool success = out.setup_dshot_bidir(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 300);       // Dshot300 Bi-Directional
+  //bool success = out.setup_brushed(4,  {MOTOR1, MOTOR2, MOTOR3, MOTOR4}, 5000);          // Brushed motors: 5000Hz with 0-100% duty cycle
 
   out.print(); //print motor configuration
   if(!success) madflight_panic("Motor init failed.");
@@ -374,15 +374,15 @@ Yaw right               (CCW+ CW-)       -++-
 
   if(rcl.throttle == 0) {
     //if throttle idle, then run props at low speed without applying PID. This allows for stick commands for arm/disarm.
-    out.set_output(0, thr);
-    out.set_output(1, thr);
-    out.set_output(2, thr);
-    out.set_output(3, thr);
+    out.set_output(motor_outputs[0], thr);
+    out.set_output(motor_outputs[1], thr);
+    out.set_output(motor_outputs[2], thr);
+    out.set_output(motor_outputs[3], thr);
   }else{
     // Quad mixing
-    out.set_output(0, thr - pid.pitch - pid.roll - pid.yaw); //M1 Back Right CW
-    out.set_output(1, thr + pid.pitch - pid.roll + pid.yaw); //M2 Front Right CCW
-    out.set_output(2, thr - pid.pitch + pid.roll + pid.yaw); //M3 Back Left CCW
-    out.set_output(3, thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
+    out.set_output(motor_outputs[0], thr - pid.pitch - pid.roll - pid.yaw); //M1 Back Right CW
+    out.set_output(motor_outputs[1], thr + pid.pitch - pid.roll + pid.yaw); //M2 Front Right CCW
+    out.set_output(motor_outputs[2], thr - pid.pitch + pid.roll + pid.yaw); //M3 Back Left CCW
+    out.set_output(motor_outputs[3], thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
   }
 }

@@ -42,21 +42,31 @@ ser_bus 0 is the RED Grove port with 4.7k pullups - DOES NOT WORK with OPENLOG, 
 ser_bus 1 is the BLACK Grove port without pullups - should work with all serial devices
 */
 const char madflight_config[] = R""(
-rcl_gizmo      CRSF // Set receiver type: MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_ser_bus    1    // 0=RED 1=BLACK Grove
 
-//--- Black Box Data Logger --- (uncomment bbx_*** to enable GPS)
-//bbx_gizmo      OPENLOG 
-//bbx_ser_bus    0    // use 0=RED Grove only, does not work with BLACK Grove with pullups
-//bbx_baud       0    // use 0 for default 115200 baud
+// Default from brd/stampfly.h: CRSF receiver on ser_bus 1 (BLACK) and openlog on ser_bus 0 (RED)
 
-//--- GPS --- (uncomment gps_*** to enable GPS)
+// Use settings below to override 
+
+// Uncomment to change receiver type
+//rcl_gizmo      CRSF // Set receiver type: MAVLINK, CRSF, SBUS, DSM, PPM xxx
+//rcl_ser_bus    1    // BLACK Grove
+
+// Uncomment this block to use GPS instead of OPENLOG on RED Grove
+//bbx_gizmo      NONE 
+//bbx_ser_bus    -1   //disable
 //gps_gizmo      UBLOX
-//gps_ser_bus    0    // 0=RED 1=BLACK Grove
+//gps_ser_bus    0    // RED Grove
 //gps_baud       0    // use 0 for auto baud
 
 )""; // End of madflight_config
-#define MF_BOARD "brd/stampfly.h"
+
+//Vehicle specific madflight configuration
+#define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
+#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_ACRO, AP_COPTER_FLIGHTMODE_STABILIZE} //mapping of fightmode index to ArduPilot code for logging and mavlink
+#define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
+enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
+flightmode_enum rcl_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}; //flightmode mapping from 2/3/6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+
 #include <madflight.h>
 
 //prototypes (for PlatformIO, not needed for Arduino IDE)
@@ -74,10 +84,6 @@ void out_Mixer();
 //IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
 const float armed_min_throttle = 0.03; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
 
-//Flight Mode: Uncommment only one
-#define FLIGHTMODE_RATE   //control rate - stick centered will keep current roll/pitch angle
-//#define FLIGHTMODE_ANGLE  //control angle - stick centered will return to horizontal - IMPORTANT: execute CLI 'calimu' and 'save' before using this!!!
-
 //Controller parameters
 const float maxRoll        = 30.0;   //Max roll angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
 const float maxPitch       = 30.0;   //Max pitch angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
@@ -87,7 +93,7 @@ const float maxYawRate     = 160.0;  //Max yaw rate in deg/sec for angle and rat
 const float i_limit        = 25.0;   //Integrator saturation level, mostly for safety (default 25.0)
 
 //PID Angle Mode 
-const float Kp_ro_pi_angle = 0.2;    //Roll/Pitch P-gain
+const float Kp_ro_pi_angle = 0.4;    //Roll/Pitch P-gain
 const float Ki_ro_pi_angle = 0.1;    //Roll/Pitch I-gain
 const float Kd_ro_pi_angle = 0.05;   //Roll/Pitch D-gain
 const float Kp_yaw_angle   = 0.6;    //Yaw P-gain
@@ -103,6 +109,9 @@ const float Kd_yaw_rate    = 0.00015;//Yaw rate D-gain (be careful when increasi
 
 //Yaw to keep in ANGLE mode when yaw stick is centered
 float yaw_desired = 0;
+
+//Motor output definition, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
+const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
 
 //========================================================================================================================//
 //                                                       SETUP()                                                          //
@@ -125,7 +134,7 @@ void setup() {
   out.print(); //print motor configuration
   if(!success) madflight_panic("Motor init failed.");
 
-  //set initial desired yaw
+  // Set initial desired yaw
   yaw_desired = ahr.yaw;
 
   Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
@@ -146,18 +155,25 @@ void loop() {
 
 //This is __MAIN__ function of this program. It is called when new IMU data is available.
 void imu_loop() {
-  //Blink LED
+  // Blink LED
   led_Blink();
 
-  //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
+  // Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
   ahr.update(); 
 
-  //PID Controller RATE or ANGLE
-  #ifdef FLIGHTMODE_ANGLE
-    control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint  //control_Angle2(rcin_thro_is_low); //Stabilize on pitch/roll setpoint using cascaded method. Rate controller must be tuned well first!
-  #else
-    control_Rate(rcl.throttle == 0); //Stabilize on rate setpoint
-  #endif
+  // Update flight mode
+  if(rcl.connected() && veh.setFlightmode( rcl_to_flightmode_map[rcl.flightmode] )) { //map rcl.flightmode (0 to 5) to vehicle flightmode
+    Serial.printf("Flightmode:%s\n",veh.flightmode_name());
+  }
+
+  //PID Controller
+  switch( veh.getFlightmode() ) {
+    case ANGLE: 
+      control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
+      break;
+    default: //RATE 
+      control_Rate(rcl.throttle == 0); //Stabilize on rate setpoint
+  }
 
   //Updates out.arm, the output armed flag
   out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
@@ -199,7 +215,7 @@ void control_Angle(bool zero_integrators) {
    * if the throttle is at the minimum setting. This means the motors will not start spooling up on the ground, and the I 
    * terms will always start from 0 on takeoff. This function updates the variables pid.roll, pid.pitch, and pid.yaw which
    * can be thought of as 1-D stablized signals. They are mixed to the configuration of the vehicle in out_Mixer().
-   */ 
+   */
 
   //inputs: roll_des, pitch_des, yawRate_des
   //outputs: pid.roll, pid.pitch, pid.yaw
@@ -318,6 +334,7 @@ void out_KillSwitchAndFailsafe() {
   if (!out.armed() && rcl.armed) {
     out.set_armed(true);
     Serial.println("OUT: ARMED");
+    bbx.start(); //start blackbox logging
   }
 
   //Change to DISARMED when rcl is disarmed, or if radio lost connection
@@ -325,8 +342,10 @@ void out_KillSwitchAndFailsafe() {
     out.set_armed(false);
     if(!rcl.armed) {
       Serial.println("OUT: DISARMED");
+      bbx.stop(); //stop blackbox logging
     }else{
       Serial.println("OUT: DISARMED due to lost radio connection");
+      //keep on logging to document the crash...
     }
   }
 }
