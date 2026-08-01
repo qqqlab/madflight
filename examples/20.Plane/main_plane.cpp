@@ -73,13 +73,6 @@ MIT license
 MIT license - Copyright (c) 2023-2026 https://madflight.com
 ##########################################################################################################################*/
 
-//Vehicle specific madflight configuration
-#define VEH_TYPE VEH_TYPE_PLANE //set the vehicle type for logging and mavlink
-#define VEH_FLIGHTMODE_AP_IDS {AP_PLANE_FLIGHTMODE_MANUAL, AP_PLANE_FLIGHTMODE_STABILIZE, AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A} //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
-#define VEH_FLIGHTMODE_NAMES {"MANUAL", "ROLL", "FBWA"} //fightmode names for telemetry
-enum flightmode_enum {MANUAL, ROLL, FBWA}; //available flight modes: MANUAL send rc commands directly to motor and aileron/pitch/yaw servos, ROLL stabilize roll angle, FBWA stabilize roll/pitch angles
-flightmode_enum rcin_to_flightmode_map[6] {MANUAL, MANUAL, ROLL, ROLL, FBWA, FBWA}; //flightmode mapping from 3/6 pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
-
 #include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
@@ -164,6 +157,9 @@ float rcin_flaps; //flaps 0.0:up, 1.0:full down
 //========================================================================================================================//
 
 void setup() {
+  // pre-madflight_setup vehicle configuration
+  veh.mav_type = VEH_TYPE_PLANE; //set the vehicle type for logging and mavlink
+
   // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
   madflight_setup();
 
@@ -207,15 +203,12 @@ void imu_loop() {
   //Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
   ahr.update(); 
 
-  // Update flight mode.
-  veh.setFlightmode( rcin_to_flightmode_map[rcl.flightmode] ); //map rcl.flightmode (0 to 5) to vehicle flightmode
-
   //PID Controller
   switch( veh.getFlightmode() ) {
-    case ROLL:
+    case FlightMode::mf_ROLL:
       control_ROLL(rcl.throttle == 0); //Stabilize on roll angle setpoints
       break;    
-    case FBWA:
+    case FlightMode::mf_FBWA:
       control_FBWA(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoints
       break;
     default:

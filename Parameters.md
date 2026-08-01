@@ -136,6 +136,12 @@
 |`rcl_arm_min`|Minimum PWM for ARMED<br>_since v1.3.4_|1600||
 |`rcl_baud`|Radio Receiver Baud Rate. Set to 0 for automatic.<br>_since v2.0.0_|0||
 |`rcl_deadband`|Radio Receiver Stick Deadband<br>_since v2.0.0_|0||
+|`rcl_flt0`|Flight Mode 0<br>_since v2.3.4_|RATE||
+|`rcl_flt1`|Flight Mode 1<br>_since v2.3.4_|RATE||
+|`rcl_flt2`|Flight Mode 2<br>_since v2.3.4_|RATE||
+|`rcl_flt3`|Flight Mode 3<br>_since v2.3.4_|RATE||
+|`rcl_flt4`|Flight Mode 4<br>_since v2.3.4_|RATE||
+|`rcl_flt5`|Flight Mode 5<br>_since v2.3.4_|ANGLE||
 |`rcl_flt_ch`|Flight Mode Channel (1-based) - default is AETR,arm,flightmode<br>_since v1.3.4_|6||
 |`rcl_flt_max`|Flight Mode 6-pos Switch Highest PWM (flight mode 5)<br>_since v1.3.4_|1815||
 |`rcl_flt_min`|Flight Mode 6-pos Switch Lowest PWM (flight mode 0)<br>_since v1.3.4_|1165||

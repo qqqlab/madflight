@@ -32,7 +32,7 @@ SOFTWARE.
 #include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
 
 //Vehicle type (corresponding to mavlink MAV_TYPE)
-#define VEH_TYPE_GENERIC 0 //0 MAV_TYPE_GENERIC	Generic micro air vehicle
+//#define VEH_TYPE_GENERIC 0 //0 MAV_TYPE_GENERIC	Generic micro air vehicle
 #define VEH_TYPE_PLANE 1   //1 MAV_TYPE_FIXED_WING	Fixed wing aircraft
 #define VEH_TYPE_COPTER 2  //2	MAV_TYPE_QUADROTOR	Quadrotor
 #define VEH_TYPE_ROVER 10  //10	MAV_TYPE_GROUND_ROVER	Ground rover
@@ -134,22 +134,46 @@ typedef enum {
     AP_SUB_FLIGHTMODE_MOTOR_DETECT = 20   // Automatically detect motors orientation
 } AP_SUB_FLIGHTMODE_ENUM;
 
+#include "../cfg/param.yaml.h" //defines enum FlightMode
+
+
+
+
 struct VehState {
-    uint8_t _flightmode = 0; //current flight mode index
+    FlightMode _flightmode = FlightMode::mf_RATE; //current flight mode index
 };
 
 class Veh : public VehState {
   public:
     MsgTopic<VehState> topic = MsgTopic<VehState>("veh");
 
-    static const uint8_t mav_type; //mavlink vehicle type
-    static const uint8_t flightmode_ap_ids[6]; //mapping from flightmode to ArduPilot flight mode id
-    static const char* flightmode_names[6]; //define flightmode name strings for telemetry
-  
-    bool setFlightmode(uint8_t flightmode); //returns true if flightmode changed
-    uint8_t getFlightmode();
+    uint8_t mav_type = VEH_TYPE_COPTER; //mavlink vehicle type
+
+    bool setFlightmode(FlightMode flightmode); //returns true if flightmode changed
+    FlightMode getFlightmode();
     uint8_t flightmode_ap_id();
     const char* flightmode_name();
+
+    struct FlightModeMap_enum {
+        char name[5]; //max 4 char
+        uint8_t mav_type;
+        uint8_t ap_fm;  //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
+    };
+    #define MF_FLIGHTMODE_COUNT 11
+    struct FlightModeMap_enum flightmode_map[MF_FLIGHTMODE_COUNT] = {
+        //keep in same order as enum FlightMode
+        {"FM0",  255, 255},
+        {"FM1",  255, 255},
+        {"FM2",  255, 255},
+        {"FM3",  255, 255},
+        {"FM4",  255, 255},
+        {"FM5",  255, 255},
+        {"RATE", VEH_TYPE_COPTER, AP_COPTER_FLIGHTMODE_ACRO},
+        {"ANGL", VEH_TYPE_COPTER, AP_COPTER_FLIGHTMODE_STABILIZE},
+        {"MANU", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_MANUAL},
+        {"ROLL", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_STABILIZE},
+        {"FBWA", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A},
+    };
 
   private:
     const char* flightmode_name_unknown = "???";

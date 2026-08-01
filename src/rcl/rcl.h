@@ -40,7 +40,7 @@ public:
     float yaw = 0; //yaw stick value -1.0 (left) to 1.0 (right)
     float vspeed = 0; //vertical speed stick value -1.0 (descent/stick back) to 1.0 (ascent/stick forward)
     bool armed = false; //armed state (triggered by arm switch or stick commands)
-    uint8_t flightmode = 0; //flightmode 0 to 5    
+    uint8_t flightmode_idx = 0; //flightmode 6-pos switch index, values 0-5
 };
 
 struct RclConfig {
