@@ -354,17 +354,6 @@ void madflight_setup() {
     alt.setup(bar.alt);
   }
 
-  // AHR - setup low pass filters for AHRS filters
-  ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
-  ahr.config.gyrLpFreq = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
-  ahr.config.accLpFreq = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
-  ahr.config.magLpFreq = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
-  ahr.config.pimu = &imu; //pointer to Imu to use
-  ahr.config.pmag = &mag; //pointer to Mag to use
-  ahr.config.gyr_offset = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
-  ahr.config.acc_offset = &(cfg.imu_cal_ax); //acc offset[3] [G]
-  ahr.setup();
-
   // IMU - Intertial Measurement Unit (gyro/acc/mag)
   imu.config.sample_rate_requested = cfg.imu_rate; //sample rate [Hz]
   imu.config.pin_int = cfg.pin_imu_int; //IMU data ready interrupt pin
@@ -375,6 +364,9 @@ void madflight_setup() {
   imu.config.i2c_adr = cfg.imu_i2c_adr; //i2c address. 0=default address
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
   imu.config.pin_clkin = cfg.pin_imu_clkin; //CLKIN pin for ICM-42866-P - only tested for RP2 targets
+  imu.config.imu_align = cfg.imu_align; //mounting alignment
+  imu.config.imu_cal_gx = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
+  imu.config.imu_cal_ax = &(cfg.imu_cal_ax); //acc offset[3] [G]
 
   // IMU - Some IMU sensors need a couple of tries...
   int tries = 10;
@@ -394,6 +386,15 @@ void madflight_setup() {
     imu.config.pmag = &mag;
     Serial.println("IMU: magnetometer installed");
   }
+
+  // AHR - setup low pass filters for AHRS filters (needs imu+mag to be configured first)
+  ahr.config.gizmo = (Cfg::ahr_gizmo_enum)cfg.ahr_gizmo; //the gizmo to use
+  ahr.config.imu_gyr_lp = cfg.imu_gyr_lp; //gyro low pass filter freq [Hz]
+  ahr.config.imu_acc_lp = cfg.imu_acc_lp; //accelerometer low pass filter freq [Hz]
+  ahr.config.mag_lp = cfg.mag_lp; //magnetometer low pass filter freq [Hz]
+  ahr.config.pimu = &imu; //pointer to Imu to use
+  ahr.config.pmag = &mag; //pointer to Mag to use
+  ahr.setup();
 
   // IMU - Start IMU update handler
   if(imu.installed()) {

@@ -29,6 +29,7 @@ SOFTWARE.
 #include "../imu/imu.h"
 #include "../mag/mag.h"
 #include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
+#include "../tbx/MF_Filter.h"
 
 struct __attribute__((aligned(4))) AhrState {
   public:
@@ -46,13 +47,11 @@ struct __attribute__((aligned(4))) AhrState {
 struct AhrConfig {
   public:
     Cfg::ahr_gizmo_enum gizmo = Cfg::ahr_gizmo_enum::mf_MAHONY; //the gizmo to use
-    float gyrLpFreq = 1e10; //gyro low pass filter freq [Hz] (default to no filtering)
-    float accLpFreq = 1e10; //accelerometer low pass filter freq [Hz] (default to no filtering)
-    float magLpFreq = 1e10; //magnetometer low pass filter freq [Hz] (default to no filtering)
+    float imu_gyr_lp = 1e10; //gyro low pass filter freq [Hz] (default to no filtering)
+    float imu_acc_lp = 1e10; //accelerometer low pass filter freq [Hz] (default to no filtering)
+    float mag_lp = 1e10; //magnetometer low pass filter freq [Hz] (default to no filtering)
     Imu* pimu = nullptr; //pointer to Imu to use
     Mag* pmag = nullptr; //pointer to Mag to use
-    float* gyr_offset = nullptr; //gyro offset[3] [deg/sec]
-    float* acc_offset = nullptr; //acc offset[3] [G]
 };
 
 class AhrGizmo {
@@ -79,9 +78,9 @@ class Ahr : public AhrState {
     float getAccelUp(); //get acceleration in earth-frame up direction in [m/s^2]
 
   protected:
-    float B_gyr = 1.0;            // gyr filter constant
-    float B_acc = 1.0;            // acc filter constant
-    float B_mag = 1.0;            // mag filter constant
+    MF_Filter *gyr_filter[3] = {new MF_FilterLowPT1(), new MF_FilterLowPT1(), new MF_FilterLowPT1()};
+    MF_Filter *acc_filter[3] = {new MF_FilterLowPT1(), new MF_FilterLowPT1(), new MF_FilterLowPT1()};
+    MF_Filter *mag_filter[3] = {new MF_FilterLowPT1(), new MF_FilterLowPT1(), new MF_FilterLowPT1()};
 
     void fusionUpdate();
     void computeAngles();
