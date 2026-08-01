@@ -35,9 +35,11 @@ Ahr ahr;
 int Ahr::setup() {
   cfg.printModule(MF_MOD);
 
-  B_gyr = lowpass_to_beta(config.gyrLpFreq, config.pimu->config.sample_rate);
-  B_acc = lowpass_to_beta(config.accLpFreq, config.pimu->config.sample_rate);
-  B_mag = lowpass_to_beta(config.magLpFreq, config.pimu->config.sample_rate);
+  for(int axis = 0; axis < 3; axis++) {
+    MF_Filter::setup(gyr_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.imu_gyr_lp);
+    MF_Filter::setup(acc_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.imu_acc_lp);
+    MF_Filter::setup(mag_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.mag_lp);
+  }
 
   //create gizmo
   delete gizmo;
@@ -73,14 +75,14 @@ bool Ahr::update() {
   // compute euler angles from q
 
   //Low-pass filtered, corrected accelerometer data
-  ax += B_acc * ((config.pimu->ax - config.acc_offset[0]) - ax);
-  ay += B_acc * ((config.pimu->ay - config.acc_offset[1]) - ay);
-  az += B_acc * ((config.pimu->az - config.acc_offset[2]) - az);
+  ax = acc_filter[0]->apply(config.pimu->ax);
+  ay = acc_filter[1]->apply(config.pimu->ay);
+  az = acc_filter[2]->apply(config.pimu->az);
 
   //Low-pass filtered, corrected gyro data
-  gx += B_gyr * ((config.pimu->gx - config.gyr_offset[0]) - gx);
-  gy += B_gyr * ((config.pimu->gy - config.gyr_offset[1]) - gy);
-  gz += B_gyr * ((config.pimu->gz - config.gyr_offset[2]) - gz);
+  gx = gyr_filter[0]->apply(config.pimu->gx);
+  gy = gyr_filter[1]->apply(config.pimu->gy);
+  gz = gyr_filter[2]->apply(config.pimu->gz);
 
   //Magnetometer (External chip, or internal in IMU chip) 
   if(config.pmag) {
@@ -90,9 +92,9 @@ bool Ahr::update() {
     //update the mag values
     if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
       //Low-pass filtered magnetometer data
-      mx += B_mag * (_mx - mx);
-      my += B_mag * (_my - my);
-      mz += B_mag * (_mz - mz);
+      mx = mag_filter[0]->apply(_mx);
+      my = mag_filter[1]->apply(_my);
+      mz = mag_filter[2]->apply(_mz);
     }
   }else{
     mx = 0;

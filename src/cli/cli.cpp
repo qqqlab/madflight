@@ -693,20 +693,23 @@ void Cli::calibrate_IMU2(bool gyro_only) {
 
   //Read IMU values, and average the readings
   const int timeout = 3000;
-  Stat alt;
-  Stat ax, ay, az, gx, gy, gz;
+  Stat alt, a[3], g[3];
+  const char axisname[3] = {'x','y','z'};
+  float *acal = &cfg.imu_cal_ax; //current a calibration
+  float *gcal = &cfg.imu_cal_gx; //current g calibration
   uint32_t ts = millis();
   while(millis() - ts < timeout) {
     if(bar_sub.pull_updated(&bar_s)) {
       alt.append(bar_s.alt);
     }
     if(imu_sub.pull_updated(&imu_s)) {
-      ax.append(imu_s.ax);
-      ay.append(imu_s.ay);
-      az.append(imu_s.az - 1.0); //remove gravitation
-      gx.append(imu_s.gx);
-      gy.append(imu_s.gy);
-      gz.append(imu_s.gz); 
+      imu.convert_to_raw(&imu_s.gx, &imu_s.ax);
+      a[0].append(imu_s.ax);
+      a[1].append(imu_s.ay);
+      a[2].append(imu_s.az - 1.0); //remove gravitation
+      g[0].append(imu_s.gx);
+      g[1].append(imu_s.gy);
+      g[2].append(imu_s.gz); 
     }
   }
 
@@ -716,20 +719,30 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     Serial.printf("BAR: Ground level: %.3fm (%d samples, stdev: %.3fm)\n", alt.mean(), alt.n, alt.std());
   }
 
-  Serial.printf("set imu_cal_gx %+f #config was %+f\n", gx.mean(), cfg.imu_cal_gx);
-  Serial.printf("set imu_cal_gy %+f #config was %+f\n", gy.mean(), cfg.imu_cal_gy);
-  Serial.printf("set imu_cal_gz %+f #config was %+f\n", gz.mean(), cfg.imu_cal_gz);
+  float aoff[3], goff[3]; //measured offsets
+  for(int axis = 0; axis < 3; axis++) {
+    aoff[axis] = a[axis].mean();
+    goff[axis] = g[axis].mean();
+  }
+
+  for(int axis = 0; axis < 3; axis++) {
+    Serial.printf("set imu_cal_g%c %+f #config was %+f\n", axisname[axis], goff[axis], gcal[axis]);
+  }
 
   bool apply_gyro = true;
   
   if (gyro_only) {
     //only apply reasonable gyro errors
-    float gtol = 10;
-    apply_gyro = ( -gtol < gx.mean() && gx.mean() < gtol  &&  -gtol < gy.mean() && gy.mean() < gtol  &&  -gtol < gz.mean() && gz.mean() < gtol );
+    float gtol = 10; //in deg/s
+    apply_gyro = ( 
+      -gtol < goff[0] && goff[0] < gtol  &&  
+      -gtol < goff[1] && goff[1] < gtol  &&  
+      -gtol < goff[2] && goff[2] < gtol 
+    );
   }else{
-    Serial.printf("set imu_cal_ax %+f #config was %+f\n", ax.mean(), cfg.imu_cal_ax);
-    Serial.printf("set imu_cal_ay %+f #config was %+f\n", ay.mean(), cfg.imu_cal_ay);
-    Serial.printf("set imu_cal_az %+f #config was %+f\n", az.mean(), cfg.imu_cal_az);
+    for(int axis = 0; axis < 3; axis++) {
+      Serial.printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
+    }
   }
 /*
     //only apply reasonable acc errors
@@ -739,17 +752,17 @@ void Cli::calibrate_IMU2(bool gyro_only) {
 */
   
   if (apply_gyro) {
-    cfg.imu_cal_gx = gx.mean();
-    cfg.imu_cal_gy = gy.mean();
-    cfg.imu_cal_gz = gz.mean();
+    for(int axis = 0; axis < 3; axis++) {
+      gcal[axis] = goff[axis];
+    }
   }else{
      Serial.println("=== Not applying gyro correction, out of tolerance ===");
   }
 
   if (!gyro_only) {
-    cfg.imu_cal_ax = ax.mean();
-    cfg.imu_cal_ay = ay.mean();
-    cfg.imu_cal_az = az.mean();
+    for(int axis = 0; axis < 3; axis++) {
+      acal[axis] = aoff[axis];
+    }
   }
   
   Serial.println("Type 'save' to save these values to flash");

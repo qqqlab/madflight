@@ -55,6 +55,9 @@ struct ImuConfig {
     bool uses_i2c = false; //use I2C bus?
     int pin_clkin = -1; //IMU clkin pin
     Mag *pmag = nullptr; //mag pointer, used to store IMU internal magnetometer samples
+    Cfg::imu_align_enum imu_align = Cfg::imu_align_enum::mf_CW0; //mounting alignment
+    float* imu_cal_gx = nullptr; //gyro offset[3] [deg/sec]
+    float* imu_cal_ax = nullptr; //acc offset[3] [G]
 
     //config values returned by gizmo
     bool has_mag = false; //true if IMU has built-in magnetometer
@@ -62,7 +65,7 @@ struct ImuConfig {
 
 };
 
-//imu sample data (raw, uncorrected and unfiltered) 
+//imu sample data (values have offset and imu mounting rotation applied, but are unfiltered) 
 struct __attribute__((aligned(4))) ImuState {
 public:
     uint32_t ts = 0; //sample low level interrupt trigger timestamp [us]
@@ -119,6 +122,9 @@ class Imu : public ImuState {
 
     //low level interrupt handler (should be private, but is public, because called from interrupt)
     void _interrupt_handler();
+
+    //convert back to raw imu data (unrotate, unbias)
+    void convert_to_raw(float *gyr, float *acc); 
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("IMU");

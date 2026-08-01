@@ -144,6 +144,53 @@ int Imu::setup() {
   return 0;
 }
 
+/*
+static void _imu_rotate(Cfg::imu_align_enum align, float *in, float *out) {
+    switch(align) {
+      case Cfg::imu_align_enum::mf_CW0 :
+        out[0] = +in[0];
+        out[1] = +in[1];
+        out[2] = +in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW90 :
+        out[0] = -in[1];
+        out[1] = +in[0];
+        out[2] = +in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW180 :
+        out[0] = -in[0];
+        out[1] = -in[1];
+        out[2] = +in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW270 :
+        out[0] = +in[1];
+        out[1] = -in[0];
+        out[2] = +in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW0FLIP :
+        out[0] = +in[0];
+        out[1] = -in[1];
+        out[2] = -in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW90FLIP :
+        out[0] = +in[1];
+        out[1] = +in[0];
+        out[2] = -in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW180FLIP :
+        out[0] = -in[0];
+        out[1] = +in[1];
+        out[2] = -in[2];
+        break;
+      case Cfg::imu_align_enum::mf_CW270FLIP :
+        out[0] = -in[1];
+        out[1] = -in[0];
+        out[2] = -in[2];
+        break;
+    }
+}
+*/
+
 bool Imu::update() {
   runtimeTrace.start();
   bool updated = (gizmo != nullptr);
@@ -157,7 +204,7 @@ bool Imu::update() {
       gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
       if(config.pmag) {
         //handle mag rotation for different mounting positions
-        switch((Cfg::imu_align_enum)cfg.imu_align) {
+        switch(config.imu_align) {
           case Cfg::imu_align_enum::mf_CW0 :
             break;
           case Cfg::imu_align_enum::mf_CW90 :
@@ -193,8 +240,16 @@ bool Imu::update() {
       gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
     }
 
-    //handle imu rotation for different mounting positions
-    switch((Cfg::imu_align_enum)cfg.imu_align) {
+    // apply zero offsets
+    ax -= config.imu_cal_ax[0];
+    ay -= config.imu_cal_ax[1];
+    az -= config.imu_cal_ax[2];
+    gx -= config.imu_cal_gx[0];
+    gy -= config.imu_cal_gx[1];
+    gz -= config.imu_cal_gx[2];
+
+    //handle imu rotation for different mounting positions (inline for speed)
+    switch(config.imu_align) {
       case Cfg::imu_align_enum::mf_CW0 :
         break;
       case Cfg::imu_align_enum::mf_CW90 :
@@ -228,6 +283,64 @@ bool Imu::update() {
   }
   runtimeTrace.stop(updated);
   return updated;
+}
+
+void Imu::convert_to_raw(float *gyr, float *acc) {
+    float gx = gyr[0];
+    float gy = gyr[1];
+    float gz = gyr[2];
+    float ax = acc[0];
+    float ay = acc[1];
+    float az = acc[2];
+
+    //un-rotate
+    switch(config.imu_align) {
+      case Cfg::imu_align_enum::mf_CW0 :
+        break;
+      case Cfg::imu_align_enum::mf_CW90 :
+        //{ float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp; } //rot
+        { float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp; } //unrot = mf_CW270
+        break;
+      case Cfg::imu_align_enum::mf_CW180 :
+        //{ ax=-ax; ay=-ay;   gx=-gx; gy=-gy; } //rot
+        { ax=-ax; ay=-ay;   gx=-gx; gy=-gy; } //unrot = same
+        break;
+      case Cfg::imu_align_enum::mf_CW270 :
+        //{ float tmp; tmp=ax; ax=ay; ay=-tmp;   tmp=gx; gx=gy; gy=-tmp; } //rot
+        { float tmp; tmp=ax; ax=-ay; ay=tmp;   tmp=gx; gx=-gy; gy=tmp; } //unrot = mf_CW270
+        break;
+      case Cfg::imu_align_enum::mf_CW0FLIP :
+        //{ ay=-ay; az=-az;   gy=-gy; gz=-gz;} //rot
+        { ay=-ay; az=-az;   gy=-gy; gz=-gz;} //unrot = same
+        break;
+      case Cfg::imu_align_enum::mf_CW90FLIP :
+        //{ float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;} //rot
+        { float tmp; tmp=ax; ax=ay; ay=tmp; az=-az;   tmp=gx; gx=gy; gy=tmp; gz=-gz;} //unrot = same
+        break;
+      case Cfg::imu_align_enum::mf_CW180FLIP :
+        //{ ax=-ax; az=-az;   gx=-gx; gz=-gz; } //rot
+        { ax=-ax; az=-az;   gx=-gx; gz=-gz; } //unrot = same
+        break;
+      case Cfg::imu_align_enum::mf_CW270FLIP :
+        //{ float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; } //rot
+         { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; } //unrot = same
+        break;
+    }
+
+    // un-apply zero offsets
+    ax += config.imu_cal_ax[0];
+    ay += config.imu_cal_ax[1];
+    az += config.imu_cal_ax[2];
+    gx += config.imu_cal_gx[0];
+    gy += config.imu_cal_gx[1];
+    gz += config.imu_cal_gx[2];
+
+    gyr[0] = gx;
+    gyr[1] = gy;
+    gyr[2] = gz;
+    acc[0] = ax;
+    acc[1] = ay;
+    acc[2] = az;
 }
 
 void Imu::statReset() {

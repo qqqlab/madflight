@@ -29,16 +29,6 @@ SOFTWARE.
 #include "../cli/cli.h"
 #include "../out/out.h"
 
-//lowpass frequency to filter beta constant
-float lowpass_to_beta(float f0, float fs) {
-  return constrain(1 - exp(-2 * PI * f0 / fs), 0.0f, 1.0f);
-}
-
-//depreciated
-void madflight_die(String msg) {
-  madflight_panic(msg);
-}
-
 void madflight_panic(String msg) {
   out.emergency_stop();
   led.enabled = false;
