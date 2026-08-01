@@ -4,8 +4,11 @@
 
 #include <stdint.h>
 
+// Global enums
+enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA };
+
 namespace Cfg {
-  const uint16_t param_cnt = 168; //number of parameters
+  const uint16_t param_cnt = 174; //number of parameters
 
   //enums for madflight library parameters (prefixed with 'mf_' to prevent macro expansion of global #defines like ADC or ICM45686)
   enum class ahr_gizmo_enum : uint32_t { mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF };
@@ -200,6 +203,12 @@ namespace Cfg {
     { "rcl_pit_expo", (float)0.0, 'f', "" },
     { "rcl_yaw_expo", (float)0.0, 'f', "" },
     { "rcl_vsp_expo", (float)0.0, 'f', "" },
+    { "rcl_flt0", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt1", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt2", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt3", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt4", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt5", (float)FlightMode::mf_ANGLE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
   }; //const param_list_t param_list[]
 }; //namespace Cfg
 
@@ -383,5 +392,11 @@ struct CfgParam {
   float rcl_pit_expo = 0.0; /* Pitch Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   float rcl_yaw_expo = 0.0; /* Yaw Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   float rcl_vsp_expo = 0.0; /* Vertical Speed Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
+  // v2.3.4
+  FlightMode rcl_flt0 = FlightMode::mf_RATE; /* Flight Mode 0 */
+  FlightMode rcl_flt1 = FlightMode::mf_RATE; /* Flight Mode 1 */
+  FlightMode rcl_flt2 = FlightMode::mf_RATE; /* Flight Mode 2 */
+  FlightMode rcl_flt3 = FlightMode::mf_RATE; /* Flight Mode 3 */
+  FlightMode rcl_flt4 = FlightMode::mf_RATE; /* Flight Mode 4 */
+  FlightMode rcl_flt5 = FlightMode::mf_ANGLE; /* Flight Mode 5 */
 }; //struct CfgParam
-

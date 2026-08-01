@@ -272,7 +272,7 @@ void Bbx::log_mode() {
   bl.TimeUS();
   bl.u8flightmode("Mode", veh.flightmode_ap_id());
   bl.u8          ("ModeNum", veh.flightmode_ap_id());
-  bl.u8          ("Rsn",1); //ModeReason
+  bl.u8          ("Rsn", 1); //ModeReason
   bl.char16      ("Name", veh.flightmode_name()); //extenstion to "standard" ArduPilot BinLog
 }
 
@@ -349,7 +349,7 @@ void Bbx::log_rcl(RclState *rcl_s) {
   bl.i16("thr", rcl_s->throttle * 1000);
   bl.i16("yaw", rcl_s->yaw * 1000);
   bl.u8 ("arm", rcl_s->armed);
-  bl.u8 ("flt", rcl_s->flightmode);
+  bl.u8 ("flt", rcl_s->flightmode_idx);
   bl.u16("ch1", rcl_s->pwm[0]);
   bl.u16("ch2", rcl_s->pwm[1]);
   bl.u16("ch3", rcl_s->pwm[2]);

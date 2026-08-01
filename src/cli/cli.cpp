@@ -156,7 +156,8 @@ static void cli_prcl() {
   Serial.printf("pitch:%+.2f\t", rcl.pitch);
   Serial.printf("yaw:%+.2f\t", rcl.yaw);
   Serial.printf("armed:%d\t", rcl.armed);
-  Serial.printf("flightmode:%d\t", rcl.flightmode);
+  Serial.printf("fm_sw:%d\t", rcl.flightmode_idx);
+  Serial.printf("fm:%s\t", veh.flightmode_name());
   Serial.printf("connected:%d\t",rcl.connected());
   Serial.printf("upd_count:%d\t", rcl.update_count());
 

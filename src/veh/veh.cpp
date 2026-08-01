@@ -33,7 +33,7 @@ SOFTWARE.
 Veh veh;
 
 //returns true if flightmode changed
-bool Veh::setFlightmode(uint8_t flightmode) {
+bool Veh::setFlightmode(FlightMode flightmode) {
   if(_flightmode == flightmode) return false;
   _flightmode = flightmode;
   topic.publish(this);
@@ -41,16 +41,16 @@ bool Veh::setFlightmode(uint8_t flightmode) {
   return true;
 }
 
-uint8_t Veh::getFlightmode() {
+FlightMode Veh::getFlightmode() {
   return _flightmode;
 }
 
 uint8_t Veh::flightmode_ap_id() {
-  if(_flightmode<6) return flightmode_ap_ids[_flightmode];
-  return _flightmode;
+  if((int)_flightmode >= MF_FLIGHTMODE_COUNT || (int)_flightmode < 0) return 255;
+  return flightmode_map[(int)_flightmode].ap_fm;
 }
 
 const char* Veh::flightmode_name() {
-  if(_flightmode<6) return flightmode_names[_flightmode];
-  return flightmode_name_unknown;
+  if((int)_flightmode >= MF_FLIGHTMODE_COUNT || (int)_flightmode < 0) return flightmode_name_unknown;
+  return flightmode_map[(int)_flightmode].name;
 }

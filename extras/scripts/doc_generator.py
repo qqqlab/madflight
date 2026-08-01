@@ -1,5 +1,5 @@
 """
-documentationi generator script for platformio.
+madflight parameter documentation generator script for platformio.
 (c) 2026 madflight
 """
 

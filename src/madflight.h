@@ -45,25 +45,6 @@ extern const char madflight_config[];
   const char madflight_board[] = "";
 #endif
 
-//===============================================================================================
-// madflight_setup()
-//===============================================================================================
-
-// vehicle setup by defines VEH_TYPE, VEH_FLIGHTMODE_AP_IDS, VEH_FLIGHTMODE_NAMES
-#ifndef VEH_TYPE
-  #define VEH_TYPE VEH_TYPE_GENERIC
-#endif
-#ifndef VEH_FLIGHTMODE_AP_IDS
-  #define VEH_FLIGHTMODE_AP_IDS {0,1,2,3,4,5}
-#endif
-#ifndef VEH_FLIGHTMODE_NAMES
-  #define VEH_FLIGHTMODE_NAMES {"FM0","FM1","FM2","FM3","FM4","FM5"}
-#endif
-const uint8_t Veh::mav_type = VEH_TYPE; //mavlink vehicle type
-const uint8_t Veh::flightmode_ap_ids[6] = VEH_FLIGHTMODE_AP_IDS; //mapping from flightmode to ArduPilot flight mode id
-const char* Veh::flightmode_names[6] = VEH_FLIGHTMODE_NAMES; //define flightmode name strings for telemetry
-
-
 //=============================================================================
 // Tasks
 //=============================================================================

@@ -210,10 +210,12 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     }
 
     //flightmode 6 position switch
-    if(st_flt_spacing<5) {
-      flightmode = 0;
+    if(st_flt_spacing < 5) {
+      flightmode_idx = 0;
     }else{
-      flightmode = constrain( ( pwm[st[FLT].ch] - st[FLT].min + st_flt_spacing/2) / st_flt_spacing, 0, 5); //output 0..5
+      flightmode_idx = constrain( ( pwm[st[FLT].ch] - st[FLT].min + st_flt_spacing/2) / st_flt_spacing, 0, 5); //output 0..5
+      FlightMode *modes = &cfg.rcl_flt0;
+      veh.setFlightmode(modes[flightmode_idx]); //update vehicle flight mode and publish message if changed
     }
 
     //set update timestamp

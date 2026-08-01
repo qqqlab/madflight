@@ -37,6 +37,7 @@ SOFTWARE.
 #include "BinLog.h"
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
+#include "../veh/veh.h"
 
 namespace BinLogWriter {
   //prototypes
@@ -138,7 +139,7 @@ namespace BinLogWriter {
       BinLog bl("MSG");
       bl.isHeader = isHeader;
       bl.TimeUS();
-      bl.char64("Message",msg);
+      bl.char64("Message", msg);
   }
 
   void log_header_parm(const char* name, float value, float default_value, bool isHeader = true) {
@@ -249,8 +250,12 @@ namespace BinLogWriter {
     //write headers (flush often)
     FMT_sendFMT(); //send FMT for FMT
     queueSendFMTU(true, 0, "", ""); //send FMT for FMTU
-    log_header_msg("ArduPlane"); //this sets the vehicle type -> which drives the translaton of flightmode codes to names (among other things probably)
-    //log_header_msg("ArduCopter");  //gives problems with plot.ardupilot.org
+    //this sets the vehicle type -> which drives the translaton of flightmode codes to names (among other things probably)
+    if(veh.mav_type == VEH_TYPE_COPTER) {
+      log_header_msg("ArduCopter");
+    }else{
+      log_header_msg("ArduPlane"); 
+    }
     //TODO log_header_msg(MADFLIGHT_VERSION);
     queueFlush();
     

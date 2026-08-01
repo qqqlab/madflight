@@ -17,7 +17,24 @@
 #   comment:  Single line comment [optional]
 #   since:    Parameter exist since madflight version [optional]
 
+# Global enums
+enum:
+  FlightMode:
+    datatype: "enum class FlightMode : uint32_t"
+    options:
+      - CUSTOM0
+      - CUSTOM1
+      - CUSTOM2
+      - CUSTOM3
+      - CUSTOM4
+      - CUSTOM5
+      - RATE    #copter
+      - ANGLE   #copter
+      - MANUAL  #plane
+      - ROLL    #plane
+      - FBWA    #plane
 
+# Global parameters
 param:
   imu_cal_ax:
     default: 0
@@ -1013,3 +1030,42 @@ param:
     datatype: float
     type: 'f'
     comment: "Vertical Speed Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection)"
+
+# v2.3.4 additions 
+  rcl_flt0:
+    since: v2.3.4
+    default: RATE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 0" 
+  rcl_flt1:
+    default: RATE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 1"
+  rcl_flt2:
+    default: RATE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 2"
+  rcl_flt3:
+    default: RATE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 3"
+  rcl_flt4:
+    default: RATE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 4"
+  rcl_flt5:
+    default: ANGLE
+    datatype: uint32_t
+    type: 'e'
+    enum: FlightMode
+    comment: "Flight Mode 5"

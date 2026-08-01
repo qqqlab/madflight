@@ -58,14 +58,15 @@ const char madflight_config[] = R""(
 //gps_ser_bus    0    // RED Grove
 //gps_baud       0    // use 0 for auto baud
 
-)""; // End of madflight_config
+//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 ANGLE
 
-//Vehicle specific madflight configuration
-#define VEH_TYPE VEH_TYPE_COPTER //set the vehicle type for logging and mavlink
-#define VEH_FLIGHTMODE_AP_IDS {AP_COPTER_FLIGHTMODE_ACRO, AP_COPTER_FLIGHTMODE_STABILIZE} //mapping of fightmode index to ArduPilot code for logging and mavlink
-#define VEH_FLIGHTMODE_NAMES {"RATE", "ANGLE"} //fightmode names for telemetry
-enum flightmode_enum { RATE, ANGLE };  //the available flightmode indexes
-flightmode_enum rcl_to_flightmode_map[6] {RATE, RATE, RATE, RATE, ANGLE, ANGLE}; //flightmode mapping from 2/3/6 pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+)""; // End of madflight_config
 
 #include <madflight.h>
 
@@ -164,17 +165,12 @@ void imu_loop() {
   // Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
   ahr.update(); 
 
-  // Update flight mode
-  if(rcl.connected() && veh.setFlightmode( rcl_to_flightmode_map[rcl.flightmode] )) { //map rcl.flightmode (0 to 5) to vehicle flightmode
-    Serial.printf("Flightmode:%s\n",veh.flightmode_name());
-  }
-
   //PID Controller
   switch( veh.getFlightmode() ) {
-    case ANGLE: 
+    case FlightMode::mf_ANGLE: 
       control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;
-    default: //RATE 
+    default: //FlightMode::mf_RATE 
       control_Rate(rcl.throttle == 0); //Stabilize on rate setpoint
   }
 
