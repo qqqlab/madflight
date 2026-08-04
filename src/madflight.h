@@ -130,18 +130,16 @@ void sensor_task(void *pvParameters) {
 #define mf_str(s)               mf_xstr(s)
 
 void madflight_setup() {
-  // HAL - Detach USB to until SDCARD is setup
+  // HAL - Detach USB until SDCARD is setup
   hal_startup();
 
   // CFG - Configuration parameters (execute before delay to start LED + SDCARD)
-  cfg.begin();
+  cfg.setup(madflight_board, madflight_config); //load config
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.writeToEeprom();
     madflight_panic("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
   #endif
-  cfg.loadFromEeprom(); //load parameters from EEPROM
-  cfg.load_madflight(madflight_board, madflight_config); //load config
 
   // LED - Setup LED (execute before delay to turn it on)
   led.config.gizmo = (Cfg::led_gizmo_enum)cfg.led_gizmo;
@@ -168,7 +166,6 @@ void madflight_setup() {
   Serial.begin(115200);
 
   // CLI - Start CLI (Serial) task early in setup, allows for CLI commands while booting
-
   #if defined ARDUINO_ARCH_RP2040 && defined USE_TINYUSB
     // Hack for Adafruit TinyUSB in combination with FreeRTOS: use core1
     int cli_core = 1;
@@ -241,9 +238,7 @@ void madflight_setup() {
   #endif
 
   // INFO - Rerun CFG to show output after startup delay
-  cfg.clear();
-  cfg.loadFromEeprom(); //load parameters from EEPROM
-  cfg.load_madflight(madflight_board, madflight_config); //load config
+  cfg.setup(madflight_board, madflight_config);
 
   // HAL - Hardware abstraction layer setup: serial, spi, i2c (see hal.h)
   hal_setup();
@@ -259,7 +254,7 @@ void madflight_setup() {
   rcl.config.gizmo = (Cfg::rcl_gizmo_enum)cfg.rcl_gizmo; //the gizmo to use
   rcl.config.ser_bus_id = cfg.rcl_ser_bus; //serial bus id
   rcl.config.baud = cfg.rcl_baud; //baud rate
-  rcl.config.ppm_pin = cfg.getValue("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
+  rcl.config.ppm_pin = cfg.get_param("pin_ser" + String(cfg.rcl_ser_bus) + "_rx", -1);
   rcl.config.sens = &cfg.rcl_rol_sens; //pointer to float[4] roll/pitch/yaw/vspeed - allows for CLI manipulation of config values
   rcl.config.expo = &cfg.rcl_rol_expo; //pointer to float[4] roll/pitch/yaw/vspeed - allows for CLI manipulation of config values
 

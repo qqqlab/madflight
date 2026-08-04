@@ -76,7 +76,7 @@ static int mf_digitalWrite(lua_State *L) {
 
 static int mf_get_cfg(lua_State *L) {
   const char *name = luaL_checkstring(L, 1);
-  float val = cfg.getValue(String(name), 0);
+  float val = cfg.get_param(String(name), 0);
   lua_pushnumber(L, val);
   return 1;
 }

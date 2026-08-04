@@ -25,15 +25,19 @@ SOFTWARE.
 #include "cfg.h" //MF_PARAM_LIST and enums for options
 #include "../hal/hal.h"
 #include "../tbx/tbx_crc.h"
+#include "../bbx/bbx.h"
 
 //create global module instance
 CfgClass cfg;
 
 CfgClass::CfgClass() {}
 
-void CfgClass::begin() {
-  clear();
+void CfgClass::setup(const char *board, const char *config) {
+  _board = board;
+  _config = config;
   hal_eeprom_begin();
+
+  cfg._load_madflight_board_and_config(); //load config from board+config strings
 }
 
 //get number of parameters
@@ -45,15 +49,15 @@ uint16_t CfgClass::paramCount() {
 bool CfgClass::getNameAndValue(uint16_t index, String* name, float* value) {
   if(index >= paramCount()) return false;
   *name = Cfg::param_list[index].name;
-  *value = getValue(index);
+  *value = _get_param(index);
   return true;
 }
 
 //get parameter value as float
-float CfgClass::getValue(String namestr, float default_value) {
+float CfgClass::get_param(String namestr, float default_value) {
   int i = getIndex(namestr);
   if(i<0) return default_value;
-  return getValue(i);
+  return _get_param(i);
 }
 
 //get enum option name for param_idx and param_val
@@ -160,7 +164,7 @@ void CfgClass::printNameAndValue(uint16_t i, const char* comment) {
 //print param value
 void CfgClass::printValue(uint16_t i) {
   if(i >= paramCount()) return;
-  float val = getValue(i);
+  float val = _get_param(i);
   switch(Cfg::param_list[i].type) {
     case 'e': { //enum
       char option[20];
@@ -212,7 +216,7 @@ void CfgClass::cli_diff(const char* filter) {
   qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
   for(int j=0; j<paramCount(); j++) {
     uint16_t i = arr[j];
-    if(strstr(Cfg::param_list[i].name, filter) && getValue(i) != cfgdefault.getValue(i)) {
+    if(strstr(Cfg::param_list[i].name, filter) && _get_param(i) != cfgdefault._get_param(i)) {
       printNameAndValue(i);
     }
   }
@@ -224,7 +228,7 @@ void CfgClass::printPins() {
   for(int pinno = 0; pinno < 128; pinno++) {
     int cnt = 0;
     for(int i = 0; i < paramCount(); i++) {
-      if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && getValue(i) == pinno) {
+      if(strncmp(Cfg::param_list[i].name, "pin_", 4) == 0 && _get_param(i) == pinno) {
         if(cnt==0) {
           printNameAndValue(i);
         }else{
@@ -237,7 +241,7 @@ void CfgClass::printPins() {
 }
 
 //CLI set a parameter value, returns true on success
-bool CfgClass::setParam(String namestr, String val) {
+bool CfgClass::set_param_cli(String namestr, String val) {
   //Serial.printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
   namestr.trim();
   val.trim();
@@ -255,7 +259,7 @@ bool CfgClass::setParam(String namestr, String val) {
     case 'e': { //enum
       int enum_idx = get_enum_index(val.c_str(), Cfg::param_list[i].options);
       if(enum_idx >= 0) {
-        setValue(i, enum_idx);
+        _set_param(i, enum_idx);
         return true;
       }else{
         Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: ", namestr.c_str(), val.c_str());
@@ -266,43 +270,49 @@ bool CfgClass::setParam(String namestr, String val) {
       break;
     }
     case 'f': //float
-      setValue(i, val.toFloat());
+      _set_param(i, val.toFloat());
       break;
     case 'i': //integer
-      setValue(i, val.toInt());
+      _set_param(i, val.toInt());
       break;
     case 'p': //pinnumber/pinname
-      setValue(i, hal_get_pin_number(val));
+      _set_param(i, hal_get_pin_number(val));
       break;
   }
   return true;
 }
 
 //Set a parameter value, returns true on success
-bool CfgClass::setValue(int i, float val) {
+bool CfgClass::_set_param(int i, float val, bool publish) {
   if(i < 0 || i >= paramCount()) return false;
 
   CfgParam* param = (CfgParam*) this;
   float* param_float = (float*) param;
   int32_t* param_int32_t = (int32_t*) param;
 
+  bool changed = false;
   switch(Cfg::param_list[i].type) {
     case 'f': //float
+      changed = (param_float[i] != val);
       param_float[i] = val;
       break;
     case 'e': //enum
     case 'i': //integer
     case 'p': //pinnumber/pinname
+      changed = (param_int32_t[i] != val);
       param_int32_t[i] = val;
       break;
     default:
       return false;
   }
+  if(publish && changed) {
+    bbx.log_parm(Cfg::param_list[i].name, val, 0); //log parameter to BBX
+  }
   return true;
 }
 
 //get parameter value as float
-float CfgClass::getValue(int i) {
+float CfgClass::_get_param(int i) {
   if(i < 0 || i >= paramCount()) return 0;
 
   CfgParam* param = (CfgParam*) this;
@@ -324,12 +334,12 @@ float CfgClass::getValue(int i) {
 }
 
 //for mavlink
-bool CfgClass::setParamMavlink(String namestr, float val) {
+bool CfgClass::set_param_mavlink(String namestr, float val) {
   namestr.trim();
   if(namestr == "") return false;
   int i = getIndex(namestr);
   if(i < 0) return false;
-  return setValue(i, val);
+  return _set_param(i, val);
 }
 
 //get parameter index for a parameter name
@@ -346,20 +356,22 @@ int CfgClass::getIndex(String namestr) {
 }
 
 //load defaults
-void CfgClass::clear() {
-  for(int i = 0; i < paramCount(); i++) {
-    setValue(i, Cfg::param_list[i].defval);
+void CfgClass::load_defaults(const char* filter) {
+  for(int i=0; i<paramCount(); i++) {
+    if(strstr(Cfg::param_list[i].name, filter)) {
+      _set_param(i, Cfg::param_list[i].defval, false /*no publish*/); 
+    }
   }
   CfgHeader hdr_clear;
   memcpy(&hdr, &hdr_clear, sizeof(CfgHeader));
 }
 
 //read parameters from eeprom/flash
-void CfgClass::loadFromEeprom() {
+void CfgClass::_load_from_eeprom() {
   //Serial.printf("mf=%d all=%d i[17]=%d\n", Cfg::mf_param_cnt, Cfg::param_cnt, param_int32_t[16]);
   Serial.print("CFG: Loading EEPROM - ");
 
-  cfg.clear();
+  cfg.load_defaults(); //load defaults in case eeprom data is shorter than current config definition
 
   //load header into buffer
   CfgHeader hdr_new;
@@ -419,14 +431,15 @@ void CfgClass::writeToEeprom() {
   uint32_t crc = 0xFFFFFFFF;
 
   //setup header
+  hdr = {}; //clear to 0
   hdr.header0 = CFG_HDR0;
   hdr.header1 = CFG_HDR1;
   hdr.header2 = CFG_HDR2;
   hdr.header3 = CFG_HDR3;
   hdr.len = sizeof(CfgHeader) + sizeof(CfgParam) + 4; //number of bytes for hdr+param+crc
   hdr._reserved0 = 0;
-  //hdr.madflight_param_crc; //this was set in load_madflight_param()
-  //hdr._reserved1;
+  hdr.board_and_config_crc = _calc_board_and_config_crc();
+  //hdr._reserved1 = 0,0,0,...
 
   //write header
   for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
@@ -454,7 +467,7 @@ void CfgClass::writeToEeprom() {
   Serial.println("CFG: EEPROM written");
 }
 
-void CfgClass::loadFromString(const char *batch) {
+void CfgClass::_load_from_string(const char *batch) {
   int pos = 0;
   int lineno = 0;
   String cmdline = "";
@@ -475,52 +488,63 @@ void CfgClass::loadFromString(const char *batch) {
   }
 }
 
-void CfgClass::load_madflight(const char *board, const char *config) {
+uint32_t CfgClass::_calc_board_and_config_crc() {
+  uint32_t crc = 0xFFFFFFFF;
+  if(_board && _board[0]) crc = tbx_crc32((const uint8_t*)_board, strlen(_board), crc);
+  if(_config && _config[0]) crc = tbx_crc32((const uint8_t*)_config, strlen(_config), crc);
+  return crc;
+}
+
+void CfgClass::_load_madflight_board_and_config() {
   Serial.print("CFG: Loading config - ");
 
-  /* debug crc
-  if(board && board[0]) {
-    uint32_t crc = 0xFFFFFFFF;
-    crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);
-    Serial.printf("board:%04X %d \"", crc & 0xFFFF, strlen(board));
-    for(int i=0;i<10;i++) Serial.print(board[i]);
-    Serial.print("\" ");
-  }
-  if(config && config[0]) {
-    uint32_t crc = 0xFFFFFFFF;    
-    crc = tbx_crc32((const uint8_t*)config, strlen(config), crc);
-    Serial.printf("config:%04X %d \"",crc & 0xFFFF, strlen(config));
-    for(int i=0;i<10;i++) Serial.print(board[i]);
-    Serial.print("\" ");
-  }
-  //*/
+  load_defaults();
+  cfg._load_from_eeprom(); //load parameters from EEPROM
 
   //calc crc
-  uint32_t crc = 0xFFFFFFFF;
-  if(board && board[0]) crc = tbx_crc32((const uint8_t*)board, strlen(board), crc);
-  if(config && config[0]) crc = tbx_crc32((const uint8_t*)config, strlen(config), crc);
+  uint32_t crc = _calc_board_and_config_crc();
+
+  #ifdef MF_DEBUG
+    // debug crc
+    Serial.printf("\n");
+    Serial.printf("eeprom.board_and_config_crc = %X\n", hdr.board_and_config_crc);
+    Serial.printf("madflight_board+config_crc  = %X\n", crc);
+    Serial.printf("%s\n", (hdr.board_and_config_crc == crc ? "MATCHED" : "NOT MATCHED"));
+    if(_board && _board[0]) {
+      uint32_t crc = 0xFFFFFFFF;
+      crc = tbx_crc32((const uint8_t*)_board, strlen(_board), crc);
+      Serial.printf("_board: crc=%X len=%d start=\"", crc, strlen(_board));
+      for(int i=0;i<40;i++) Serial.print(_board[i]);
+      Serial.print("\"\n");
+    }
+    if(_config && _config[0]) {
+      uint32_t crc = 0xFFFFFFFF;
+      crc = tbx_crc32((const uint8_t*)_config, strlen(_config), crc);
+      Serial.printf("config:crc=%X len=%d start=\"",crc, strlen(_config));
+      for(int i=0;i<40;i++) Serial.print(_config[i]);
+      Serial.print("\"\n");
+    }
+  #endif
 
   //check board+config crc against board+config crc stored in eeprom
-  if(hdr.madflight_param_crc == crc) {
+  if(hdr.board_and_config_crc == crc) {
     //the board+config parameters were already applied (and potentially modified since, so do not re-apply)
     Serial.println("Skipping madflight_board and madflight_config (EEPROM is newer)");
-    return;
-  }
-
-  //load board + config
-  if(board && board[0]) {
-    loadFromString(board);
-    Serial.print("madflight_board loaded OK, ");
   }else{
-    Serial.print("madflight_board is empty, ");
+    //load board + config
+    if(_board && _board[0]) {
+      _load_from_string(_board);
+      Serial.print("madflight_board loaded OK, ");
+    }else{
+      Serial.print("madflight_board is empty, ");
+    }
+    if(_config && _config[0]) {
+      _load_from_string(_config);
+      Serial.println("madflight_config loaded OK");
+    }else{
+      Serial.println("madflight_config is empty");
+    }
   }
-  if(config && config[0]) {
-    loadFromString(config);
-    Serial.println("madflight_config loaded OK");
-  }else{
-    Serial.println("madflight_config is empty");
-  }
-  hdr.madflight_param_crc = crc; //save crc (and save it to eeprom with next CLI 'save')
 }
 
 //returns true on success
@@ -546,7 +570,7 @@ bool CfgClass::load_cmdline(String cmdline) {
   if(name.length() == 0) return true;
 
   //process parameter (prints error message)
-  return setParam(name, value);
+  return set_param_cli(name, value);
 }
 
 //get enum index from key string, return -1 if not found

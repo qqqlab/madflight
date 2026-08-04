@@ -605,14 +605,14 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }else if (cmd == "bbbench") {
     bbx.bench();
   }else if (cmd == "set") {
-    cfg.setParam(arg1, arg2);
+    cfg.set_param_cli(arg1, arg2);
   }else if (cmd == "dump") {
     cfg.cli_dump(arg1.c_str());
   }else if (cmd == "diff") {
     cfg.cli_diff(arg1.c_str());
   }else if (cmd == "defaults") {
     Serial.println("Resetting to defaults and rebooting, please wait... ");
-    cfg.clear();
+    cfg.load_defaults();
     cfg.writeToEeprom();
     delay(1000);
     hal_reboot();
