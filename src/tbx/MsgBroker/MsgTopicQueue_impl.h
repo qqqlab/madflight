@@ -39,20 +39,31 @@ class MsgTopicQueue : public MsgTopicBase {
         return generation;
     }
 
-    uint32_t publish(void *msg) override {
-      xQueueOverwrite(queue, msg);
-      generation++;
-      return generation;
+    uint32_t publish(T *msg) {
+      return _publish((void*) msg);
     }
 
-    void publishFromISR(void *msg) {
+    void publishFromISR(T* msg) {
       BaseType_t higherPriorityTaskWoken;
       xQueueOverwriteFromISR(queue, msg, &higherPriorityTaskWoken);
       (void)higherPriorityTaskWoken;
       generation++;
     }
 
-    bool pull_next(void* msg, uint32_t *subscriber_gen) override {
+    //pull last message from topic
+    bool pull_last(T* msg) {
+      uint32_t subscriber_gen = get_generation();
+      return _pull_next(msg, &subscriber_gen);
+    }
+
+protected:
+    uint32_t _publish(void *msg) override {
+      xQueueOverwrite(queue, msg);
+      generation++;
+      return generation;
+    }
+
+    bool _pull_next(void* msg, uint32_t *subscriber_gen) override {
       uint8_t tries = 5;
       uint32_t topic_gen;
       do {

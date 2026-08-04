@@ -79,8 +79,19 @@ public:
     return topic_gen.load(std::memory_order_relaxed);
   }
 
+    uint32_t publish(T *msg) {
+      return _publish((void*) msg);
+    }
+
+    //pull last message from topic
+    bool pull_last(T* msg) {
+      uint32_t subscriber_gen = get_generation();
+      return _pull_next(msg, &subscriber_gen);
+    }
+
+protected:  
   //publish a message, returns the published message generation
-  uint32_t publish(void* msg) override {
+  uint32_t _publish(void* msg) override {
     for (;;) {
       uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
       cell_t* cell = &buf[tgen & buf_mask];
@@ -97,7 +108,7 @@ public:
 
   //pull message with topic_gen == subscriber_gen+1, if not found then pull closest topic_gen available in buffer
   //returns true, msg, and updated subscriber_gen if publish() was called at least once, else returns false and unmodified msg, subscriber_gen
-  bool pull_next(void* msg, uint32_t *subscriber_gen) override {
+  bool _pull_next(void* msg, uint32_t *subscriber_gen) override {
     for (;;) {
       uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
       if(tgen == 0) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
