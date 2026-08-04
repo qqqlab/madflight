@@ -67,7 +67,7 @@ class Bat : public BatState {
     bool installed() {return (gizmo != nullptr); } // Returns true if a gizmo was setup
 
   protected:
-    friend void sensor_task(void *pvParameters);
+    friend struct sensor_task_s;
     bool update();    // Returns true if state was updated
 
   private:

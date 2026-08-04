@@ -69,7 +69,7 @@ void cli_task(void *pvParameters) {
   }
 }
 
-struct {
+struct sensor_task_s {
   ScheduleFreq sys_schedule = ScheduleFreq(10); // System log (10Hz)
   //ahr
   ScheduleFreq ahr_schedule = ScheduleFreq(cfg.bbx_log_ahr);
@@ -86,40 +86,44 @@ struct {
   //rcl
   ScheduleFreq rcl_schedule = ScheduleFreq(cfg.bbx_log_rcl);
   MsgSubscription<RclState> rcl_sub = MsgSubscription<RclState>("log_rcl", &rcl.topic);
-  RclState rcl_state; 
-} g_sensor_task;
+  RclState rcl_state;
+
+  void run() {
+    for(;;) {
+      //sensors
+      if(bar.update()) bbx.log_baro(); // barometer
+      mag.update(); // magnetometer (logging is done with imu together)
+      if(gps.update()) bbx.log_gps(); // gps
+      if(bat.update()) bbx.log_bat(); // battery consumption
+      if(rdr.update()) bbx.log_rdr(); // radar
+      if(ofl.update()) bbx.log_ofl(); // optical flow
+
+      //logging
+      if(sys_schedule.expired()) {
+        bbx.log_sys();
+      }
+      if(imu_schedule.expired() && imu_sub.pull_updated(&imu_state)) {
+        bbx.log_imu(&imu_state);
+      }
+      if(ahr_schedule.expired() && ahr_sub.pull_updated(&ahr_state)) {
+        bbx.log_ahr(&ahr_state);
+      }
+      if(out_schedule.expired() && out_sub.pull_updated(&out_state)) {
+        bbx.log_out(&out_state);
+      }
+      if(rcl_schedule.expired() && rcl_sub.pull_updated(&rcl_state)) {
+        bbx.log_rcl(&rcl_state);
+      }
+      portYIELD();
+    }
+  }
+};
 
 void sensor_task(void *pvParameters) {
   (void)pvParameters;
 
-  for(;;) {
-    //sensors
-    if(bar.update()) bbx.log_baro(); // barometer
-    mag.update(); // magnetometer (logging is done with imu together)
-    if(gps.update()) bbx.log_gps(); // gps
-    if(bat.update()) bbx.log_bat(); // battery consumption
-    if(rdr.update()) bbx.log_rdr(); // radar
-    if(ofl.update()) bbx.log_ofl(); // optical flow
-
-    //logging
-    if(g_sensor_task.sys_schedule.expired()) {
-      bbx.log_sys();
-    }
-    if(g_sensor_task.imu_schedule.expired() && g_sensor_task.imu_sub.pull_updated(&g_sensor_task.imu_state)) {
-      bbx.log_imu(&g_sensor_task.imu_state);
-    }
-    if(g_sensor_task.ahr_schedule.expired() && g_sensor_task.ahr_sub.pull_updated(&g_sensor_task.ahr_state)) {
-      bbx.log_ahr(&g_sensor_task.ahr_state);
-    }
-    if(g_sensor_task.out_schedule.expired() && g_sensor_task.out_sub.pull_updated(&g_sensor_task.out_state)) {
-      bbx.log_out(&g_sensor_task.out_state);
-    }
-    if(g_sensor_task.rcl_schedule.expired() && g_sensor_task.rcl_sub.pull_updated(&g_sensor_task.rcl_state)) {
-      bbx.log_rcl(&g_sensor_task.rcl_state);
-    }
-  
-    portYIELD();
-  }
+  sensor_task_s *task = new sensor_task_s(); //create on heap, not on stack
+  task->run();
 }
 
 #define mf_xstr(s)              #s

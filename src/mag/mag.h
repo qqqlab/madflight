@@ -67,7 +67,7 @@ class Mag : public MagState {
     void cli_calibrate();
 
   protected:
-    friend void sensor_task(void *pvParameters);
+    friend struct sensor_task_s;
     bool update();    // Returns true if state was updated
 
   protected:

@@ -64,7 +64,7 @@ class Bar : public BarState {
     const char* name() {return (gizmo ? gizmo->name() : "NONE");}
 
   protected:
-    friend void sensor_task(void *pvParameters);
+    friend struct sensor_task_s;
     bool update();    // Returns true if state was updated
 
   private:
