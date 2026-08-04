@@ -52,8 +52,19 @@ class MsgTopic : public MsgTopicBase {
         return generation;
     }
 
+    uint32_t publish(T *msg) {
+      return _publish((void*) msg);
+    }
+
+    //pull last message from topic
+    bool pull_last(T* msg) {
+      uint32_t subscriber_gen = get_generation();
+      return _pull_next(msg, &subscriber_gen);
+    }
+
+  protected:  
     //publish a message, returns the published message generation
-    uint32_t publish (void *msg) override {
+    uint32_t _publish(void *msg) override {
       memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
       generation++; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
@@ -62,7 +73,7 @@ class MsgTopic : public MsgTopicBase {
 
     //pull next message from fifo buffer (subscriber_gen+1), if not found then pull closest gen in fifo buffer
     //returns false if no message in buffer, otherwise returns true, msg, and updated subscriber_gen
-    bool pull_next(void* msg, uint32_t *subscriber_gen) override {
+    bool _pull_next(void* msg, uint32_t *subscriber_gen) override {
       if(!generation) return false; //will miss a pull every 4,000,000,000 publishes...
       uint8_t tries = 5;
       do {

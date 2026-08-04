@@ -34,14 +34,14 @@ SOFTWARE.
 //=============================================================================
 // MsgBroker
 //=============================================================================
-MsgTopicBase* MsgBroker::topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
-uint32_t MsgBroker::stat_ts = micros();
+MsgTopicBase* MsgBroker::_topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
+uint32_t MsgBroker::_stat_ts = micros();
 
 void MsgBroker::add_topic(MsgTopicBase *topic) {
   DEBUG_PRINTF("MsgBroker::add_topic(%d)", topic->name);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
-    if(!topic_list[i]) {
-      topic_list[i] = topic;
+    if(!_topic_list[i]) {
+      _topic_list[i] = topic;
       return;
     }
   }
@@ -50,7 +50,7 @@ void MsgBroker::add_topic(MsgTopicBase *topic) {
 int MsgBroker::topic_count() {
   int cnt = 0;
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
-    if(topic_list[i]) {
+    if(_topic_list[i]) {
       cnt++;
     }
   }
@@ -58,16 +58,16 @@ int MsgBroker::topic_count() {
 }
 
 void MsgBroker::top() {
-  float dt = 1e-6 * (micros() - stat_ts);
+  float dt = 1e-6 * (micros() - _stat_ts);
   Serial.printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
-    MsgTopicBase *t = topic_list[i];
+    MsgTopicBase *t = _topic_list[i];
     if(t) {
-      uint32_t t_dgen = t->get_generation() - t->stat_generation;
+      uint32_t t_dgen = t->get_generation() - t->_stat_generation;
       Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->get_generation(), (int)t_dgen);
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
-        MsgSubscriptionBase *s = t->sub_list[j];
-        if(s) Serial.printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->stat_pull_cnt / dt, (int)s->generation, (int)s->stat_pull_cnt, (int)(t_dgen - s->stat_pull_cnt));
+        MsgSubscriptionBase *s = t->_sub_list[j];
+        if(s) Serial.printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->_stat_pull_cnt / dt, (int)s->_generation, (int)s->_stat_pull_cnt, (int)(t_dgen - s->_stat_pull_cnt));
       } 
     }
   }
@@ -75,14 +75,14 @@ void MsgBroker::top() {
 }
 
 void MsgBroker::reset_stats() {
-  stat_ts = micros();
+  _stat_ts = micros();
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
-    MsgTopicBase *t = topic_list[i];
+    MsgTopicBase *t = _topic_list[i];
     if(t) {
-      t->stat_generation = t->get_generation();
+      t->_stat_generation = t->get_generation();
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
-        MsgSubscriptionBase *s = t->sub_list[j];
-        if(s) s->stat_pull_cnt = 0;
+        MsgSubscriptionBase *s = t->_sub_list[j];
+        if(s) s->_stat_pull_cnt = 0;
       }       
     }
   }
@@ -101,8 +101,8 @@ MsgTopicBase::MsgTopicBase(const char* name) {
 void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
   DEBUG_PRINTF("MsgTopicBase::add_subscription sub=%s topic=%s\n", sub->name, name);
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
-    if(!sub_list[i]) {
-      sub_list[i] = sub;
+    if(!_sub_list[i]) {
+      _sub_list[i] = sub;
       return;
     }
   }
@@ -111,8 +111,8 @@ void MsgTopicBase::add_subscription(MsgSubscriptionBase *sub) {
 void MsgTopicBase::remove_subscription(MsgSubscriptionBase *sub) {
   DEBUG_PRINTF("MsgTopicBase::remove_subscription sub=%s topic=%s\n", sub->name, name);
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
-    if(sub_list[i] == sub) {
-      sub_list[i] = nullptr;
+    if(_sub_list[i] == sub) {
+      _sub_list[i] = nullptr;
       return;
     }
   }
@@ -121,7 +121,7 @@ void MsgTopicBase::remove_subscription(MsgSubscriptionBase *sub) {
 int MsgTopicBase::subscriber_count() {
   int cnt = 0;
   for(int i = 0; i < MF_MSGSUB_LIST_SIZE; i++) {
-    if(sub_list[i]) {
+    if(_sub_list[i]) {
       cnt++;
     }
   }
@@ -145,26 +145,26 @@ MsgSubscriptionBase::~MsgSubscriptionBase() {
 
 //returns true if new msg available
 bool MsgSubscriptionBase::updated() { 
-  return (generation != topic->get_generation());
+  return (_generation != topic->get_generation());
 }
 
 //pull message: returns true if msg was pulled, returns false if no msg available
-bool MsgSubscriptionBase::pull_next(void *msg) {
-    if(!topic->pull_next(msg, &generation)) return false;
-    stat_pull_cnt++;
+bool MsgSubscriptionBase::_pull_next(void *msg) {
+    if(!topic->_pull_next(msg, &_generation)) return false;
+    _stat_pull_cnt++;
     return true;
 }
 
 //pull updated message: returns true when updated msg available, else returns false and does not update msg 
-bool MsgSubscriptionBase::pull_updated(void *msg) {
+bool MsgSubscriptionBase::_pull_updated(void *msg) {
     if(!updated()) return false;
-    return pull_next(msg);
+    return _pull_next(msg);
 }
 
 //pull last message: returns true if msg was pulled, returns false if no msg available
-bool MsgSubscriptionBase::pull_last(void *msg) {
-    generation = topic->get_generation() - 1;
-    if(!topic->pull_next(msg, &generation)) return false;
-    stat_pull_cnt++;
+bool MsgSubscriptionBase::_pull_last(void *msg) {
+    _generation = topic->get_generation() - 1;
+    if(!topic->_pull_next(msg, &_generation)) return false;
+    _stat_pull_cnt++;
     return true;
 }

@@ -52,8 +52,8 @@ class MsgBroker {
 
     static void add_topic(MsgTopicBase *topic);
   private:
-    static MsgTopicBase* topic_list[MF_MSGTOPIC_LIST_SIZE];
-    static uint32_t stat_ts;
+    static MsgTopicBase* _topic_list[MF_MSGTOPIC_LIST_SIZE];
+    static uint32_t _stat_ts;
 };
 
 //=============================================================================
@@ -68,16 +68,17 @@ class MsgTopicBase {
     template <class T> friend class MsgTopicQueue;
     template <typename T> friend class MsgTopicMPMS;
 
-    uint32_t stat_generation = 0; //starting generation for statistics
-    MsgSubscriptionBase* sub_list[MF_MSGSUB_LIST_SIZE] = {};
+    uint32_t _stat_generation = 0; //starting generation for statistics
+    MsgSubscriptionBase* _sub_list[MF_MSGSUB_LIST_SIZE] = {};
 
     virtual ~MsgTopicBase() {}
     MsgTopicBase(const char* name);
 
     //interface
     virtual uint32_t get_generation() = 0; //counts messages published to this topic
-    virtual uint32_t publish(void* msg) = 0; //publish a message
-    virtual bool pull_next(void* msg, uint32_t *subscriber_gen) = 0; //pull next message relative to subscriber_gen
+    virtual uint32_t _publish(void* msg) = 0; //publish a message
+    virtual bool _pull_next(void* msg, uint32_t *subscriber_gen) = 0; //pull next message relative to subscriber_gen
+    
 
     //subscription
     void add_subscription(MsgSubscriptionBase *sub);
@@ -94,21 +95,21 @@ class MsgSubscriptionBase {
   public:
     bool updated(); //returns true if new msg available
     char name[9] = {};
-    uint32_t get_generation() {return generation;}
+    uint32_t get_generation() {return _generation;}
 
   protected:
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
 
-    uint32_t generation = 0; //last pulled topic generation 
-    uint32_t stat_pull_cnt = 0; //pull counter
+    uint32_t _generation = 0; //last pulled topic generation 
+    uint32_t _stat_pull_cnt = 0; //pull counter
 
     virtual ~MsgSubscriptionBase();
     MsgSubscriptionBase(const char* name, MsgTopicBase *topic); //start a new subscription
 
-    bool pull_next(void *msg); //pull next message: returns true if msg was pulled, returns false if no msg available
-    bool pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
-    bool pull_last(void *msg); //pull last message: returns true if msg was pulled, returns false if no msg available
+    bool _pull_next(void *msg); //pull next message: returns true if msg was pulled, returns false if no msg available
+    bool _pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
+    bool _pull_last(void *msg); //pull last message: returns true if msg was pulled, returns false if no msg available
 
   private:
     MsgSubscriptionBase() {}
@@ -120,7 +121,7 @@ template <class T>
 class MsgSubscription : public MsgSubscriptionBase {
   public:
     MsgSubscription(const char* name, MsgTopicBase *topic) : MsgSubscriptionBase(name, topic) {}
-    bool pull(T *msg) { return MsgSubscriptionBase::pull_next(msg); }
-    bool pull_updated(T *msg) { return MsgSubscriptionBase::pull_updated(msg); }
-    bool pull_last(T *msg) { return MsgSubscriptionBase::pull_last(msg); }
+    bool pull(T *msg) { return MsgSubscriptionBase::_pull_next(msg); }
+    bool pull_updated(T *msg) { return MsgSubscriptionBase::_pull_updated(msg); }
+    bool pull_last(T *msg) { return MsgSubscriptionBase::_pull_last(msg); }
 };
