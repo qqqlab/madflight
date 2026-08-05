@@ -33,9 +33,10 @@ SOFTWARE.
 Veh veh;
 
 //returns true if flightmode changed
-bool Veh::setFlightmode(FlightMode flightmode) {
-  if(_flightmode == flightmode) return false;
-  _flightmode = flightmode;
+bool Veh::setFlightmode(FlightMode fm) {
+  if(_flightmode == fm) return false;
+  if(!pid.has_flightmode(fm)) return false;
+  _flightmode = fm;
   topic.publish(this);
   bbx.log_mode();
   return true;

@@ -306,6 +306,7 @@ bool CfgClass::_set_param(int i, float val, bool publish) {
       return false;
   }
   if(publish && changed) {
+    pid.load_param(); //force PID to reload parameters
     bbx.log_parm(Cfg::param_list[i].name, val, 0); //log parameter to BBX
   }
   return true;

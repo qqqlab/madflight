@@ -6,9 +6,10 @@
 
 // Global enums
 enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA };
+enum class MF_FilterType : uint32_t { mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH };
 
 namespace Cfg {
-  const uint16_t param_cnt = 174; //number of parameters
+  const uint16_t param_cnt = 214; //number of parameters
 
   //enums for madflight library parameters (prefixed with 'mf_' to prevent macro expansion of global #defines like ADC or ICM45686)
   enum class ahr_gizmo_enum : uint32_t { mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF };
@@ -26,6 +27,7 @@ namespace Cfg {
   enum class mag_align_enum : uint32_t { mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP };
   enum class ofl_gizmo_enum : uint32_t { mf_NONE,mf_PMW3901,mf_PMW3901U };
   enum class ofl_align_enum : uint32_t { mf_NE,mf_NW,mf_ES,mf_EN,mf_SW,mf_SE,mf_WN,mf_WS };
+  enum class pid_gizmo_enum : uint32_t { mf_MF0,mf_MF1,mf_MF2 };
 
   //list of parameters
   struct param_list_t {
@@ -209,6 +211,46 @@ namespace Cfg {
     { "rcl_flt3", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
     { "rcl_flt4", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
     { "rcl_flt5", (float)FlightMode::mf_ANGLE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "pid_gizmo", (float)Cfg::pid_gizmo_enum::mf_MF2, 'e', "mf_MF0,mf_MF1,mf_MF2" },
+    { "pid_kp0", (float)-1, 'f', "" },
+    { "pid_kp1", (float)-1, 'f', "" },
+    { "pid_kp2", (float)-1, 'f', "" },
+    { "pid_kp3", (float)-1, 'f', "" },
+    { "pid_ki0", (float)-1, 'f', "" },
+    { "pid_ki1", (float)-1, 'f', "" },
+    { "pid_ki2", (float)-1, 'f', "" },
+    { "pid_ki3", (float)-1, 'f', "" },
+    { "pid_kd0", (float)-1, 'f', "" },
+    { "pid_kd1", (float)-1, 'f', "" },
+    { "pid_kd2", (float)-1, 'f', "" },
+    { "pid_kd3", (float)-1, 'f', "" },
+    { "pid_ka0", (float)-1, 'f', "" },
+    { "pid_ka1", (float)-1, 'f', "" },
+    { "pid_ka2", (float)-1, 'f', "" },
+    { "pid_ka3", (float)-1, 'f', "" },
+    { "pid_kb0", (float)-1, 'f', "" },
+    { "pid_kb1", (float)-1, 'f', "" },
+    { "pid_kb2", (float)-1, 'f', "" },
+    { "pid_kb3", (float)-1, 'f', "" },
+    { "pid_filt0_type", (float)MF_FilterType::mf_NONE, 'e', "mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH" },
+    { "pid_filt1_type", (float)MF_FilterType::mf_NONE, 'e', "mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH" },
+    { "pid_filt2_type", (float)MF_FilterType::mf_NONE, 'e', "mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH" },
+    { "pid_filt3_type", (float)MF_FilterType::mf_NONE, 'e', "mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH" },
+    { "pid_filt0_freq", (float)-1, 'f', "" },
+    { "pid_filt1_freq", (float)-1, 'f', "" },
+    { "pid_filt2_freq", (float)-1, 'f', "" },
+    { "pid_filt3_freq", (float)-1, 'f', "" },
+    { "pid_filt0_q", (float)-1, 'f', "" },
+    { "pid_filt1_q", (float)-1, 'f', "" },
+    { "pid_filt2_q", (float)-1, 'f', "" },
+    { "pid_filt3_q", (float)-1, 'f', "" },
+    { "pid_rol_angl_lim", (float)-1, 'f', "" },
+    { "pid_pit_angl_lim", (float)-1, 'f', "" },
+    { "pid_rol_rate_lim", (float)-1, 'f', "" },
+    { "pid_pit_rate_lim", (float)-1, 'f', "" },
+    { "pid_yaw_rate_lim", (float)-1, 'f', "" },
+    { "pid_i_limit", (float)-1, 'f', "" },
+    { "pid_angl_mult", (float)-1, 'f', "" },
   }; //const param_list_t param_list[]
 }; //namespace Cfg
 
@@ -392,11 +434,51 @@ struct CfgParam {
   float rcl_pit_expo = 0.0; /* Pitch Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   float rcl_yaw_expo = 0.0; /* Yaw Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   float rcl_vsp_expo = 0.0; /* Vertical Speed Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
-  // v2.3.4
+  // v2.4.0
   FlightMode rcl_flt0 = FlightMode::mf_RATE; /* Flight Mode 0 */
   FlightMode rcl_flt1 = FlightMode::mf_RATE; /* Flight Mode 1 */
   FlightMode rcl_flt2 = FlightMode::mf_RATE; /* Flight Mode 2 */
   FlightMode rcl_flt3 = FlightMode::mf_RATE; /* Flight Mode 3 */
   FlightMode rcl_flt4 = FlightMode::mf_RATE; /* Flight Mode 4 */
   FlightMode rcl_flt5 = FlightMode::mf_ANGLE; /* Flight Mode 5 */
+  Cfg::pid_gizmo_enum pid_gizmo = Cfg::pid_gizmo_enum::mf_MF2; /* PID controller. IMPORTANT: Read module instructions before when changing this parameter!!! */
+  float pid_kp0 = -1; /* Proportional PID Term */
+  float pid_kp1 = -1;
+  float pid_kp2 = -1;
+  float pid_kp3 = -1;
+  float pid_ki0 = -1; /* Integral PID Term */
+  float pid_ki1 = -1;
+  float pid_ki2 = -1;
+  float pid_ki3 = -1;
+  float pid_kd0 = -1; /* Derivative/Damping PID Term */
+  float pid_kd1 = -1;
+  float pid_kd2 = -1;
+  float pid_kd3 = -1;
+  float pid_ka0 = -1; /* Additional-A PID Term */
+  float pid_ka1 = -1;
+  float pid_ka2 = -1;
+  float pid_ka3 = -1;
+  float pid_kb0 = -1; /* Additional-B PID Term */
+  float pid_kb1 = -1;
+  float pid_kb2 = -1;
+  float pid_kb3 = -1;
+  MF_FilterType pid_filt0_type = MF_FilterType::mf_NONE; /* Filter Type */
+  MF_FilterType pid_filt1_type = MF_FilterType::mf_NONE;
+  MF_FilterType pid_filt2_type = MF_FilterType::mf_NONE;
+  MF_FilterType pid_filt3_type = MF_FilterType::mf_NONE;
+  float pid_filt0_freq = -1; /* Filter Frequency (or filter parameter 1 for non-frequency filters) */
+  float pid_filt1_freq = -1;
+  float pid_filt2_freq = -1;
+  float pid_filt3_freq = -1;
+  float pid_filt0_q = -1; /* Filter Q (or filter parameter 2 for non-Q filters) */
+  float pid_filt1_q = -1;
+  float pid_filt2_q = -1;
+  float pid_filt3_q = -1;
+  float pid_rol_angl_lim = -1; /* Roll angle limit in angle flightmode [deg] */
+  float pid_pit_angl_lim = -1; /* Pitch angle limit in angle flightmode [deg] */
+  float pid_rol_rate_lim = -1; /* Roll rate limit [deg/s] */
+  float pid_pit_rate_lim = -1; /* Pitch rate limit [deg/s] */
+  float pid_yaw_rate_lim = -1; /* Yaw rate limit [deg/s] */
+  float pid_i_limit = -1; /* I-Term limit. Usually in percent of output, check pid_gizmo documentation */
+  float pid_angl_mult = -1; /* Angle to rate multiplier */
 }; //struct CfgParam

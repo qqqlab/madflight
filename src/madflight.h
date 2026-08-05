@@ -79,6 +79,10 @@ struct sensor_task_s {
   ScheduleFreq imu_schedule = ScheduleFreq(cfg.bbx_log_imu);
   MsgSubscription<ImuState> imu_sub = MsgSubscription<ImuState>("log_imu", &imu.topic);
   ImuState imu_state;
+  //pid
+  ScheduleFreq pid_schedule = ScheduleFreq(cfg.bbx_log_imu); //use imu schedule freq
+  MsgSubscription<PidState> pid_sub = MsgSubscription<PidState>("log_pid", &pid.topic);
+  PidState pid_state;
   //out
   ScheduleFreq out_schedule = ScheduleFreq(cfg.bbx_log_out);
   MsgSubscription<OutState> out_sub = MsgSubscription<OutState>("log_out", &out.topic);
@@ -104,6 +108,9 @@ struct sensor_task_s {
       }
       if(imu_schedule.expired() && imu_sub.pull_updated(&imu_state)) {
         bbx.log_imu(&imu_state);
+      }
+      if(pid_schedule.expired() && pid_sub.pull_updated(&pid_state)) {
+        bbx.log_pid(&pid_state);
       }
       if(ahr_schedule.expired() && ahr_sub.pull_updated(&ahr_state)) {
         bbx.log_ahr(&ahr_state);
@@ -397,6 +404,9 @@ void madflight_setup() {
       cli.calibrate_gyro();
     #endif
   }
+
+  // PID - After IMU
+  pid.setup();
 
   // LUA - Start Lua task and read script /madflight.lua from SDCARD (when #define MF_LUA_ENABLE 1)
   lua.begin();

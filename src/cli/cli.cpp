@@ -189,17 +189,52 @@ static void cli_pahr() {
   const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left";
   const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
   const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
-  Serial.printf("roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
+  Serial.printf("ahr.roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
 }
 
 static void cli_pah() {
-  Serial.printf("roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
+  Serial.printf("ah.roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
 
 static void cli_ppid() {
-  Serial.printf("pid.roll:%+.3f\t",pid.roll);
-  Serial.printf("pitch:%+.3f\t",pid.pitch);
-  Serial.printf("yaw:%+.3f\t",pid.yaw);
+  PidState pid_s;
+  pid.topic.pull_last(&pid_s); //get a consistent copy
+  Serial.printf("pid.roll:%+.3f\t",pid_s.roll.sum);
+  Serial.printf("pitch:%+.3f\t",pid_s.pitch.sum);
+  Serial.printf("yaw:%+.3f\t",pid_s.yaw.sum);
+}
+
+static void cli_ppidr() {
+  PidState pid_s;
+  pid.topic.pull_last(&pid_s); //get a consistent copy
+  Serial.printf("pidr.roll:%+.3f\t",pid_s.roll.sum);
+  Serial.printf("P:%+.3f\t",pid_s.roll.p);
+  Serial.printf("I:%+.3f\t",pid_s.roll.i);
+  Serial.printf("D:%+.3f\t",pid_s.roll.d);
+  Serial.printf("A:%+.3f\t",pid_s.roll.a);
+  Serial.printf("B:%+.3f\t",pid_s.roll.b);
+}
+
+static void cli_ppidp() {
+  PidState pid_s;
+  pid.topic.pull_last(&pid_s); //get a consistent copy
+  Serial.printf("pidp.pitch:%+.3f\t",pid.pitch.sum);
+  Serial.printf("P:%+.3f\t",pid_s.pitch.p);
+  Serial.printf("I:%+.3f\t",pid_s.pitch.i);
+  Serial.printf("D:%+.3f\t",pid_s.pitch.d);
+  Serial.printf("A:%+.3f\t",pid_s.pitch.a);
+  Serial.printf("B:%+.3f\t",pid_s.pitch.b);
+}
+
+static void cli_ppidy() {
+  PidState pid_s;
+  pid.topic.pull_last(&pid_s); //get a consistent copy
+  Serial.printf("pidy.yaw:%+.3f\t",pid_s.yaw.sum);
+  Serial.printf("P:%+.3f\t",pid_s.yaw.p);
+  Serial.printf("I:%+.3f\t",pid_s.yaw.i);
+  Serial.printf("D:%+.3f\t",pid_s.yaw.d);
+  Serial.printf("A:%+.3f\t",pid_s.yaw.a);
+  Serial.printf("B:%+.3f\t",pid_s.yaw.b);
 }
 
 static void cli_pout() {
@@ -309,7 +344,7 @@ bool Cli::add_print_command(const char *cmd, const char *info, void (*function)(
   return true;
 };
 
-#define CLI_PRINT_FLAG_COUNT 17
+#define CLI_PRINT_FLAG_COUNT 20
 
 static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"po",     "Overview", cli_po},
@@ -322,6 +357,9 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"pahr",   "AHRS roll, pitch, and yaw in human friendly format (expected: degrees, 0 when level)", cli_pahr},
   {"pah",    "AHRS roll, pitch, and yaw (expected: degrees, 0 when level)", cli_pah},
   {"ppid",   "PID output (expected: -1 to 1)", cli_ppid},
+  {"ppidr",  "PID Roll output (expected: -1 to 1)", cli_ppidr},
+  {"ppidp",  "PID Pitch output (expected: -1 to 1)", cli_ppidp},
+  {"ppidy",  "PID Yaw output (expected: -1 to 1)", cli_ppidy},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_pout},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_pbat},
   {"pbar",   "Barometer", cli_pbar},
@@ -484,7 +522,7 @@ void Cli::help() {
   "dump <filter>       List config\n"
   "diff <filter>       List config changes from default\n"
   "save                Save config and reboot\n"
-  "defaults            Reset to defaults and reboot\n"
+  "defaults <filter>   Reset to defaults\n"
   "-- CALIBRATE --\n"
   "calinfo             Sensor info\n"
   "calimu              Calibrate IMU error\n"
@@ -582,7 +620,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     if(cli_execute(cmd, arg1, arg2)) return;
   }
 
-  if (cmd=="help" || cmd=="?") {
+  if (cmd == "help" || cmd == "?") {
     help();
   }else if (cmd == "i2c") {
     print_i2cScan();
@@ -611,11 +649,9 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }else if (cmd == "diff") {
     cfg.cli_diff(arg1.c_str());
   }else if (cmd == "defaults") {
-    Serial.println("Resetting to defaults and rebooting, please wait... ");
-    cfg.load_defaults();
-    cfg.writeToEeprom();
-    delay(1000);
-    hal_reboot();
+    cfg.load_defaults(arg1.c_str());
+    if(arg1 != "") cfg.cli_dump(arg1.c_str());
+    Serial.println("Parameters reset to defaults, type 'save' to save... ");
   }else if (cmd == "save") {
     Serial.println("Saving and rebooting, please wait... ");
     cfg.writeToEeprom();

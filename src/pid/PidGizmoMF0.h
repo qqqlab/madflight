@@ -22,31 +22,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#pragma once
+
 #include "pid.h"
-#include "PidGizmoMF0.h"
-#include "PidGizmoMF1.h"
-#include "PidGizmoMF2.h"
-#include <Arduino.h>
+#include "../cfg/cfg.h"
 
-void Pid::setup() {
-    delete gizmo;
-    gizmo = nullptr;
-    switch(cfg.pid_gizmo) {
-    case Cfg::pid_gizmo_enum::mf_MF0:
-        gizmo = new PidGizmoMF0();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF1:
-        gizmo = new PidGizmoMF1();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF2:
-        gizmo = new PidGizmoMF2();
-        break;
-    }
-    if(!gizmo) {
-        Serial.printf("PID: ERROR invalid pid_gizmo\n");
-    }else{
-        Serial.printf("PID: %s\n",gizmo->name());
-    }
-}
+class PidGizmoMF0 : public PidGizmo {
+public:
+    PidGizmoMF0() {setup();}
+    const char* name() override {return "MF0";};
+    void setup() override;
+    void load_param() override;
+    bool has_flightmode(FlightMode fm) override;
+    void controller() override;
 
-Pid pid;
+private:
+    void control_Angle(bool zero_integrators);
+    void control_Rate(bool zero_integrators);
+
+    //Yaw to keep in ANGLE mode when yaw stick is centered
+    float yaw_desired = 0;
+
+    //Parameters are private and are loaded from cfg.pid_xxx with load_config()
+
+    //Controller parameters
+    float maxRoll;
+    float maxPitch;
+    float maxRollRate;
+    float maxPitchRate;
+    float maxYawRate;
+    float i_limit;
+
+    //PID Rate Mode 
+    float Kp_ro_pi_rate;
+    float Ki_ro_pi_rate;
+    float Kd_ro_pi_rate;
+    float Kp_yaw_rate;
+    float Ki_yaw_rate;
+    float Kd_yaw_rate;
+
+    //PID Angle Mode 
+    float Kp_ro_pi_angle;
+    float Ki_ro_pi_angle;
+    float Kd_ro_pi_angle;
+    float Kp_yaw_angle;
+    float Kd_yaw_angle;
+};

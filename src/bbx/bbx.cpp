@@ -266,6 +266,43 @@ void Bbx::log_imu(ImuState *imu_s) {
   }
 }
 
+//PID 
+void Bbx::log_pid(PidState *pid_s) {
+  {
+    BinLog bl("PIDR");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts); 
+    bl.i16("sum", pid_s->roll.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->roll.p * 1000, 1e-3);
+    bl.i16("i", pid_s->roll.i * 1000, 1e-3);
+    bl.i16("d", pid_s->roll.d * 1000, 1e-3);
+    bl.i16("a", pid_s->roll.a * 1000, 1e-3);
+    bl.i16("b", pid_s->roll.b * 1000, 1e-3);
+  }
+  {
+    BinLog bl("PIDP");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts);
+    bl.i16("sum", pid_s->pitch.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->pitch.p * 1000, 1e-3);
+    bl.i16("i", pid_s->pitch.i * 1000, 1e-3);
+    bl.i16("d", pid_s->pitch.d * 1000, 1e-3);
+    bl.i16("a", pid_s->pitch.a * 1000, 1e-3);
+    bl.i16("b", pid_s->pitch.b * 1000, 1e-3);    
+  }
+  {
+    BinLog bl("PIDY");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts); 
+    bl.i16("sum", pid_s->yaw.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->yaw.p * 1000, 1e-3);
+    bl.i16("i", pid_s->yaw.i * 1000, 1e-3);
+    bl.i16("d", pid_s->yaw.d * 1000, 1e-3);
+    bl.i16("a", pid_s->yaw.a * 1000, 1e-3);
+    bl.i16("b", pid_s->yaw.b * 1000, 1e-3);
+  }
+}
+
 //MODE - flight mode
 void Bbx::log_mode() {
   BinLog bl("MODE");
@@ -281,7 +318,7 @@ void Bbx::log_msg(const char* msg) {
   BinLogWriter::log_msg(msg);
 }
 
-//PARM - parameer
+//PARM - parameter
 void Bbx::log_parm(const char* name, float value, float default_value) {
   BinLogWriter::log_parm(name, value, default_value);
 }
@@ -314,7 +351,7 @@ void Bbx::log_out(OutState *out_s) {
       lbl[0] = 'R';
       lbl[1] = '0' + i;
       lbl[2] = 0;
-      bl.u16(lbl, Out::eperiod_to_rpm(out_s->eperiod[i]), 1, "rpm");
+      bl.i16(lbl, Out::eperiod_to_rpm(out_s->eperiod[i]), 1, "rpm"); //rpm is -1 when no rpm data available
     }
   }
 }

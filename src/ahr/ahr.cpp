@@ -36,9 +36,9 @@ int Ahr::setup() {
   cfg.printModule(MF_MOD);
 
   for(int axis = 0; axis < 3; axis++) {
-    MF_Filter::setup(gyr_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.imu_gyr_lp);
-    MF_Filter::setup(acc_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.imu_acc_lp);
-    MF_Filter::setup(mag_filter[axis], MF_FilterType::LowPT1, config.pimu->getSampleRate(), config.mag_lp);
+    MF_Filter::setup(gyr_filter[axis], MF_FilterType::mf_PT1, config.pimu->getSampleRate(), config.imu_gyr_lp, 0);
+    MF_Filter::setup(acc_filter[axis], MF_FilterType::mf_PT1, config.pimu->getSampleRate(), config.imu_acc_lp, 0);
+    MF_Filter::setup(mag_filter[axis], MF_FilterType::mf_PT1, config.pimu->getSampleRate(), config.mag_lp,     0);
   }
 
   //create gizmo
