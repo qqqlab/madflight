@@ -117,11 +117,6 @@ float yaw_desired = 0;
 const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
 
 void setup_motors() {
-  // Uncomment ONE line - select output type - StampFly has BRUSHED MOTORS
-  //bool success = out.setup_motors     (4, motor_outputs, 400, 950, 2000); // Standard PWM: 400Hz, 950-2000 us
-  //bool success = out.setup_motors     (4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
-  //bool success = out.setup_dshot      (4, motor_outputs, 300);            // Dshot300
-  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);            // Dshot300 Bi-Directional
   bool success = out.setup_brushed    (4, motor_outputs, 5000);           // Brushed motors: 5000Hz with 0-100% duty cycle
 
   out.print(); //print motor configuration
@@ -166,13 +161,7 @@ void imu_loop() {
   ahr.update(); 
 
   //PID Controller
-  switch( veh.getFlightmode() ) {
-    case FlightMode::mf_ANGLE: 
-      control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
-      break;
-    default: //FlightMode::mf_RATE 
-      control_Rate(rcl.throttle == 0); //Stabilize on rate setpoint
-  }
+  pid.controller();
 
   //Updates out.arm, the output armed flag
   out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
@@ -191,141 +180,6 @@ void led_Blink() {
   uint32_t modulus = imu.update_cnt % imu.getSampleRate();
   if( modulus == 0) led.color( (out.armed() ? 0 : 0x00ff00) ); //start of pulse - armed: off, disarmed: green
   if( modulus == imu.getSampleRate() / 10)  led.color( (out.armed() ? 0xff0000 : 0) ); //end of pulse - armed: red, disarmed: off
-}
-
-//returns angle in range -180 to 180
-float degreeModulus(float v) {
-  if(v >= 180) {
-    return fmod(v + 180, 360) - 180;
-  }else if(v < -180.0) {
-    return fmod(v - 180, 360) + 180;
-  }
-  return v;
-}
-
-void control_Angle(bool zero_integrators) {
-  //DESCRIPTION: Computes control commands based on angle error
-  /*
-   * Basic PID control to stablize on angle setpoint based on desired states roll_des, pitch_des, and yaw_des. Error
-   * is simply the desired state minus the actual state (ex. roll_des - ahr.roll). Two safety features
-   * are implimented here regarding the I terms. The I terms are saturated within specified limits on startup to prevent 
-   * excessive buildup. This can be seen by holding the vehicle at an angle and seeing the motors ramp up on one side until
-   * they've maxed out throttle... saturating I to a specified limit fixes this. The second feature defaults the I terms to 0
-   * if the throttle is at the minimum setting. This means the motors will not start spooling up on the ground, and the I 
-   * terms will always start from 0 on takeoff. This function updates the variables pid.roll, pid.pitch, and pid.yaw which
-   * can be thought of as 1-D stablized signals. They are mixed to the configuration of the vehicle in out_Mixer().
-   */
-
-  //inputs: roll_des, pitch_des, yawRate_des
-  //outputs: pid.roll, pid.pitch, pid.yaw
-
-  //desired values
-  float roll_des = rcl.roll * maxRoll; //Between -maxRoll and +maxRoll
-  float pitch_des = rcl.pitch * maxPitch; //Between -maxPitch and +maxPitch
-  float yawRate_des = rcl.yaw * maxYawRate; //Between -maxYawRate roll_PIDand +maxYawRate
-
-  //state vars
-  static float integral_roll, integral_pitch, error_yawRate_prev, integral_yawRate;
-
-  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
-  if(zero_integrators) {
-    integral_roll = 0;
-    integral_pitch = 0;
-    integral_yawRate = 0;
-  }
-
-  //Roll PID
-  float error_roll = roll_des - ahr.roll;
-  integral_roll += error_roll * imu.dt;
-  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = ahr.gx;
-  pid.roll = 0.01 * (Kp_ro_pi_angle*error_roll + Ki_ro_pi_angle*integral_roll - Kd_ro_pi_angle*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
-
-  //Pitch PID
-  float error_pitch = pitch_des - ahr.pitch;
-  integral_pitch += error_pitch * imu.dt;
-  integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = ahr.gy; 
-  pid.pitch = 0.01 * (Kp_ro_pi_angle*error_pitch + Ki_ro_pi_angle*integral_pitch - Kd_ro_pi_angle*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
-
-  //Yaw PID
-  if(-0.02 < rcl.yaw && rcl.yaw < 0.02) {
-    //on reset, set desired yaw to current yaw
-    if(zero_integrators) yaw_desired = ahr.yaw; 
-
-    //Yaw stick centered: hold yaw_desired
-    float error_yaw = degreeModulus(yaw_desired - ahr.yaw);
-    float desired_yawRate = error_yaw / 0.5; //set desired yawRate such that it gets us to desired yaw in 0.5 second
-    float derivative_yaw = desired_yawRate - ahr.gz;
-    pid.yaw = 0.01 * (Kp_yaw_angle*error_yaw + Kd_yaw_angle*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
-
-    //update yaw rate controller
-    error_yawRate_prev = 0;
-  }else{
-    //Yaw stick not centered: stablize on rate from GyroZ
-    float error_yawRate = yawRate_des - ahr.gz;
-    integral_yawRate += error_yawRate * imu.dt;
-    integral_yawRate = constrain(integral_yawRate, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-    float derivative_yawRate = (error_yawRate - error_yawRate_prev) / imu.dt; 
-    pid.yaw = 0.01 * (Kp_yaw_rate*error_yawRate + Ki_yaw_rate*integral_yawRate + Kd_yaw_rate*derivative_yawRate); //Scaled by .01 to bring within -1 to 1 range
-
-    //Update derivative variables
-    error_yawRate_prev = error_yawRate;
-
-    //update yaw controller: 
-    yaw_desired = ahr.yaw; //set desired yaw to current yaw, the yaw angle controller will hold this value
-  }
-}
-
-void control_Rate(bool zero_integrators) {
-  //Computes control commands based on state error (rate)
-  //See explanation for control_Angle(). Everything is the same here except the error is now: desired rate - raw gyro reading.
-
-  //inputs: roll_des, pitch_des, yawRate_des
-  //outputs: pid.roll, pid.pitch, pid.yaw
-
-  //desired values
-  float rollRate_des = rcl.roll * maxRollRate; //Between -maxRoll and +maxRoll
-  float pitchRate_des = rcl.pitch * maxPitchRate; //Between -maxPitch and +maxPitch
-  float yawRate_des = rcl.yaw * maxYawRate; //Between -maxYawRate and +maxYawRate 
-  
-  //state vars
-  static float integral_roll, error_roll_prev;
-  static float integral_pitch, error_pitch_prev;
-  static float integral_yaw, error_yaw_prev;
-
-  //Zero the integrators (used to don't let integrator build if throttle is too low, or to re-start the controller)
-  if(zero_integrators) {
-    integral_roll = 0;
-    integral_pitch = 0;
-    integral_yaw = 0;
-  }
-
-  //Roll
-  float error_roll = rollRate_des - ahr.gx;
-  integral_roll += error_roll * imu.dt;
-  integral_roll = constrain(integral_roll, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_roll = (error_roll - error_roll_prev) / imu.dt;
-  pid.roll = 0.01 * (Kp_ro_pi_rate*error_roll + Ki_ro_pi_rate*integral_roll + Kd_ro_pi_rate*derivative_roll); //Scaled by .01 to bring within -1 to 1 range
-
-  //Pitch
-  float error_pitch = pitchRate_des - ahr.gy;
-  integral_pitch += error_pitch * imu.dt;
-  integral_pitch = constrain(integral_pitch, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_pitch = (error_pitch - error_pitch_prev) / imu.dt;   
-  pid.pitch = 0.01 * (Kp_ro_pi_rate*error_pitch + Ki_ro_pi_rate*integral_pitch + Kd_ro_pi_rate*derivative_pitch); //Scaled by .01 to bring within -1 to 1 range
-
-  //Yaw, stablize on rate from GyroZ
-  float error_yaw = yawRate_des - ahr.gz;
-  integral_yaw += error_yaw * imu.dt;
-  integral_yaw = constrain(integral_yaw, -i_limit, i_limit); //Saturate integrator to prevent unsafe buildup
-  float derivative_yaw = (error_yaw - error_yaw_prev) / imu.dt; 
-  pid.yaw = 0.01 * (Kp_yaw_rate*error_yaw + Ki_yaw_rate*integral_yaw + Kd_yaw_rate*derivative_yaw); //Scaled by .01 to bring within -1 to 1 range
-
-  //Update derivative variables
-  error_roll_prev = error_roll;
-  error_pitch_prev = error_pitch;
-  error_yaw_prev = error_yaw;
 }
 
 void out_KillSwitchAndFailsafe() {
@@ -393,9 +247,9 @@ Yaw right               (CCW+ CW-)       -++-
     out.set_output(motor_outputs[3], thr);
   }else{
     // Quad mixing
-    out.set_output(motor_outputs[0], thr - pid.pitch - pid.roll - pid.yaw); //M1 Back Right CW
-    out.set_output(motor_outputs[1], thr + pid.pitch - pid.roll + pid.yaw); //M2 Front Right CCW
-    out.set_output(motor_outputs[2], thr - pid.pitch + pid.roll + pid.yaw); //M3 Back Left CCW
-    out.set_output(motor_outputs[3], thr + pid.pitch + pid.roll - pid.yaw); //M4 Front Left CW
+    out.set_output(motor_outputs[0], thr - pid.pitch.sum - pid.roll.sum - pid.yaw.sum); //M1 Back Right CW
+    out.set_output(motor_outputs[1], thr + pid.pitch.sum - pid.roll.sum + pid.yaw.sum); //M2 Front Right CCW
+    out.set_output(motor_outputs[2], thr - pid.pitch.sum + pid.roll.sum + pid.yaw.sum); //M3 Back Left CCW
+    out.set_output(motor_outputs[3], thr + pid.pitch.sum + pid.roll.sum - pid.yaw.sum); //M4 Front Left CW
   }
 }

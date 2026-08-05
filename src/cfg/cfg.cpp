@@ -202,7 +202,7 @@ void CfgClass::cli_dump(const char* filter) {
   qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
   for(int j=0; j<paramCount(); j++) {
     uint16_t i = arr[j];
-    if(strstr(Cfg::param_list[i].name, filter)) {
+    if(!filter || strstr(Cfg::param_list[i].name, filter)) {
       printNameAndValue(i);
     }
   }
@@ -359,7 +359,7 @@ int CfgClass::getIndex(String namestr) {
 //load defaults
 void CfgClass::load_defaults(const char* filter) {
   for(int i=0; i<paramCount(); i++) {
-    if(strstr(Cfg::param_list[i].name, filter)) {
+    if(!filter || strstr(Cfg::param_list[i].name, filter)) {
       _set_param(i, Cfg::param_list[i].defval, false /*no publish*/); 
     }
   }
