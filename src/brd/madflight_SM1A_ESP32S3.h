@@ -96,10 +96,6 @@ pin_bbx_cs     -1
 led_gizmo     RGB // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
 pin_led        48
 
-//--- RCL --- Radio Receiver Link
-rcl_gizmo CRSF
-rcl_ser_bus     0
-
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 imu_gizmo      AUTO
 imu_bus_type   SPI     // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
@@ -111,7 +107,6 @@ imu_i2c_bus    -1 //i2c
 imu_i2c_adr     0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
-
 
 //--- BAR --- Barometer
 bar_gizmo      HP203B

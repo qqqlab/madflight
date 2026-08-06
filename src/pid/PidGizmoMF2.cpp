@@ -175,5 +175,6 @@ void PidGizmoMF2::control_axis(int axis, float rate_setpoint) {
   state[axis].sum = state[axis].p + state[axis].i + state[axis].d;
 
   //for debugging
+  state[axis].setpoint = rate_setpoint;
   state[axis].a = dterm_unfiltered;
 }

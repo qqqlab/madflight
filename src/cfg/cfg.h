@@ -65,7 +65,7 @@ public:
   float get_param(String namestr, float default_value); //get parameter as float
 
   //CLI commands
-  void cli_dump(const char* filter = nullptr); //CLI dump: print all config values
+  void cli_dump(const char* filter = nullptr, bool diff = false); //CLI dump: print all config values
   void cli_diff(const char* filter = nullptr); //CLI diff: print all modified config values
 
   //print

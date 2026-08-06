@@ -196,13 +196,18 @@ static int _cfg_param_list_name_compare(const void *a, const void *b) {
 }
 
 //CLI dump: print all config values, sorted by name
-void CfgClass::cli_dump(const char* filter) {
+void CfgClass::cli_dump(const char* filter, bool diff) {
+  char filt[17] = {};
+  if(filter) {
+    strncpy(filt, filter, 16);
+  }
+  strlwr(filt);
   uint16_t arr[paramCount()];
   for(int i=0; i<paramCount(); i++) arr[i] = i;
   qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
   for(int j=0; j<paramCount(); j++) {
     uint16_t i = arr[j];
-    if(!filter || strstr(Cfg::param_list[i].name, filter)) {
+    if(strstr(Cfg::param_list[i].name, filt) && ( !diff || _get_param(i) != Cfg::param_list[i].defval )) {
       printNameAndValue(i);
     }
   }
@@ -210,16 +215,7 @@ void CfgClass::cli_dump(const char* filter) {
 
 //CLI diff: print all modified config values, sorted by name
 void CfgClass::cli_diff(const char* filter) {
-  CfgClass cfgdefault;
-  uint16_t arr[paramCount()];
-  for(int i=0; i<paramCount(); i++) arr[i] = i;
-  qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
-  for(int j=0; j<paramCount(); j++) {
-    uint16_t i = arr[j];
-    if(strstr(Cfg::param_list[i].name, filter) && _get_param(i) != cfgdefault._get_param(i)) {
-      printNameAndValue(i);
-    }
-  }
+  cli_dump(filter, true);
 }
 
 //sort by pin number (using inefficient sort)
@@ -496,16 +492,31 @@ uint32_t CfgClass::_calc_board_and_config_crc() {
   return crc;
 }
 
+//#define MF_DEBUG_CFG1
+//#define MF_DEBUG_CFG2
+
 void CfgClass::_load_madflight_board_and_config() {
   Serial.print("CFG: Loading config - ");
 
   load_defaults();
+
+  #ifdef MF_DEBUG_CFG1
+    #define MF_DEBUG_DUMP() cfg.cli_dump("rcl_gizmo")
+    Serial.printf("\nDEBUG: After load_defaults()\n");
+    MF_DEBUG_DUMP();
+  #endif
+
   cfg._load_from_eeprom(); //load parameters from EEPROM
+
+  #ifdef MF_DEBUG_CFG1
+    Serial.printf("\nDEBUG: After _load_from_eeprom()\n");
+    MF_DEBUG_DUMP();
+  #endif
 
   //calc crc
   uint32_t crc = _calc_board_and_config_crc();
 
-  #ifdef MF_DEBUG
+  #ifdef MF_DEBUG_CFG2
     // debug crc
     Serial.printf("\n");
     Serial.printf("eeprom.board_and_config_crc = %X\n", hdr.board_and_config_crc);
@@ -536,16 +547,29 @@ void CfgClass::_load_madflight_board_and_config() {
     if(_board && _board[0]) {
       _load_from_string(_board);
       Serial.print("madflight_board loaded OK, ");
+      #ifdef MF_DEBUG_CFG1
+        Serial.printf("\nDEBUG: After _load_from_string(_board)\n");
+        MF_DEBUG_DUMP();
+      #endif
     }else{
       Serial.print("madflight_board is empty, ");
     }
     if(_config && _config[0]) {
       _load_from_string(_config);
       Serial.println("madflight_config loaded OK");
+      #ifdef MF_DEBUG_CFG1
+        Serial.printf("\nDEBUG: After _load_from_string(_config)\n");
+        MF_DEBUG_DUMP();
+      #endif
     }else{
       Serial.println("madflight_config is empty");
     }
   }
+
+  #ifdef MF_DEBUG_CFG1
+    Serial.printf("\nDEBUG: final\n");
+    MF_DEBUG_DUMP();
+  #endif
 }
 
 //returns true on success

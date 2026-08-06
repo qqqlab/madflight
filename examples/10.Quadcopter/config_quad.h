@@ -54,6 +54,14 @@ const char madflight_config[] = R""(
 //rcl_num_ch     8     // serial and ppm: number of channels
 //rcl_deadband   0     // serial and ppm: center stick deadband
 
+//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 RATE
+rcl_flt0 ANGLE
+
 //--- BAR --- Barometer
 //bar_gizmo      NONE  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611
 //bar_i2c_adr    0

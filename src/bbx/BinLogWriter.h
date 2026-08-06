@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 
 #define LOG_TYPE_LEN  64    // max number of message types
-#define QUEUE_LENGTH  100   // max number of messages in the queue
+#define QUEUE_LENGTH  300   // max number of messages in the queue - size required approx QUEUE_LENGTH * MAX_MSG_LEN
 #define MAX_MSG_LEN   89    // max message len is FMT with 89 (0x59) bytes
 
 #define HEAD_BYTE1  0xA3
@@ -36,7 +36,9 @@ namespace BinLogWriter {
   enum Command_t { START, STOP };
   enum State_t { READY, STARTING, STARTED };
 
-  extern uint32_t missCnt;
+  extern uint32_t msgCnt; //number of messages sent
+  extern uint32_t missCnt; //number of messages missed
+  extern uint16_t stat_max_used; //max number of queue spots used
 
   void stop();
   void start();

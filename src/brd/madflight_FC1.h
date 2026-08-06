@@ -37,14 +37,6 @@ imu_i2c_adr   0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 
-
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo     NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_num_ch    8     // number of channels
-rcl_deadband  0     // center stick deadband
-rcl_ser_bus   0
-pin_rcl_ppm   -1
-
 //--- BAR --- Barometer
 bar_gizmo     HP203B  // options: NONE, BMP390, BMP388, BMP280, MS5611, HP203B
 bar_i2c_adr   118 //0x76
@@ -78,20 +70,6 @@ bbx_spi_bus   -1  // spi
 pin_mmc_dat   36  // mmc (uses 4-bit sdio mode on data pins 36,37,38,39)
 pin_mmc_clk   34  // mmc
 pin_mmc_cmd   35  // mmc
-
-//--- RDR --- Radar (use serial bus -OR- trig+echo pins)
-rdr_gizmo     NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
-rdr_baud      0
-rdr_ser_bus   -1
-pin_rdr_trig  -1
-pin_rdr_echo  -1
-
-//--- LED ---
-led_gizmo     NONE // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB
-pin_led       -1
-
-//--- AHR --- AHRS (keep MAHONY, unless you want to experiment)
-ahr_gizmo     MAHONY  // options: MAHONY, MAHONY_BF, MADGWICK, VQF
 
 //--- Serial bus 0 ---
 pin_ser0_rx   1

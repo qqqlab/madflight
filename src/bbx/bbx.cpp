@@ -271,7 +271,8 @@ void Bbx::log_pid(PidState *pid_s) {
   {
     BinLog bl("PIDR");
     bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-    bl.TimeUS(pid_s->ts); 
+    bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->roll.setpoint * 1000, 1e-3);
     bl.i16("sum", pid_s->roll.sum * 1000, 1e-3);
     bl.i16("p", pid_s->roll.p * 1000, 1e-3);
     bl.i16("i", pid_s->roll.i * 1000, 1e-3);
@@ -283,6 +284,7 @@ void Bbx::log_pid(PidState *pid_s) {
     BinLog bl("PIDP");
     bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
     bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->pitch.setpoint * 1000, 1e-3);
     bl.i16("sum", pid_s->pitch.sum * 1000, 1e-3);
     bl.i16("p", pid_s->pitch.p * 1000, 1e-3);
     bl.i16("i", pid_s->pitch.i * 1000, 1e-3);
@@ -293,7 +295,8 @@ void Bbx::log_pid(PidState *pid_s) {
   {
     BinLog bl("PIDY");
     bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-    bl.TimeUS(pid_s->ts); 
+    bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->yaw.setpoint * 1000, 1e-3);
     bl.i16("sum", pid_s->yaw.sum * 1000, 1e-3);
     bl.i16("p", pid_s->yaw.p * 1000, 1e-3);
     bl.i16("i", pid_s->yaw.i * 1000, 1e-3);
@@ -327,9 +330,11 @@ void Bbx::log_parm(const char* name, float value, float default_value) {
 void Bbx::log_sys() {
   BinLog bl("SYS");
   bl.TimeUS();
-  bl.u32("BBm", BinLogWriter::missCnt);
-  bl.u32("IMi", imu.interrupt_cnt);
-  bl.i32("IMm", imu.interrupt_cnt - imu.update_cnt);
+  bl.u32("BBXc", BinLogWriter::msgCnt); //bbx message count
+  bl.u16("BBXm", (BinLogWriter::msgCnt > 0 ? (1000 * BinLogWriter::missCnt) / BinLogWriter::msgCnt : 0), 0.1, "%"); //bbx miss %
+  bl.u16("BBXu", BinLogWriter::stat_max_used); //bbx max used queue spaces
+  bl.u32("IMUc", imu.interrupt_cnt); //imu interrupt count
+  bl.u16("IMUm", (imu.interrupt_cnt > 0 && imu.interrupt_cnt > imu.update_cnt + 1 ? (1000 * (imu.interrupt_cnt - imu.update_cnt)) / imu.interrupt_cnt : 0), 0.1, "%"); //imu miss %
 }
 
 //OUT - outputs (motors, servos)

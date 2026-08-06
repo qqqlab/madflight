@@ -41,7 +41,7 @@ Fast blinking                          Something is wrong, connect USB serial fo
 MIT license - Copyright (c) 2026 https://madflight.com
 ##########################################################################################################################*/
 
-#include "madflight_config.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
+#include "config_quad.h" //Edit this header file to setup the pins, hardware, radio, etc. for madflight
 #include <madflight.h>
 
 //prototypes (for PlatformIO, not needed for Arduino IDE)
