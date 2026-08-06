@@ -17,75 +17,63 @@
 #   comment:  Single line comment [optional]
 #   since:    Parameter exist since madflight version [optional]
 
-# Global enums
-enum:
-  FlightMode:
-    datatype: "enum class FlightMode : uint32_t"
-    options:
-      - CUSTOM0
-      - CUSTOM1
-      - CUSTOM2
-      - CUSTOM3
-      - CUSTOM4
-      - CUSTOM5
-      - RATE    #copter
-      - ANGLE   #copter
-      - MANUAL  #plane
-      - ROLL    #plane
-      - FBWA    #plane
-  MF_FilterType:
-    datatype: "enum class MF_FilterType : uint32_t"
-    options:
-      - NONE
-      - PT1
-      - PT2
-      - PT3
-      - BIQUAD
-      - NOTCH
 
 # Module documentaion
+pageheader: |
+  # madflight Configuration Parameters
+
+  Parameters are saved to EEPROM (i.e. flash). They can be modified with:
+  
+   - `madflight_board` string in board file: `#define MF_BOARD "brd/board_name.h"`
+   - `madflight_config` string defined in main.cpp
+   - CLI `set` Command
+   - Mavlink via Mission Planner or QGroundControl
+
+  ### Parameter Loading Logic
+
+    - Step 1: Load defaults as listed on this page
+    - Step 2: Overwrite with eeprom (eeprom could be shorter than defaults)
+    - Step 3: Overwrite with `madflight_board` and then `madflight_config` (if not already applied to eeprom)
+
 module:
   ahr:
-    title: Attitude and heading reference system (AHRS)
+    title: Attitude and Heading Reference System (AHRS)
   alt:
-    title: Altitude estimators
+    title: Altitude Estimators
   bar:
-    title: Barometer sensors
+    title: Barometer Sensors
   bat:
-    title: Battery sensors (current, voltage, power, capacity)
+    title: Battery Sensors (current, voltage, power, capacity)
   bbx:
-    title: Blackbox logging to SDCARD
+    title: Blackbox Logging
     comment: |
-      ```
-      #define MF_BINLOG_I16_SCALED
-      ```
-      This define will use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
+      `#define MF_BINLOG_I16_SCALED` This define will use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
   brd:
-    title: Board definition
+    title: Board Definition
   cfg:
-    title: Configuration from EEPROM, string
+    title: Configuration from EEPROM
   cli:
-    title: Command line interface
+    title: Command Line Interface
   gps:
-    title: Global positioning system
+    title: Global Positioning System
   hal:
-    title: Hardware abstraction layer
+    title: Hardware Abstraction Layer
   imu:
-    title: Inertial measurement unit sensors
+    title: Inertial Measurement Unit Sensors
   led:
-    title: Light emmitting diode
+    title: Light Emmitting Diode
   lua:
-    title: Lua scripting
+    title: Lua Scripting
   mag:
-    title: Magnetometer sensors
+    title: Magnetometer Sensors
   nav:
-    title: Waypoint navigation
+    title: Waypoint Navigation
   ofl:
-    title: Optical flow sensors
+    title: Optical Flow Sensors
   out:
-    title: Output drivers (motors, servos, etc.)
+    title: Output Drivers (motors, servos, etc.)
   pid:
-    title: Proportional–integral–derivative controller
+    title: Proportional Integral Derivative Controller
     comment: |
       This is the brain of the flight controller. 
       
@@ -196,15 +184,43 @@ module:
       Kd_yaw_angle   = 0.01 * ifneg(cfg.pid_kd3, 0.1);  // Yaw D-gain
       ```
   pin:
-    title: Pin mapping
+    title: GPIO Pin Mapping
   rcl:
-    title: Remote control radio link
+    title: Remote Control Radio Link
   rdr:
-    title: Radar, lidar, and ultrasonic distance sensors
+    title: Radar, Lidar, and Ultrasonic Distance Sensors
   tbx:
     title: Toolbox (common functions)
   veh:
-    title: Vehicle state info
+    title: Vehicle State
+
+
+# Global enums
+enum:
+  FlightMode:
+    datatype: "enum class FlightMode : uint32_t"
+    options:
+      - CUSTOM0
+      - CUSTOM1
+      - CUSTOM2
+      - CUSTOM3
+      - CUSTOM4
+      - CUSTOM5
+      - RATE    #copter
+      - ANGLE   #copter
+      - MANUAL  #plane
+      - ROLL    #plane
+      - FBWA    #plane
+  MF_FilterType:
+    datatype: "enum class MF_FilterType : uint32_t"
+    options:
+      - NONE
+      - PT1
+      - PT2
+      - PT3
+      - BIQUAD
+      - NOTCH
+
 
 # Global parameters
 param:

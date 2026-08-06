@@ -144,7 +144,7 @@ void madflight_setup() {
   cfg.setup(madflight_board, madflight_config); //load config
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
-    cfg.writeToEeprom();
+    cfg.save();
     madflight_panic("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
   #endif
 

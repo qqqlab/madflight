@@ -51,6 +51,8 @@ public:
   CfgClass();
   //loading and saving
   void setup(const char *board, const char *config);
+  void clear(); //clear config to default param (does not load madflight_board, madflight_config)
+  void save(); //save to eeprom
 
   //indexed parameter manipulation
   uint16_t paramCount(); //get number of parameters
@@ -86,11 +88,10 @@ private:
   uint32_t _calc_board_and_config_crc();
   void _load(); //load defaults, eeprom, board+config
   void _load_from_string(const char *batch); //load text unconditional
-  void _save(); //save to eeprom
 
   const char *_board = nullptr; //madflight_board config string
   const char *_config = nullptr; //madflight_config config string
-  bool _eeprom_has_board_and_config = false;
+  bool _is_board_and_config_loaded = false;
 };
 
 extern CfgClass cfg;
