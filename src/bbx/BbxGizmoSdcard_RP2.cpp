@@ -199,7 +199,8 @@ void BbxGizmoSdcard::_writeChar(uint8_t c) {
   }
   if(wbuf_len >= sizeof(wbuf)) {
     file.write(wbuf, sizeof(wbuf));
-    file.flush();
+    sectors_written++;
+    if((sectors_written % flush_sectors) == 0) file.flush();
     memset(wbuf, 0xff, sizeof(wbuf));
     wbuf_len = 0;
   }
@@ -218,6 +219,7 @@ void BbxGizmoSdcard::close() {
       wbuf_len = 0;
     }
     file.flush();
+    if(pre_allocate_len> 0) file.truncate(); //truncate unused preallocated space
     int len = file.size();
     file.close();
     file = {};
@@ -243,16 +245,16 @@ void BbxGizmoSdcard::dir() {
 
 void BbxGizmoSdcard::bench() {
     const char* path = "madfli.ght";
+    const uint32_t sectors = 2048; //1MB
     uint8_t *buf;
     size_t len = 0;
     uint32_t start;
     uint32_t end;
-    size_t flen;
+    size_t flen = sectors * 512;
     FsFile file;
-    
     buf = (uint8_t*)malloc(512);
     if(!buf) {
-        Serial.println("BBX:   bench - malloc failed");
+        Serial.println("BBX: bench - malloc failed");
         return;
     }
 
@@ -262,30 +264,36 @@ void BbxGizmoSdcard::bench() {
 
     file = sd.open(path, FILE_WRITE);
     if(!file){
-        Serial.println("BBX:   bench - Failed to open file for writing");
+        Serial.println("BBX: Failed to open file for writing");
         free(buf);
         return;
+    }
+
+    if(!file.preAllocate(pre_allocate_len)) {
+        Serial.println("BBX: preAllocate() failed");
     }
 
     size_t i;
     for(i=0;i<512;i++) buf[i] = i%64<63 ? '0' + i%64 - 1 : '\n';
 
+    Serial.printf("BBX: writing %u bytes to %s ...\n", (int)flen, path);
+    Serial.flush();
     start = millis();
-    for(i=0; i<2048; i++){
+    for(i=0; i<sectors; i++){
         sprintf((char*)buf,"%u ",i);
         file.write(buf, 512);
+        if((i % flush_sectors) == 0) file.flush();
     }
-    end = millis() - start;
-    flen = 2048 * 512;
-    Serial.printf("BBX:   %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
-    
+    end = millis() - start;
+    Serial.printf("BBX: %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+
     file = sd.open(path);
     if(!file){
-        Serial.println("BBX:   bench - Failed to open file for reading");
+        Serial.println("BBX: bench - Failed to open file for reading");
         free(buf);
         return;
-    }        
+    }
     len = file.size();
     flen = len;
     start = millis();
@@ -298,7 +306,7 @@ void BbxGizmoSdcard::bench() {
         len -= toRead;
     }
     end = millis() - start;
-    Serial.printf("BBX:   %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    Serial.printf("BBX: %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
 
     free(buf);
@@ -408,6 +416,10 @@ void BbxGizmoSdcard::sd_logOpen(const char * dirname){
   filename = String(dirname) + '/' + String(maxnr+1) + ".bin";
   Serial.println(filename);
   file = sd.open(filename, FILE_WRITE);
+  if(!file.preAllocate(pre_allocate_len)) {
+      Serial.println("BBX: preAllocate() failed");
+  }
+  sectors_written = 0;
 }
 
 
