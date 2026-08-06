@@ -162,12 +162,12 @@ class Veh : public VehState {
     #define MF_FLIGHTMODE_COUNT 11
     struct FlightModeMap_enum flightmode_map[MF_FLIGHTMODE_COUNT] = {
         //keep in same order as enum FlightMode
-        {"FM0",  255, 255},
-        {"FM1",  255, 255},
-        {"FM2",  255, 255},
-        {"FM3",  255, 255},
-        {"FM4",  255, 255},
-        {"FM5",  255, 255},
+        {"CUS0",  255, 255},
+        {"CUS1",  255, 255},
+        {"CUS2",  255, 255},
+        {"CUS3",  255, 255},
+        {"CUS4",  255, 255},
+        {"CUS5",  255, 255},
         {"RATE", VEH_TYPE_COPTER, AP_COPTER_FLIGHTMODE_ACRO},
         {"ANGL", VEH_TYPE_COPTER, AP_COPTER_FLIGHTMODE_STABILIZE},
         {"MANU", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_MANUAL},

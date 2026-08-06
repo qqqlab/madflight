@@ -25,24 +25,27 @@ SOFTWARE.
 #pragma once
 
 #include <math.h>
+#include "../cfg/cfg.h"
 
+/* moved to param.yaml.h
 enum class MF_FilterType {
-  None,
-  LowPT1,
-  LowPT2,
-  LowPT3,
-  LowBiquad,
-  NotchBiquad,
+  mf_NONE,
+  mf_PT1,
+  mf_PT2,
+  mf_PT3,
+  mf_BIQUAD,
+  mf_NOTCH,
 };
+*/
 
 class MF_Filter {
 public:
     virtual float apply(float input) = 0;
     virtual MF_FilterType get_type() = 0;
 
-    static bool setup(MF_Filter* &f, MF_FilterType typ, float f_sample, float para1, float para2 = 0);
+    static bool setup(MF_Filter* &f, MF_FilterType typ, float f_sample, float para1, float para2);
 private:
-    virtual bool init(float f_sample, float para1, float para2 = 0) = 0;
+    virtual bool init(float f_sample, float para1, float para2) = 0;
     static MF_Filter* create(MF_FilterType typ);
 };
 

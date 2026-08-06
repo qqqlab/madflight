@@ -32,17 +32,17 @@ SOFTWARE.
 
 MF_Filter* MF_Filter::create(MF_FilterType typ) {
     switch (typ) {
-    case MF_FilterType::None:
+    case MF_FilterType::mf_NONE:
         return new MF_FilterNone();
-    case MF_FilterType::LowPT1:
+    case MF_FilterType::mf_PT1:
         return new MF_FilterLowPT1();
-    case MF_FilterType::LowPT2:
+    case MF_FilterType::mf_PT2:
         return new MF_FilterLowPT2();
-    case MF_FilterType::LowPT3:
+    case MF_FilterType::mf_PT3:
         return new MF_FilterLowPT3();
-    case MF_FilterType::LowBiquad:
+    case MF_FilterType::mf_BIQUAD:
         return new MF_FilterLowBiquad();
-    case MF_FilterType::NotchBiquad:
+    case MF_FilterType::mf_NOTCH:
         return new MF_FilterNotchBiquad();
     default:
         //should not get here
@@ -63,7 +63,7 @@ bool MF_Filter::setup(MF_Filter* &f, MF_FilterType typ, float f_sample, float pa
 //=================================================================
 
 MF_FilterType MF_FilterNone::get_type() {
-    return MF_FilterType::None;
+    return MF_FilterType::mf_NONE;
 }
 
 bool MF_FilterNone::init(float f_sample, float f_cut, float dummy) {
@@ -87,11 +87,12 @@ float MF_FilterNone::apply(float input) {
 #define CUTOFF_CORRECTION_PT3 1.961459177f
 
 MF_FilterType MF_FilterLowPT1::get_type() {
-    return MF_FilterType::LowPT1;
+    return MF_FilterType::mf_PT1;
 }
 
 static float pt_calc_k(float f_cut, float f_sample) {
-    if(f_sample <= 0) return 1;
+    //default to no filtering when parameters are incorrect
+    if(f_sample <= 0 || f_cut < 0) return 1; 
 
     //approximation
     //float omega = 2.0f * M_PI * f_cut / f_sample;
@@ -124,7 +125,7 @@ float MF_FilterLowPT1::apply(float input) {
 //=================================================================
 
 MF_FilterType MF_FilterLowPT2::get_type() {
-    return MF_FilterType::LowPT2;
+    return MF_FilterType::mf_PT2;
 }
 
 bool MF_FilterLowPT2::init(float f_sample, float f_cut, float dummy) {
@@ -156,7 +157,7 @@ float MF_FilterLowPT2::apply(float input) {
 //=================================================================
 
 MF_FilterType MF_FilterLowPT3::get_type() {
-    return MF_FilterType::LowPT3;
+    return MF_FilterType::mf_PT3;
 }
 
 bool MF_FilterLowPT3::init(float f_sample, float f_cut, float dummy) {
@@ -191,7 +192,7 @@ float MF_FilterLowPT3::apply(float input) {
 //=================================================================
 
 MF_FilterType MF_FilterLowBiquad::get_type() {
-    return MF_FilterType::LowBiquad;
+    return MF_FilterType::mf_BIQUAD;
 }
 
 bool MF_FilterLowBiquad::init(float f_sample, float f_cut, float Q) {
@@ -224,7 +225,7 @@ float MF_FilterLowBiquad::apply(float input) {
 //=================================================================
 
 MF_FilterType MF_FilterNotchBiquad::get_type() {
-    return MF_FilterType::NotchBiquad;
+    return MF_FilterType::mf_NOTCH;
 }
 
 bool MF_FilterNotchBiquad::init(float f_sample, float f_notch, float Q) {
@@ -273,7 +274,7 @@ public:
     float k = 0; // 1 / Q
 
     MF_FilterType get_type() override {
-        return MF_FilterType::LowBiquad;
+        return MF_FilterType::mf_BIQUAD;
     }
 
     bool init(float f_sample, float f_cut, float Q) override {

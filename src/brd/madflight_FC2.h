@@ -37,28 +37,6 @@ const char madflight_board[] = R""(
 // external components - modify accordingly //
 //==========================================//
 
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_num_ch     8     // number of channels
-rcl_deadband   0     // center stick deadband
-rcl_ser_bus    0
-pin_rcl_ppm   -1
-
-//--- GPS ---
-gps_gizmo      NONE  // options: NONE, UBLOX
-gps_baud       0   // use 0 for auto baud
-gps_ser_bus    1
-
-//--- RDR --- Radar (use serial bus -OR- trig+echo pins)
-rdr_gizmo      NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
-rdr_baud       0
-rdr_ser_bus   -1
-pin_rdr_trig  -1
-pin_rdr_echo  -1
-
-//--- AHR --- AHRS (keep MAHONY, unless you want to experiment)
-ahr_gizmo      MAHONY  // options: MAHONY, MAHONY_BF, MADGWICK, VQF
-
 //--- Serial bus 0 ---
 pin_ser0_rx    7
 pin_ser0_tx   21
@@ -109,7 +87,6 @@ imu_i2c_bus    -1 //i2c
 imu_i2c_adr     0 //i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
-
 
 //--- BAR --- Barometer
 bar_gizmo      HP203B  // options: NONE, BMP390, BMP388, BMP280, MS5611, HP203B

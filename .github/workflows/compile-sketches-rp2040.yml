@@ -13,7 +13,6 @@ jobs:
           sketch-paths: |
             - examples/00.HelloWorld
             - examples/10.Quadcopter
-            - examples/11.QuadcopterAdvanced
             - examples/20.Plane
 
 # see https://forum.arduino.cc/t/example-of-core-log-level-using-compile-sketch-github-action/1036161

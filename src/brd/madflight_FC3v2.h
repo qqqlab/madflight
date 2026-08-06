@@ -39,14 +39,6 @@ imu_i2c_adr   0
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus
 
-
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo     NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_num_ch    8     // number of channels
-rcl_deadband  0     // center stick deadband
-rcl_ser_bus   0
-pin_rcl_ppm   -1
-
 //--- BAR --- Barometer
 bar_gizmo     BMP580
 bar_i2c_adr   71 //0x47
@@ -68,11 +60,6 @@ pin_bat_v     -1
 bat_cal_v     1 //adc voltage scale, value is: actual_voltage_in_v / adc_reading
 bat_cal_i     0.002 //adc current scale, value is: actual_current_in_a / adc_reading; for ina226/228: rshunt value in ohm
 
-//--- GPS ---
-gps_gizmo     NONE  // options: NONE, UBLOX
-gps_baud      0   // use 0 for auto baud
-gps_ser_bus   1
-
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
 bbx_gizmo     SDMMC
 pin_bbx_cs    -1  // spi
@@ -80,13 +67,6 @@ bbx_spi_bus   -1  // spi
 pin_mmc_dat   36  // mmc (uses 4-bit sdio mode on data pins 36,37,38,39)
 pin_mmc_clk   34  // mmc
 pin_mmc_cmd   35  // mmc
-
-//--- RDR --- Radar (use serial bus -OR- trig+echo pins)
-rdr_gizmo     NONE  // options: NONE, LD2411S, LD2413, USD1, SR04
-rdr_baud      0
-rdr_ser_bus   -1
-pin_rdr_trig  -1
-pin_rdr_echo  -1
 
 //--- LED ---
 led_gizmo     RGB // options: NONE, HIGH_IS_ON, LOW_IS_ON, RGB

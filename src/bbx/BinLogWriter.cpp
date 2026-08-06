@@ -24,12 +24,6 @@ SOFTWARE.
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
 
-#define LOG_TYPE_LEN  64    // max number of message types
-#define QUEUE_LENGTH  100   // max number of messages in the queue
-#define MAX_MSG_LEN   89    // max message len is FMT with 89 (0x59) bytes
-
-
-
 #include <Arduino.h> //Serial
 #include "bbx.h"
 #include "../hal/hal.h" //FreeRtos
@@ -46,7 +40,9 @@ namespace BinLogWriter {
 
   State_t state = READY;
   uint32_t startMicros = 0;
+  uint32_t msgCnt = 0;
   uint32_t missCnt = 0;
+  uint16_t stat_max_used;
 
   struct msg_t
   {
@@ -90,7 +86,11 @@ namespace BinLogWriter {
 
   //append message to queue
   bool queueSend(uint8_t *buf, uint8_t len, uint8_t keepfree) {
-    if(keepfree && uxQueueSpacesAvailable(queue) < keepfree) {
+    msgCnt++;
+    uint32_t avail = uxQueueSpacesAvailable(queue);
+    uint32_t used = QUEUE_LENGTH - avail;
+    if(stat_max_used < used) stat_max_used = used;
+    if(keepfree && avail < keepfree) {
       missCnt++;
       return false;
     }
@@ -245,6 +245,7 @@ namespace BinLogWriter {
 
     //log file time start now
     startMicros = micros();
+    msgCnt = 0;
     missCnt = 0;
 
     //write headers (flush often)

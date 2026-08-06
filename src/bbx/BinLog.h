@@ -122,6 +122,7 @@ const struct MultiplierStructure log_Multipliers[] = {
     { 'E', 1e-5 },
     { 'F', 1e-6 },
     { 'G', 1e-7 },
+    { 'H', 1e-8 },
     { 'I', 1e-9 },
 // <leave a gap here, just in case....>
     { '!', 3.6 }, // (ampere*second => milliampere*hour) and (km/h => m/s)
@@ -189,16 +190,17 @@ private:
  
     //multiplier
     for(int i=0;i<_num_multipliers;i++) {
+      FMT_mult[FMT_fmt] = '-';
       if(mult == log_Multipliers[i].mult) {
         FMT_mult[FMT_fmt] = log_Multipliers[i].ID;
         break;
       }
     }
-    FMT_mult[FMT_fmt] = mult;
     
     //units
     if(unit) {
       for(int i=0;i<_num_units;i++) {
+        FMT_unit[FMT_fmt] = '-';
         if(strcmp(unit, log_Units[i].unit) == 0) {
           FMT_unit[FMT_fmt] = log_Units[i].ID;
           break;
@@ -242,8 +244,8 @@ private:
       FMT_lbl = 0;
       FMT_msglen = 3;
       
-      memset(FMT_unit, '-', 16);
-      memset(FMT_mult, '-', 16);
+      memset(FMT_unit, 0, 16);
+      memset(FMT_mult, 0, 16);
     }
     
   }
@@ -330,9 +332,20 @@ public:
     buf[buflen++] = v;
   }
   void i16(const char* label, int16_t v, float mult = 1, const char* unit = nullptr) {
-    if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
-    memcpy(buf+buflen, &v, 2);
-    buflen+=2;
+   //use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
+   #if MF_BINLOG_I16_SCALED
+      if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
+      memcpy(buf+buflen, &v, 2);
+      buflen+=2;
+    #else
+      if(mult == 1) {
+        if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
+        memcpy(buf+buflen, &v, 2);
+        buflen+=2;
+      }else{
+        flt(label, (float)v * mult, 1.0, unit);
+      }
+    #endif
   }
   void i16x100(const char* label, int16_t v, float mult = 1, const char* unit = nullptr) {
     if(FMT_write) FMT_addField('c', 2, label, mult, unit); // c   : int16_t * 100

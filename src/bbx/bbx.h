@@ -32,6 +32,7 @@ SOFTWARE.
 #include "../imu/imu.h"
 #include "../out/out.h"
 #include "../rcl/rcl.h"
+#include "../pid/pid.h"
 
 struct BbxConfig {
   public:
@@ -89,11 +90,10 @@ class Bbx {
     void log_bat();
     void log_gps();
     void log_imu(ImuState *imu_s);
+    void log_pid(PidState *pid_s);
     void log_mode();
     void log_msg(const char* msg);
     void log_parm(const char* name, float value, float default_value);
-    void log_pid();
-//    void log_att();
     void log_ahr(AhrState *ahr_s);
     void log_sys();
     void log_out(OutState *out_s);

@@ -22,31 +22,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
 
+#pragma once
+
 #include "pid.h"
-#include "PidGizmoMF0.h"
-#include "PidGizmoMF1.h"
-#include "PidGizmoMF2.h"
-#include <Arduino.h>
+#include "../cfg/cfg.h"
+#include "../tbx/tbx.h"
 
-void Pid::setup() {
-    delete gizmo;
-    gizmo = nullptr;
-    switch(cfg.pid_gizmo) {
-    case Cfg::pid_gizmo_enum::mf_MF0:
-        gizmo = new PidGizmoMF0();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF1:
-        gizmo = new PidGizmoMF1();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF2:
-        gizmo = new PidGizmoMF2();
-        break;
-    }
-    if(!gizmo) {
-        Serial.printf("PID: ERROR invalid pid_gizmo\n");
-    }else{
-        Serial.printf("PID: %s\n",gizmo->name());
-    }
-}
+class PidGizmoMF2 : public PidGizmo {
+public:
+    PidGizmoMF2() {setup();}
+    const char* name() override {return "MF2";};
+    void setup() override;
+    void load_param() override;
+    bool has_flightmode(FlightMode fm) override;
+    void controller() override;
 
-Pid pid;
+private:
+    void control_angle();
+    void control_rate();
+    void control_rate_axis(int axis);
+    void control_axis(int axis, float rate_setpoint);
+    void zeroIntegrators();
+
+    //Parameters are private and are loaded from cfg.pid_xxx with load_config()
+
+    //Controller parameters
+    float i_limit = 0;
+    float pid_angl_mult = 0;
+
+    struct axis_s {
+        //parameters
+        float kp = 0;
+        float ki = 0;
+        float kd = 0;
+        float rate_limit = 0;
+        float angle_limit = 0;
+        MF_Filter *d_filter = nullptr;
+        //intermediate state
+        float error_prev = 0;
+    } param[3];
+
+    float pid_freq = 0;
+    float pid_dt = 0;
+
+    //pointers to external variables
+    float *stick = nullptr; //roll/pitch/yaw stick inputs
+    float *gyro = nullptr; //gx,gy,gz gyro
+    float *ahrs_angle = nullptr; //roll/pitch/yaw euler angles
+    PidStatePID_s *state = nullptr; //roll/pitch/yaw output state
+};

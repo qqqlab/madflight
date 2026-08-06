@@ -218,18 +218,18 @@ void Bbx::log_pos(float homeAlt, float OriginAlt) override {
 void Bbx::log_ahr(AhrState *ahr_s) {
   BinLog bl("AHRS"); 
   bl.TimeUS();
-  bl.i16("ax",    ahr_s->ax * 1000,   1e-3, "G"); //G
-  bl.i16("ay",    ahr_s->ay * 1000,   1e-3, "G"); //G
-  bl.i16("az",    ahr_s->az * 1000,   1e-3, "G"); //G
-  bl.i16("gx",    ahr_s->gx * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gy",    ahr_s->gy * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gz",    ahr_s->gz * 10,     1e-1, "deg/s"); //dps
-  bl.i16("mx",    ahr_s->mx * 100,    1e-2, "uT"); //uT
-  bl.i16("my",    ahr_s->my * 100,    1e-2, "uT"); //uT
-  bl.i16("mz",    ahr_s->mz * 100,    1e-2, "uT"); //uT
-  bl.i16("roll",  ahr_s->roll * 100,  1e-2, "deg"); //deg -180 to 180
-  bl.i16("pitch", ahr_s->pitch * 100, 1e-2, "deg"); //deg -90 to 90
-  bl.i16("yaw",   ahr_s->yaw * 100,   1e-2, "deg"); //deg -180 to 180
+  bl.i16x100("ax",    ahr_s->ax * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s (G is not a binlog unit)
+  bl.i16x100("ay",    ahr_s->ay * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16x100("az",    ahr_s->az * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16(    "gx",    ahr_s->gx * 10,     1e-1, "deg/s"); //dps
+  bl.i16(    "gy",    ahr_s->gy * 10,     1e-1, "deg/s"); //dps
+  bl.i16(    "gz",    ahr_s->gz * 10,     1e-1, "deg/s"); //dps
+  bl.i16x100("mx",    ahr_s->mx * 100,    1, "uT"); //uT (uT is not a binlog unit, Gauss is but unpracticable with 1 uT = 0.01 Gauss and expected range -100 to +100 uT)
+  bl.i16x100("my",    ahr_s->my * 100,    1, "uT"); //uT
+  bl.i16x100("mz",    ahr_s->mz * 100,    1, "uT"); //uT
+  bl.i16x100("roll",  ahr_s->roll * 100,  1, "deg"); //deg -180 to 180
+  bl.i16x100("pitch", ahr_s->pitch * 100, 1, "deg"); //deg -90 to 90
+  bl.i16x100("yaw",   ahr_s->yaw * 100,   1, "deg"); //deg -180 to 180
 }
 
 /*
@@ -253,16 +253,56 @@ void Bbx::log_imu(ImuState *imu_s) {
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
   bl.TimeUS(imu_s->ts);
-  bl.i16("ax", imu_s->ax * 1000, 1e-3, "G"); //G
-  bl.i16("ay", imu_s->ay * 1000, 1e-3, "G"); //G
-  bl.i16("az", imu_s->az * 1000, 1e-3, "G"); //G
-  bl.i16("gx", imu_s->gx * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gy", imu_s->gy * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gz", imu_s->gz * 10,   1e-1, "deg/s"); //dps
+  bl.i16x100( "ax",    imu_s->ax * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s (G is not a binlog unit)
+  bl.i16x100( "ay",    imu_s->ay * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16x100( "az",    imu_s->az * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16(     "gx",    imu_s->gx * 10,        1e-1, "deg/s"); //dps
+  bl.i16(     "gy",    imu_s->gy * 10,        1e-1, "deg/s"); //dps
+  bl.i16(     "gz",    imu_s->gz * 10,        1e-1, "deg/s"); //dps
   if(mag.installed()) {
-    bl.i16("mx", mag.mx * 100, 1e-2, "uT"); //uT
-    bl.i16("my", mag.my * 100, 1e-2, "uT"); //uT
-    bl.i16("mz", mag.mz * 100, 1e-2, "uT"); //uT
+    bl.i16x100("mx",   mag.mx * 100,             1, "uT"); //uT (uT is not a binlog unit, Gauss is but unpracticable with 1 uT = 0.01 Gauss and expected range -100 to +100 uT)
+    bl.i16x100("my",   mag.my * 100,             1, "uT"); //uT  
+    bl.i16x100("mz",   mag.mz * 100,             1, "uT"); //uT
+  }
+}
+
+//PID 
+void Bbx::log_pid(PidState *pid_s) {
+  {
+    BinLog bl("PIDR");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->roll.setpoint * 1000, 1e-3);
+    bl.i16("sum", pid_s->roll.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->roll.p * 1000, 1e-3);
+    bl.i16("i", pid_s->roll.i * 1000, 1e-3);
+    bl.i16("d", pid_s->roll.d * 1000, 1e-3);
+    bl.i16("a", pid_s->roll.a * 1000, 1e-3);
+    bl.i16("b", pid_s->roll.b * 1000, 1e-3);
+  }
+  {
+    BinLog bl("PIDP");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->pitch.setpoint * 1000, 1e-3);
+    bl.i16("sum", pid_s->pitch.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->pitch.p * 1000, 1e-3);
+    bl.i16("i", pid_s->pitch.i * 1000, 1e-3);
+    bl.i16("d", pid_s->pitch.d * 1000, 1e-3);
+    bl.i16("a", pid_s->pitch.a * 1000, 1e-3);
+    bl.i16("b", pid_s->pitch.b * 1000, 1e-3);    
+  }
+  {
+    BinLog bl("PIDY");
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(pid_s->ts);
+    bl.i16("setpoint", pid_s->yaw.setpoint * 1000, 1e-3);
+    bl.i16("sum", pid_s->yaw.sum * 1000, 1e-3);
+    bl.i16("p", pid_s->yaw.p * 1000, 1e-3);
+    bl.i16("i", pid_s->yaw.i * 1000, 1e-3);
+    bl.i16("d", pid_s->yaw.d * 1000, 1e-3);
+    bl.i16("a", pid_s->yaw.a * 1000, 1e-3);
+    bl.i16("b", pid_s->yaw.b * 1000, 1e-3);
   }
 }
 
@@ -281,7 +321,7 @@ void Bbx::log_msg(const char* msg) {
   BinLogWriter::log_msg(msg);
 }
 
-//PARM - parameer
+//PARM - parameter
 void Bbx::log_parm(const char* name, float value, float default_value) {
   BinLogWriter::log_parm(name, value, default_value);
 }
@@ -290,9 +330,11 @@ void Bbx::log_parm(const char* name, float value, float default_value) {
 void Bbx::log_sys() {
   BinLog bl("SYS");
   bl.TimeUS();
-  bl.u32("BBm", BinLogWriter::missCnt);
-  bl.u32("IMi", imu.interrupt_cnt);
-  bl.i32("IMm", imu.interrupt_cnt - imu.update_cnt);
+  bl.u32("BBXc", BinLogWriter::msgCnt); //bbx message count
+  bl.u16("BBXm", (BinLogWriter::msgCnt > 0 ? (1000 * BinLogWriter::missCnt) / BinLogWriter::msgCnt : 0), 0.1, "%"); //bbx miss %
+  bl.u16("BBXu", BinLogWriter::stat_max_used); //bbx max used queue spaces
+  bl.u32("IMUc", imu.interrupt_cnt); //imu interrupt count
+  bl.u16("IMUm", (imu.interrupt_cnt > 0 && imu.interrupt_cnt > imu.update_cnt + 1 ? (1000 * (imu.interrupt_cnt - imu.update_cnt)) / imu.interrupt_cnt : 0), 0.1, "%"); //imu miss %
 }
 
 //OUT - outputs (motors, servos)
@@ -314,7 +356,7 @@ void Bbx::log_out(OutState *out_s) {
       lbl[0] = 'R';
       lbl[1] = '0' + i;
       lbl[2] = 0;
-      bl.u16(lbl, Out::eperiod_to_rpm(out_s->eperiod[i]), 1, "rpm");
+      bl.i16(lbl, Out::eperiod_to_rpm(out_s->eperiod[i]), 1, "rpm"); //rpm is -1 when no rpm data available
     }
   }
 }

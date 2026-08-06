@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2023-2026 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,47 @@ SOFTWARE.
 
 #pragma once
 
-#define LOG_TYPE_LEN  64    // max number of message types
-#define QUEUE_LENGTH  300   // max number of messages in the queue - size required approx QUEUE_LENGTH * MAX_MSG_LEN
-#define MAX_MSG_LEN   89    // max message len is FMT with 89 (0x59) bytes
+#include "pid.h"
+#include "../cfg/cfg.h"
 
-#define HEAD_BYTE1  0xA3
-#define HEAD_BYTE2  0x95
+class PidGizmoMF0 : public PidGizmo {
+public:
+    PidGizmoMF0() {setup();}
+    const char* name() override {return "MF0";};
+    void setup() override;
+    void load_param() override;
+    bool has_flightmode(FlightMode fm) override;
+    void controller() override;
 
+private:
+    void control_Angle(bool zero_integrators);
+    void control_Rate(bool zero_integrators);
 
-namespace BinLogWriter {
-  enum Command_t { START, STOP };
-  enum State_t { READY, STARTING, STARTED };
+    //Yaw to keep in ANGLE mode when yaw stick is centered
+    float yaw_desired = 0;
 
-  extern uint32_t msgCnt; //number of messages sent
-  extern uint32_t missCnt; //number of messages missed
-  extern uint16_t stat_max_used; //max number of queue spots used
+    //Parameters are private and are loaded from cfg.pid_xxx with load_config()
 
-  void stop();
-  void start();
-  void setup();
-  void log_msg(const char* msg);
-  void log_parm(const char* name, float value, float default_value);
+    //Controller parameters
+    float maxRoll;
+    float maxPitch;
+    float maxRollRate;
+    float maxPitchRate;
+    float maxYawRate;
+    float i_limit;
+
+    //PID Rate Mode 
+    float Kp_ro_pi_rate;
+    float Ki_ro_pi_rate;
+    float Kd_ro_pi_rate;
+    float Kp_yaw_rate;
+    float Ki_yaw_rate;
+    float Kd_yaw_rate;
+
+    //PID Angle Mode 
+    float Kp_ro_pi_angle;
+    float Ki_ro_pi_angle;
+    float Kd_ro_pi_angle;
+    float Kp_yaw_angle;
+    float Kd_yaw_angle;
 };

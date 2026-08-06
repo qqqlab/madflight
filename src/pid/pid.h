@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2025 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,16 +24,73 @@ SOFTWARE.
 
 #pragma once
 
-#include "PIDController.h"
-#include "FilterLowPass.h"
+#include "../tbx/tbx.h" //MF_Schedule, RuntimeTrace, MsgBroker
+#include "../cfg/cfg.h"
 
-class Pid {
+struct PidStatePID_s {
+    float p = 0;
+    float i = 0;
+    float d = 0;
+    float a = 0;
+    float b = 0;
+    float sum = 0;
+    float setpoint = 0; //for debugging
+};
+
+struct __attribute__((aligned(4))) PidState {
   public:
-    //PIDController outputs
-    float roll = 0;
-    float pitch = 0;
-    float yaw = 0;
-    float throttle = 0;
+    uint32_t ts = 0;  // Timestamp in [us]
+ 
+    PidStatePID_s roll;
+    PidStatePID_s pitch;
+    PidStatePID_s yaw;
+};
+
+class PidGizmo {
+  public:
+    virtual ~PidGizmo() {}
+    virtual const char* name() = 0;
+    virtual void setup() = 0; // initial setup
+    virtual void load_param() = 0; // (re-)load parameters
+    virtual bool has_flightmode(FlightMode fm) = 0; //set flightmode, returns true if mode was changed
+    virtual void controller() = 0; // execute controller
+
+  protected:
+    //load cfg parameter value, set default if value < 0
+    float ifneg(float &value, float default_value) {
+      if(value < 0) value = default_value; //set default cfg parameter value by reference
+      return value;
+    }
+};
+
+class Pid : public PidState {
+  public:
+    PidGizmo *gizmo = nullptr;
+    MsgTopic<PidState> topic = MsgTopic<PidState>("pid", 10); //10-deep fifo
+
+    void setup();
+
+    void load_param() {
+      if(!gizmo) return;
+      gizmo->load_param();
+    }
+
+    bool has_flightmode(FlightMode fm) {
+      if(!gizmo) return false;
+      return gizmo->has_flightmode(fm);
+    }
+
+    void controller() {
+      if(!gizmo) return;
+      runtimeTrace.start();
+      gizmo->controller();
+      ts = micros();
+      topic.publish(this);
+      runtimeTrace.stop(true);
+    }
+
+  private:
+    RuntimeTrace runtimeTrace = RuntimeTrace("PID");
 };
 
 extern Pid pid;
