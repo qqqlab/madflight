@@ -34,6 +34,14 @@ If things do not work as expected, have a good look at the startup messages!
 
 const char madflight_config[] = R""(
 
+//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+rcl_flt0 RATE
+rcl_flt1 RATE
+rcl_flt2 RATE
+rcl_flt3 RATE
+rcl_flt4 RATE
+rcl_flt5 ANGLE
+
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 //imu_gizmo      NONE  // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250
 //imu_bus_type   SPI   // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
@@ -53,14 +61,6 @@ const char madflight_config[] = R""(
 //pin_rcl_ppm   -1     // ppm
 //rcl_num_ch     8     // serial and ppm: number of channels
 //rcl_deadband   0     // serial and ppm: center stick deadband
-
-//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 ANGLE
 
 //--- BAR --- Barometer
 //bar_gizmo      NONE  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611

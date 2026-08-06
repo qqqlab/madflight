@@ -124,6 +124,8 @@ This is the brain of the flight controller.
 
 **!!! Parameter changes can lead unpleasant surprises, you have been warned !!!**
 
+
+
 ### Selecting a different controller
 
 Use following procedure to change the selected `pid_gizmo` controller, to ensure the defaults of the new controller are applied.
@@ -141,6 +143,8 @@ set pid_xxx value         # change parameters as desired
 
 Note: If a `pid_xxx` parameter is -1 then the default value for the selected `pid_gizmo` is used.
 
+
+
 ### pid_gizmo MF2
 
 This controller is a very basic PID rate controller. When in Angle Mode the angle error is converted to a desired rate which the controller tries to keep.
@@ -149,9 +153,47 @@ Betaflight friends will notice that the default MF2 PID parameters are identical
 
 Supported FlightModes: RATE, ANGLE
 
+#### MF2 Controller Parameters and Default Values
+
+The defaults values are chosen more conservative than the BF equivalents.
+
+```
+== General ==
+pid_i_limit       10  Integrator saturation level in % of output
+pid_angl_mult      5  Multiplicator to convert Angle Error to Rate Error
+
+== Roll ==
+pid_kp0            45  Roll Kp
+pid_ki0            80  Roll Ki
+pid_kd0            30  Roll Kd
+pid_rol_rate_lim  300  Roll rate limit in deg/sec for rate mode - BF default is 600
+pid_rol_angl_lim   30  Roll angle limit in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
+
+== Pitch == (default -1 means use Roll value) 
+pid_kp1            -1  Pitch Kp - BF default is 47
+pid_ki1            -1  Pitch Ki - BF default is 84
+pid_kd1            -1  Pitch Kd - BF default is 34
+pid_pit_rate_lim   -1  Pitch rate limit in deg/sec for rate mode - BF default is 600
+pid_pit_angl_lim   -1  Pitch angle limit in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
+
+== Yaw ==
+pid_kp2            45  Yaw Kp
+pid_ki2            80  Yaw Ki
+pid_kd2             0  Yaw Kd
+pid_yaw_rate_lim  160  Yaw rate limit in deg/sec for rate+angle modes 
+
+== D-Term Filter ==
+pid_filt0_type    PT1  D-Term filter type
+pid_filt0_freq     30  D-Term filter cutoff frequency [Hz]
+```
+
+
+
 ### pid_gizmo MF1 - NOT TESTED - DO NOT USE
 
 An attempt to improve the MF0 controller with better yaw hold. Not tested, do not use.
+
+
 
 ### pid_gizmo MF0 - NOT TESTED - DO NOT USE
 
@@ -321,12 +363,12 @@ Kd_yaw_angle   = 0.01 * ifneg(cfg.pid_kd3, 0.1);  // Yaw D-gain
 |`rcl_arm_min`|Minimum PWM for ARMED<br>_since v1.3.4_|1600||
 |`rcl_baud`|Radio Receiver Baud Rate. Set to 0 for automatic.<br>_since v2.0.0_|0||
 |`rcl_deadband`|Radio Receiver Stick Deadband<br>_since v2.0.0_|0||
-|`rcl_flt0`|Flight Mode 0<br>_since v2.4.0_|RATE||
-|`rcl_flt1`|Flight Mode 1<br>_since v2.4.0_|RATE||
-|`rcl_flt2`|Flight Mode 2<br>_since v2.4.0_|RATE||
-|`rcl_flt3`|Flight Mode 3<br>_since v2.4.0_|RATE||
-|`rcl_flt4`|Flight Mode 4<br>_since v2.4.0_|RATE||
-|`rcl_flt5`|Flight Mode 5<br>_since v2.4.0_|ANGLE||
+|`rcl_flt0`|Flight Mode 0<br>_since v2.4.0_|CUSTOM0||
+|`rcl_flt1`|Flight Mode 1<br>_since v2.4.0_|CUSTOM0||
+|`rcl_flt2`|Flight Mode 2<br>_since v2.4.0_|CUSTOM0||
+|`rcl_flt3`|Flight Mode 3<br>_since v2.4.0_|CUSTOM0||
+|`rcl_flt4`|Flight Mode 4<br>_since v2.4.0_|CUSTOM0||
+|`rcl_flt5`|Flight Mode 5<br>_since v2.4.0_|CUSTOM0||
 |`rcl_flt_ch`|Flight Mode Channel (1-based) - default is AETR,arm,flightmode<br>_since v1.3.4_|6||
 |`rcl_flt_max`|Flight Mode 6-pos Switch Highest PWM (flight mode 5)<br>_since v1.3.4_|1815||
 |`rcl_flt_min`|Flight Mode 6-pos Switch Lowest PWM (flight mode 0)<br>_since v1.3.4_|1165||

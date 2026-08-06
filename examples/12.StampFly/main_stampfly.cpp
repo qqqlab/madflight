@@ -6,7 +6,7 @@ Minimal quadcopter demo program for madflight on a M5Stack StampFly v1.0/v1.1 Qu
 
 See http://madflight.com for detailed description (this example is based on the QuadcopterAdvanced example)
 
-NOTE: This program does not work with the M5Stack Joystick and ESP-NOW, you need to connect a separate CRSF/ELRS/SBUS/DSM/PPM radio receiver
+NOTE: This program does not work with the M5Stack ESP-NOW Joystick, you need to connect a 6+ channel CRSF/ELRS/SBUS/DSM/PPM radio receiver
 
 Arming/disarming with dedicated switch
 
@@ -41,30 +41,37 @@ Grove Port Pinout:
 ser_bus 0 is the RED Grove port with 4.7k pullups - DOES NOT WORK with OPENLOG, might work with other devices
 ser_bus 1 is the BLACK Grove port without pullups - should work with all serial devices
 */
+
+#define MF_BOARD "brd/stampfly.h"
+
 const char madflight_config[] = R""(
 
-// Default from brd/stampfly.h: CRSF receiver on ser_bus 1 (BLACK) and openlog on ser_bus 0 (RED)
+//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
+rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
+rcl_ser_bus    1     // 1=BLACK Grove
 
-// Use settings below to override 
+// Uncomment BBX or GPS, not both 
 
-// Uncomment to change receiver type
-//rcl_gizmo      CRSF // Set receiver type: MAVLINK, CRSF, SBUS, DSM, PPM xxx
-//rcl_ser_bus    1    // BLACK Grove
+//--- BBX --- Black Box Data Logger
+bbx_gizmo      OPENLOG 
+bbx_ser_bus    0    // use 0=RED Grove only, openlog does not work with 1=BLACK Grove with pullups
+// lower logging rates for OPENLOG at 115200 baud
+bbx_log_ahr 40
+bbx_log_imu 40
+bbx_log_out 40
+bbx_log_rcl 40
 
-// Uncomment this block to use GPS instead of OPENLOG on RED Grove
-//bbx_gizmo      NONE 
-//bbx_ser_bus    -1   //disable
+//--- GPS ---
 //gps_gizmo      UBLOX
-//gps_ser_bus    0    // RED Grove
-//gps_baud       0    // use 0 for auto baud
+//gps_ser_bus    0     // 0=RED Grove
 
 //flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 RATE
-rcl_flt0 ANGLE
+rcl_flt1 RATE
+rcl_flt2 RATE
+rcl_flt3 RATE
+rcl_flt4 RATE
+rcl_flt5 ANGLE
 
 )""; // End of madflight_config
 
@@ -73,8 +80,6 @@ rcl_flt0 ANGLE
 //prototypes (for PlatformIO, not needed for Arduino IDE)
 void led_Blink();
 float degreeModulus(float v);
-void control_Angle(bool zero_integrators);
-void control_Rate(bool zero_integrators);
 void out_KillSwitchAndFailsafe();
 void out_Mixer();
 
@@ -85,39 +90,13 @@ void out_Mixer();
 //IMPORTANT: This is a safety feature which keeps props spinning when armed, and hopefully reminds the pilot to disarm!!! 
 const float armed_min_throttle = 0.03; //Minimum throttle when armed, set to a value between ~0.10 and ~0.25 which keeps the props spinning at minimum speed.
 
-//Controller parameters
-const float maxRoll        = 30.0;   //Max roll angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-const float maxPitch       = 30.0;   //Max pitch angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-const float maxRollRate    = 60.0;   //Max roll rate in deg/sec for rate mode 
-const float maxPitchRate   = 60.0;   //Max pitch rate in deg/sec for rate mode
-const float maxYawRate     = 160.0;  //Max yaw rate in deg/sec for angle and rate mode
-const float i_limit        = 25.0;   //Integrator saturation level, mostly for safety (default 25.0)
-
-//PID Angle Mode 
-const float Kp_ro_pi_angle = 0.4;    //Roll/Pitch P-gain
-const float Ki_ro_pi_angle = 0.1;    //Roll/Pitch I-gain
-const float Kd_ro_pi_angle = 0.05;   //Roll/Pitch D-gain
-const float Kp_yaw_angle   = 0.6;    //Yaw P-gain
-const float Kd_yaw_angle   = 0.1;    //Yaw D-gain
-
-//PID Rate Mode 
-const float Kp_ro_pi_rate  = 0.15;   //Roll/Pitch rate P-gain
-const float Ki_ro_pi_rate  = 0.2;    //Roll/Pitch rate I-gain
-const float Kd_ro_pi_rate  = 0.0002; //Roll/Pitch rate D-gain (be careful when increasing too high, motors will begin to overheat!)
-const float Kp_yaw_rate    = 0.3;    //Yaw rate P-gain
-const float Ki_yaw_rate    = 0.05;   //Yaw rate I-gain
-const float Kd_yaw_rate    = 0.00015;//Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
-
-//Yaw to keep in ANGLE mode when yaw stick is centered
-float yaw_desired = 0;
-
 //Motor Setup
 
 //Define motor outputs, for example 6 means use the GPIO pin defined with the `out6_pin` parameter
 const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear, left-front
 
 void setup_motors() {
-  bool success = out.setup_brushed    (4, motor_outputs, 5000);           // Brushed motors: 5000Hz with 0-100% duty cycle
+  bool success = out.setup_brushed    (4, motor_outputs, 5000); // Stampfly has brushed motors, use 5000Hz PWM with 0-100% duty cycle
 
   out.print(); //print motor configuration
   if(!success) madflight_panic("Motor init failed.");
@@ -132,9 +111,6 @@ void setup() {
   madflight_setup();
 
   setup_motors();
-
-  // Set initial desired yaw
-  yaw_desired = ahr.yaw;
 
   Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
 }

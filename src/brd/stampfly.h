@@ -38,13 +38,6 @@ pin_imu_int    11      // spi and i2c
 imu_i2c_bus    -1      // i2c
 imu_i2c_adr    0       // i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-rcl_ser_bus    1     // 0=RED 1=BLACK Grove (use 1=BLACK and keep 0=RED for BBX/GPS)
-pin_rcl_ppm   -1     // ppm
-rcl_num_ch     8     // serial and ppm: number of channels
-rcl_deadband   0     // serial and ppm: center stick deadband
-
 //--- BAR --- Barometer
 bar_gizmo      BMP280  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611
 bar_i2c_adr    0x76
@@ -71,8 +64,8 @@ gps_baud       0     // use 0 for auto baud
 gps_ser_bus   -1
 
 //--- BBX --- Black Box Data Logger  (use spi -OR- mmc)
-bbx_gizmo      OPENLOG 
-bbx_ser_bus    0    // use 0=RED Grove only, openlog does not work with 1=BLACK Grove with pullups
+bbx_gizmo      NONE 
+bbx_ser_bus   -1
 bbx_baud       0    // use 0 for default 115200 baud
 pin_bbx_cs    -1     // spi
 bbx_spi_bus   -1     // spi

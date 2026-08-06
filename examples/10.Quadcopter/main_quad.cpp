@@ -63,10 +63,10 @@ const int motor_outputs[4] = {0, 1, 2, 3}; //right-rear, right-front, left-rear,
 
 void setup_motors() {
   // Uncomment ONE line - select output type
-  //bool success = out.setup_motors     (4, motor_outputs, 400, 950, 2000); // Standard PWM: 400Hz, 950-2000 us
+  bool success = out.setup_motors     (4, motor_outputs, 400, 950, 2000); // Standard PWM: 400Hz, 950-2000 us
   //bool success = out.setup_motors     (4, motor_outputs, 2000, 125, 250); // Oneshot125: 2000Hz, 125-250 us
   //bool success = out.setup_dshot      (4, motor_outputs, 300);            // Dshot300
-  bool success = out.setup_dshot_bidir(4, motor_outputs, 300);            // Dshot300 Bi-Directional
+  //bool success = out.setup_dshot_bidir(4, motor_outputs, 300);            // Dshot300 Bi-Directional
   //bool success = out.setup_brushed    (4, motor_outputs, 5000);           // Brushed motors: 5000Hz with 0-100% duty cycle
 
   out.print(); //print motor configuration

@@ -1,6 +1,6 @@
 /*#########################################################################################################################
 
-WARNING: This program is experimental - it was only flight-tested in a couple of flights
+WARNING: This program is experimental - it was only flight-tested in a couple of flights and was not updated to use the PID module
 
 This program is an airplane controller, it has 3 flight modes: MANUAL, ROLL and FBWA.
 

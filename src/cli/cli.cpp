@@ -643,20 +643,17 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }else if (cmd == "bbbench") {
     bbx.bench();
   }else if (cmd == "set") {
-    cfg.set_param_cli(arg1, arg2);
+    cfg.cli_set_param(arg1, arg2);
   }else if (cmd == "dump") {
     cfg.cli_dump(arg1.c_str());
   }else if (cmd == "diff") {
     cfg.cli_diff(arg1.c_str());
   }else if (cmd == "defaults") {
-    cfg.load_defaults(arg1.c_str());
+    cfg.cli_defaults(arg1.c_str());
     if(arg1 != "") cfg.cli_dump(arg1.c_str());
     Serial.println("Parameters reset to defaults, type 'save' to save... ");
   }else if (cmd == "save") {
-    Serial.println("Saving and rebooting, please wait... ");
-    cfg.writeToEeprom();
-    delay(1000);
-    hal_reboot();
+    cfg.cli_save();
   }else if (cmd == "calinfo") {
     cli_print_all(false);
     calibrate_info(arg1.toInt());

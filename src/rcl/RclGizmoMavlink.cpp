@@ -130,7 +130,7 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
         char name[17];
         memcpy(name, m.param_id, 16);
         name[16] = 0;
-        int param_index = cfg.set_param_mavlink(String(name), m.param_value);
+        int param_index = cfg.mavlink_set_param(String(name), m.param_value);
         if(param_index >= 0) telem_param_value(param_index);
         break;
       }

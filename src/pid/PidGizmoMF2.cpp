@@ -37,45 +37,37 @@ enum flag_enum {
 };
 
 void PidGizmoMF2::load_param() {
-    //Controller parameters
-    i_limit        = 0.01 * ifneg(cfg.pid_i_limit,      10);  // Integrator saturation level in % of output
-    pid_angl_mult  =        ifneg(cfg.pid_angl_mult,    5);   // Multiplicator to convert Angle Error to Rate Error
+    //Controller Parameters
+    i_limit              = 0.01 * ifneg(cfg.pid_i_limit, 10);  // Integrator saturation level in % of output
+    pid_angl_mult        = ifneg(cfg.pid_angl_mult, 5);   // Multiplicator to convert Angle Error to Rate Error
 
     //roll
-    param[0].kp = 0.032029 * 0.001 * ifneg(cfg.pid_kp0, 45);
-    param[0].ki = 0.244381 * 0.001 * ifneg(cfg.pid_ki0, 80);
-    param[0].kd = 0.000529 * 0.001 * ifneg(cfg.pid_kd0, 30);
-    param[0].rate_limit =  ifneg(cfg.pid_rol_rate_lim, 500);  // Max roll rate in deg/sec for rate mode 
-    param[0].angle_limit = ifneg(cfg.pid_rol_angl_lim, 30);  // Max roll angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-    //pitch
-    if(cfg.pid_kp1 < 0 && cfg.pid_ki1 < 0 && cfg.pid_kd1 && cfg.pid_pit_rate_lim < 0 && cfg.pid_pit_angl_lim < 0) {
-      //use same values as roll for pitch (but do not update the cfg parameters)
-      param[1].kp  = param[0].kp;
-      param[1].ki  = param[0].ki;
-      param[1].kd  = param[0].kd;
-      param[1].rate_limit =  param[0].rate_limit; 
-      param[1].angle_limit = param[0].angle_limit;
-    }else{
-      //set separate values for roll and pitch
-      param[1].kp  = 0.032029 * 0.001 * ifneg(cfg.pid_kp1, 47);
-      param[1].ki  = 0.244381 * 0.001 * ifneg(cfg.pid_ki1, 84);
-      param[1].kd  = 0.000529 * 0.001 * ifneg(cfg.pid_kd1, 34);
-      param[1].rate_limit =  ifneg(cfg.pid_pit_rate_lim, 500);  // Max pitch rate in deg/sec for rate mode
-      param[1].angle_limit = ifneg(cfg.pid_pit_angl_lim, 30);  // Max pitch angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-    }
+    param[0].kp          = 0.032029 * 0.001 * ifneg(cfg.pid_kp0, 45);
+    param[0].ki          = 0.244381 * 0.001 * ifneg(cfg.pid_ki0, 80);
+    param[0].kd          = 0.000529 * 0.001 * ifneg(cfg.pid_kd0, 30);
+    param[0].rate_limit  = ifneg(cfg.pid_rol_rate_lim, 300);  // Max roll rate in deg/sec for rate mode 
+    param[0].angle_limit = ifneg(cfg.pid_rol_angl_lim, 30);   // Max roll angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
+
+    //pitch (-1 means use same values as roll for pitch but do not update the cfg parameters)
+    param[1].kp          = (cfg.pid_kp1 < 0          ? param[0].kp          : 0.032029 * 0.001 * cfg.pid_kp1);
+    param[1].ki          = (cfg.pid_ki1 < 0          ? param[0].ki          : 0.244381 * 0.001 * cfg.pid_ki1);
+    param[1].kd          = (cfg.pid_kd1 < 0          ? param[0].kd          : 0.000529 * 0.001 * cfg.pid_kd1);
+    param[1].rate_limit  = (cfg.pid_pit_rate_lim < 0 ? param[0].rate_limit  : cfg.pid_pit_rate_lim);
+    param[1].angle_limit = (cfg.pid_pit_angl_lim < 0 ? param[0].angle_limit : cfg.pid_pit_angl_lim);
+
     //yaw
-    param[2].kp  = 0.032029 * 0.001 * ifneg(cfg.pid_kp2, 45);
-    param[2].ki  = 0.244381 * 0.001 * ifneg(cfg.pid_ki2, 80);
-    param[2].kd  = 0.000529 * 0.001 * ifneg(cfg.pid_kd2, 0);
-    param[2].rate_limit = ifneg(cfg.pid_yaw_rate_lim, 160); // Max yaw rate in deg/sec for angle and rate mode
-    param[2].angle_limit = 0; //unused
+    param[2].kp          = 0.032029 * 0.001 * ifneg(cfg.pid_kp2, 45);
+    param[2].ki          = 0.244381 * 0.001 * ifneg(cfg.pid_ki2, 80);
+    param[2].kd          = 0.000529 * 0.001 * ifneg(cfg.pid_kd2, 0);
+    param[2].rate_limit  = ifneg(cfg.pid_yaw_rate_lim, 160); // Max yaw rate in deg/sec for angle and rate mode
+    param[2].angle_limit = -1; //unused
 
     //D-term filter
     if(cfg.pid_filt0_freq < 0) {
       //set default filter
       cfg.pid_filt0_type = MF_FilterType::mf_PT1;
-      cfg.pid_filt0_freq = 60;
-      cfg.pid_filt0_q = 0; //unused for PT1
+      cfg.pid_filt0_freq = 30;
+      cfg.pid_filt0_q    = -1; //unused for PT1
     }
     MF_Filter::setup(param[0].d_filter, cfg.pid_filt0_type, pid_freq, cfg.pid_filt0_freq,  cfg.pid_filt0_q);
     MF_Filter::setup(param[1].d_filter, cfg.pid_filt0_type, pid_freq, cfg.pid_filt0_freq,  cfg.pid_filt0_q);

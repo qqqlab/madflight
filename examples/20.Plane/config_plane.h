@@ -36,11 +36,11 @@ const char madflight_config[] = R""(
 
 //flightmode mapping from 6-pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
 rcl_flt0 MANUAL
-rcl_flt0 MANUAL
-rcl_flt0 ROLL
-rcl_flt0 ROLL
-rcl_flt0 FBWA
-rcl_flt0 FBWA
+rcl_flt1 MANUAL
+rcl_flt2 ROLL
+rcl_flt3 ROLL
+rcl_flt4 FBWA
+rcl_flt5 FBWA
 
 //--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 //imu_gizmo      NONE  // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250

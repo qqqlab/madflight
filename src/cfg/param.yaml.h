@@ -205,12 +205,12 @@ namespace Cfg {
     { "rcl_pit_expo", (float)0.0, 'f', "" },
     { "rcl_yaw_expo", (float)0.0, 'f', "" },
     { "rcl_vsp_expo", (float)0.0, 'f', "" },
-    { "rcl_flt0", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt1", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt2", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt3", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt4", (float)FlightMode::mf_RATE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt5", (float)FlightMode::mf_ANGLE, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt0", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt1", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt2", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt3", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt4", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt5", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
     { "pid_gizmo", (float)Cfg::pid_gizmo_enum::mf_MF2, 'e', "mf_MF0,mf_MF1,mf_MF2" },
     { "pid_kp0", (float)-1, 'f', "" },
     { "pid_kp1", (float)-1, 'f', "" },
@@ -435,12 +435,12 @@ struct CfgParam {
   float rcl_yaw_expo = 0.0; /* Yaw Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   float rcl_vsp_expo = 0.0; /* Vertical Speed Stick Expo: 0.0 (smooth transition from center sensitity to max sensitity) to 1.0 (center sensitivity until approx 50% deflection) */
   // v2.4.0
-  FlightMode rcl_flt0 = FlightMode::mf_RATE; /* Flight Mode 0 */
-  FlightMode rcl_flt1 = FlightMode::mf_RATE; /* Flight Mode 1 */
-  FlightMode rcl_flt2 = FlightMode::mf_RATE; /* Flight Mode 2 */
-  FlightMode rcl_flt3 = FlightMode::mf_RATE; /* Flight Mode 3 */
-  FlightMode rcl_flt4 = FlightMode::mf_RATE; /* Flight Mode 4 */
-  FlightMode rcl_flt5 = FlightMode::mf_ANGLE; /* Flight Mode 5 */
+  FlightMode rcl_flt0 = FlightMode::mf_CUSTOM0; /* Flight Mode 0 */
+  FlightMode rcl_flt1 = FlightMode::mf_CUSTOM0; /* Flight Mode 1 */
+  FlightMode rcl_flt2 = FlightMode::mf_CUSTOM0; /* Flight Mode 2 */
+  FlightMode rcl_flt3 = FlightMode::mf_CUSTOM0; /* Flight Mode 3 */
+  FlightMode rcl_flt4 = FlightMode::mf_CUSTOM0; /* Flight Mode 4 */
+  FlightMode rcl_flt5 = FlightMode::mf_CUSTOM0; /* Flight Mode 5 */
   Cfg::pid_gizmo_enum pid_gizmo = Cfg::pid_gizmo_enum::mf_MF2; /* PID controller. IMPORTANT: Read module instructions before when changing this parameter!!! */
   float pid_kp0 = -1; /* Proportional PID Term */
   float pid_kp1 = -1;
