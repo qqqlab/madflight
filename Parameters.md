@@ -36,6 +36,10 @@ The parameters are saved to EEPROM. You can modify them with:
 |`bat_i2c_bus`|Power Sensor I2C Bus<br>_since v2.0.0_|-1||
 
 ## BBX - Blackbox logging to SDCARD
+```
+#define MF_BINLOG_I16_SCALED
+```
+This define will use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
 
 
 |Parameter|Description|Default|Options|

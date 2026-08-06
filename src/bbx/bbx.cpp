@@ -218,18 +218,18 @@ void Bbx::log_pos(float homeAlt, float OriginAlt) override {
 void Bbx::log_ahr(AhrState *ahr_s) {
   BinLog bl("AHRS"); 
   bl.TimeUS();
-  bl.i16("ax",    ahr_s->ax * 1000,   1e-3, "G"); //G
-  bl.i16("ay",    ahr_s->ay * 1000,   1e-3, "G"); //G
-  bl.i16("az",    ahr_s->az * 1000,   1e-3, "G"); //G
-  bl.i16("gx",    ahr_s->gx * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gy",    ahr_s->gy * 10,     1e-1, "deg/s"); //dps
-  bl.i16("gz",    ahr_s->gz * 10,     1e-1, "deg/s"); //dps
-  bl.i16("mx",    ahr_s->mx * 100,    1e-2, "uT"); //uT
-  bl.i16("my",    ahr_s->my * 100,    1e-2, "uT"); //uT
-  bl.i16("mz",    ahr_s->mz * 100,    1e-2, "uT"); //uT
-  bl.i16("roll",  ahr_s->roll * 100,  1e-2, "deg"); //deg -180 to 180
-  bl.i16("pitch", ahr_s->pitch * 100, 1e-2, "deg"); //deg -90 to 90
-  bl.i16("yaw",   ahr_s->yaw * 100,   1e-2, "deg"); //deg -180 to 180
+  bl.i16x100("ax",    ahr_s->ax * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s (G is not a binlog unit)
+  bl.i16x100("ay",    ahr_s->ay * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16x100("az",    ahr_s->az * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16(    "gx",    ahr_s->gx * 10,     1e-1, "deg/s"); //dps
+  bl.i16(    "gy",    ahr_s->gy * 10,     1e-1, "deg/s"); //dps
+  bl.i16(    "gz",    ahr_s->gz * 10,     1e-1, "deg/s"); //dps
+  bl.i16x100("mx",    ahr_s->mx * 100,    1, "uT"); //uT (uT is not a binlog unit, Gauss is but unpracticable with 1 uT = 0.01 Gauss and expected range -100 to +100 uT)
+  bl.i16x100("my",    ahr_s->my * 100,    1, "uT"); //uT
+  bl.i16x100("mz",    ahr_s->mz * 100,    1, "uT"); //uT
+  bl.i16x100("roll",  ahr_s->roll * 100,  1, "deg"); //deg -180 to 180
+  bl.i16x100("pitch", ahr_s->pitch * 100, 1, "deg"); //deg -90 to 90
+  bl.i16x100("yaw",   ahr_s->yaw * 100,   1, "deg"); //deg -180 to 180
 }
 
 /*
@@ -253,16 +253,16 @@ void Bbx::log_imu(ImuState *imu_s) {
   BinLog bl("IMU");
   bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
   bl.TimeUS(imu_s->ts);
-  bl.i16("ax", imu_s->ax * 1000, 1e-3, "G"); //G
-  bl.i16("ay", imu_s->ay * 1000, 1e-3, "G"); //G
-  bl.i16("az", imu_s->az * 1000, 1e-3, "G"); //G
-  bl.i16("gx", imu_s->gx * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gy", imu_s->gy * 10,   1e-1, "deg/s"); //dps
-  bl.i16("gz", imu_s->gz * 10,   1e-1, "deg/s"); //dps
+  bl.i16x100( "ax",    imu_s->ax * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s (G is not a binlog unit)
+  bl.i16x100( "ay",    imu_s->ay * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16x100( "az",    imu_s->az * 9.81 * 100,   1, "m/s/s"); //G -> m/s/s
+  bl.i16(     "gx",    imu_s->gx * 10,        1e-1, "deg/s"); //dps
+  bl.i16(     "gy",    imu_s->gy * 10,        1e-1, "deg/s"); //dps
+  bl.i16(     "gz",    imu_s->gz * 10,        1e-1, "deg/s"); //dps
   if(mag.installed()) {
-    bl.i16("mx", mag.mx * 100, 1e-2, "uT"); //uT
-    bl.i16("my", mag.my * 100, 1e-2, "uT"); //uT
-    bl.i16("mz", mag.mz * 100, 1e-2, "uT"); //uT
+    bl.i16x100("mx",   mag.mx * 100,             1, "uT"); //uT (uT is not a binlog unit, Gauss is but unpracticable with 1 uT = 0.01 Gauss and expected range -100 to +100 uT)
+    bl.i16x100("my",   mag.my * 100,             1, "uT"); //uT  
+    bl.i16x100("mz",   mag.mz * 100,             1, "uT"); //uT
   }
 }
 

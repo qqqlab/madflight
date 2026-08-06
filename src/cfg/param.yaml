@@ -55,6 +55,11 @@ module:
     title: Battery sensors (current, voltage, power, capacity)
   bbx:
     title: Blackbox logging to SDCARD
+    comment: |
+      ```
+      #define MF_BINLOG_I16_SCALED
+      ```
+      This define will use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
   brd:
     title: Board definition
   cfg:

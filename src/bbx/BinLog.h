@@ -332,9 +332,20 @@ public:
     buf[buflen++] = v;
   }
   void i16(const char* label, int16_t v, float mult = 1, const char* unit = nullptr) {
-    if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
-    memcpy(buf+buflen, &v, 2);
-    buflen+=2;
+   //use scaled 2 byte integers in the binlogs to create smaller logs, otherwise use 4 byte floats. Most visualisation software does not support scaled integers, and will show unscaled values. 
+   #if MF_BINLOG_I16_SCALED
+      if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
+      memcpy(buf+buflen, &v, 2);
+      buflen+=2;
+    #else
+      if(mult == 1) {
+        if(FMT_write) FMT_addField('h', 2, label, mult, unit); // h   : int16_t
+        memcpy(buf+buflen, &v, 2);
+        buflen+=2;
+      }else{
+        flt(label, (float)v * mult, 1.0, unit);
+      }
+    #endif
   }
   void i16x100(const char* label, int16_t v, float mult = 1, const char* unit = nullptr) {
     if(FMT_write) FMT_addField('c', 2, label, mult, unit); // c   : int16_t * 100
