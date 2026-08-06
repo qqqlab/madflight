@@ -31,11 +31,14 @@ SOFTWARE.
 
 class BbxGizmoSdcard : public BbxGizmo {
 private:
+  const uint32_t flush_sectors = 32; //16kB flush after this many sectors written
+  const uint32_t pre_allocate_len = 100000000; //100MB preallocate - set to 0 to disable
   BbxConfig *config;
   const char* BB_LOG_DIR_NAME = "/log";
   bool setup_done = false;
-  uint8_t wbuf[512];
-  uint32_t wbuf_len = 0;
+  uint8_t wbuf[512]; //sector buffer
+  uint32_t wbuf_len = 0; //number of bytes written to wbuf
+  uint32_t sectors_written = 0;
   String filename;
   FsFile file = {}; //current log file
 
