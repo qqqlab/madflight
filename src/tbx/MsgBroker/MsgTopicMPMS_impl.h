@@ -42,7 +42,7 @@ private:
 
   cell_t* const             buf;
   uint32_t const            buf_mask;
-  std::atomic<uint32_t>     topic_gen; //topic generation
+  std::atomic<uint32_t>     _topic_gen; //topic generation
 
   static inline uint32_t nextPowerOfTwo(uint32_t buffer_size) {
     uint32_t result = buffer_size - 1;
@@ -53,7 +53,7 @@ private:
   }
 
 public:
-  MsgTopicMPMS(char * name, uint32_t buffer_size)
+  MsgTopicMPMS(const char * name, uint32_t buffer_size)
     : buf(new cell_t [nextPowerOfTwo(buffer_size)])
     , buf_mask(nextPowerOfTwo(buffer_size) - 1)
     , MsgTopicBase(name)
@@ -64,7 +64,7 @@ public:
     for (uint32_t i = 0; i != buffer_size; i += 1) {
       buf[i].gen.store(i - buffer_size, std::memory_order_relaxed); 
     }
-    topic_gen.store(0, std::memory_order_relaxed);
+    _topic_gen.store(0, std::memory_order_relaxed);
   }
 
   ~MsgTopicMPMS() {
@@ -76,28 +76,22 @@ public:
   }
 
   uint32_t get_generation() override {
-    return topic_gen.load(std::memory_order_relaxed);
+    return _topic_gen.load(std::memory_order_relaxed);
   }
 
     uint32_t publish(T *msg) {
       return _publish((void*) msg);
     }
 
-    //pull last message from topic
-    bool pull_last(T* msg) {
-      uint32_t subscriber_gen = get_generation();
-      return _pull_next(msg, &subscriber_gen);
-    }
-
 protected:  
   //publish a message, returns the published message generation
   uint32_t _publish(void* msg) override {
     for (;;) {
-      uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
+      uint32_t tgen = _topic_gen.load(std::memory_order_relaxed);
       cell_t* cell = &buf[tgen & buf_mask];
       uint32_t cgen = cell->gen.load(std::memory_order_acquire);
       if (cgen + buf_mask + 1 == tgen) { //cgen should be buf_size behind tgen (buf_size = buf_mask + 1), if not then another thread published while we read tgen and cgen
-        if (topic_gen.compare_exchange_weak(tgen, tgen + 1, std::memory_order_relaxed)) { //increase topic_gen, this invalidates buf[tgen].gen
+        if (_topic_gen.compare_exchange_weak(tgen, tgen + 1, std::memory_order_relaxed)) { //increase topic_gen, this invalidates buf[tgen].gen
           memcpy(&cell->msg, msg, sizeof(T)); //write msg data to cell
           cell->gen.store(tgen, std::memory_order_release); //write valid buf[tgen].gen
           return tgen + 1; //return the topic_gen
@@ -106,27 +100,33 @@ protected:
     }
   }
 
-  //pull message with topic_gen == subscriber_gen+1, if not found then pull closest topic_gen available in buffer
-  //returns true, msg, and updated subscriber_gen if publish() was called at least once, else returns false and unmodified msg, subscriber_gen
-  bool _pull_next(void* msg, uint32_t *subscriber_gen) override {
+  bool _pull(void* msg, PullOp op, uint32_t *gen_to_pull) override {
     for (;;) {
-      uint32_t tgen = topic_gen.load(std::memory_order_relaxed);
+      uint32_t tgen = _topic_gen.load(std::memory_order_relaxed); //copy the current topic generation (_topic_gen can change with publish in other thread)
       if(tgen == 0) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
 
-      //find tgen for subscriber_gen+1
-      uint32_t depth = tgen - (*subscriber_gen + 1);
-      if( (int32_t)depth < 0) depth = 0; //subscriber_gen+1 > topic_gen -> look for depth = 0 (newest topic_gen in buffer)
-      if( depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET; //subscriber_gen+1 <= topic_gen-buf_size -> look for depth = buf_size-1 (oldest topic_gen in buffer)
-      tgen -= depth + 1; //tgen is post-incremented on publish, so decrement tgen by 1 here
+      //find depth for gen_to_pull
+      int32_t depth = (int32_t)(tgen - *gen_to_pull); //we're interested in the message at this depth
+      switch(op) {
+        case PullOp::LAST_GREATER_EQUAL:
+          if(depth < 0) return false; //the gen we want is not yet in fifo
+          depth = 0; //pick the most recent msg in fifo
+          break;
+        case PullOp::FIRST_GREATER_EQUAL:
+          if(depth < 0) return false; //the gen we want is not yet in fifo
+          if(depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET; //pick oldest msg in fifo
+          break;
+      }
 
-      //pull msg from buf[tgen]
+      //get msg at depth
+      tgen -= depth + 1; //tgen is post-incremented on publish, so decrement tgen by 1 here
       cell_t* cell = &buf[tgen & buf_mask]; 
       uint32_t cgen1 = cell->gen.load(std::memory_order_acquire);
       if(cgen1 == tgen) { //check cell.gen
         memcpy(msg, &cell->msg, sizeof(T)); //retrieve msg data from cell
         uint32_t cgen2 = cell->gen.load(std::memory_order_acquire);
         if(cgen2 == tgen) { //if cell.gen did not change, then msg is consistent
-          *subscriber_gen = tgen + 1; //set subscriber_gen to the topic_gen we retrieved
+          *gen_to_pull = tgen + 1; //set subscriber_gen to the topic_gen we retrieved
           return true; 
         }
       }

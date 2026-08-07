@@ -733,10 +733,10 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   float *gcal = &cfg.imu_cal_gx; //current g calibration
   uint32_t ts = millis();
   while(millis() - ts < timeout) {
-    if(bar_sub.pull_updated(&bar_s)) {
+    if(bar_sub.pull_next(&bar_s)) {
       alt.append(bar_s.alt);
     }
-    if(imu_sub.pull_updated(&imu_s)) {
+    if(imu_sub.pull_next(&imu_s)) {
       imu.convert_to_raw(&imu_s.gx, &imu_s.ax);
       a[0].append(imu_s.ax);
       a[1].append(imu_s.ay);
@@ -832,7 +832,7 @@ void Cli::calibrate_info(int seconds) {
 
   uint32_t ts = micros();
   while((uint32_t)micros() - ts < (uint32_t)1000000*seconds) {
-    if(imu_sub.pull_updated(&imu_s)) {
+    if(imu_sub.pull_next(&imu_s)) {
       ax.append(imu_s.ax);
       ay.append(imu_s.ay);
       az.append(imu_s.az);
@@ -841,7 +841,7 @@ void Cli::calibrate_info(int seconds) {
       gz.append(imu_s.gz);
     }
 
-    if(bar_sub.pull_updated(&bar_s) && ((bar_s.press != bp_last) || (bar_s.alt != ba_last) || (bar_s.temp != bt_last))) {
+    if(bar_sub.pull_next(&bar_s) && ((bar_s.press != bp_last) || (bar_s.alt != ba_last) || (bar_s.temp != bt_last))) {
       //only record if at least one value is changed
       sp.append(bar_s.press);
       sa.append(bar_s.alt);
@@ -851,7 +851,7 @@ void Cli::calibrate_info(int seconds) {
       bt_last = bar_s.temp;
     }
 
-    if(mag_sub.pull_updated(&mag_s) && ((mag_s.mx != mx_last) || (mag_s.my != my_last) || (mag_s.mz != mz_last))) {
+    if(mag_sub.pull_next(&mag_s) && ((mag_s.mx != mx_last) || (mag_s.my != my_last) || (mag_s.mz != mz_last))) {
       //only record if at least one value is changed
       mx.append(mag_s.mx);
       my.append(mag_s.my);
