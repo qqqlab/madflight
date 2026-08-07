@@ -203,7 +203,7 @@ bool Mag::_calibrate(float bias[3], float scale[3]) {
   // get starting sample
   uint32_t ts = millis();
   while(millis() - ts < 1000) {
-    if(mag_sub.pull_updated(&state)) break;
+    if(mag_sub.pull_next(&state)) break;
   }
 
   //save starting data
@@ -218,7 +218,7 @@ bool Mag::_calibrate(float bias[3], float scale[3]) {
   uint32_t progress_time = millis() - 1000;
   counter = 0;
   while (counter < maxCounts) {
-    if(mag_sub.pull_updated(&state)) {
+    if(mag_sub.pull_next(&state)) {
       if ( m[0] != mlast[0] && m[1] != mlast[1] && m[2] != mlast[2] && m[0] != 0  && m[1] != 0 && m[2] != 0) { //value changed and is not 0,0,0
         for(int axis = 0; axis < 3; axis++) {
           float range_limit = 0.1 * (m_max[axis] - m_min[axis]);

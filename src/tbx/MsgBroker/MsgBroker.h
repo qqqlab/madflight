@@ -61,24 +61,31 @@ class MsgTopicBase {
   public:
     char name[9] = {};
 
+    //pull last message from topic
+    template <class T> bool pull_last(T* msg) {
+      uint32_t gen_to_get = get_generation();
+      return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
+    }
+
   protected:
     friend class MsgBroker;
     friend class MsgSubscriptionBase;
+    template <class T> friend class MsgSubscription;
     template <class T> friend class MsgTopic;
-    template <class T> friend class MsgTopicQueue;
-    template <typename T> friend class MsgTopicMPMS;
+    template <class T> friend class MsgTopicMPMS;
 
-    uint32_t _stat_generation = 0; //starting generation for statistics
-    MsgSubscriptionBase* _sub_list[MF_MSGSUB_LIST_SIZE] = {};
+    uint32_t _stat_start_gen = 0; //starting generation for statistics
+    MsgSubscriptionBase* _sub_list[MF_MSGSUB_LIST_SIZE] = {}; //subscriptions for this topic
 
     virtual ~MsgTopicBase() {}
     MsgTopicBase(const char* name);
 
+    enum class PullOp {LAST_GREATER_EQUAL, FIRST_GREATER_EQUAL};
+
     //interface
     virtual uint32_t get_generation() = 0; //counts messages published to this topic
-    virtual uint32_t _publish(void* msg) = 0; //publish a message
-    virtual bool _pull_next(void* msg, uint32_t *subscriber_gen) = 0; //pull next message relative to subscriber_gen
-    
+    virtual uint32_t _publish(void* msg) = 0; //publish a message to the fifo
+    virtual bool _pull(void* msg, PullOp op, uint32_t *gen_to_pull) = 0; //pull a message from the fifo
 
     //subscription
     void add_subscription(MsgSubscriptionBase *sub);
@@ -88,28 +95,25 @@ class MsgTopicBase {
 
 #include "MsgTopic_impl.h"
 #include "MsgTopicMPMS_impl.h"
-#include "MsgTopicQueue_impl.h"
 
 //=============================================================================
 class MsgSubscriptionBase {
   public:
-    bool updated(); //returns true if new msg available
     char name[9] = {};
-    uint32_t get_generation() {return _generation;}
+    uint32_t get_generation() {
+      return _sub_gen;
+    }
 
   protected:
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
 
-    uint32_t _generation = 0; //last pulled topic generation 
+    uint32_t _sub_gen = 0; //last pulled topic generation 
     uint32_t _stat_pull_cnt = 0; //pull counter
 
-    virtual ~MsgSubscriptionBase();
-    MsgSubscriptionBase(const char* name, MsgTopicBase *topic); //start a new subscription
-
-    bool _pull_next(void *msg); //pull next message: returns true if msg was pulled, returns false if no msg available
-    bool _pull_updated(void *msg); //pull updated message: returns true when updated msg available, else returns false and does not update msg
-    bool _pull_last(void *msg); //pull last message: returns true if msg was pulled, returns false if no msg available
+    virtual ~MsgSubscriptionBase() {
+      topic->remove_subscription(this);
+    }
 
   private:
     MsgSubscriptionBase() {}
@@ -120,8 +124,33 @@ class MsgSubscriptionBase {
 template <class T>
 class MsgSubscription : public MsgSubscriptionBase {
   public:
-    MsgSubscription(const char* name, MsgTopicBase *topic) : MsgSubscriptionBase(name, topic) {}
-    bool pull(T *msg) { return MsgSubscriptionBase::_pull_next(msg); }
-    bool pull_updated(T *msg) { return MsgSubscriptionBase::_pull_updated(msg); }
-    bool pull_last(T *msg) { return MsgSubscriptionBase::_pull_last(msg); }
+
+    // Start a new subscription
+    MsgSubscription(const char* name, MsgTopicBase *topic) {
+      this->topic = topic;
+      strncpy(this->name, name, sizeof(this->name) - 1);
+      this->name[sizeof(this->name) - 1] = 0;
+      topic->add_subscription(this);
+    }
+
+    // Pull next (oldest) message from fifo, which is newer than the previous message pulled
+    // Returns true if found, false if no new message available
+    bool pull_next(T *msg) {
+        uint32_t gen_to_get = _sub_gen + 1; //get next msg
+        if(!topic->_pull(msg, MsgTopicBase::PullOp::FIRST_GREATER_EQUAL, &gen_to_get)) return false;
+        _sub_gen = gen_to_get;
+        _stat_pull_cnt++;
+        return true;
+    }
+
+    // Pull last (newest) message from fifo, which is newer than the previous message pulled
+    // Returns true if found, false if no new message available
+    bool pull_last(T *msg) {
+        uint32_t gen_to_get = topic->get_generation();
+        if(gen_to_get == _sub_gen) return false; //last msg in fifo was already pulled
+        if(!topic->_pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get)) return false;
+        _sub_gen = gen_to_get;
+        _stat_pull_cnt++;
+        return true;
+    }
 };

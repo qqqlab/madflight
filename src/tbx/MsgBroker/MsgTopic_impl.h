@@ -29,7 +29,7 @@ SOFTWARE.
 template <class T>
 class MsgTopic : public MsgTopicBase {
   private:
-    uint32_t generation = 0;
+    volatile uint32_t _topic_gen = 0;
     uint16_t msglen = 0; //message length
     uint16_t buflen = 0; //message length rounded up to next 4 bytes for alignment
     uint16_t bufdepth_1 = 0; //size of buffer in messages minus 1 (E.g. exclusive one message used for loading new data)
@@ -49,7 +49,7 @@ class MsgTopic : public MsgTopicBase {
     }
 
     uint32_t get_generation() override {
-        return generation;
+        return _topic_gen;
     }
 
     uint32_t publish(T *msg) {
@@ -58,37 +58,43 @@ class MsgTopic : public MsgTopicBase {
 
     //pull last message from topic
     bool pull_last(T* msg) {
-      uint32_t subscriber_gen = get_generation();
-      return _pull_next(msg, &subscriber_gen);
+      uint32_t gen_to_get = get_generation();
+      return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
     }
 
   protected:  
     //publish a message, returns the published message generation
     uint32_t _publish(void *msg) override {
       memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
-      generation++; //update as soon as data is in buf
+      _topic_gen++; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
-      return generation;
+      return _topic_gen;
     }
 
-    //pull next message from fifo buffer (subscriber_gen+1), if not found then pull closest gen in fifo buffer
-    //returns false if no message in buffer, otherwise returns true, msg, and updated subscriber_gen
-    bool _pull_next(void* msg, uint32_t *subscriber_gen) override {
-      if(!generation) return false; //will miss a pull every 4,000,000,000 publishes...
+   bool _pull(void* msg, PullOp op, uint32_t *gen_to_pull) override {
+      if(!_topic_gen) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
       uint8_t tries = 5;
       do {
-        uint32_t topic_gen = generation; //copy the current topic generation (generation is volatile)
-        uint32_t depth = topic_gen - (*subscriber_gen + 1); //we're interested in the message at this depth
-        //limit depth to [0 .. bufdepth_1 - 1]
-        if(depth & 0x80000000) { //unsigned negative
-          depth = 0;
-        } else if(depth >= bufdepth_1) {
-          depth = bufdepth_1 - 1; 
+        uint32_t tgen = _topic_gen; //copy the current topic generation (_topic_gen can change with publish in other thread)
+        int32_t depth = (int32_t)(tgen - *gen_to_pull); //we're interested in the message at this depth
+        //generations [tgen - bufdepth_1 - 1 ... tgen] are in the fifo
+        //depth [bufdepth_1 - 1 ... 0] are in the fifo
+        switch(op) {
+          case PullOp::LAST_GREATER_EQUAL:
+            if(depth < 0) return false; //the gen we want is not yet in fifo
+            depth = 0; //pick the most recent msg in fifo
+            break;
+          case PullOp::FIRST_GREATER_EQUAL:
+            if(depth < 0) return false; //the gen we want is not yet in fifo
+            if(depth > bufdepth_1 - 1) depth = bufdepth_1 - 1; //pick oldest msg in fifo
+            break;
         }
-        uint8_t* bufout = buf + ((topic_gen - depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
+
+        //get msg at depth
+        uint8_t* bufout = buf + ((tgen - depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
         memcpy(msg, bufout, msglen); //copy the message
-        if((generation - topic_gen) < (bufdepth_1 - depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
-          *subscriber_gen = topic_gen - depth; //update the subscriber generation
+        if((_topic_gen - tgen) < (bufdepth_1 - depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
+          *gen_to_pull = tgen - depth; //update the subscriber generation
           return true;
         }
         //the message got updated while we were memcpy'ing it, try again...
@@ -96,4 +102,5 @@ class MsgTopic : public MsgTopicBase {
       }while(--tries);
       return false;
     }
+
 };
