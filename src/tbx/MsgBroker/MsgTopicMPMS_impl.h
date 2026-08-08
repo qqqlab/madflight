@@ -114,7 +114,7 @@ protected:
           break;
         case PullOp::FIRST_GREATER_EQUAL:
           if(depth < 0) return false; //the gen we want is not yet in fifo
-          if(depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET; //pick oldest msg in fifo
+          if(depth > buf_mask - MF_PUBSUB_DEPTH_OFFSET) depth = buf_mask - MF_PUBSUB_DEPTH_OFFSET; //pick oldest msg in fifo
           break;
       }
 
