@@ -28,6 +28,7 @@ SOFTWARE.
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
+#include "../tbx/quaternion.h"
 
 //create global module instance
 Ahr ahr;
@@ -110,7 +111,7 @@ bool Ahr::update() {
   gizmo->update();
 
   //update euler angles
-  computeAngles();
+  quaternion_to_euler_deg(&roll, q);
 
   topic.publish(this);
 
@@ -153,13 +154,6 @@ void Ahr::getQFromMag(float *q) {
   //set dt,ts
   dt = 0;
   ts = micros();
-}
-
-//compute euler angles from q
-void Ahr::computeAngles() {
-  roll = atan2(q[0]*q[1] + q[2]*q[3], 0.5f - q[1]*q[1] - q[2]*q[2]) * rad_to_deg; //degrees - roll right is positive
-  pitch = asin(constrain(-2.0f * (q[1]*q[3] - q[0]*q[2]), -1.0, 1.0)) * rad_to_deg; //degrees - pitch up is positive - use constrain() to prevent NaN due to rounding
-  yaw = atan2(q[1]*q[2] + q[0]*q[3], 0.5f - q[2]*q[2] - q[3]*q[3]) * rad_to_deg; //degrees - yaw right is positive
 }
 
 //get acceleration in earth-frame up direction in [m/s^2]

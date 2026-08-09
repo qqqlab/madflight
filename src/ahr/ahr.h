@@ -41,7 +41,7 @@ struct __attribute__((aligned(4))) AhrState {
     float pitch = 0;              // pitch in degrees: -90 to 90, pitch up is positive
     float yaw = 0;                // yaw in degrees: -180 to 180, yaw right is positive
     uint32_t ts = 0;              // IMU sample timestamp [us]
-    float dt = 0;              // time difference with ts from last update() call [s]
+    float dt = 0;                 // time difference with ts from last update() call [s]
 };
 
 struct AhrConfig {
@@ -83,7 +83,6 @@ class Ahr : public AhrState {
     MF_Filter *mag_filter[3] = {new MF_FilterLowPT1(), new MF_FilterLowPT1(), new MF_FilterLowPT1()};
 
     void fusionUpdate();
-    void computeAngles();
     void getQFromMag(float *q);
 
   private:
