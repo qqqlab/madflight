@@ -206,43 +206,54 @@ void madflight_setup() {
     Serial.println("Processor (MF_MCU_NAME): " MF_MCU_NAME);
   #endif
 
+  //MF_XXX compiler options
+  Serial.print("Compiler Flags:");
+  #ifdef MF_APPROX_MATH
+    Serial.print(" MF_APPROX_MATH=on");
+  #else
+    Serial.print(" MF_APPROX_MATH=off");
+  #endif
+  Serial.println();
+
   //arduino defines
+  Serial.print("Arduino Flags:");
   #ifdef ARDUINO_BOARD
-    Serial.println("-D ARDUINO_BOARD=" ARDUINO_BOARD );
+    Serial.print(" ARDUINO_BOARD=" ARDUINO_BOARD );
   #endif
   #ifdef ARDUINO_VARIANT
-    Serial.println("-D ARDUINO_VARIANT=" ARDUINO_VARIANT );
+    Serial.print(" ARDUINO_VARIANT=" ARDUINO_VARIANT );
   #endif
   #ifdef ARDUINO_HOST_OS
-    Serial.println("-D ARDUINO_HOST_OS=" ARDUINO_HOST_OS ); //only arduino IDE, not PlatformIO
+    Serial.print(" ARDUINO_HOST_OS=" ARDUINO_HOST_OS ); //only arduino IDE, not PlatformIO
   #endif
   #ifdef ARDUINO_FQBN
-    Serial.println("-D ARDUINO_FQBN=" ARDUINO_FQBN ); //only arduino IDE, not PlatformIO
+    Serial.print(" ARDUINO_FQBN=" ARDUINO_FQBN ); //only arduino IDE, not PlatformIO
   #endif
   #ifdef ARDUINO
-    Serial.println("-D ARDUINO=" mf_str(ARDUINO));
+    Serial.print(" ARDUINO=" mf_str(ARDUINO));
   #endif
   #ifdef CORE_DEBUG_LEVEL
-    Serial.println("-D CORE_DEBUG_LEVEL=" mf_str(CORE_DEBUG_LEVEL));
+    Serial.print(" CORE_DEBUG_LEVEL=" mf_str(CORE_DEBUG_LEVEL));
   #endif
   #ifdef ARDUINO_RUNNING_CORE
-    Serial.println("-D ARDUINO_RUNNING_CORE=" mf_str(ARDUINO_RUNNING_CORE));
+    Serial.print(" ARDUINO_RUNNING_CORE=" mf_str(ARDUINO_RUNNING_CORE));
   #endif
   #ifdef ARDUINO_EVENT_RUNNING_CORE
-    Serial.println("-D ARDUINO_EVENT_RUNNING_CORE=" mf_str(ARDUINO_EVENT_RUNNING_CORE));
+    Serial.print(" ARDUINO_EVENT_RUNNING_CORE=" mf_str(ARDUINO_EVENT_RUNNING_CORE));
   #endif
   #ifdef ARDUINO_USB_MODE
-    Serial.println("-D ARDUINO_USB_MODE=" mf_str(ARDUINO_USB_MODE));
+    Serial.print(" ARDUINO_USB_MODE=" mf_str(ARDUINO_USB_MODE));
   #endif
   #ifdef ARDUINO_USB_CDC_ON_BOOT
-    Serial.println("-D ARDUINO_USB_CDC_ON_BOOT=" mf_str(ARDUINO_USB_CDC_ON_BOOT));
+    Serial.print(" ARDUINO_USB_CDC_ON_BOOT=" mf_str(ARDUINO_USB_CDC_ON_BOOT));
   #endif
   #ifdef ARDUINO_USB_MSC_ON_BOOT
-    Serial.println("-D ARDUINO_USB_MSC_ON_BOOT=" mf_str(ARDUINO_USB_MSC_ON_BOOT));
+    Serial.print(" ARDUINO_USB_MSC_ON_BOOT=" mf_str(ARDUINO_USB_MSC_ON_BOOT));
   #endif
   #ifdef ARDUINO_USB_DFU_ON_BOOT
-    Serial.println("-D ARDUINO_USB_DFU_ON_BOOT=" mf_str(ARDUINO_USB_DFU_ON_BOOT));
+    Serial.print(" ARDUINO_USB_DFU_ON_BOOT=" mf_str(ARDUINO_USB_DFU_ON_BOOT));
   #endif
+  Serial.println();
 
   // INFO - Rerun CFG to show output after startup delay
   cfg.setup(madflight_board, madflight_config);
