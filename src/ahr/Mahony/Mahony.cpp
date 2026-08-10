@@ -4,7 +4,8 @@
 //source: https://github.com/PaulStoffregen/MahonyAHRS
 
 #include "Mahony.h"
-#include <math.h> //sqrtf
+#include "../../tbx/maths.h" //rsqrt_approx
+#include <math.h> //sqrt
 
 void Mahony::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
   //Use 6DOF algorithm if magnetometer measurement invalid or unavailable (avoids NaN in magnetometer normalisation)
@@ -29,13 +30,13 @@ void Mahony::update9DOF(float gx, float gy, float gz, float ax, float ay, float 
   if (alen2 > config_alen2_min && alen2 < config_alen2_max) {
 
     //Normalise accelerometer measurement
-    recipNorm = 1.0 / sqrtf(alen2);
+    recipNorm = rsqrt_approx(alen2);
     ax *= recipNorm;
     ay *= recipNorm;
     az *= recipNorm;
 
     // Normalise magnetometer measurement
-    recipNorm = 1.0f/sqrtf(mx * mx + my * my + mz * mz);
+    recipNorm = rsqrt_approx(mx * mx + my * my + mz * mz);
     mx *= recipNorm;
     my *= recipNorm;
     mz *= recipNorm;
@@ -55,7 +56,7 @@ void Mahony::update9DOF(float gx, float gy, float gz, float ax, float ay, float 
     // Reference direction of Earth's magnetic field
     hx = 2.0f * (mx * (0.5f - q2q2 - q3q3) + my * (q1q2 - q0q3) + mz * (q1q3 + q0q2));
     hy = 2.0f * (mx * (q1q2 + q0q3) + my * (0.5f - q1q1 - q3q3) + mz * (q2q3 - q0q1));
-    bx = sqrtf(hx * hx + hy * hy);
+    bx = sqrt(hx * hx + hy * hy);
     bz = 2.0f * (mx * (q1q3 - q0q2) + my * (q2q3 + q0q1) + mz * (0.5f - q1q1 - q2q2));
 
     // Estimated direction of gravity and magnetic field
@@ -126,7 +127,7 @@ void Mahony::update6DOF(float gx, float gy, float gz, float ax, float ay, float 
   if (alen2 > config_alen2_min && alen2 < config_alen2_max) {
 
     //Normalise accelerometer measurement
-    recipNorm = 1.0 / sqrtf(alen2);
+    recipNorm = rsqrt_approx(alen2);
     ax *= recipNorm;
     ay *= recipNorm;
     az *= recipNorm;
@@ -176,7 +177,7 @@ void Mahony::update6DOF(float gx, float gy, float gz, float ax, float ay, float 
   q3 += (qa * gz + qb * gy - qc * gx);
 
   // Normalise quaternion
-  recipNorm = 1.0f/sqrtf(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+  recipNorm = rsqrt_approx(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
   q0 *= recipNorm;
   q1 *= recipNorm;
   q2 *= recipNorm;
