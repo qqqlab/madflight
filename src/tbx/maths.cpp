@@ -1,3 +1,5 @@
+//NOTE: modified for madflight
+
 /*
  * This file is part of Cleanflight and Betaflight.
  *
@@ -188,7 +190,9 @@ float asin_approx(float x)
     return (M_PIf * 0.5f) - acos_approx(x);
 }
 
-#endif
+#endif //#if defined(MF_APPROX_MATH)
+
+#if 0 //disable unused functions
 
 int gcd(int num, int denom)
 {
@@ -427,3 +431,5 @@ float smoothStepUpTransition(const float x, const float center, const float widt
         return cubicBlend(t);
     }
 }
+
+#endif //disable unused functions

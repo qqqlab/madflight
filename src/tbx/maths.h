@@ -1,3 +1,5 @@
+//NOTE: modified for madflight
+
 /*
  * This file is part of Cleanflight and Betaflight.
  *
@@ -34,6 +36,24 @@
     float exp_approx(float val);
     float log_approx(float val);
     float pow_approx(float a, float b);
+
+    #define M_PIf       3.14159265358979323846f
+    #define INV_PIO2    (2.0f / M_PIf)
+
+    #ifndef MIN
+    #define MIN(a,b) \
+    __extension__ ({ __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b; })
+    #endif
+
+    #ifndef MAX
+    #define MAX(a,b) \
+    __extension__ ({ __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; })
+    #endif
+
 #else
     #include <math.h>
     static inline float rsqrt_approx(float x) {
@@ -55,6 +75,8 @@
     #define pow_approx(a, b)    powf(b, a)
 #endif
 
+#if 0 //disable unused functions
+
 #ifndef sq
 #define sq(x) ((x)*(x))
 #endif
@@ -62,9 +84,8 @@
 #define power5(x) ((x)*(x)*(x)*(x)*(x))
 
 // Use floating point M_PI instead explicitly.
-#define M_PIf       3.14159265358979323846f
+
 #define M_EULERf    2.71828182845904523536f
-#define INV_PIO2    (2.0f / M_PIf)
 
 #define RAD    (M_PIf / 180.0f)
 #define DEGREES_TO_DECIDEGREES(angle) ((angle) * 10)
@@ -76,19 +97,7 @@
 #define CM_S_TO_KM_H(centimetersPerSecond) ((centimetersPerSecond) * 36 / 1000)
 #define CM_S_TO_MPH(centimetersPerSecond) ((centimetersPerSecond) * 10000 / 5080 / 88)
 
-#ifndef MIN
-#define MIN(a,b) \
-  __extension__ ({ __typeof__ (a) _a = (a); \
-  __typeof__ (b) _b = (b); \
-  _a < _b ? _a : _b; })
-#endif
 
-#ifndef MAX
-#define MAX(a,b) \
-  __extension__ ({ __typeof__ (a) _a = (a); \
-  __typeof__ (b) _b = (b); \
-  _a > _b ? _a : _b; })
-#endif
 
 #define ABS(x) \
   __extension__ ({ __typeof__ (x) _x = (x); \
@@ -194,3 +203,5 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+#endif
