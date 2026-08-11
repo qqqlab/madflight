@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 // Global enums
-enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA };
+enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA };
 enum class MF_FilterType : uint32_t { mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH };
 
 namespace Cfg {
@@ -205,12 +205,12 @@ namespace Cfg {
     { "rcl_pit_expo", (float)0.0, 'f', "" },
     { "rcl_yaw_expo", (float)0.0, 'f', "" },
     { "rcl_vsp_expo", (float)0.0, 'f', "" },
-    { "rcl_flt0", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt1", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt2", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt3", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt4", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
-    { "rcl_flt5", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_MANUAL,mf_ROLL,mf_FBWA" },
+    { "rcl_flt0", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
+    { "rcl_flt1", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
+    { "rcl_flt2", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
+    { "rcl_flt3", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
+    { "rcl_flt4", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
+    { "rcl_flt5", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
     { "pid_gizmo", (float)Cfg::pid_gizmo_enum::mf_MF2, 'e', "mf_MF0,mf_MF1,mf_MF2" },
     { "pid_kp0", (float)-1, 'f', "" },
     { "pid_kp1", (float)-1, 'f', "" },

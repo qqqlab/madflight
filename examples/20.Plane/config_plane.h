@@ -35,14 +35,14 @@ If things do not work as expected, have a good look at the startup messages!
 const char madflight_config[] = R""(
 
 //flightmode mapping from 6-pos switch to flight mode (simulates a 3-pos switch: MANUAL/ROLL/FBWA)
-rcl_flt0 MANUAL
-rcl_flt1 MANUAL
-rcl_flt2 ROLL
-rcl_flt3 ROLL
-rcl_flt4 FBWA
-rcl_flt5 FBWA
+rcl_flt0 PLANE_MANUAL
+rcl_flt1 PLANE_MANUAL
+rcl_flt2 PLANE_ROLL
+rcl_flt3 PLANE_ROLL
+rcl_flt4 PLANE_FBWA
+rcl_flt5 PLANE_FBWA
 
-//--- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
+//REQUIRED --- IMU --- Inertial Measurement Unit  (use spi -OR- i2c bus)
 //imu_gizmo      NONE  // options: NONE, BMI270, ICM42688, ICM45686, MPU6000, MPU6050, MPU6500, MPU9150, MPU9250
 //imu_bus_type   SPI   // options: SPI, I2C (not all combinations of gizmo and bus_type are supported)
 //imu_align      CW0   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
@@ -55,7 +55,7 @@ rcl_flt5 FBWA
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus, interrupt pin is required
 
 
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
+//REQUIRED --- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
 //rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
 //rcl_ser_bus   -1     // serial
 //pin_rcl_ppm   -1     // ppm
@@ -162,6 +162,14 @@ rcl_flt5 FBWA
 //pin_out13     -1
 //pin_out14     -1
 //pin_out15     -1
+
+//uncomment to disable receiver stick expo and center sensitivity. Then set trim + expo on transmitter as needed
+//rcl_rol_expo 0
+//rcl_pit_expo 0
+//rcl_yaw_expo 0
+//rcl_rol_sens 0
+//rcl_pit_sens 0
+//rcl_yaw_sens 0
 
 )""; // End of madflight_config
 
