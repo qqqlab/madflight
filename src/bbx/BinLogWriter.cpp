@@ -32,6 +32,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../tbx/RuntimeTrace.h"
 #include "../veh/veh.h"
+#include "../madflight_modules.h" //MADFLIGHT_VERSION
 
 namespace BinLogWriter {
   //prototypes
@@ -257,7 +258,7 @@ namespace BinLogWriter {
     }else{
       log_header_msg("ArduPlane"); 
     }
-    //TODO log_header_msg(MADFLIGHT_VERSION);
+    log_header_msg(MADFLIGHT_VERSION);
     queueFlush();
     
     //write multipliers
