@@ -236,7 +236,28 @@ void CfgClass::printPins() {
 }
 
 //CLI set a parameter value, returns true on success
-bool CfgClass::cli_set_param(String namestr, String val) {
+bool CfgClass::cli_set_param(String name_filter, String val) {
+  name_filter.trim();
+  if(name_filter.length() < 3) return false;
+  bool rv = true;
+  char filt[17] = {};
+  strncpy(filt, name_filter.c_str(), 16);
+  strlwr(filt);
+  uint16_t arr[paramCount()];
+  for(int i=0; i<paramCount(); i++) arr[i] = i;
+  qsort(arr, paramCount(), 2, _cfg_param_list_name_compare);
+  for(int j=0; j<paramCount(); j++) {
+    uint16_t i = arr[j];
+    if(strstr(Cfg::param_list[i].name, filt)) {
+      String namestr = Cfg::param_list[i].name;
+      if(!_cli_set_param(namestr, val)) rv = false;
+    }
+  }
+  cli_dump(name_filter.c_str());
+  return rv;
+}
+
+bool CfgClass::_cli_set_param(String namestr, String val) {
   //Serial.printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
   namestr.trim();
   val.trim();

@@ -60,7 +60,6 @@ public:
   bool getNameAndValue(uint16_t index, String* name, float* value); //get parameter name and value for index
 
   //named parameter manipulation
-  bool cli_set_param(String namestr, String val); //CLI set a parameter value, returns true on success
   bool mavlink_set_param(String namestr, float val); //set a parameter value, returns true on success
   float get_param(String namestr, float default_value); //get parameter as float
 
@@ -69,6 +68,7 @@ public:
   void cli_diff(const char* filter = nullptr); //CLI diff: print all modified config values
   void cli_defaults(const char* filter = nullptr); //CLI defaults: load defaults from param_list (without publishing)
   void cli_save(); //CLI save: save param and reboot
+  bool cli_set_param(String name_filter, String val); //CLI set a parameter value, returns true on success
 
   //print
   bool getOptionString(uint16_t param_idx, int32_t param_val, char out_option[20]);
@@ -84,6 +84,7 @@ private:
   void _print_options(const char *str); //print option list without "mf_"
   float _get_param(int i); //get parameter as float
   bool _set_param(int i, float val, bool publish = true); //set parameter value, and publish changes
+  bool _cli_set_param(String namestr, String val);
 
   uint32_t _calc_board_and_config_crc();
   void _load(); //load defaults, eeprom, board+config

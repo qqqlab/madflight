@@ -517,12 +517,12 @@ void Cli::help() {
   "bberase             Erase bb device\n"
   "bbbench             Benchmark\n"
   "bbinfo              Info\n"
-  "-- CONFIG --\n"
-  "set <name> <value>  Set config parameter\n"
-  "dump <filter>       List config\n"
-  "diff <filter>       List config changes from default\n"
-  "save                Save config and reboot\n"
-  "defaults <filter>   Reset to defaults\n"
+  "-- PARAMETERS --\n"
+  "set <filter> <val>  Set parameter(s)\n"
+  "dump <filter>       List parameters\n"
+  "diff <filter>       List parameter changes from default\n"
+  "defaults <filter>   Reset parameters to defaults\n"
+  "save                Save parameters and reboot\n"
   "-- CALIBRATE --\n"
   "calinfo             Sensor info\n"
   "calimu              Calibrate IMU error\n"
@@ -594,8 +594,10 @@ void Cli::processCmd() {
   cmd.trim();
   cmdline = ""; //clear command line
 
-  Serial.println( "> " + cmd + " " + arg1 + " " + arg2 );
+  //Serial.println( "> " + cmd + " " + arg1 + " " + arg2 );
   this->executeCmd(cmd, arg1, arg2);
+  Serial.print( "> ");
+  Serial.flush();  
 }
 
 void Cli::executeCmd(String cmd, String arg1, String arg2) {
