@@ -56,8 +56,8 @@ class MsgTopic : public MsgTopicBase {
       return _publish((void*) msg);
     }
 
-    //pull last message from topic
-    bool pull_last(T* msg) {
+    //pull latest message from topic
+    bool pull_latest(T* msg) {
       uint32_t gen_to_get = get_generation();
       return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
     }

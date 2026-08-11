@@ -106,19 +106,19 @@ struct sensor_task_s {
       if(sys_schedule.expired()) {
         bbx.log_sys();
       }
-      if(imu_schedule.expired() && imu_sub.pull_last(&imu_state)) {
+      if(imu_schedule.expired() && imu_sub.pull_latest(&imu_state)) {
         bbx.log_imu(&imu_state);
       }
-      if(pid_schedule.expired() && pid_sub.pull_last(&pid_state)) {
+      if(pid_schedule.expired() && pid_sub.pull_latest(&pid_state)) {
         bbx.log_pid(&pid_state);
       }
-      if(ahr_schedule.expired() && ahr_sub.pull_last(&ahr_state)) {
+      if(ahr_schedule.expired() && ahr_sub.pull_latest(&ahr_state)) {
         bbx.log_ahr(&ahr_state);
       }
-      if(out_schedule.expired() && out_sub.pull_last(&out_state)) {
+      if(out_schedule.expired() && out_sub.pull_latest(&out_state)) {
         bbx.log_out(&out_state);
       }
-      if(rcl_schedule.expired() && rcl_sub.pull_last(&rcl_state)) {
+      if(rcl_schedule.expired() && rcl_sub.pull_latest(&rcl_state)) {
         bbx.log_rcl(&rcl_state);
       }
       portYIELD();

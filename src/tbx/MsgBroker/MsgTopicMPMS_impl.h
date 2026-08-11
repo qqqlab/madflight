@@ -79,9 +79,15 @@ public:
     return _topic_gen.load(std::memory_order_relaxed);
   }
 
-    uint32_t publish(T *msg) {
-      return _publish((void*) msg);
-    }
+  uint32_t publish(T *msg) {
+    return _publish((void*) msg);
+  }
+
+  //pull latest message from topic
+  bool pull_latest(T* msg) {
+    uint32_t gen_to_get = get_generation();
+    return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
+  }
 
 protected:  
   //publish a message, returns the published message generation

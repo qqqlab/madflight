@@ -62,7 +62,7 @@ class MsgTopicBase {
     char name[9] = {};
 
     //pull last message from topic
-    template <class T> bool pull_last(T* msg) {
+    template <class T> bool pull_latest(T* msg) {
       uint32_t gen_to_get = get_generation();
       return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
     }
@@ -143,9 +143,9 @@ class MsgSubscription : public MsgSubscriptionBase {
         return true;
     }
 
-    // Pull last (newest) message from fifo, which is newer than the previous message pulled
+    // Pull latest (newest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
-    bool pull_last(T *msg) {
+    bool pull_latest(T *msg) {
         uint32_t gen_to_get = topic->get_generation();
         if(gen_to_get == _sub_gen) return false; //last msg in fifo was already pulled
         if(!topic->_pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get)) return false;

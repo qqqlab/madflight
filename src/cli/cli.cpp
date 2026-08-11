@@ -198,7 +198,7 @@ static void cli_pah() {
 
 static void cli_ppid() {
   PidState pid_s;
-  pid.topic.pull_last(&pid_s); //get a consistent copy
+  pid.topic.pull_latest(&pid_s); //get a consistent copy
   Serial.printf("pid.roll:%+.3f\t",pid_s.roll.sum);
   Serial.printf("pitch:%+.3f\t",pid_s.pitch.sum);
   Serial.printf("yaw:%+.3f\t",pid_s.yaw.sum);
@@ -206,7 +206,7 @@ static void cli_ppid() {
 
 static void cli_ppidr() {
   PidState pid_s;
-  pid.topic.pull_last(&pid_s); //get a consistent copy
+  pid.topic.pull_latest(&pid_s); //get a consistent copy
   Serial.printf("pidr.roll:%+.3f\t",pid_s.roll.sum);
   Serial.printf("P:%+.3f\t",pid_s.roll.p);
   Serial.printf("I:%+.3f\t",pid_s.roll.i);
@@ -217,7 +217,7 @@ static void cli_ppidr() {
 
 static void cli_ppidp() {
   PidState pid_s;
-  pid.topic.pull_last(&pid_s); //get a consistent copy
+  pid.topic.pull_latest(&pid_s); //get a consistent copy
   Serial.printf("pidp.pitch:%+.3f\t",pid.pitch.sum);
   Serial.printf("P:%+.3f\t",pid_s.pitch.p);
   Serial.printf("I:%+.3f\t",pid_s.pitch.i);
@@ -228,7 +228,7 @@ static void cli_ppidp() {
 
 static void cli_ppidy() {
   PidState pid_s;
-  pid.topic.pull_last(&pid_s); //get a consistent copy
+  pid.topic.pull_latest(&pid_s); //get a consistent copy
   Serial.printf("pidy.yaw:%+.3f\t",pid_s.yaw.sum);
   Serial.printf("P:%+.3f\t",pid_s.yaw.p);
   Serial.printf("I:%+.3f\t",pid_s.yaw.i);
