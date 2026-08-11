@@ -102,25 +102,78 @@ struct sensor_task_s {
       if(rdr.update()) bbx.log_rdr(); // radar
       if(ofl.update()) bbx.log_ofl(); // optical flow
 
-      //logging
+      // === logging ===
+
+      //sys
       if(sys_schedule.expired()) {
         bbx.log_sys();
       }
-      if(imu_schedule.expired() && imu_sub.pull_latest(&imu_state)) {
-        bbx.log_imu(&imu_state);
+
+      int intervals;
+    
+      // TODO: use correct spacing. 
+      // Example: msg 1 to 9 in fifo and we need 3 intervals -> Currently we'll pull 1,2,9
+
+      //imu
+      intervals = imu_schedule.expired_count();
+      if(intervals > 0) {
+        //log data from msgbroker fifo
+        for(int i = 0; i < intervals - 1; i++) {
+          if(!imu_sub.pull_next(&imu_state)) break;
+          bbx.log_imu(&imu_state);
+        }
+        //always get latest data to log
+        if(imu_sub.pull_latest(&imu_state)) bbx.log_imu(&imu_state);
       }
-      if(pid_schedule.expired() && pid_sub.pull_latest(&pid_state)) {
-        bbx.log_pid(&pid_state);
+
+      //pid
+      intervals = pid_schedule.expired_count();
+      if(intervals > 0) {
+        //log data from msgbroker fifo
+        for(int i = 0; i < intervals - 1; i++) {
+          if(!pid_sub.pull_next(&pid_state)) break;
+          bbx.log_pid(&pid_state);
+        }
+        //always get latest data to log
+        if(pid_sub.pull_latest(&pid_state)) bbx.log_pid(&pid_state);
       }
-      if(ahr_schedule.expired() && ahr_sub.pull_latest(&ahr_state)) {
-        bbx.log_ahr(&ahr_state);
+
+      //ahr
+      intervals = ahr_schedule.expired_count();
+      if(intervals > 0) {
+        //log data from msgbroker fifo
+        for(int i = 0; i < intervals - 1; i++) {
+          if(!ahr_sub.pull_next(&ahr_state)) break;
+          bbx.log_ahr(&ahr_state);
+        }
+        //always get latest data to log
+        if(ahr_sub.pull_latest(&ahr_state)) bbx.log_ahr(&ahr_state);
       }
-      if(out_schedule.expired() && out_sub.pull_latest(&out_state)) {
-        bbx.log_out(&out_state);
+
+      //out
+      intervals = out_schedule.expired_count();
+      if(intervals > 0) {
+        //log data from msgbroker fifo
+        for(int i = 0; i < intervals - 1; i++) {
+          if(!out_sub.pull_next(&out_state)) break;
+          bbx.log_out(&out_state);
+        }
+        //always get latest data to log
+        if(out_sub.pull_latest(&out_state)) bbx.log_out(&out_state);
       }
-      if(rcl_schedule.expired() && rcl_sub.pull_latest(&rcl_state)) {
-        bbx.log_rcl(&rcl_state);
+
+      //rcl
+      intervals = rcl_schedule.expired_count();
+      if(intervals > 0) {
+        //log data from msgbroker fifo
+        for(int i = 0; i < intervals - 1; i++) {
+          if(!rcl_sub.pull_next(&rcl_state)) break;
+          bbx.log_rcl(&rcl_state);
+        }
+        //always get latest data to log
+        if(rcl_sub.pull_latest(&rcl_state)) bbx.log_rcl(&rcl_state);
       }
+
       portYIELD();
     }
   }

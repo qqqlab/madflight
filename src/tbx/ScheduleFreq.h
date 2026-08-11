@@ -40,34 +40,75 @@ void loop() {
 
 class ScheduleFreq {
   public:
-    uint32_t ts_interval_us = 0;
-    uint32_t dt_interval_us = 0;
+    uint32_t ts_last = 0; //[us]
+    uint32_t interval = 0; //[us]
 
     ScheduleFreq(float freq_hz) {
-      dt_interval_us = (freq_hz <= 0 ? 0xFFFFFFFF : 1000000 / freq_hz);
+      if(freq_hz <= 0){
+        interval = 0xFFFFFFFF;
+      }else if(freq_hz >= 1000000){
+        interval = 1;
+      }else{
+        interval = 1000000 / freq_hz;
+      }
     }
 
-    virtual bool expired() {
+    //returns true if at least 1 interval passed since last call
+    bool expired() {
       uint32_t now = micros();
-      if(now - ts_interval_us < dt_interval_us) return false;
-      ts_interval_us += dt_interval_us; //timeout for next dt interval
-      if(now - ts_interval_us < dt_interval_us) return true;
-      ts_interval_us = now; //resync
+      if(now - ts_last < interval) return false;
+      ts_last += interval; //timeout for next dt interval
+      if(now - ts_last < interval) return true;
+      ts_last = now; //resync
       return true;
+    }
+
+    //returns number of expired intervals since last call
+    uint32_t expired_count() {
+      uint32_t now = micros();
+      uint32_t dt = now - ts_last;
+      if(dt < interval) {
+        return 0;
+      }
+      if(dt < 2 * interval) {
+        //early exit to avoid divide/multiply overhead
+        ts_last += interval; //timeout for next dt interval
+        return 1;
+      }
+      //last call was more than 2 intervals ago
+      uint32_t intervals = dt / interval;
+      ts_last += intervals * interval; //timeout for next dt interval
+      return intervals;
     }
 };
 
 // Extended ScheduleFreq - keeps track of actual update timestamps
-class ScheduleFreqExt : public ScheduleFreq {
+class ScheduleFreqExt {
   public:
+    uint32_t ts_interval_us = 0;
+    uint32_t dt_interval_us = 0;
     uint32_t ts_actual_us = 0;
     uint32_t dt_actual_us = 0;
 
-    ScheduleFreqExt(float freq_hz) : ScheduleFreq(freq_hz) {}
+    ScheduleFreqExt(float freq_hz) {
+      if(freq_hz <= 0){
+        dt_interval_us = 0xFFFFFFFF;
+      }else if(freq_hz >= 1000000){
+        dt_interval_us = 1;
+      }else{
+        dt_interval_us = 1000000 / freq_hz;
+      }
+    }
 
-    bool expired() override {
-      if(!ScheduleFreq::expired()) return false;
+    bool expired() {
       uint32_t now = micros();
+      if(now - ts_interval_us < dt_interval_us) {
+        return false;
+      }
+      ts_interval_us += dt_interval_us; //timeout for next dt interval
+      if(now - ts_interval_us >= dt_interval_us) {
+        ts_interval_us = now; //resync
+      }
       if(ts_actual_us == 0){
         dt_actual_us = dt_interval_us; //assume interval (avoid returning 0)
       }else{
