@@ -1,6 +1,6 @@
 #pragma once
 
-#define MADFLIGHT_VERSION "madflight v2.4.1-DEV"
+#define MADFLIGHT_VERSION "madflight v2.4.1"
 
 #include <Arduino.h>
 
