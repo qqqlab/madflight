@@ -38,11 +38,12 @@ public:
     void controller() override;
 
 private:
-    void control_angle();
-    void control_rate();
-    void control_rate_axis(int axis);
-    void control_axis(int axis, float rate_setpoint);
+    enum class Mode {RCL_RATE, RCL_ANGLE, RCL_PASSTHRU};
+
     void zeroIntegrators();
+    void control_mode(Mode mode[3]);
+    void control_axis(int axis, float rate_setpoint);
+    FlightMode get_default_flightmode();
 
     //Parameters are private and are loaded from cfg.pid_xxx with load_config()
 
