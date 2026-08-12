@@ -52,7 +52,7 @@ class PidGizmo {
     virtual const char* name() = 0;
     virtual void setup() = 0; // initial setup
     virtual void load_param() = 0; // (re-)load parameters
-    virtual bool has_flightmode(FlightMode fm) = 0; //set flightmode, returns true if mode was changed
+    virtual FlightMode set_flightmode(FlightMode fm) = 0; //set flightmode, returns actual fm set which could be differnt than requested
     virtual void controller() = 0; // execute controller
 
   protected:
@@ -75,9 +75,9 @@ class Pid : public PidState {
       gizmo->load_param();
     }
 
-    bool has_flightmode(FlightMode fm) {
-      if(!gizmo) return false;
-      return gizmo->has_flightmode(fm);
+    FlightMode set_flightmode(FlightMode fm) {
+      if(!gizmo) return FlightMode::mf_CUSTOM0;
+      return gizmo->set_flightmode(fm);
     }
 
     void controller() {

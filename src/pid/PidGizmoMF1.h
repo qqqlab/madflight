@@ -33,7 +33,7 @@ public:
     const char* name() override {return "MF1";};
     void setup() override;
     void load_param() override;
-    bool has_flightmode(FlightMode fm) override;
+    FlightMode set_flightmode(FlightMode fm) override; //set flightmode, returns actual fm set which could be differnt than requested
     void controller() override;
 
 private:
@@ -41,6 +41,8 @@ private:
     void control_Rate();
     void control_YawRate(float yawRate_des, float* integral_yaw);
     void zeroIntegrators();
+
+    FlightMode flightmode = FlightMode::mf_RATE;
 
     //Yaw to keep in ANGLE mode when yaw stick is centered
     float yaw_angle_desired = 0;

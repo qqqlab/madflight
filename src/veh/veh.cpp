@@ -33,16 +33,17 @@ SOFTWARE.
 Veh veh;
 
 //returns true if flightmode changed
-bool Veh::setFlightmode(FlightMode fm) {
+bool Veh::set_flightmode(FlightMode fm) {
   if(_flightmode == fm) return false;
-  if(!pid.has_flightmode(fm)) return false;
-  _flightmode = fm;
+  FlightMode pid_fm = pid.set_flightmode(fm); //set pid controller flight mode, which might not support all flight modes
+  if(_flightmode == pid_fm) return false;
+  _flightmode = pid_fm;
   topic.publish(this);
   bbx.log_mode();
   return true;
 }
 
-FlightMode Veh::getFlightmode() {
+FlightMode Veh::get_flightmode() {
   return _flightmode;
 }
 

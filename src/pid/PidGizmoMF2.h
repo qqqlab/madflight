@@ -34,7 +34,7 @@ public:
     const char* name() override {return "MF2";};
     void setup() override;
     void load_param() override;
-    bool has_flightmode(FlightMode fm) override;
+    FlightMode set_flightmode(FlightMode fm) override; //set flightmode, returns actual fm set which could be differnt than requested
     void controller() override;
 
 private:
@@ -44,6 +44,9 @@ private:
     void control_mode(Mode mode[3]);
     void control_axis(int axis, float rate_setpoint);
     FlightMode get_default_flightmode();
+
+    FlightMode flightmode = FlightMode::mf_RATE;
+    Mode mode[3] = {Mode::RCL_RATE, Mode::RCL_RATE, Mode::RCL_RATE};
 
     //Parameters are private and are loaded from cfg.pid_xxx with load_config()
 

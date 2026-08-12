@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "PidGizmoMF2.h"
 #include "../rcl/rcl.h"
-#include "../veh/veh.h"
 #include "../ahr/ahr.h"
 #include "../veh/veh.h"
 #include "../cfg/cfg.h"
@@ -93,9 +92,7 @@ FlightMode PidGizmoMF2::get_default_flightmode() {
 }
 
 void PidGizmoMF2::setup() {
-  if(!has_flightmode(veh.getFlightmode())) {
-    veh.setFlightmode(get_default_flightmode());
-  }
+  set_flightmode(get_default_flightmode());
   stick = &rcl.roll;
   gyro = &ahr.gx;
   ahrs_angle = &ahr.roll;
@@ -109,61 +106,57 @@ void PidGizmoMF2::setup() {
   }
 }
 
-bool PidGizmoMF2::has_flightmode(FlightMode fm) {
+//set controller mode for each axis (roll/pitch/yaw)
+FlightMode PidGizmoMF2::set_flightmode(FlightMode fm) {
   switch(fm) {
-    case FlightMode::mf_RATE:
-    case FlightMode::mf_ANGLE:
-    case FlightMode::mf_PLANE_FBWA:
-    case FlightMode::mf_PLANE_ROLL:
-    case FlightMode::mf_PLANE_MANUAL:
-      return true;
-  }
-  return false;
-}
-
-void PidGizmoMF2::controller() {
-  if(rcl.throttle == 0) zeroIntegrators();
-  FlightMode fm = veh.getFlightmode();
-
-  while(1) { //better make sure get_default_flightmode() returns something in the switch(fm) list
-    switch(fm) {
-      //copter modes
-      case FlightMode::mf_RATE: {
-        //Stabilize rate for roll/pitch/yaw
-        Mode mode[3] = {Mode::RCL_RATE, Mode::RCL_RATE, Mode::RCL_RATE};
-        control_mode(mode);
-        return;
-      }
-      case FlightMode::mf_ANGLE: {
-        //Stabilize angle for roll/pitch, stabilize rate for yaw
-        Mode mode[3] = {Mode::RCL_ANGLE, Mode::RCL_ANGLE, Mode::RCL_RATE};
-        control_mode(mode);
-        return;
-      }
-
-      //plane modes
-      case FlightMode::mf_PLANE_FBWA: {
-        //Stabilize angle for roll/pitch, passthru for yaw
-        Mode mode[3] = {Mode::RCL_ANGLE, Mode::RCL_ANGLE, Mode::RCL_PASSTHRU};
-        control_mode(mode);
-        return;
-      }
-      case FlightMode::mf_PLANE_ROLL: {
-        //Stabilize angle for roll, passthru for pitch/yaw
-        Mode mode[3] = {Mode::RCL_ANGLE, Mode::RCL_PASSTHRU, Mode::RCL_PASSTHRU};
-        control_mode(mode);
-        return;
-      }
-      case FlightMode::mf_PLANE_MANUAL: {
-        // Passthru roll/pitch/yaw
-        Mode mode[3] = {Mode::RCL_PASSTHRU, Mode::RCL_PASSTHRU, Mode::RCL_PASSTHRU};
-        control_mode(mode);
-        return;
-      }
-      default: //flightmode not supported - use default
-        fm = get_default_flightmode();
+    //copter modes
+    case FlightMode::mf_RATE: {
+      //Stabilize rate for roll/pitch/yaw
+      mode[0] = Mode::RCL_RATE; //roll
+      mode[1] = Mode::RCL_RATE; //pitch
+      mode[2] = Mode::RCL_RATE; //yaw
+      flightmode = fm;
+      break;
     }
+    case FlightMode::mf_ANGLE: {
+      //Stabilize angle for roll/pitch, stabilize rate for yaw
+      mode[0] = Mode::RCL_ANGLE; //roll
+      mode[1] = Mode::RCL_ANGLE; //pitch
+      mode[2] = Mode::RCL_RATE; //yaw
+      flightmode = fm;
+      break;
+    }
+
+    //plane modes
+    case FlightMode::mf_PLANE_FBWA: {
+      //Stabilize angle for roll/pitch, passthru for yaw
+      mode[0] = Mode::RCL_ANGLE; //roll
+      mode[1] = Mode::RCL_ANGLE; //pitch
+      mode[2] = Mode::RCL_PASSTHRU; //yaw
+      flightmode = fm;
+      break;
+    }
+    case FlightMode::mf_PLANE_ROLL: {
+      //Stabilize angle for roll, passthru for pitch/yaw
+      mode[0] = Mode::RCL_ANGLE; //roll
+      mode[1] = Mode::RCL_PASSTHRU; //pitch
+      mode[2] = Mode::RCL_PASSTHRU; //yaw
+      flightmode = fm;
+      break;
+    }
+    case FlightMode::mf_PLANE_MANUAL: {
+      // Passthru roll/pitch/yaw
+      mode[0] = Mode::RCL_PASSTHRU; //roll
+      mode[1] = Mode::RCL_PASSTHRU; //pitch
+      mode[2] = Mode::RCL_PASSTHRU; //yaw
+      flightmode = fm;
+      break;
+    }
+    default: 
+      //requested flightmode not supported - keep existing mode
+      break;
   }
+  return flightmode;
 }
 
 void PidGizmoMF2::zeroIntegrators() {
@@ -172,15 +165,19 @@ void PidGizmoMF2::zeroIntegrators() {
   }
 }
 
-void PidGizmoMF2::control_mode(Mode mode[3]) {
+void PidGizmoMF2::controller() {
+  if(rcl.throttle == 0) zeroIntegrators();
+
   for(int axis = 0; axis < 3; axis++) {
     switch(mode[axis]) { 
       case Mode::RCL_RATE: {
+        //control axis by rate setpoint
         float rate_setpoint = stick[axis] * param[axis].rate_limit;;
         control_axis(axis, rate_setpoint);
         break;
       }
       case  Mode::RCL_ANGLE: {
+        //control axis by angle setpoint
         float angle_setpoint = stick[axis] * param[axis].angle_limit;
         float angle_error = angle_setpoint - ahrs_angle[axis];
         float rate_setpoint = pid_angl_mult * angle_error;
@@ -188,6 +185,7 @@ void PidGizmoMF2::control_mode(Mode mode[3]) {
         break;        
       }
       case Mode::RCL_PASSTHRU: {
+        //passthru stick setpoint
         state[axis].p = stick[axis];
         state[axis].sum =  state[axis].p;
         state[axis].i = 0;

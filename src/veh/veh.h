@@ -149,8 +149,8 @@ class Veh : public VehState {
 
     uint8_t mav_type = VEH_TYPE_COPTER; //mavlink vehicle type
 
-    bool setFlightmode(FlightMode flightmode); //returns true if flightmode changed
-    FlightMode getFlightmode();
+    bool set_flightmode(FlightMode flightmode); //returns true if flightmode changed
+    FlightMode get_flightmode();
     uint8_t flightmode_ap_id();
     const char* flightmode_name();
 
@@ -162,7 +162,7 @@ class Veh : public VehState {
     #define MF_FLIGHTMODE_COUNT 11
     struct FlightModeMap_enum flightmode_map[MF_FLIGHTMODE_COUNT] = {
         //keep in same order as enum FlightMode
-        {"CUS0",  255, 255},
+        {"MADF",  255, 255},
         {"CUS1",  255, 255},
         {"CUS2",  255, 255},
         {"CUS3",  255, 255},
@@ -178,7 +178,5 @@ class Veh : public VehState {
   private:
     const char* flightmode_name_unknown = "???";
 };
-
-
 
 extern Veh veh;

@@ -24,9 +24,7 @@ SOFTWARE.
 
 #include "PidGizmoMF0.h"
 #include "../rcl/rcl.h"
-#include "../veh/veh.h"
 #include "../ahr/ahr.h"
-#include "../veh/veh.h"
 #include "../cfg/cfg.h"
 #include "Arduino.h" //constrain
 
@@ -67,22 +65,26 @@ static float degreeModulus(float v) {
 }
 
 void PidGizmoMF0::setup() {
-  veh.setFlightmode(FlightMode::mf_RATE);
+  set_flightmode(FlightMode::mf_RATE);
   yaw_desired = ahr.yaw; //set desired yaw to current yaw, the yaw angle controller will hold this value
   load_param();
 }
 
-bool PidGizmoMF0::has_flightmode(FlightMode fm) {
+FlightMode PidGizmoMF0::set_flightmode(FlightMode fm) {
   switch(fm) {
     case FlightMode::mf_RATE:
     case FlightMode::mf_ANGLE: 
-      return true;
+      flightmode = fm;
+      break;
+    default:
+      //keep current flight mode, i.e. do nothing
+      break;
   }
-  return false;
+  return flightmode;
 }
 
 void PidGizmoMF0::controller() {
-  switch( veh.getFlightmode() ) {
+  switch(flightmode) {
     case FlightMode::mf_ANGLE: 
       control_Angle(rcl.throttle == 0); //Stabilize on pitch/roll angle setpoint, stabilize yaw on rate setpoint
       break;
