@@ -60,6 +60,7 @@ bbx_log_ahr 40
 bbx_log_imu 40
 bbx_log_out 40
 bbx_log_rcl 40
+bbx_log_pid 40
 
 //--- GPS ---
 //gps_gizmo      UBLOX

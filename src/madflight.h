@@ -80,7 +80,7 @@ struct sensor_task_s {
   MsgSubscription<ImuState> imu_sub = MsgSubscription<ImuState>("log_imu", &imu.topic);
   ImuState imu_state;
   //pid
-  ScheduleFreq pid_schedule = ScheduleFreq(cfg.bbx_log_imu); //use imu schedule freq
+  ScheduleFreq pid_schedule = ScheduleFreq(cfg.bbx_log_pid);
   MsgSubscription<PidState> pid_sub = MsgSubscription<PidState>("log_pid", &pid.topic);
   PidState pid_state;
   //out

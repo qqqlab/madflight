@@ -1273,6 +1273,13 @@ param:
     type: 'f'
     comment: "Angle to rate multiplier"
 
+# v2.4.2 additions 
+  bbx_log_pid:
+    since: v2.4.2
+    default: 100
+    datatype: int32_t
+    type: 'i'
+    comment: "Max log interval in [Hz] for PID"
 
 # Documentation
 pageheader: |

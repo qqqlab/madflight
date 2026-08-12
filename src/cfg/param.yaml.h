@@ -9,7 +9,7 @@ enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,m
 enum class MF_FilterType : uint32_t { mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH };
 
 namespace Cfg {
-  const uint16_t param_cnt = 214; //number of parameters
+  const uint16_t param_cnt = 215; //number of parameters
 
   //enums for madflight library parameters (prefixed with 'mf_' to prevent macro expansion of global #defines like ADC or ICM45686)
   enum class ahr_gizmo_enum : uint32_t { mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF };
@@ -251,6 +251,7 @@ namespace Cfg {
     { "pid_yaw_rate_lim", (float)-1, 'f', "" },
     { "pid_i_limit", (float)-1, 'f', "" },
     { "pid_angl_mult", (float)-1, 'f', "" },
+    { "bbx_log_pid", (float)100, 'i', "" },
   }; //const param_list_t param_list[]
 }; //namespace Cfg
 
@@ -481,4 +482,6 @@ struct CfgParam {
   float pid_yaw_rate_lim = -1; /* Yaw rate limit [deg/s] */
   float pid_i_limit = -1; /* I-Term limit. Usually in percent of output, check pid_gizmo documentation */
   float pid_angl_mult = -1; /* Angle to rate multiplier */
+  // v2.4.2
+  int32_t bbx_log_pid = 100; /* Max log interval in [Hz] for PID */
 }; //struct CfgParam

@@ -54,6 +54,7 @@ Parameters are saved to EEPROM (i.e. flash). They can be modified with:
 |`bbx_log_ahr`|Max log interval in [Hz] for AHR<br>_since v2.3.0_|100||
 |`bbx_log_imu`|Max log interval in [Hz] for IMU<br>_since v2.3.0_|100||
 |`bbx_log_out`|Max log interval in [Hz] for OUT<br>_since v2.3.0_|100||
+|`bbx_log_pid`|Max log interval in [Hz] for PID<br>_since v2.4.2_|100||
 |`bbx_log_rcl`|Max log interval in [Hz] for RCL<br>_since v2.3.0_|100||
 |`bbx_ser_bus`|Black Box Logger Serial Bus<br>_since v2.3.2_|-1||
 |`bbx_spi_bus`|Black Box SPI Bus<br>_since v2.0.0_|-1||
