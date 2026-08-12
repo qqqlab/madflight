@@ -29,12 +29,6 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "Arduino.h" //constrain
 
-enum flag_enum {
-  FLAG_RATE = 1,
-  FLAG_ANGLE_YAWCENTER = 2,
-  FLAG_ANGLE_YAW = 3,
-};
-
 void PidGizmoMF2::load_param() {
     //Controller Parameters
     i_limit              = 0.01 * ifneg(cfg.pid_i_limit, 10);  // Integrator saturation level in % of output
@@ -104,6 +98,7 @@ void PidGizmoMF2::setup() {
   for(uint8_t axis = 0; axis < 3; axis++) {
     param[axis].error_prev = 0;
   }
+  _yaw_hybrid_angle_setpoint = ahrs_angle[2]; //RCL_YAW_HYBRID: set current yaw angle as angle_setpoint 
 }
 
 //set controller mode for each axis (roll/pitch/yaw)
@@ -122,7 +117,14 @@ FlightMode PidGizmoMF2::set_flightmode(FlightMode fm) {
       //Stabilize angle for roll/pitch, stabilize rate for yaw
       mode[0] = Mode::RCL_ANGLE; //roll
       mode[1] = Mode::RCL_ANGLE; //pitch
-      mode[2] = Mode::RCL_RATE; //yaw
+
+      //control yaw by rate only - will drift when stick centered
+      //mode[2] = Mode::RCL_RATE; //yaw
+
+      //control yaw by angle when stick centered - no drift with mag installed
+      mode[2] = Mode::RCL_YAW_HYBRID; //yaw
+      _yaw_hybrid_angle_setpoint = ahrs_angle[2]; //RCL_YAW_HYBRID: set current yaw angle as angle_setpoint 
+
       flightmode = fm;
       break;
     }
@@ -169,6 +171,7 @@ void PidGizmoMF2::controller() {
   if(rcl.throttle == 0) zeroIntegrators();
 
   for(int axis = 0; axis < 3; axis++) {
+    float sub_mode = 0;
     switch(mode[axis]) { 
       case Mode::RCL_RATE: {
         //control axis by rate setpoint
@@ -194,8 +197,26 @@ void PidGizmoMF2::controller() {
         state[axis].setpoint = stick[axis];
         break;
       }
+      case Mode::RCL_YAW_HYBRID:{
+        //keep yaw angle when stick centered, RCL_RATE otherwise
+        const float eps = 0.02;
+        if(-eps <= stick[axis] &&  stick[axis] <= +eps){
+          //stick centered - control axis by angle setpoint
+          float angle_setpoint = _yaw_hybrid_angle_setpoint;
+          float angle_error = angle_setpoint - ahrs_angle[axis];
+          float rate_setpoint = pid_angl_mult * angle_error;
+          control_axis(axis, rate_setpoint);
+          sub_mode = 0.1;
+        }else{
+          //control axis by rate setpoint
+          float rate_setpoint = stick[axis] * param[axis].rate_limit;;
+          control_axis(axis, rate_setpoint);
+          _yaw_hybrid_angle_setpoint = ahrs_angle[2]; //RCL_YAW_HYBRID: set current yaw angle as angle_setpoint
+        }
+        break;
+      }  
     }
-    state[axis].b = (float)mode[axis];
+    state[axis].b = (float)mode[axis] + sub_mode;
   }
 }
 
