@@ -38,7 +38,12 @@ public:
     void controller() override;
 
 private:
-    enum class Mode {RCL_RATE, RCL_ANGLE, RCL_PASSTHRU};
+    enum class Mode {
+        RCL_RATE,        // control axis by rate setpoint
+        RCL_ANGLE,       // control axis by angle setpoint
+        RCL_PASSTHRU,    // passthru stick setpoint
+        RCL_YAW_HYBRID,  // keep yaw angle when stick centered, RCL_RATE otherwise - use only for axis 2 (yaw)
+    };
 
     void zeroIntegrators();
     void control_mode(Mode mode[3]);
@@ -47,6 +52,8 @@ private:
 
     FlightMode flightmode = FlightMode::mf_RATE;
     Mode mode[3] = {Mode::RCL_RATE, Mode::RCL_RATE, Mode::RCL_RATE};
+
+    float _yaw_hybrid_angle_setpoint = 0; //RCL_YAW_HYBRID: yaw angle setpoint when yaw stick centered
 
     //Parameters are private and are loaded from cfg.pid_xxx with load_config()
 
