@@ -76,6 +76,7 @@ class Ahr : public AhrState {
 
     void setInitalOrientation();
     float getAccelUp(); //get acceleration in earth-frame up direction in [m/s^2]
+    void get_acc_ned(float acc[3]); //get acceleration in NED earth-frame [m/s^2]
 
   protected:
     MF_Filter *gyr_filter[3] = {new MF_FilterLowPT1(), new MF_FilterLowPT1(), new MF_FilterLowPT1()};

@@ -66,7 +66,7 @@ class MsgTopic : public MsgTopicBase {
     //publish a message, returns the published message generation
     uint32_t _publish(void *msg) override {
       memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
-      _topic_gen++; //update as soon as data is in buf
+      _topic_gen = _topic_gen + 1; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
       return _topic_gen;
     }

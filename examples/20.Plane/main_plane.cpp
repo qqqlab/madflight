@@ -1,6 +1,12 @@
 /*#########################################################################################################################
 
+RC-Airplane demo program for madflight Arduino ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32 Flight Controller
+
 WARNING: This program is experimental - NOT FLIGHT TESTED - PLEASE REPORT YOUR RESULTS
+
+###########################################################################################################################
+
+See http://madflight.com for setup instructions
 
 This program is an airplane controller, it has 3 flight modes: MANUAL, ROLL and FBWA.
 
@@ -50,7 +56,7 @@ control surfaces react quickly, but don't oscillate, on changes in attitude.
 
 ###########################################################################################################################
 
-See http://madflight.com for detailed description
+See http://madflight.com for detailed description and modify the USER-SPECIFIED VARIABLES section below
 
 Arming/disarming with dedicated switch
 
@@ -83,7 +89,7 @@ void out_KillSwitchAndFailsafe();
 void out_Mixer();
 
 //========================================================================================================================//
-//                                               OUTPUTS                                                                  //
+//                                            USER-SPECIFIED VARIABLES                                                    //
 //========================================================================================================================//
 
 // Define outputs (Change as needed, note: pin_outX names are 0-based)
@@ -111,23 +117,25 @@ void out_Mixer();
 #define FLAPS_MULT 1
 #define FLAPS_RC_CHANNEL 7 //1 based RC channel number (RC channels 1-6 used by default for Roll, Pitch, Throttle, Yaw, Arm, Flightmode)
 
-// Uncomment ONE mixer:
+// Uncomment ONE mixer: 
+
+// The mix matrix maps PID [roll,pitch,yaw,throttle] to outputs [ail,ele,rud,mot]
 
 // Regular plane
-// outputs: AILERON_OUTPUT=aileron, ELEVATOR_OUTPUT=elevator, RUDDER_OUTPUT=rudder
-float mix[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; 
+// outputs: AILERON_OUTPUT=aileron, ELEVATOR_OUTPUT=elevator, RUDDER_OUTPUT=rudder, MOTOR_OUTPUT=throttle
+float const mix[4][4] = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}; 
 
 // Delta wing
-// outputs: AILERON_OUTPUT=left-elevon, ELEVATOR_OUTPUT=right-elevon, RUDDER_OUTPUT=rudder
+// outputs: AILERON_OUTPUT=left-elevon, ELEVATOR_OUTPUT=right-elevon, RUDDER_OUTPUT=rudder, MOTOR_OUTPUT=throttle
 // when pid.roll positive -> roll right -> deflect left elevon down, deflect right elevon up
 // when pid.pitch is positive -> pitch up -> deflect left elevon down, deflect right elevon down 
-//float mix[3][3] = {{1, 1, 0}, {-1, 1, 0}, {0, 0, 1}};
+//float const mix[4][4] = {{1, 1, 0, 0}, {-1, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}; 
 
 // V-Tail
-// outputs: AILERON_OUTPUT=aileron, ELEVATOR_OUTPUT=left-ruddervator, RUDDER_OUTPUT=right-ruddervator
+// outputs: AILERON_OUTPUT=aileron, ELEVATOR_OUTPUT=left-ruddervator, RUDDER_OUTPUT=right-ruddervator, MOTOR_OUTPUT=throttle
 // when pid.yaw positive -> yaw right -> deflect left ruddervator down, deflect right ruddervator up
 // when pid.pitch is positive -> pitch up -> deflect left ruddervator down, deflect right ruddervator down 
-//float mix[3][3] = {{1, 0, 0}, {0, 1, 1}, {0, 1, -1}};
+//float const mix[4][4] = {{1, 0, 0, 0}, {0, 1, 1, 0}, {0, 1, -1, 0}, {0, 0, 0, 1}}; 
 
 
 //========================================================================================================================//
@@ -245,13 +253,13 @@ void out_Mixer() {
 */
 
   // Apply mixer
-  float ail_mix = mix[0][0] * pid.roll.sum + mix[0][1] * pid.pitch.sum + mix[0][2] * pid.yaw.sum; // nominal range [-1 to 1]
-  float ele_mix = mix[1][0] * pid.roll.sum + mix[1][1] * pid.pitch.sum + mix[1][2] * pid.yaw.sum; // nominal range [-1 to 1]
-  float rud_mix = mix[2][0] * pid.roll.sum + mix[2][1] * pid.pitch.sum + mix[2][2] * pid.yaw.sum; // nominal range [-1 to 1]
-  float thr_mix = rcl.throttle; // passthru RC throttle [0 to 1]
+  float ail_mix = mix[0][0] * pid.roll.sum + mix[0][1] * pid.pitch.sum + mix[0][2] * pid.yaw.sum + mix[0][3] * pid.throttle.sum; // nominal range [-1 to 1]
+  float ele_mix = mix[1][0] * pid.roll.sum + mix[1][1] * pid.pitch.sum + mix[1][2] * pid.yaw.sum + mix[1][3] * pid.throttle.sum; // nominal range [-1 to 1]
+  float rud_mix = mix[2][0] * pid.roll.sum + mix[2][1] * pid.pitch.sum + mix[2][2] * pid.yaw.sum + mix[2][3] * pid.throttle.sum; // nominal range [-1 to 1]
+  float thr_mix = mix[3][0] * pid.roll.sum + mix[3][1] * pid.pitch.sum + mix[3][2] * pid.yaw.sum + mix[3][3] * pid.throttle.sum; // nominal range [0 to 1]
 
   // Motor output
-  float motor_out = FLAPS_MULT * (FLAPS_MULT > 0 ?  thr_mix : thr_mix - 1.0); //apply MULT
+  float motor_out = MOTOR_MULT * (MOTOR_MULT > 0 ?  thr_mix : thr_mix - 1.0); //apply MULT
   out.set_output(MOTOR_OUTPUT, motor_out); // send to ESC
 
   // Aileron output: this is both-ailerons(plane/vtail), or left-aileron(plane/vtail), or left-elevon(delta)
@@ -275,7 +283,3 @@ void out_Mixer() {
   float flaps_out = FLAPS_MULT * (FLAPS_MULT > 0 ? flaps_mix : flaps_mix - 1.0); // apply MULT
   out.set_output(FLAPS_OUTPUT, flaps_out); // send to flaps servo
 }
-
-
-
-

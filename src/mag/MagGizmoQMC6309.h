@@ -168,6 +168,7 @@ public:
     */
   }
 
+private:
   bool update_raw() {
     uint8_t stat = dev->readReg(QMC6309_STAT_REG);
     if((stat & QMC6309_STAT_DRDY) == 0 || (stat & QMC6309_STAT_OVFL) != 0 ) return false;
@@ -182,12 +183,13 @@ public:
     return true;
   }
 
-  bool update(float *x, float *y, float *z) override {
+public:
+  bool update_nwu(float *n, float *w, float *u) override {
     if(!update_raw()) return false;
 
-    *x =  scale_uT * mx; 
-    *y =  scale_uT * my;
-    *z =  scale_uT * mz;
+    *n =  scale_uT * mx; 
+    *w =  scale_uT * my;
+    *u =  scale_uT * mz;
     return true;
   }
 };

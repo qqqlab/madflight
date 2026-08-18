@@ -33,3 +33,4 @@ void quaternion_inverse(float result[4], const float q[4]);
 void quaternion_inverse(float q[4]);
 void quaternion_normalize(float q[4]);
 void quaternion_init(float q[4]);
+void quaternion_rotate(float result[3], const float q[4], const float v[3]);

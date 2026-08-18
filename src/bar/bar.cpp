@@ -93,6 +93,15 @@ int Bar::setup() {
     return -1001;
   }
 
+  //set ground level
+  uint32_t ts = millis();
+  int n = 0;
+  while(n < 30 && millis() - ts < 1000) {
+    if(update()) n++;
+  }
+  ground_level = alt;
+  Serial.printf("BAR: Ground Level: %.2f m\n", ground_level);
+
   return 0;
 }
 

@@ -17,6 +17,8 @@
 #   comment:  Single line comment [optional]
 #   since:    Parameter exist since madflight version [optional]
 
+version: "2.4.2-DEV"
+
 # Global enums
 enum:
   FlightMode:
@@ -28,11 +30,12 @@ enum:
       - CUSTOM3
       - CUSTOM4
       - CUSTOM5
-      - RATE    #copter
-      - ANGLE   #copter
-      - PLANE_MANUAL  #plane
-      - PLANE_ROLL    #plane
-      - PLANE_FBWA    #plane
+      - RATE           #copter
+      - ANGLE          #copter
+      - PLANE_MANUAL   #plane
+      - PLANE_ROLL     #plane
+      - PLANE_FBWA     #plane
+      - COPTER_ALTHOLD #copter
   MF_FilterType:
     datatype: "enum class MF_FilterType : uint32_t"
     options:
@@ -1080,14 +1083,13 @@ param:
     comment: "Flight Mode 5"
 
   pid_gizmo:
-    default: MF2
+    default: BASIC
     datatype: int32_t
     type: 'e'
     options:
-      - MF0
-      - MF1
-      - MF2
-    comment: "PID controller. IMPORTANT: Read module instructions before when changing this parameter!!!"
+      - BASIC
+      - EXPERIMENTAL
+    comment: "PID controller. IMPORTANT: Read module instructions before changing this parameter!!!"
 
   pid_kp0:
     default: -1
@@ -1283,7 +1285,7 @@ param:
 
 # Documentation
 pageheader: |
-  # madflight Configuration Parameters
+  # madflight v%VERSION% Configuration Parameters
 
   Parameters are saved to EEPROM (i.e. flash). They can be modified with:
   
@@ -1295,7 +1297,7 @@ pageheader: |
   ### Parameter Loading Logic
 
     - Step 1: Load defaults as listed on this page
-    - Step 2: Overwrite with eeprom (eeprom could be shorter than defaults)
+    - Step 2: Overwrite with eeprom (eeprom could have less parameters than defaults)
     - Step 3: Overwrite with `madflight_board` and then `madflight_config` (if not already applied to eeprom)
 
 module:
@@ -1362,18 +1364,15 @@ module:
       Note: If a `pid_xxx` parameter is -1 then the default value for the selected `pid_gizmo` is used.
 
 
-
-      ### pid_gizmo MF2
+      ### pid_gizmo BASIC
 
       This controller is a very basic PID rate controller. When in Angle Mode the angle error is converted to a desired rate which the controller tries to keep.
 
-      Betaflight friends will notice that the default MF2 PID parameters are identical. Yes, this is the case, so your BF setup should work with MF2. But this controller lacks all the fancy stuff BF offers.
+      Betaflight friends will notice that the default MF parameters are identical to the BF defaults. Yes, this is by design, so your BF PID setup should work with this controller. But this controller lacks all the fancy stuff BF offers.
 
       Supported FlightModes: RATE, ANGLE
 
-      #### MF2 Controller Parameters and Default Values
-
-      The defaults values are chosen more conservative than the BF equivalents.
+      #### BASIC Controller Parameters and Default Values
 
       ```
       == General ==
@@ -1381,9 +1380,9 @@ module:
       pid_angl_mult      5  Multiplicator to convert Angle Error to Rate Error
 
       == Roll ==
-      pid_kp0            45  Roll Kp
-      pid_ki0            80  Roll Ki
-      pid_kd0            30  Roll Kd
+      pid_kp0            45  Roll Kp - same as BF default
+      pid_ki0            80  Roll Ki - same as BF default
+      pid_kd0            30  Roll Kd - same as BF default
       pid_rol_rate_lim  300  Roll rate limit in deg/sec for rate mode - BF default is 600
       pid_rol_angl_lim   30  Roll angle limit in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
 
@@ -1395,9 +1394,9 @@ module:
       pid_pit_angl_lim   -1  Pitch angle limit in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
 
       == Yaw ==
-      pid_kp2            45  Yaw Kp
-      pid_ki2            80  Yaw Ki
-      pid_kd2             0  Yaw Kd
+      pid_kp2            45  Yaw Kp - same as BF default
+      pid_ki2            80  Yaw Ki - same as BF default
+      pid_kd2             0  Yaw Kd - same as BF default
       pid_yaw_rate_lim  160  Yaw rate limit in deg/sec for rate+angle modes 
 
       == D-Term Filter ==
@@ -1405,47 +1404,21 @@ module:
       pid_filt0_freq     30  D-Term filter cutoff frequency [Hz]
       ```
 
+      ### pid_gizmo EXPERIMENTAL
 
-
-      ### pid_gizmo MF1 - NOT TESTED - DO NOT USE
-
-      An attempt to improve the MF0 controller with better yaw hold. Not tested, do not use.
-
-
-
-      ### pid_gizmo MF0 - NOT TESTED - DO NOT USE
-
-      The MF0 controller is a port of the classic madflight v2.3 controller, but the port is not flight tested so do not use!!!
+      As the name implies, this is a work in progress experimental PID controller for madflight.
       
-      This controller is a modified version of the [dRehmFlight](https://github.com/nickrehm/dRehmFlight) controller.
+      Limited flight testing has been done, so be prepared for surprises and hands-on trial-and-error work to improve this controller.
 
-      Supported FlightModes: RATE, ANGLE
+      Supported FlightModes: RATE, ANGLE, COPTER_ALTHOLD
 
-      ```
-      //Controller parameters
-      maxRoll        = ifneg(cfg.pid_rol_angl_lim, 30);  // Max roll angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-      maxPitch       = ifneg(cfg.pid_pit_angl_lim, 30);  // Max pitch angle in deg for angle mode - DO NOT INCREASE OVER 70 OR YOU WILL CRASH DUE TO GIMBAL-LOCKS
-      maxRollRate    = ifneg(cfg.pid_rol_rate_lim, 50);  // Max roll rate in deg/sec for rate mode 
-      maxPitchRate   = ifneg(cfg.pid_pit_rate_lim, 60);  // Max pitch rate in deg/sec for rate mode
-      maxYawRate     = ifneg(cfg.pid_yaw_rate_lim, 160); // Max yaw rate in deg/sec for angle and rate mode
-      i_limit        = ifneg(cfg.pid_i_limit,      25);  // Integrator saturation level, mostly for safety
+      This controller is an extended version of the BASIC controller:
 
-      //PID Rate Mode - Scaled by .01 to bring PID output within -1 to 1 range
-      Kp_ro_pi_rate  = 0.01 * ifneg(cfg.pid_kp0, 0.15);    // Roll/Pitch rate P-gain
-      Ki_ro_pi_rate  = 0.01 * ifneg(cfg.pid_ki0, 0.2);     // Roll/Pitch rate I-gain
-      Kd_ro_pi_rate  = 0.01 * ifneg(cfg.pid_kd0, 0.002);   // Roll/Pitch rate D-gain (be careful when increasing too high, motors will begin to overheat!)
-      Kp_yaw_rate    = 0.01 * ifneg(cfg.pid_kp1, 0.3);     // Yaw rate P-gain
-      Ki_yaw_rate    = 0.01 * ifneg(cfg.pid_ki1, 0.05);    // Yaw rate I-gain
-      Kd_yaw_rate    = 0.01 * ifneg(cfg.pid_kd1, 0.00015); // Yaw rate D-gain (be careful when increasing too high, motors will begin to overheat!)
+       - ANGLE: Added no drift yaw control when mag is present
+       - COPTER_ALTHOLD: Copter Altitutde Hold Mode (start this mode from hover in ANGLE mode, not on ground)
 
-      //PID Angle Mode 
-      Kp_ro_pi_angle = 0.01 * ifneg(cfg.pid_kp2, 0.4);  // Roll/Pitch P-gain
-      Ki_ro_pi_angle = 0.01 * ifneg(cfg.pid_ki2, 0.1);  // Roll/Pitch I-gain
-      Kd_ro_pi_angle = 0.01 * ifneg(cfg.pid_kd2, 0.05); // Roll/Pitch D-gain
-      Kp_yaw_angle   = 0.01 * ifneg(cfg.pid_kp3, 0.6);  // Yaw P-gain
-      //cfg.pid_ki3 unused
-      Kd_yaw_angle   = 0.01 * ifneg(cfg.pid_kd3, 0.1);  // Yaw D-gain
-      ```
+       See file pid/GizmoPidEXPERIMENTAL.cpp for the config parameters of this controller.
+
   pin:
     title: GPIO Pin Mapping
   rcl:

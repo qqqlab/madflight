@@ -95,24 +95,24 @@ private:
     return false;
   }
 
-public:
   bool update_raw() {
     if((dev->readReg(0x18) & 0x40) == 0x00) return false; //exit if no new mag data
 
     uint8_t d[9];
     dev->readReg(0x00, d, 9);
-    mx = (d[0]<<12 | d[1]<<4 | d[6]>>4 ) - (1<<19);
-    my = (d[2]<<12 | d[3]<<4 | d[7]>>4 ) - (1<<19);
-    mz = (d[4]<<12 | d[5]<<4 | d[8]>>4 ) - (1<<19);
+    mx = (d[0]<<12 | d[1]<<4 | d[6]>>4 ) - (1<<19); //N
+    my = (d[2]<<12 | d[3]<<4 | d[7]>>4 ) - (1<<19); //W
+    mz = (d[4]<<12 | d[5]<<4 | d[8]>>4 ) - (1<<19); //U
     return true;
   }
 
-  bool update(float *x, float *y, float *z) override {
+public:
+  bool update_nwu(float *n, float *w, float *u) override {
     if(!update_raw()) return false;
 
-    *x =  scale_uT * mx; 
-    *y =  scale_uT * my;
-    *z =  scale_uT * mz;
+    *n = scale_uT * mx; //N
+    *w = scale_uT * my; //W
+    *u = scale_uT * mz; //U
     return true;
   }
 };

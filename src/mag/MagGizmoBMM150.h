@@ -79,11 +79,11 @@ class MagGizmoBMM150: public MagGizmo {
       return gizmo;
     }
 
-    bool update(float *x, float *y, float *z) override {
+    bool update_nwu(float *n, float *w, float *u) override {
       sBmm150MagData_t magData = sensor->getGeomagneticData();
-      *x = magData.xx;
-      *y = magData.yy;
-      *z = magData.zz;
+      *n = magData.xx;
+      *w = magData.yy;
+      *u = magData.zz;
       return true; 
     }
 };

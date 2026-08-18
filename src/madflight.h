@@ -95,7 +95,11 @@ struct sensor_task_s {
   void run() {
     for(;;) {
       //sensors
-      if(bar.update()) bbx.log_baro(); // barometer
+      if(bar.update()) {
+        alt.updateAccelUp(ahr.getAccelUp(), micros());
+        alt.updateBarAlt(bar.alt - bar.ground_level, micros());
+        bbx.log_baro(); // barometer
+      }
       mag.update(); // magnetometer (logging is done with imu together)
       if(gps.update()) bbx.log_gps(); // gps
       if(bat.update()) bbx.log_bat(); // battery consumption
@@ -198,6 +202,7 @@ void madflight_setup() {
   #ifdef MF_CONFIG_CLEAR
     cfg.clear();
     cfg.save();
+    Serial.begin(115200);
     madflight_panic("Config cleared. comment out '#define MF_CONFIG_CLEAR' and upload again.");
   #endif
 
@@ -415,7 +420,7 @@ void madflight_setup() {
   imu.config.i2c_adr = cfg.imu_i2c_adr; //i2c address. 0=default address
   imu.config.uses_i2c = ((Cfg::imu_bus_type_enum)cfg.imu_bus_type == Cfg::imu_bus_type_enum::mf_I2C);
   imu.config.pin_clkin = cfg.pin_imu_clkin; //CLKIN pin for ICM-42866-P - only tested for RP2 targets
-  imu.config.imu_align = cfg.imu_align; //mounting alignment
+  imu.config.imu_align = &cfg.imu_align; //mounting alignment
   imu.config.imu_cal_gx = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
   imu.config.imu_cal_ax = &(cfg.imu_cal_ax); //acc offset[3] [G]
 
@@ -433,7 +438,7 @@ void madflight_setup() {
 
   // IMU - Connect imu internal magnetometer to mag
   if(imu.config.has_mag && !mag.gizmo) {
-    mag.gizmo = new MagGizmoIMU((MagState*)&mag);
+    mag.gizmo = new MagGizmoIMU();
     imu.config.pmag = &mag;
     Serial.println("IMU: magnetometer installed");
   }

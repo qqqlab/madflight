@@ -16,8 +16,8 @@ class MagGizmoQMC5883L: public MagGizmo {
       //return (mag_QMC5883L.detect() ? 0 : 1);
     }
 
-    bool update(float *x, float *y, float *z) override {
-      sensor.read_uT(x, y, z);
+    bool update_nwu(float *n, float *w, float *u) override {
+      sensor.read_uT(n, w, u);
       return true; 
     }
 };

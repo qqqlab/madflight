@@ -1,10 +1,10 @@
 /*#########################################################################################################################
 
-Minimal quadcopter demo program for madflight on a M5Stack StampFly v1.0/v1.1 Quadcopter
+Quadcopter demo program for madflight on a M5Stack StampFly v1.0/v1.1 Quadcopter
 
 ###########################################################################################################################
 
-See http://madflight.com for detailed description (this example is based on the QuadcopterAdvanced example)
+See http://madflight.com for setup instructions (this example is based on the Quadcopter example)
 
 NOTE: This program does not work with the M5Stack ESP-NOW Joystick, you need to connect a 6+ channel CRSF/ELRS/SBUS/DSM/PPM radio receiver
 
@@ -46,9 +46,12 @@ ser_bus 1 is the BLACK Grove port without pullups - should work with all serial 
 
 const char madflight_config[] = R""(
 
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
+//--- RCL --- Remote Controller Link (modify as required)
 rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
 rcl_ser_bus    1     // 1=BLACK Grove
+rcl_num_ch     16
+rcl_deadband   0
+pin_rcl_ppm   -1
 
 // Uncomment BBX or GPS, not both 
 
@@ -64,15 +67,57 @@ bbx_log_pid 40
 
 //--- GPS ---
 //gps_gizmo      UBLOX
-//gps_ser_bus    0     // 0=RED Grove
+//gps_ser_bus    0    // 0=RED Grove
 
-//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+//flightmode mapping from 2/3/6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 rcl_flt0 RATE
 rcl_flt1 RATE
 rcl_flt2 RATE
 rcl_flt3 RATE
 rcl_flt4 RATE
 rcl_flt5 ANGLE
+
+//reset PID parameters to default (remove/update this section if you want to use your own settings)
+pid_gizmo        BASIC
+pid_angl_mult    -1.000000
+pid_filt0_freq   -1.000000
+pid_filt0_q      -1.000000
+pid_filt0_type   NONE
+pid_filt1_freq   -1.000000
+pid_filt1_q      -1.000000
+pid_filt1_type   NONE
+pid_filt2_freq   -1.000000
+pid_filt2_q      -1.000000
+pid_filt2_type   NONE
+pid_filt3_freq   -1.000000
+pid_filt3_q      -1.000000
+pid_filt3_type   NONE
+pid_i_limit      -1.000000
+pid_ka0          -1.000000
+pid_ka1          -1.000000
+pid_ka2          -1.000000
+pid_ka3          -1.000000
+pid_kb0          -1.000000
+pid_kb1          -1.000000
+pid_kb2          -1.000000
+pid_kb3          -1.000000
+pid_kd0          -1.000000
+pid_kd1          -1.000000
+pid_kd2          -1.000000
+pid_kd3          -1.000000
+pid_ki0          -1.000000
+pid_ki1          -1.000000
+pid_ki2          -1.000000
+pid_ki3          -1.000000
+pid_kp0          -1.000000
+pid_kp1          -1.000000
+pid_kp2          -1.000000
+pid_kp3          -1.000000
+pid_pit_angl_lim -1.000000
+pid_pit_rate_lim -1.000000
+pid_rol_angl_lim -1.000000
+pid_rol_rate_lim -1.000000
+pid_yaw_rate_lim -1.000000
 
 )""; // End of madflight_config
 
@@ -199,22 +244,40 @@ Motor order diagram (Betaflight order)
 
       front
  CW -->   <-- CCW
-     4     2 
+    M4     M2 
       \ ^ /
        |X|
       / - \
-     3     1 
+    M3     M1 
 CCW -->   <-- CW
 
-                                        M1234
-Pitch up (stick back)   (front+ back-)   -+-+
-Roll right              (left+ right-)   --++
-Yaw right               (CCW+ CW-)       -++-
+Mixer:
+
+Roll right            ==> +left_motors. -right_motors ==> -m1 -m2 +m3 +m4 ==> 1st column of mix[][]
+Pitch up (stick back) ==> +front motors, -back motors ==> -m1 +m2 -m3 +m4 ==> 2nd column of mix[][]
+Yaw right             ==> +CCW motors, -CW motors     ==> -m1 +m2 +m3 -m4 ==> 3rd column of mix[][]
 */
+  // Quad mix - the mix matrix maps PID [roll,pitch,yaw,throttle] to outputs [motor1,2,3,4]
+  float const mix[4][4] = {
+    {-1, -1, -1, +1},
+    {-1, +1, +1, +1},
+    {+1, -1, +1, +1},
+    {+1, +1, -1, +1}
+  };
+
+  /* Example mix for a Quad with motor rotation direction reversed, i.e. props rotate outwards at front of drone -> mix with 3rd column (yaw) reversed
+  float const mix[4][4] = {
+    {-1, -1, +1, +1},
+    {-1, +1, -1, +1},
+    {+1, -1, -1, +1},
+    {+1, +1, +1, +1}
+  }; */
 
   // IMPORTANT: This is a safety feature to remind the pilot to disarm.
   // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed() == false
-  float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
+  float thr_in = constrain(pid.throttle.sum, 0, 1);
+  float thr = armed_min_throttle + (1 - armed_min_throttle) * thr_in; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
+  thr = constrain(thr, armed_min_throttle, 1);
 
   if(rcl.throttle == 0) {
     //if throttle idle, then run props at low speed without applying PID. This allows for stick commands for arm/disarm.
@@ -223,10 +286,15 @@ Yaw right               (CCW+ CW-)       -++-
     out.set_output(motor_outputs[2], thr);
     out.set_output(motor_outputs[3], thr);
   }else{
-    // Quad mixing
-    out.set_output(motor_outputs[0], thr - pid.pitch.sum - pid.roll.sum - pid.yaw.sum); //M1 Back Right CW
-    out.set_output(motor_outputs[1], thr + pid.pitch.sum - pid.roll.sum + pid.yaw.sum); //M2 Front Right CCW
-    out.set_output(motor_outputs[2], thr - pid.pitch.sum + pid.roll.sum + pid.yaw.sum); //M3 Back Left CCW
-    out.set_output(motor_outputs[3], thr + pid.pitch.sum + pid.roll.sum - pid.yaw.sum); //M4 Front Left CW
+    // Apply mixer
+    float mot1_mix = mix[0][0] * pid.roll.sum + mix[0][1] * pid.pitch.sum + mix[0][2] * pid.yaw.sum + mix[0][3] * thr; // nominal range [-1 to 1]
+    float mot2_mix = mix[1][0] * pid.roll.sum + mix[1][1] * pid.pitch.sum + mix[1][2] * pid.yaw.sum + mix[1][3] * thr; // nominal range [-1 to 1]
+    float mot3_mix = mix[2][0] * pid.roll.sum + mix[2][1] * pid.pitch.sum + mix[2][2] * pid.yaw.sum + mix[2][3] * thr; // nominal range [-1 to 1]
+    float mot4_mix = mix[3][0] * pid.roll.sum + mix[3][1] * pid.pitch.sum + mix[3][2] * pid.yaw.sum + mix[3][3] * thr; // nominal range [0 to 1]
+
+    out.set_output(motor_outputs[0], mot1_mix); //M1 Back Right CW
+    out.set_output(motor_outputs[1], mot2_mix); //M2 Front Right CCW
+    out.set_output(motor_outputs[2], mot3_mix); //M3 Back Left CCW
+    out.set_output(motor_outputs[3], mot4_mix); //M4 Front Left CW
   }
 }

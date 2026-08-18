@@ -50,8 +50,8 @@ public:
     return gizmo;
   }
 
-  bool update(float *x, float *y, float *z) override {
-    sensor->read(x,y,z);
+  bool update_nwu(float *n, float *w, float *u) override {
+    sensor->read(n, w, u);
     return true;
   }
 

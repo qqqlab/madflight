@@ -34,7 +34,14 @@ If things do not work as expected, have a good look at the startup messages!
 
 const char madflight_config[] = R""(
 
-//flightmode mapping from 6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
+//--- RCL --- Remote Controller Link (modify as required)
+rcl_gizmo      CRSF  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
+rcl_ser_bus    0  
+rcl_num_ch     16
+rcl_deadband   0
+pin_rcl_ppm   -1
+
+//flightmode mapping from 2/3/6-pos switch to flight mode (simulates a 2-pos switch: RATE/ANGLE)
 rcl_flt0 RATE
 rcl_flt1 RATE
 rcl_flt2 RATE
@@ -53,14 +60,6 @@ rcl_flt5 ANGLE
 //imu_i2c_adr     0    // i2c: enter decimal i2c address, not hex (use 0 for default i2c address)
 
 // IMPORTANT: the IMU sensor should be the ONLY sensor on the selected bus, interrupt pin is required
-
-
-//--- RCL --- Remote Controller Link  (use serial bus -OR- ppm pin)
-//rcl_gizmo      NONE  // options: NONE, MAVLINK, CRSF, SBUS, DSM, PPM
-//rcl_ser_bus   -1     // serial
-//pin_rcl_ppm   -1     // ppm
-//rcl_num_ch     8     // serial and ppm: number of channels
-//rcl_deadband   0     // serial and ppm: center stick deadband
 
 //--- BAR --- Barometer
 //bar_gizmo      NONE  // options: NONE, BMP280, BMP388, BMP390, BMP580, HP203B, MS5611
@@ -162,6 +161,48 @@ rcl_flt5 ANGLE
 //pin_out13     -1
 //pin_out14     -1
 //pin_out15     -1
+
+//reset PID parameters to default (remove/update this section if you want to use your own settings)
+pid_gizmo        BASIC
+pid_angl_mult    -1.000000
+pid_filt0_freq   -1.000000
+pid_filt0_q      -1.000000
+pid_filt0_type   NONE
+pid_filt1_freq   -1.000000
+pid_filt1_q      -1.000000
+pid_filt1_type   NONE
+pid_filt2_freq   -1.000000
+pid_filt2_q      -1.000000
+pid_filt2_type   NONE
+pid_filt3_freq   -1.000000
+pid_filt3_q      -1.000000
+pid_filt3_type   NONE
+pid_i_limit      -1.000000
+pid_ka0          -1.000000
+pid_ka1          -1.000000
+pid_ka2          -1.000000
+pid_ka3          -1.000000
+pid_kb0          -1.000000
+pid_kb1          -1.000000
+pid_kb2          -1.000000
+pid_kb3          -1.000000
+pid_kd0          -1.000000
+pid_kd1          -1.000000
+pid_kd2          -1.000000
+pid_kd3          -1.000000
+pid_ki0          -1.000000
+pid_ki1          -1.000000
+pid_ki2          -1.000000
+pid_ki3          -1.000000
+pid_kp0          -1.000000
+pid_kp1          -1.000000
+pid_kp2          -1.000000
+pid_kp3          -1.000000
+pid_pit_angl_lim -1.000000
+pid_pit_rate_lim -1.000000
+pid_rol_angl_lim -1.000000
+pid_rol_rate_lim -1.000000
+pid_yaw_rate_lim -1.000000
 
 )""; // End of madflight_config
 

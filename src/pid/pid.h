@@ -34,7 +34,8 @@ struct PidStatePID_s {
     float a = 0;
     float b = 0;
     float sum = 0;
-    float setpoint = 0; //for debugging
+    float setpoint = 0;
+    float actual = 0;
 };
 
 struct __attribute__((aligned(4))) PidState {
@@ -44,6 +45,7 @@ struct __attribute__((aligned(4))) PidState {
     PidStatePID_s roll;
     PidStatePID_s pitch;
     PidStatePID_s yaw;
+    PidStatePID_s throttle;
 };
 
 class PidGizmo {

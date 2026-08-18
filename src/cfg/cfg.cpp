@@ -323,7 +323,7 @@ bool CfgClass::_set_param(int i, float val, bool publish) {
   }
   if(publish && changed) {
     pid.load_param(); //force PID to reload parameters
-    bbx.log_parm(Cfg::param_list[i].name, val, 0); //log parameter to BBX
+    bbx.log_parm(Cfg::param_list[i].name, val, Cfg::param_list[i].defval); //log parameter to BBX
   }
   return true;
 }
@@ -416,6 +416,8 @@ void CfgClass::save() {
   if(_is_board_and_config_loaded) hdr.board_and_config_crc = _calc_board_and_config_crc();
   //hdr._reserved1 = 0,0,0,...
 
+  Serial.printf("CFG: Saving to EEPROM: board_and_config_crc=%X\n", hdr.board_and_config_crc);
+
   //write header
   for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
     uint8_t byte = ((uint8_t*)&hdr)[i];
@@ -452,7 +454,7 @@ void CfgClass::_load_from_string(const char *batch) {
     if ( c=='\r' || c=='\n' || c==0 ) { //end of line, or end of string
       lineno++;
       if(!_load_cmdline(cmdline)) {
-        Serial.printf(" while processing line number %d: %s\n", lineno, cmdline.c_str());
+        Serial.printf("=== ERROR while processing line number %d: %s\n", lineno, cmdline.c_str());
       }
       cmdline = "";
       if(c==0) return;
@@ -482,10 +484,6 @@ void CfgClass::clear() {
 //#define MF_DEBUG_CFG2
 
 void CfgClass::_load() {
-  _is_board_and_config_loaded = false;
-
-  Serial.print("CFG: Loading");
-
   //====================================
   // Step 1: load defaults
   //====================================
@@ -515,34 +513,35 @@ void CfgClass::_load() {
   || eeprom_hdr.header3 != CFG_HDR3 
   || eeprom_hdr.len < sizeof(CfgHeader) + 8 
   || eeprom_hdr.len > 4096) {
-    Serial.println(" - EEPROM skipped (Header invalid)");
+    Serial.println("CFG: Loading EEPROM skipped (Header invalid)");
   }else{
-    uint32_t datalen = eeprom_hdr.len - 4; //length of header+param (4=crc)
-    uint32_t paramlen = datalen - sizeof(CfgHeader); //length of param
+    uint32_t eeprom_datalen = eeprom_hdr.len - 4; //length of header+param (4=crc)
+    uint32_t eeprom_paramlen = eeprom_datalen - sizeof(CfgHeader); //length of param
 
     //check crc
     uint32_t crc = 0xFFFFFFFF;
-    for(uint32_t i = 0; i < datalen; i++) { 
+    for(uint32_t i = 0; i < eeprom_datalen; i++) { 
       uint8_t byte = hal_eeprom_read(i);
       crc = tbx_crc32(&byte, 1, crc);
     }
     uint32_t crc_eeprom;
     uint8_t *crc_eeprom_buf = (uint8_t*)&crc_eeprom;
     for(uint32_t i = 0; i < 4; i++) { //4=crc
-      crc_eeprom_buf[i] = hal_eeprom_read(datalen + i);
+      crc_eeprom_buf[i] = hal_eeprom_read(eeprom_datalen + i);
     }
     if(crc != crc_eeprom) {
-      Serial.print(" - EEPROM skipped (CRC invalid)");
+      Serial.print("CFG: Loading EEPROM skipped (CRC invalid)");
+      eeprom_hdr.board_and_config_crc = 0;
     }else{
       //load param from eeprom
       CfgParam *param = this;
       uint8_t *param_buf = (uint8_t*)param;
       uint32_t num_bytes = sizeof(CfgParam);
-      if(num_bytes > paramlen) num_bytes = paramlen; //minimum of CfgParam and eeprom bytes
+      if(num_bytes > eeprom_paramlen) num_bytes = eeprom_paramlen; //minimum of CfgParam and eeprom bytes
       for(uint32_t i = 0; i<num_bytes; i++) {
         param_buf[i] = hal_eeprom_read(sizeof(CfgHeader) + i);
       }
-      Serial.print(" - EEPROM OK");
+      Serial.println("CFG: Loading EEPROM OK");
     }
   }
 
@@ -555,43 +554,51 @@ void CfgClass::_load() {
   // Step 3: load board+config (if not already applied to eeprom)
   //====================================
   //check board+config crc against board+config crc stored in eeprom
-  if(eeprom_hdr.board_and_config_crc == _calc_board_and_config_crc()) {
+  uint32_t prog_crc = _calc_board_and_config_crc();
+  Serial.printf("CFG: board_and_config_crc eeprom=%X program=%X\n", eeprom_hdr.board_and_config_crc, prog_crc);
+  if(eeprom_hdr.board_and_config_crc == prog_crc) {
     //the board+config parameters were already applied (and potentially modified since, so do not re-apply)
-    Serial.println(" - madflight_board+config skipped (EEPROM is newer)");
-    return;
-  }
-
-  //load board + config
-  if(_board && _board[0]) _load_from_string(_board);
-  if(_config && _config[0]) _load_from_string(_config);
-  Serial.println(" - madflight_board+config OK");
-  _is_board_and_config_loaded = true;
-
-  #ifdef MF_DEBUG_CFG2
-    // debug crc
-    Serial.printf("\n");
-    Serial.printf("eeprom_board_and_config_crc = %X\n", eeprom_board_and_config_crc);
-    Serial.printf("madflight_board+config_crc  = %X\n", crc);
-    Serial.printf("%s\n", (hdr.board_and_config_crc == crc ? "MATCHED" : "NOT MATCHED"));
+    Serial.println("CFG: madflight_board + madflight_config skipped (EEPROM is newer)");
+  }else{
+    //load board + config
     if(_board && _board[0]) {
-      uint32_t crc = 0xFFFFFFFF;
-      crc = tbx_crc32((const uint8_t*)_board, strlen(_board), crc);
-      Serial.printf("_board: crc=%X len=%d start=\"", crc, strlen(_board));
-      for(int i=0;i<40;i++) Serial.print(_board[i]);
-      Serial.print("\"\n");
+      Serial.println("CFG: Loading madflight_board");
+      _load_from_string(_board);
     }
     if(_config && _config[0]) {
-      uint32_t crc = 0xFFFFFFFF;
-      crc = tbx_crc32((const uint8_t*)_config, strlen(_config), crc);
-      Serial.printf("config:crc=%X len=%d start=\"",crc, strlen(_config));
-      for(int i=0;i<40;i++) Serial.print(_config[i]);
-      Serial.print("\"\n");
+      Serial.println("CFG: Loading madflight_config");
+      _load_from_string(_config);
     }
-  #endif
-  #ifdef MF_DEBUG_CFG1
-    Serial.printf("\nDEBUG: final\n");
-    MF_DEBUG_DUMP();
-  #endif
+    Serial.println("CFG: madflight_board + madflight_config OK");
+
+    #ifdef MF_DEBUG_CFG2
+      // debug crc
+      Serial.printf("\n");
+      Serial.printf("eeprom_board_and_config_crc = %X\n", eeprom_board_and_config_crc);
+      Serial.printf("madflight_board+config_crc  = %X\n", crc);
+      Serial.printf("%s\n", (hdr.board_and_config_crc == crc ? "MATCHED" : "NOT MATCHED"));
+      if(_board && _board[0]) {
+        uint32_t crc = 0xFFFFFFFF;
+        crc = tbx_crc32((const uint8_t*)_board, strlen(_board), crc);
+        Serial.printf("_board: crc=%X len=%d start=\"", crc, strlen(_board));
+        for(int i=0;i<40;i++) Serial.print(_board[i]);
+        Serial.print("\"\n");
+      }
+      if(_config && _config[0]) {
+        uint32_t crc = 0xFFFFFFFF;
+        crc = tbx_crc32((const uint8_t*)_config, strlen(_config), crc);
+        Serial.printf("config:crc=%X len=%d start=\"",crc, strlen(_config));
+        for(int i=0;i<40;i++) Serial.print(_config[i]);
+        Serial.print("\"\n");
+      }
+    #endif
+    #ifdef MF_DEBUG_CFG1
+      Serial.printf("\nDEBUG: final\n");
+      MF_DEBUG_DUMP();
+    #endif
+  }
+
+  _is_board_and_config_loaded = true;
 }
 
 //returns true on success

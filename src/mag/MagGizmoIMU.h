@@ -25,22 +25,39 @@ SOFTWARE.
 #pragma once
 
 #include "mag.h"
-#include "../hal/MF_I2C.h"
+#include "../imu/imu.h"
 #include "../tbx/common.h"
 
 class MagGizmoIMU : public MagGizmo {
 private:
-  MagState* state;
-  uint32_t last_ts;
+  float n = 0;
+  float w = 0;
+  float u = 0;
+  uint32_t ts = 0;
+  uint32_t last_ts = 0;
 public:
-  const char* name() override {return "IMU";}
-  MagGizmoIMU(MagState* state) {
-    this->state = state;
+
+  bool push_nwu_from_imu(float n, float w, float u) {
+    if(n != this->n || w != this->w || u != this->u ) {
+      this->n = n;
+      this->w = w;
+      this->u = u;
+      ts = micros();
+      return true;
+    }
+    return false;
   }
-  bool update(float *x, float *y, float *z) override {
-    //data is pushed by imu, nothing to do here but check for change in ts
-    bool updated = (last_ts != state->ts);
-    last_ts = state->ts;
-    return updated;
+
+  const char* name() override {return "IMU";}
+
+  MagGizmoIMU() {}
+
+  bool update_nwu(float *n, float *w, float *u) override {
+    if(last_ts == ts) return false;
+    *n = this->n;
+    *w = this->w;
+    *u = this->u;
+    last_ts = ts;
+    return true;
   }
 };
