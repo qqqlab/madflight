@@ -1,10 +1,10 @@
 /*#########################################################################################################################
 
-Minimal quadcopter demo program for madflight Arduino ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32 Flight Controller
+Quadcopter demo program for madflight Arduino ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32 Flight Controller
 
 ###########################################################################################################################
 
-See http://madflight.com for detailed description
+See http://madflight.com for setup instructions and modify the USER-SPECIFIED VARIABLES section below
 
 Required Hardware
 
@@ -172,22 +172,40 @@ Motor order diagram (Betaflight order)
 
       front
  CW -->   <-- CCW
-     4     2 
+    M4     M2 
       \ ^ /
        |X|
       / - \
-     3     1 
+    M3     M1 
 CCW -->   <-- CW
 
-                                        M1234
-Pitch up (stick back)   (front+ back-)   -+-+
-Roll right              (left+ right-)   --++
-Yaw right               (CCW+ CW-)       -++-
+Mixer:
+
+Roll right            ==> +left_motors. -right_motors ==> -m1 -m2 +m3 +m4 ==> 1st column of mix[][]
+Pitch up (stick back) ==> +front motors, -back motors ==> -m1 +m2 -m3 +m4 ==> 2nd column of mix[][]
+Yaw right             ==> +CCW motors, -CW motors     ==> -m1 +m2 +m3 -m4 ==> 3rd column of mix[][]
 */
+  // Quad mix - the mix matrix maps PID [roll,pitch,yaw,throttle] to outputs [motor1,2,3,4]
+  float const mix[4][4] = {
+    {-1, -1, -1, +1},
+    {-1, +1, +1, +1},
+    {+1, -1, +1, +1},
+    {+1, +1, -1, +1}
+  };
+
+  /* Example mix for a Quad with motor rotation direction reversed, i.e. props rotate outwards at front of drone -> mix with 3rd column (yaw) reversed
+  float const mix[4][4] = {
+    {-1, -1, +1, +1},
+    {-1, +1, -1, +1},
+    {+1, -1, -1, +1},
+    {+1, +1, +1, +1}
+  }; */
 
   // IMPORTANT: This is a safety feature to remind the pilot to disarm.
   // Set motor outputs to at least armed_min_throttle, to keep at least one prop spinning when armed. The [out] module will disable motors when out.armed() == false
-  float thr = armed_min_throttle + (1 - armed_min_throttle) * rcl.throttle; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
+  float thr_in = constrain(pid.throttle.sum, 0, 1);
+  float thr = armed_min_throttle + (1 - armed_min_throttle) * thr_in; //shift motor throttle range from [0.0 .. 1.0] to [armed_min_throttle .. 1.0]
+  thr = constrain(thr, armed_min_throttle, 1);
 
   if(rcl.throttle == 0) {
     //if throttle idle, then run props at low speed without applying PID. This allows for stick commands for arm/disarm.
@@ -196,10 +214,15 @@ Yaw right               (CCW+ CW-)       -++-
     out.set_output(motor_outputs[2], thr);
     out.set_output(motor_outputs[3], thr);
   }else{
-    // Quad mixing
-    out.set_output(motor_outputs[0], thr - pid.pitch.sum - pid.roll.sum - pid.yaw.sum); //M1 Back Right CW
-    out.set_output(motor_outputs[1], thr + pid.pitch.sum - pid.roll.sum + pid.yaw.sum); //M2 Front Right CCW
-    out.set_output(motor_outputs[2], thr - pid.pitch.sum + pid.roll.sum + pid.yaw.sum); //M3 Back Left CCW
-    out.set_output(motor_outputs[3], thr + pid.pitch.sum + pid.roll.sum - pid.yaw.sum); //M4 Front Left CW
+    // Apply mixer
+    float mot1_mix = mix[0][0] * pid.roll.sum + mix[0][1] * pid.pitch.sum + mix[0][2] * pid.yaw.sum + mix[0][3] * thr; // nominal range [-1 to 1]
+    float mot2_mix = mix[1][0] * pid.roll.sum + mix[1][1] * pid.pitch.sum + mix[1][2] * pid.yaw.sum + mix[1][3] * thr; // nominal range [-1 to 1]
+    float mot3_mix = mix[2][0] * pid.roll.sum + mix[2][1] * pid.pitch.sum + mix[2][2] * pid.yaw.sum + mix[2][3] * thr; // nominal range [-1 to 1]
+    float mot4_mix = mix[3][0] * pid.roll.sum + mix[3][1] * pid.pitch.sum + mix[3][2] * pid.yaw.sum + mix[3][3] * thr; // nominal range [0 to 1]
+
+    out.set_output(motor_outputs[0], mot1_mix); //M1 Back Right CW
+    out.set_output(motor_outputs[1], mot2_mix); //M2 Front Right CCW
+    out.set_output(motor_outputs[2], mot3_mix); //M3 Back Left CCW
+    out.set_output(motor_outputs[3], mot4_mix); //M4 Front Left CW
   }
 }

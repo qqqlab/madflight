@@ -157,6 +157,8 @@ void Bbx::log_baro() {
                                     //float Offset: raw adjustment of barometer altitude, zeroed on calibration, possibly set by GCS
                                     //float GndTemp: temperature on ground, specified by parameter or measured while on ground
                                     //uint8_t Health: true if barometer is considered healthy
+  bl.flt("h",   alt.getH(),   1, "m");
+  bl.flt("v",   alt.getV(),   1, "m/s");
 } 
 
 void Bbx::log_bat() {
@@ -266,44 +268,25 @@ void Bbx::log_imu(ImuState *imu_s) {
   }
 }
 
-//PID 
+//PID
+static void log_pid_item(const char* name, uint32_t ts, PidStatePID_s *p) {
+    BinLog bl(name);
+    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
+    bl.TimeUS(ts);
+    bl.flt("set", p->setpoint);
+    bl.flt("act", p->actual); 
+    bl.flt("sum", p->sum);
+    bl.flt("p",   p->p);
+    bl.flt("i",   p->i);
+    bl.flt("d",   p->d);
+    bl.flt("a",   p->a);
+    bl.flt("b",   p->b);
+}
 void Bbx::log_pid(PidState *pid_s) {
-  {
-    BinLog bl("PIDR");
-    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-    bl.TimeUS(pid_s->ts);
-    bl.i16("setpoint", pid_s->roll.setpoint * 1000, 1e-3);
-    bl.i16("sum", pid_s->roll.sum * 1000, 1e-3);
-    bl.i16("p", pid_s->roll.p * 1000, 1e-3);
-    bl.i16("i", pid_s->roll.i * 1000, 1e-3);
-    bl.i16("d", pid_s->roll.d * 1000, 1e-3);
-    bl.i16("a", pid_s->roll.a * 1000, 1e-3);
-    bl.i16("b", pid_s->roll.b * 1000, 1e-3);
-  }
-  {
-    BinLog bl("PIDP");
-    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-    bl.TimeUS(pid_s->ts);
-    bl.i16("setpoint", pid_s->pitch.setpoint * 1000, 1e-3);
-    bl.i16("sum", pid_s->pitch.sum * 1000, 1e-3);
-    bl.i16("p", pid_s->pitch.p * 1000, 1e-3);
-    bl.i16("i", pid_s->pitch.i * 1000, 1e-3);
-    bl.i16("d", pid_s->pitch.d * 1000, 1e-3);
-    bl.i16("a", pid_s->pitch.a * 1000, 1e-3);
-    bl.i16("b", pid_s->pitch.b * 1000, 1e-3);    
-  }
-  {
-    BinLog bl("PIDY");
-    bl.keepFree = QUEUE_LENGTH/4; //keep 25% of queue free for other messages
-    bl.TimeUS(pid_s->ts);
-    bl.i16("setpoint", pid_s->yaw.setpoint * 1000, 1e-3);
-    bl.i16("sum", pid_s->yaw.sum * 1000, 1e-3);
-    bl.i16("p", pid_s->yaw.p * 1000, 1e-3);
-    bl.i16("i", pid_s->yaw.i * 1000, 1e-3);
-    bl.i16("d", pid_s->yaw.d * 1000, 1e-3);
-    bl.i16("a", pid_s->yaw.a * 1000, 1e-3);
-    bl.i16("b", pid_s->yaw.b * 1000, 1e-3);
-  }
+  log_pid_item("PIDR", pid_s->ts, &pid_s->roll);
+  log_pid_item("PIDP", pid_s->ts, &pid_s->pitch);
+  log_pid_item("PIDY", pid_s->ts, &pid_s->yaw);
+  log_pid_item("PIDT", pid_s->ts, &pid_s->throttle);
 }
 
 //MODE - flight mode
@@ -330,11 +313,12 @@ void Bbx::log_parm(const char* name, float value, float default_value) {
 void Bbx::log_sys() {
   BinLog bl("SYS");
   bl.TimeUS();
-  bl.u32("BBXc", BinLogWriter::msgCnt); //bbx message count
-  bl.u16("BBXm", (BinLogWriter::msgCnt > 0 ? (1000 * BinLogWriter::missCnt) / BinLogWriter::msgCnt : 0), 0.1, "%"); //bbx miss %
-  bl.u16("BBXu", BinLogWriter::stat_max_used); //bbx max used queue spaces
-  bl.u32("IMUc", imu.interrupt_cnt); //imu interrupt count
-  bl.u16("IMUm", (imu.interrupt_cnt > 0 && imu.interrupt_cnt > imu.update_cnt + 1 ? (1000 * (imu.interrupt_cnt - imu.update_cnt)) / imu.interrupt_cnt : 0), 0.1, "%"); //imu miss %
+  bl.u32("BBX", BinLogWriter::msgCnt); //bbx message count
+  bl.u32("BBXmiss", BinLogWriter::missCnt); //bbx miss count
+  bl.u16("BBXused", BinLogWriter::stat_max_used); //bbx max used queue spaces
+  BinLogWriter::stat_max_used = 0;
+  bl.u32("IMU", imu.interrupt_cnt); //imu interrupt count
+  bl.u32("IMUmiss", (imu.interrupt_cnt - imu.update_cnt > 1 ? imu.interrupt_cnt - imu.update_cnt : 0)); //imu miss count
 }
 
 //OUT - outputs (motors, servos)

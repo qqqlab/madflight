@@ -45,7 +45,7 @@ bar_i2c_bus    0
 
 //--- MAG --- Magnetometer
 mag_gizmo      BMM150 // options: NONE, QMC6309, QMC5883L, QMC5883P, RM3100, BMM150
-mag_align      CW90   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
+mag_align      CW90FLIP   // options: CW0, CW90, CW180, CW270, CW0FLIP, CW90FLIP, CW180FLIP, CW270FLIP
 mag_i2c_adr    0x10
 mag_i2c_bus    0
 

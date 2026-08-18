@@ -28,51 +28,54 @@ SOFTWARE.
 
 #include "../alt.h" //AltEst
 #include "../../bar/bar.h"
-#include "../../tbx/common.h" //lowpass_to_beta()
+#include "../../tbx/MF_Filter.h"
 
-class AltEst_Baro : public AltEst {
+class AltEst_Bar : public AltEst {
 public:
   void setup(float alt) {
     Serial.printf("ALT: BARO\n");
 
     float sample_rate = bar.config.sample_rate;
     float filterHHertz = 2.0;
-    float filterVHertz = 0.5;
+    float filterVHertz = 2.0;
     
-    B_h = lowpass_to_beta(filterHHertz, sample_rate);
-    B_v = lowpass_to_beta(filterVHertz, sample_rate);
+    MF_Filter::setup(filter_h, MF_FilterType::mf_PT1, sample_rate, filterHHertz, -1);
+    MF_Filter::setup(filter_v, MF_FilterType::mf_PT1, sample_rate, filterVHertz, -1);
+    
     h = alt;
     v = 0;
     ts = 0;
   }
 
-  void updateAccelUp(float a, uint32_t ts) { (void)a; (void)ts; }; //a: accel up in [m/s^2], ts: timestamp in [us]
+  void updateAccelUp(float a, uint32_t ts) override { (void)a; (void)ts; }; //a: accel up in [m/s^2], ts: timestamp in [us]
   
-  void updateBaroAlt(float alt, uint32_t ts) { //altitude: barometric altitude in [m], ts: timestamp in [us]
+  void updateBarAlt(float alt, uint32_t ts) override { //altitude: barometric altitude in [m], ts: timestamp in [us]
     if(this->ts != 0) {
       float dt = 1e-6 * (ts - this->ts);
-      float hnew = h + B_h * (alt - h); //Low-pass filtered altitude
-      float vnew = (hnew - h) / dt;
-      v += B_v * (vnew - v); //Low-pass filtered velocity
-      h = hnew;
+      h = filter_h->apply(alt); //Low-pass filtered altitude
+      if(dt > 0) v = filter_v->apply((alt - alt_prev) / dt); //Low-pass filtered velocity
+      alt_prev = alt;
+    }else{
+      h = alt;
+      v = 0;
+      alt_prev = alt;
     }
     this->ts = ts;
   }
   
-  float getH() {return h;} //altitude estimate in [m]
-  float getV() {return v;} //vertical up speed (climb rate) estimate in [m/s]
+  float getH() override {return h;} //altitude estimate in [m]
+  float getV() override {return v;} //vertical up speed (climb rate) estimate in [m/s]
 
   void toString(char *s) {
-    int n = 0;
-    n += sprintf(s+n, "alt.h:%.2f\t", h);
-    n += sprintf(s+n, "alt.v:%+.2f\t", v);
+    if(s) s[0] = 0;
   }
-  
+
   float h = 0;    // Filtered approximate International Standard Atmosphere (ISA) Altitude in [m]
   float v = 0;    // Filtered vertical speed in [m/s], up is positive
 
 protected:
-  float B_h = 1.0; //alt filter constant
-  float B_v = 1.0; //vz filter constant
+  MF_Filter *filter_h = nullptr;
+  MF_Filter *filter_v = nullptr;
   uint32_t ts = 0;
+  float alt_prev = 0;
 };

@@ -170,7 +170,7 @@ bool Rcl::update() { //returns true if channel pwm data was updated
     const float _roll   =  st[ROL].inv * _ChannelNormalize(pwm[st[ROL].ch], st[ROL].min, st[ROL].mid, st[ROL].max, cfg.rcl_deadband); // output: -1 (roll left, st left) to 1 (roll right, st right)
     const float _pitch  = -st[PIT].inv * _ChannelNormalize(pwm[st[PIT].ch], st[PIT].min, st[PIT].mid, st[PIT].max, cfg.rcl_deadband); // output: -1 (pitch down, st back) to 1 (pitch up, st forward)
     const float _yaw    =  st[YAW].inv * _ChannelNormalize(pwm[st[YAW].ch], st[YAW].min, st[YAW].mid, st[YAW].max, cfg.rcl_deadband); // output: -1 (yaw left, st left) to 1 (yaw right, st right)
-    const float _vspeed =  st[THR].inv * _ChannelNormalize(pwm[st[THR].ch], st[THR].min, st[THR].mid, st[THR].max, cfg.rcl_deadband); // output: -1 (descent, st back) to 1 (ascent, st forward)
+    const float _vspeed =  st[THR].inv * _ChannelNormalize(pwm[st[THR].ch], st[THR].min, st[THR].mid, st[THR].max, abs(st[THR].max - st[THR].min) / 10); // 0 = +/-10% center deadband, -1 = descent, st back, 1 = ascent, st forward
     roll = _applyExpo(0, _roll);
     pitch = _applyExpo(1, _pitch);
     yaw = _applyExpo(2, _yaw);

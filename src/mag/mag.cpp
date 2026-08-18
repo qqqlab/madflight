@@ -94,12 +94,13 @@ bool Mag::update() {
   bool updated = (gizmo != nullptr);
   updated = updated && schedule.interval(_samplePeriod); //wait for next sample interval
 
-  updated = updated && gizmo->update(&raw[0], &raw[1], &raw[2]);
+  float nwu[3]; //uncalibrated NWU values
+  updated = updated && gizmo->update_nwu(&nwu[0], &nwu[1], &nwu[2]);
 
-  //Correct the mag values with the calibration values
-  float _mx = (raw[0] - config.mag_cal_x[0]) * config.mag_cal_sx[0];
-  float _my = (raw[1] - config.mag_cal_x[1]) * config.mag_cal_sx[1];
-  float _mz = (raw[2] - config.mag_cal_x[2]) * config.mag_cal_sx[2];
+  //Correct the NWU mag values with the calibration values, and convert to NED (N=+N, E=-W, D=-U)
+  float _mx = +(nwu[0] - config.mag_cal_x[0]) * config.mag_cal_sx[0];
+  float _my = -(nwu[1] - config.mag_cal_x[1]) * config.mag_cal_sx[1];
+  float _mz = -(nwu[2] - config.mag_cal_x[2]) * config.mag_cal_sx[2];
 
   if(updated) {
     //handle rotation for different mounting positions
@@ -155,6 +156,59 @@ bool Mag::update() {
   return updated;
 }
 
+void Mag::convert_to_raw(float m[3]) {
+  //unrotate
+  float b[3];
+  switch(*config.mag_align) {
+    case Cfg::mag_align_enum::mf_CW0 :
+      b[0] = +m[0]; //mx = +_mx;
+      b[1] = +m[1]; //my = +_my; 
+      b[2] = +m[2]; //mz = +_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW90 :
+      b[1] = -m[0]; //mx = -_my;
+      b[0] = +m[1]; //my = +_mx; 
+      b[2] = +m[2]; //mz = +_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW180 :
+      b[0] = -m[0]; //mx = -_mx;
+      b[1] = -m[1]; //my = -_my;
+      b[2] = +m[2]; //mz = +_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW270 :
+      b[1] = +m[0]; //mx = +_my;
+      b[0] = -m[1]; //my = -_mx;
+      b[2] = +m[2]; //mz = +_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW0FLIP :
+      b[0] = +m[0]; //mx = +_mx;
+      b[1] = -m[1]; //my = -_my; 
+      b[2] = -m[2]; //mz = -_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW90FLIP :
+      b[1] = +m[0]; //mx = +_my;
+      b[0] = +m[1]; //my = +_mx;
+      b[2] = -m[2]; //mz = -_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW180FLIP :
+      b[0] = -m[0]; //mx = -_mx;
+      b[1] = +m[1]; //my = +_my;
+      b[2] = -m[2]; //mz = -_mz;
+      break;
+    case Cfg::mag_align_enum::mf_CW270FLIP :
+      b[1] = -m[0]; //mx = -_my;
+      b[0] = -m[1]; //my = -_mx;
+      b[2] = -m[2]; //mz = -_mz;
+      break;
+  }
+
+  //Undo: Correct the NWU mag values with the calibration values, and convert to NED (N=+N, E=-W, D=-U)
+  m[0] = (+b[0] / config.mag_cal_sx[0] + config.mag_cal_x[0]); //float _mx = +(raw[0] - config.mag_cal_x[0]) * config.mag_cal_sx[0];
+  m[1] = (-b[1] / config.mag_cal_sx[1] + config.mag_cal_x[1]); //float _my = -(raw[1] - config.mag_cal_x[1]) * config.mag_cal_sx[1];
+  m[2] = (-b[2] / config.mag_cal_sx[2] + config.mag_cal_x[2]); //float _mz = -(raw[2] - config.mag_cal_x[2]) * config.mag_cal_sx[2];
+}
+
+
 void Mag::cli_calibrate() {
   float bias[3], scale[3];
 
@@ -198,12 +252,15 @@ bool Mag::_calibrate(float bias[3], float scale[3]) {
   //start subscription
   auto mag_sub = MsgSubscription<MagState>("calmag", &mag.topic);
   MagState state;
-  float *m = state.raw;
+  float *m = &state.mx;
 
   // get starting sample
   uint32_t ts = millis();
   while(millis() - ts < 1000) {
-    if(mag_sub.pull_next(&state)) break;
+    if(mag_sub.pull_next(&state)) {
+      convert_to_raw(m);
+      break;
+    }
   }
 
   //save starting data
@@ -219,6 +276,7 @@ bool Mag::_calibrate(float bias[3], float scale[3]) {
   counter = 0;
   while (counter < maxCounts) {
     if(mag_sub.pull_next(&state)) {
+      convert_to_raw(m);
       if ( m[0] != mlast[0] && m[1] != mlast[1] && m[2] != mlast[2] && m[0] != 0  && m[1] != 0 && m[2] != 0) { //value changed and is not 0,0,0
         for(int axis = 0; axis < 3; axis++) {
           float range_limit = 0.1 * (m_max[axis] - m_min[axis]);

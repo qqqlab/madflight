@@ -174,71 +174,93 @@ static void cli_prcl() {
 }
 
 static void cli_pgyr() {
-  Serial.printf("gx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahr.gx, ahr.gy, ahr.gz);
+  Serial.printf("GYRO\tgx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahr.gx, ahr.gy, ahr.gz);
 }
 
 static void cli_pacc() {
-  Serial.printf("ax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahr.ax, ahr.ay, ahr.az);
+  Serial.printf("ACC\tax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahr.ax, ahr.ay, ahr.az);
 }
 
 static void cli_pmag() {
-  Serial.printf("mx:%+.2f\tmy:%+.2f\tmz:%+.2f\tmtot:%+.2f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz)); 
+  Serial.printf("MAG\tmx:%+.1f\tmy:%+.1f\tmz:%+.1f\ttotal:%+.1f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz));
+  float yaw = -atan2(mag.my, mag.mx) * 180 / M_PI;
+  Serial.printf("compass:%+.1f\t", yaw);
 }
 
 static void cli_pahr() {
   const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left";
   const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
   const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
-  Serial.printf("ahr.roll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
+  Serial.printf("AHRS\troll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
 }
 
 static void cli_pah() {
-  Serial.printf("ah.roll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
+  Serial.printf("AHRS\troll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
 
 static void cli_ppid() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("pid.roll:%+.3f\t",pid_s.roll.sum);
+  Serial.printf("PID\troll:%+.3f\t",pid_s.roll.sum);
   Serial.printf("pitch:%+.3f\t",pid_s.pitch.sum);
   Serial.printf("yaw:%+.3f\t",pid_s.yaw.sum);
+  Serial.printf("throttle:%+.3f\t",pid_s.throttle.sum);
 }
 
 static void cli_ppidr() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("pidr.roll:%+.3f\t",pid_s.roll.sum);
+  Serial.printf("PIDROLL\tsum:%+.3f\t",pid_s.roll.sum);
   Serial.printf("P:%+.3f\t",pid_s.roll.p);
   Serial.printf("I:%+.3f\t",pid_s.roll.i);
   Serial.printf("D:%+.3f\t",pid_s.roll.d);
   Serial.printf("A:%+.3f\t",pid_s.roll.a);
   Serial.printf("B:%+.3f\t",pid_s.roll.b);
+  Serial.printf("set:%+.3f\t",pid_s.roll.setpoint);
+  Serial.printf("act:%+.3f\t",pid_s.roll.actual);
 }
 
 static void cli_ppidp() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("pidp.pitch:%+.3f\t",pid.pitch.sum);
+  Serial.printf("PIDPITCH\tsum:%+.3f\t",pid.pitch.sum);
   Serial.printf("P:%+.3f\t",pid_s.pitch.p);
   Serial.printf("I:%+.3f\t",pid_s.pitch.i);
   Serial.printf("D:%+.3f\t",pid_s.pitch.d);
   Serial.printf("A:%+.3f\t",pid_s.pitch.a);
   Serial.printf("B:%+.3f\t",pid_s.pitch.b);
+  Serial.printf("set:%+.3f\t",pid_s.pitch.setpoint);
+  Serial.printf("act:%+.3f\t",pid_s.pitch.actual);
 }
 
 static void cli_ppidy() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("pidy.yaw:%+.3f\t",pid_s.yaw.sum);
+  Serial.printf("PIDYAW\tsum:%+.3f\t",pid_s.yaw.sum);
   Serial.printf("P:%+.3f\t",pid_s.yaw.p);
   Serial.printf("I:%+.3f\t",pid_s.yaw.i);
   Serial.printf("D:%+.3f\t",pid_s.yaw.d);
   Serial.printf("A:%+.3f\t",pid_s.yaw.a);
   Serial.printf("B:%+.3f\t",pid_s.yaw.b);
+  Serial.printf("set:%+.3f\t",pid_s.yaw.setpoint);
+  Serial.printf("act:%+.3f\t",pid_s.yaw.actual);
+}
+
+static void cli_ppidt() {
+  PidState pid_s;
+  pid.topic.pull_latest(&pid_s); //get a consistent copy
+  Serial.printf("PIDTHROTTLE\tsum:%+.3f\t",pid_s.throttle.sum);
+  Serial.printf("P:%+.3f\t",pid_s.throttle.p);
+  Serial.printf("I:%+.3f\t",pid_s.throttle.i);
+  Serial.printf("D:%+.3f\t",pid_s.throttle.d);
+  Serial.printf("A:%+.3f\t",pid_s.throttle.a);
+  Serial.printf("B:%+.3f\t",pid_s.throttle.b);
+  Serial.printf("set:%+.3f\t",pid_s.throttle.setpoint);
+  Serial.printf("act:%+.3f\t",pid_s.throttle.actual);
 }
 
 static void cli_pout() {
-  Serial.printf("out.armed:%d\t", (int)out.mode());
+  Serial.printf("OUT\tarmed:%d\t", (int)out.mode());
   for(int i = 0; i < OUT_SIZE; i++) {
     if(out.type(i)) {
       Serial.printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
@@ -257,16 +279,16 @@ static void cli_pimu() {
   uint32_t delta_upd = imu.update_cnt - update_cnt_last;
   update_cnt_last = imu.update_cnt;
   int miss_cnt = (int)imu.interrupt_cnt - imu.update_cnt;
-  if(miss_cnt == 1) miss_cnt = 0; //ignore first miss, probably caused by imu_loop still running
+  if(miss_cnt == 1) miss_cnt = 0; //ignore first miss, probably caused by interrupt_cnt updating before update_cnt
   uint32_t now = micros();
   uint32_t dt = now - ts_last;
   ts_last = now;
 
   int hz = imu.config.sample_rate;
-  Serial.printf("samp_hz:%d\t", hz);
+  Serial.printf("IMU\tsamp_hz:%d\t", hz);
 
   if(dt == 0) dt = 1;
-  Serial.printf("imu_loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
+  Serial.printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
 
   int stat_cnt = 1;
   if(imu.stat_cnt > 0) stat_cnt = imu.stat_cnt;
@@ -283,20 +305,31 @@ static void cli_pimu() {
 }
 
 static void cli_pbat() {
-  Serial.printf("bat.v:%.2f\t",bat.v);
-  Serial.printf("bat.i:%+.2f\t",bat.i);
-  Serial.printf("bat.mah:%+.2f\t",bat.mah);
-  Serial.printf("bat.wh:%+.2f\t",bat.wh); 
+  Serial.printf("BAT\tv:%.2f\t",bat.v);
+  Serial.printf("i:%+.2f\t",bat.i);
+  Serial.printf("mah:%+.2f\t",bat.mah);
+  Serial.printf("wh:%+.2f\t",bat.wh); 
 }
 
 static void cli_pbar() {
-  Serial.printf("bar.alt:%.2f\t", bar.alt);
+  Serial.printf("BAT\talt:%.2f\t", bar.alt);
   Serial.printf("press:%.1f\t", bar.press);
   Serial.printf("temp:%.2f\t", bar.temp);
+  Serial.printf("agl:%+.2f\t", bar.alt - bar.ground_level);
+}
+
+static void cli_palt() {
+  Serial.print("ALT\t");
+  char s[100];
+  alt.toString(s);
+  Serial.print(s);
+  Serial.printf("h:%+.2f\t", alt.getH());
+  Serial.printf("v:%+.2f\t", alt.getV());
+  Serial.printf("a:%+.2f\t", ahr.getAccelUp());
 }
 
 static void cli_pgps() {
-  Serial.printf("gps.time:%d\t", (int)gps.time);
+  Serial.printf("GPS\ttime:%d\t", (int)gps.time);
   Serial.printf("fix:%d\t", (int)gps.fix);
   Serial.printf("sat:%d\t", (int)gps.sat);
   Serial.printf("lat:%d\t", (int)gps.lat);
@@ -304,21 +337,13 @@ static void cli_pgps() {
   Serial.printf("alt:%.3f\t", (float)gps.alt/1000.0);
 }
 
-static void cli_palt() {
-  char s[100];
-  alt.toString(s);
-  Serial.print(s);
-  Serial.printf("bar.alt:%.2f\t", bar.alt);
-  Serial.printf("ahr.aup:%.2f\t", ahr.getAccelUp());
-}
-
 static void cli_prdr() {
-  Serial.printf("rdr.dist:%.3f\t", rdr.dist);
+  Serial.printf("RDR\tdist:%.3f\t", rdr.dist);
   Serial.printf("upd_cnt:%d\t", (int)rdr.update_cnt);  
 }
 
 static void cli_pofl() {
-  Serial.printf("ofl.dx:%.3f\t", ofl.dx);
+  Serial.printf("OFL\tdx:%.3f\t", ofl.dx);
   Serial.printf("dy:%.3f\t", ofl.dy);
   Serial.printf("x:%.3f\t", ofl.x);
   Serial.printf("y:%.3f\t", ofl.y);
@@ -344,7 +369,7 @@ bool Cli::add_print_command(const char *cmd, const char *info, void (*function)(
   return true;
 };
 
-#define CLI_PRINT_FLAG_COUNT 20
+#define CLI_PRINT_FLAG_COUNT 21
 
 static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"po",     "Overview", cli_po},
@@ -360,6 +385,7 @@ static const struct cli_print_s cli_print_options[CLI_PRINT_FLAG_COUNT] = {
   {"ppidr",  "PID Roll output (expected: -1 to 1)", cli_ppidr},
   {"ppidp",  "PID Pitch output (expected: -1 to 1)", cli_ppidp},
   {"ppidy",  "PID Yaw output (expected: -1 to 1)", cli_ppidy},
+  {"ppidt",  "PID Throttle output (expected: -1 to 1)", cli_ppidt},
   {"pout",   "Motor/servo output (expected: 0 to 1)", cli_pout},
   {"pbat",   "Battery voltage, current, Ah used and Wh used", cli_pbat},
   {"pbar",   "Barometer", cli_pbar},
@@ -742,7 +768,7 @@ void Cli::calibrate_IMU2(bool gyro_only) {
       imu.convert_to_raw(&imu_s.gx, &imu_s.ax);
       a[0].append(imu_s.ax);
       a[1].append(imu_s.ay);
-      a[2].append(imu_s.az - 1.0); //remove gravitation
+      a[2].append(imu_s.az);
       g[0].append(imu_s.gx);
       g[1].append(imu_s.gy);
       g[2].append(imu_s.gz); 
@@ -758,6 +784,9 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   float aoff[3], goff[3]; //measured offsets
   for(int axis = 0; axis < 3; axis++) {
     aoff[axis] = a[axis].mean();
+    //remove gravitation
+    if(aoff[axis] > +0.8) aoff[axis] -= 1.0;
+    if(aoff[axis] < -0.8) aoff[axis] += 1.0;
     goff[axis] = g[axis].mean();
   }
 

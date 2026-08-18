@@ -55,7 +55,7 @@ struct ImuConfig {
     bool uses_i2c = false; //use I2C bus?
     int pin_clkin = -1; //IMU clkin pin
     Mag *pmag = nullptr; //mag pointer, used to store IMU internal magnetometer samples
-    Cfg::imu_align_enum imu_align = Cfg::imu_align_enum::mf_CW0; //mounting alignment
+    Cfg::imu_align_enum *imu_align = nullptr; //mounting alignment
     float* imu_cal_gx = nullptr; //gyro offset[3] [deg/sec]
     float* imu_cal_ax = nullptr; //acc offset[3] [G]
 

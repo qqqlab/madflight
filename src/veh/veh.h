@@ -159,7 +159,7 @@ class Veh : public VehState {
         uint8_t mav_type;
         uint8_t ap_fm;  //(approximate) mapping of fightmode index to ArduPilot code for logging and mavlink
     };
-    #define MF_FLIGHTMODE_COUNT 11
+    #define MF_FLIGHTMODE_COUNT 12
     struct FlightModeMap_enum flightmode_map[MF_FLIGHTMODE_COUNT] = {
         //keep in same order as enum FlightMode
         {"MADF",  255, 255},
@@ -173,6 +173,7 @@ class Veh : public VehState {
         {"MANU", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_MANUAL},
         {"ROLL", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_STABILIZE},
         {"FBWA", VEH_TYPE_PLANE,  AP_PLANE_FLIGHTMODE_FLY_BY_WIRE_A},
+        {"ALTH", VEH_TYPE_COPTER, AP_COPTER_FLIGHTMODE_ALT_HOLD},
     };
 
   private:

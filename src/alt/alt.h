@@ -25,7 +25,8 @@ SOFTWARE.
 #pragma once
 
 #ifndef ALT_USE
-  #define ALT_USE ALT_USE_KALMAN3
+  #define ALT_USE ALT_USE_BAR
+  //#define ALT_USE ALT_USE_KALMAN3
 #endif
 
 #define ALT_USE_NONE    0

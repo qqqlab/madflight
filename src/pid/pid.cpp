@@ -23,24 +23,20 @@ SOFTWARE.
 ===========================================================================================*/
 
 #include "pid.h"
-#include "PidGizmoMF0.h"
-#include "PidGizmoMF1.h"
-#include "PidGizmoMF2.h"
+#include "PidGizmoEXPERIMENTAL.h"
+#include "PidGizmoBASIC.h"
 #include <Arduino.h>
 
 void Pid::setup() {
     delete gizmo;
     gizmo = nullptr;
     switch(cfg.pid_gizmo) {
-    case Cfg::pid_gizmo_enum::mf_MF0:
-        gizmo = new PidGizmoMF0();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF1:
-        gizmo = new PidGizmoMF1();
-        break;
-    case Cfg::pid_gizmo_enum::mf_MF2:
-        gizmo = new PidGizmoMF2();
-        break;
+        case Cfg::pid_gizmo_enum::mf_BASIC:
+            gizmo = new PidGizmoBASIC();
+            break;
+        case Cfg::pid_gizmo_enum::mf_EXPERIMENTAL:
+            gizmo = new PidGizmoEXPERIMENTAL();
+            break;
     }
     if(!gizmo) {
         Serial.printf("PID: ERROR invalid pid_gizmo\n");

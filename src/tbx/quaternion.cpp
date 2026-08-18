@@ -51,11 +51,6 @@ void quaternion_from_euler_deg(float q[4], const float euler_rpy[3]) {
   q[1] = s0c1*c2 - c0s1*s2;
   q[2] = c0s1*c2 + s0c1*s2;
   q[3] = c0c1*s2 - s0s1*c2;
-
-  //Serial.printf("euler_rpy %f %f %f    ", euler_rpy[0], euler_rpy[1], euler_rpy[2]);
-  //Serial.printf("sincos %f %f %f %f %f %f    ", s0,s1,s2,c0,c1,c2);
-  //Serial.printf("q=%f %f %f %f\n", q[0], q[1], q[2], q[3]);
-  //delay(100);
 }
 
 void quaternion_to_euler_deg(float euler_rpy[3], const float q[4]) {
@@ -103,4 +98,31 @@ void quaternion_init(float q[4]) {
   q[1] = 0;
   q[2] = 0;
   q[3] = 0;
+}
+
+void quaternion_rotate(float result[3], const float q[4], const float v[3])
+{
+    float ww = q[0] * q[0];
+    float xx = q[1] * q[1];
+    float yy = q[2] * q[2];
+    float zz = q[3] * q[3];
+    float wx = q[0] * q[1];
+    float wy = q[0] * q[2];
+    float wz = q[0] * q[3];
+    float xy = q[1] * q[2];
+    float xz = q[1] * q[3];
+    float yz = q[2] * q[3];
+
+    result[0] = 
+      + (1 - 2 * (yy + zz)) * v[0]
+      + 2 * (xy - wz) * v[1]
+      + 2 * (xz + wy) * v[2];
+    result[1] = 
+      + 2 * (xy + wz) * v[0]
+      + (1 - 2 * (xx + zz)) * v[1]
+      + 2 * (yz - wx) * v[2];
+    result[2] = 
+      + 2 * (xz - wy) * v[0]
+      + 2 * (yz + wx) * v[1]
+      + (1 - 2 * (xx + yy)) * v[2];
 }

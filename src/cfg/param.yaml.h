@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 // Global enums
-enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA };
+enum class FlightMode : uint32_t { mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD };
 enum class MF_FilterType : uint32_t { mf_NONE,mf_PT1,mf_PT2,mf_PT3,mf_BIQUAD,mf_NOTCH };
 
 namespace Cfg {
@@ -27,7 +27,7 @@ namespace Cfg {
   enum class mag_align_enum : uint32_t { mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP };
   enum class ofl_gizmo_enum : uint32_t { mf_NONE,mf_PMW3901,mf_PMW3901U };
   enum class ofl_align_enum : uint32_t { mf_NE,mf_NW,mf_ES,mf_EN,mf_SW,mf_SE,mf_WN,mf_WS };
-  enum class pid_gizmo_enum : uint32_t { mf_MF0,mf_MF1,mf_MF2 };
+  enum class pid_gizmo_enum : uint32_t { mf_BASIC,mf_EXPERIMENTAL };
 
   //list of parameters
   struct param_list_t {
@@ -205,13 +205,13 @@ namespace Cfg {
     { "rcl_pit_expo", (float)0.0, 'f', "" },
     { "rcl_yaw_expo", (float)0.0, 'f', "" },
     { "rcl_vsp_expo", (float)0.0, 'f', "" },
-    { "rcl_flt0", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "rcl_flt1", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "rcl_flt2", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "rcl_flt3", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "rcl_flt4", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "rcl_flt5", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA" },
-    { "pid_gizmo", (float)Cfg::pid_gizmo_enum::mf_MF2, 'e', "mf_MF0,mf_MF1,mf_MF2" },
+    { "rcl_flt0", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "rcl_flt1", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "rcl_flt2", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "rcl_flt3", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "rcl_flt4", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "rcl_flt5", (float)FlightMode::mf_CUSTOM0, 'e', "mf_CUSTOM0,mf_CUSTOM1,mf_CUSTOM2,mf_CUSTOM3,mf_CUSTOM4,mf_CUSTOM5,mf_RATE,mf_ANGLE,mf_PLANE_MANUAL,mf_PLANE_ROLL,mf_PLANE_FBWA,mf_COPTER_ALTHOLD" },
+    { "pid_gizmo", (float)Cfg::pid_gizmo_enum::mf_BASIC, 'e', "mf_BASIC,mf_EXPERIMENTAL" },
     { "pid_kp0", (float)-1, 'f', "" },
     { "pid_kp1", (float)-1, 'f', "" },
     { "pid_kp2", (float)-1, 'f', "" },
@@ -442,7 +442,7 @@ struct CfgParam {
   FlightMode rcl_flt3 = FlightMode::mf_CUSTOM0; /* Flight Mode 3 */
   FlightMode rcl_flt4 = FlightMode::mf_CUSTOM0; /* Flight Mode 4 */
   FlightMode rcl_flt5 = FlightMode::mf_CUSTOM0; /* Flight Mode 5 */
-  Cfg::pid_gizmo_enum pid_gizmo = Cfg::pid_gizmo_enum::mf_MF2; /* PID controller. IMPORTANT: Read module instructions before when changing this parameter!!! */
+  Cfg::pid_gizmo_enum pid_gizmo = Cfg::pid_gizmo_enum::mf_BASIC; /* PID controller. IMPORTANT: Read module instructions before changing this parameter!!! */
   float pid_kp0 = -1; /* Proportional PID Term */
   float pid_kp1 = -1;
   float pid_kp2 = -1;

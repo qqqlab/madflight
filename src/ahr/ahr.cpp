@@ -161,6 +161,14 @@ float Ahr::getAccelUp() {
   return 9.80665 * ((2*q[1]*q[3] - 2*q[0]*q[2])*ax + (2*q[2]*q[3] + 2*q[0]*q[1])*ay + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*az - 1.0);
 }
 
+//get acceleration in NED earth-frame [m/s^2]
+void Ahr::get_acc_ned(float acc[3]) {
+  quaternion_rotate(acc, q, &ax);
+  acc[0] *= 9.80665;
+  acc[1] *= 9.80665;
+  acc[2]  = 9.80665 * (acc[2] - 1); //remove gravity
+}
+
 void Ahr::setInitalOrientation() {
   if(!gizmo) return;
   float qnew[4];

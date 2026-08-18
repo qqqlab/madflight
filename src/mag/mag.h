@@ -33,7 +33,6 @@ struct __attribute__((aligned(4))) MagState {
     float mx = 0; //"North" magnetic flux [uT]
     float my = 0; //"East" magnetic flux [uT]
     float mz = 0; //"Down" magnetic flux [uT]
-    float raw[3]; //raw readings - not calibrated, not aligned
     uint32_t ts = 0; //last sample time in [us]
 };
 
@@ -52,7 +51,7 @@ class MagGizmo {
 public:
   virtual ~MagGizmo() {};
   virtual const char* name() = 0;
-  virtual bool update(float *mx, float *my, float *mz) = 0; //returns true if new sample was retrieved
+  virtual bool update_nwu(float *n, float *w, float *u) = 0; //get NWU sensor data, returns true if new sample was retrieved
 };
 
 class Mag : public MagState {
@@ -68,6 +67,7 @@ class Mag : public MagState {
 
   protected:
     friend struct sensor_task_s;
+    friend class Imu;
     bool update();    // Returns true if state was updated
 
   protected:
@@ -78,6 +78,7 @@ class Mag : public MagState {
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("MAG");
     bool _calibrate(float bias[3], float scale[3]);
+    void convert_to_raw(float m[3]);
 };
 
 //Global module instance

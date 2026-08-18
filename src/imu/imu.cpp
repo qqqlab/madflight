@@ -28,6 +28,7 @@ SOFTWARE.
 #include "../cfg/cfg.h"
 #include "../hal/hal.h"
 #include "../bbx/bbx.h"
+#include "../mag/MagGizmoIMU.h"
 
 //the "gizmos"
 #include "ImuGizmoMPUXXXX.h"
@@ -203,38 +204,9 @@ bool Imu::update() {
       float mx, my, mz;
       gizmo->getMotion9NED(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
       if(config.pmag) {
-        //handle mag rotation for different mounting positions
-        switch(config.imu_align) {
-          case Cfg::imu_align_enum::mf_CW0 :
-            break;
-          case Cfg::imu_align_enum::mf_CW90 :
-            { float tmp;  tmp=mx; mx=-my; my=tmp; }
-            break;
-          case Cfg::imu_align_enum::mf_CW180 :
-            { mx=-mx; my=-my; }
-            break;
-          case Cfg::imu_align_enum::mf_CW270 :
-            { float tmp; tmp=mx; mx=my; my=-tmp; }
-            break;
-          case Cfg::imu_align_enum::mf_CW0FLIP :
-            { my=-my; mz=-mz; }
-            break;
-          case Cfg::imu_align_enum::mf_CW90FLIP :
-            { float tmp; tmp=mx; mx=my; my=tmp; mz=-mz; }
-            break;
-          case Cfg::imu_align_enum::mf_CW180FLIP :
-            { mx=-mx; mz=-mz; }
-            break;
-          case Cfg::imu_align_enum::mf_CW270FLIP :
-            { float tmp; tmp=mx; mx=-my; my=-tmp; mz=-mz; }
-            break;
+        if(((MagGizmoIMU*)config.pmag->gizmo)->push_nwu_from_imu(mx, my, mz)) {
+          config.pmag->update();
         }
-
-        //update the mag values
-        config.pmag->mx = mx;
-        config.pmag->my = my;
-        config.pmag->mz = mz;
-        config.pmag->ts = update_ts;
       }
     }else{
       gizmo->getMotion6NED(&ax, &ay, &az, &gx, &gy, &gz);
@@ -249,7 +221,7 @@ bool Imu::update() {
     gz -= config.imu_cal_gx[2];
 
     //handle imu rotation for different mounting positions (inline for speed)
-    switch(config.imu_align) {
+    switch(*config.imu_align) {
       case Cfg::imu_align_enum::mf_CW0 :
         break;
       case Cfg::imu_align_enum::mf_CW90 :
@@ -294,7 +266,7 @@ void Imu::convert_to_raw(float *gyr, float *acc) {
     float az = acc[2];
 
     //un-rotate
-    switch(config.imu_align) {
+    switch(*config.imu_align) {
       case Cfg::imu_align_enum::mf_CW0 :
         break;
       case Cfg::imu_align_enum::mf_CW90 :
