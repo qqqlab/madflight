@@ -2,47 +2,92 @@
 
 <p align="center">&star;&nbsp;&star;&nbsp;&star;&nbsp;</p>
 <p align="center">If you like <i>madflight</i>, please give it a &star; star</p>
-<p align="center">or fork it and contribute!</p>
 <p align="center">&star;&nbsp;&star;&nbsp;&star;&nbsp;</p>
 
-_madflight_ is a toolbox to build high performance flight controllers with Aduino IDE or PlatformIO for ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32. A functional DIY flight controller can be build for under $10 from readily available [development boards](https://madflight.com/Controller-Boards/) and [sensor breakout boards](https://madflight.com/Sensor-Boards/).
+_madflight_ is a toolbox to build high performance flight controllers with PlatformIO or Aduino IDE for ESP32-S3 / ESP32 / RP2350 / RP2040 / STM32. A functional flight controller can be build for under $10 from readily available [development boards](https://madflight.com/Controller-Boards/) and [sensor breakout boards](https://madflight.com/Sensor-Boards/). Or, buy a complete flight controller.
 
-Get started with the [Arduino IDE](https://madflight.com/Getting-Started) or [PlatformIO](https://madflight.com/Getting-Started)
+## Getting Started
 
-Flight tested example programs for quadcopter and airplane are included. The example programs are only a couple hundred lines long, but contain the full flight controller logic. The nitty-gritty low-level sensor and input/output management is done by the _madflight_ library.
+Build a multicopter or airplane with [PlatformIO](https://madflight.com/Getting-Started) or the [Arduino IDE](https://madflight.com/Getting-Started) 
 
-The source code and [website](https://madflight.com/) have extensive documentation explaning what the settings and functions do.
-
-<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight RP2040 flight controller.jpeg" title="madflight RP2040 flight controller" width="38%" /> <img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight drone.jpeg" title="madflight drone" width="30%" /> <img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/madflight ESP32 flight controller.jpeg" title="madflight ESP32 flight controller" width="29%" />
+For additional help see [Discussions](https://github.com/qqqlab/madflight/discussions)
 
 ## DEV Version
 
 If you clone/download this repository you get the DEVELOPMENT version, which is BLEEDING EDGE - not flight tested at all, might not even compile, and will completely change in the next hour... 
 
-Use a [release version](https://github.com/qqqlab/madflight/releases) if you want something that actually has logged flight hours.
+Download a [release version](https://github.com/qqqlab/madflight/releases) if you want something that actually has logged flight hours.
 
-## Required Hardware
+## What is flying with madflight?
 
-- [Development board](https://madflight.com/Controller-Boards/): 
-    - [RP2350/RP2040](https://madflight.com/Board-RP2040/) (e.g. Raspberry Pi Pico/Pico2)
-    - [ESP32-S3/ESP32](https://madflight.com/Board-ESP32/) (e.g. Espressiv ESP32/ESP32-S3 DevKitC)
-    - [STM32](https://madflight.com/Board-STM32/) (e.g. Black Pill or a commercial flight 
-- [IMU sensor](https://madflight.com/Sensor-Boards/): MPU6000, MPU6050, MPU6500, MPU9250, BMI270, ICM42688P, etc.
-- RC Receiver: MAVLink, ELRS, CRSF, SBUS, DMSX, or PPM
+## RP2350 DJI Phantom 1 P330
 
-## Optional Hardware
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/phantom1.jpg"/>
 
-- GPS Module (Serial)
-- Barometer (I2C BMP390, BMP388, BMP280, MS5611)
-- Magnetometer (I2C QMC5883L)
-- Current/Voltage Sensor (ADC or I2C INA226, INA228)
-- [Optical Flow Sensor](https://github.com/qqqlab/ESP32-Optical-Flow) (I2C)
+Swapped existing NAZA flight controller with a madflight FC3 RP2350. The existing ESCs are recycled and driven in PWM 400Hz mode.
 
-## Getting Started
+ - DJI Phantom 1 P330
+ - [madflight FC3 RP2350 Flight Controller](https://www.tindie.com/products/madflight/flight-controller-raspberry-pi-rp2350b/)
+ - ELRS Nano Receiver
+ - Short USB-C cable for programming
 
-See [Getting Started](https://madflight.com/Getting-Started/) 
+## ESP32-S3 5" Sub-250 Gram
 
-For additional help see [Discussions](https://github.com/qqqlab/madflight/discussions)
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/bambu.jpg"/>
+
+Lightweight frame made from 6mm bambu rods + 3D printed PETG motor mounts
+
+ - [madflight FC1 ESP32-S3 Flight Controller](https://www.tindie.com/products/madflight/flight-controller-esp32-s3/)
+ - ELRS Nano Receiver
+ - ESCs: Favorite LittleBee Spring 20A with BlueJay bidir DSHOT
+ - 1503 Motors
+ - Folding 5" 120mm props
+ - Weight: 201 gr (including 2S 18650 battery)
+
+## ESP32-S3 M5Stack Stampfly
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/stampfly.jpg"/>
+
+ - M5Stack Stampfly
+ - ELRS Nano Receiver
+ - Openlog SDCard logger
+
+## ESP32-S3 Bixler 3
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/bixler.jpg"/>
+
+ - ESP32-S3 Dev Board
+ - MPU9250 Gyro/Acc/Mag Module
+ - ELRS receiver
+ - Hobbyking Bixler 3 155cm
+
+## RP2040 Quad with 9" Props
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/ifly.jpg"/>
+
+ - Raspberry Pi Pico
+ - MPU6500 Gyro/Acc Module
+ - BME280 Barometer Module
+ - INA226 Current Sensor Module
+ - Micro SD Card Module
+ - Mini DC-DC 12-20V to 5V 3A Buck Converter
+ - uBlox M8 GPS with QMC5883L Compass Compass
+ - ELRS receiver
+ - DJI E300 Propulsion System (9.4x4.3 props, 2212 920KV motors, 15A ESCs)
+ - Frame of a Ideafly IFLY-4 Quadcopter
+
+## ESP32 Dualsky Hornet 460
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/hornet.jpg"/>
+
+This build does not use the default board for ESP32. And a custom pinout is used, so that the MPU6500 board can be soldered directly with pins to the ESP32 board, and just requires the red wire for 3V. The I2C sensor boards are also soldered directly with pins, plus one black ground wire.
+
+ - Lolin ESP32 Lite
+ - MPU6500 SPI Gyro/Acc Module
+ - ELRS receiver
+ - Dualsky Hornet 460 Quadcopter minus original brain
+ - BME280 Barometer Module
+ - QMC5883L Magnetometer Module
 
 ## Disclaimer
 
