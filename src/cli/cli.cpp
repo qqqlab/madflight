@@ -551,9 +551,10 @@ void Cli::help() {
   "save                Save parameters and reboot\n"
   "-- CALIBRATE --\n"
   "calinfo             Sensor info\n"
-  "calimu              Calibrate IMU error\n"
+  "calimu              Calibrate IMU (quick)\n"
+  "calimu2             Calibrate and align IMU\n"
   "calmag              Calibrate magnetometer\n"
-  "calradio            Calibrate RC Radio\n"
+  "calradio            Calibrate RC radio\n"
   );
 }
 
@@ -627,6 +628,11 @@ void Cli::processCmd() {
 }
 
 void Cli::executeCmd(String cmd, String arg1, String arg2) {
+  //hack: remove 0xff char on RP2350 after calxxx commands
+  if(cmd != "" && cmd[0] == 0xff) {
+    cmd = cmd.substring(1);
+  }
+
   //process external print commands
   for (int i=0;i<cli_print_extern_count;i++) {
     if (strcmp(cmd.c_str(), cli_print_extern[i].cmd) == 0) {
@@ -649,60 +655,82 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }
 
   if (cmd == "help" || cmd == "?") {
+    cli_print_all(false);
     help();
   }else if (cmd == "i2c") {
+    cli_print_all(false);
     print_i2cScan();
   }else if (cmd == "reboot") {
+    cli_print_all(false);
     hal_reboot();
   }else if (cmd == "q" || cmd == "poff") {
     cli_print_all(false);
   }else if (cmd == "pall") {
     cli_print_all(true);
   }else if (cmd == "bbstart") {
+    cli_print_all(false);
     bbx.start();
   }else if (cmd == "bbstop") {
+    cli_print_all(false);
     bbx.stop();
   }else if (cmd == "bbls") {
+    cli_print_all(false);
     bbx.dir();
   }else if (cmd == "bberase") {
+    cli_print_all(false);
     bbx.erase();
   }else if (cmd == "bbinfo") {
+    cli_print_all(false);
     bbx.info();
   }else if (cmd == "bbbench") {
+    cli_print_all(false);
     bbx.bench();
   }else if (cmd == "set") {
+    cli_print_all(false);
     cfg.cli_set_param(arg1, arg2);
   }else if (cmd == "dump") {
+    cli_print_all(false);
     cfg.cli_dump(arg1.c_str());
   }else if (cmd == "diff") {
+    cli_print_all(false);
     cfg.cli_diff(arg1.c_str());
   }else if (cmd == "defaults") {
+    cli_print_all(false);
     cfg.cli_defaults(arg1.c_str());
     if(arg1 != "") cfg.cli_dump(arg1.c_str());
     Serial.println("Parameters reset to defaults, type 'save' to save... ");
   }else if (cmd == "save") {
+    cli_print_all(false);
     cfg.cli_save();
   }else if (cmd == "calinfo") {
     cli_print_all(false);
     calibrate_info(arg1.toInt());
   }else if (cmd == "calimu") {
     cli_print_all(false);
-    calibrate_IMU();
+    calibrate_imu_quick();
+  }else if (cmd == "calimu2") {
+    cli_print_all(false);
+    calibrate_imu_slow();
   }else if (cmd == "calmag") {
+    cli_print_all(false);
     mag.cli_calibrate();
   }else if (cmd == "calradio") {
     cli_print_all(false);
     RclCalibrate::calibrate();
   }else if (cmd == "ps") {
+    cli_print_all(false);
     ps();
   }else if (cmd == "serial") {
+    cli_print_all(false);
     cli_serial(arg1.toInt());
   }else if (cmd == "spinmotors") {
+    cli_print_all(false);
     cli_spinmotors();
   }else if (cmd == "res") {
+    cli_print_all(false);
     print_resources();
   }else if (cmd != "") {
-    Serial.println("ERROR Unknown command - Type help for help");
+    Serial.printf("ERROR Unknown command '%s' - Type help for help\n", cmd.c_str());
   }
 }
 
@@ -736,18 +764,168 @@ void Cli::print_i2cScan() {
 //========================================================================================================================//
 //                                          CALIBRATION FUNCTIONS                                                         //
 //========================================================================================================================//
-void Cli::calibrate_gyro() {
-  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
-  calibrate_IMU2(true);
+
+static void _calibrate_imu_slow_direction(const char *msg, MovingAverage ma[3], MsgSubscription<ImuState>* imu_sub, ImuState *imu_s, float result[3]) {
+  float eps = 0.02; //max stdev in G
+  float eps2 = 0.1; //max mean diff from 0 or 1 G
+  float *a = &imu_s->ax;
+  ScheduleFreq sch = ScheduleFreq(3);
+
+  //fill ma buffer
+  for(int i=0;i<3;i++) ma[i].clear();
+  while(!ma[0].loaded()) {
+    if(imu_sub->pull_next(imu_s)) {
+      imu.convert_to_raw(&imu_s->gx, a);
+      //Serial.printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
+      for(int i=0;i<3;i++) ma[i].append(a[i]);
+    }
+  }
+
+  //wait for key
+  while(Serial.available()) Serial.read();
+  while(true) {
+    taskYIELD(); //yield to other tasks
+    if(Serial.available()) {
+      while(Serial.available()) Serial.read();
+      break;
+    }
+
+    if(imu_sub->pull_next(imu_s)) {
+      imu.convert_to_raw(&imu_s->gx, a);
+      for(int i=0;i<3;i++) {
+        ma[i].append(a[i]);
+      }
+      if(sch.expired()) {
+        Serial.printf("Keep %s, press key when ready ...", msg);
+        Serial.printf("    ax:%+.3f  y:%+.3f  z:%+.3f\n", ma[0].mean(), ma[1].mean(), ma[2].mean());
+      } 
+    }
+  }
+
+  for(int i=0;i<3;i++) {
+    result[i] = ma[i].mean();
+  }
+
+
+/*
+          //Serial.printf("111 idx=%d n=%d\t",ma[0].idx,ma[0].n);
+          //Serial.printf("111. %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
+
+  bool found = false;
+  while(1){//!found) {
+    if(imu_sub->pull_next(imu_s)) {
+      imu.convert_to_raw(&imu_s->gx, a);
+      //Serial.printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
+      found = true;
+      for(int i=0;i<3;i++) {
+        ma[i].append(a[i]);
+        if(found && ma[i].std() > eps) found = false;
+		    avg[i] = ma[i].mean();
+		    if(found && abs(avg[i]) > eps2 && abs(avg[i]) - 1 > eps2) found = false;
+      }
+      if(sch.expired()) {
+        Serial.printf("idx=%d n=%d\t",ma[0].idx,ma[0].n);
+        Serial.printf("... %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
+      } 
+    }
+  }
+    */
 }
 
-void Cli::calibrate_IMU() {
-  Serial.println("Calibrating IMU, don't move vehicle, this takes a couple of seconds...");
-  calibrate_IMU2(false);
+//Computes IMU accelerometer scale and offset calibration
+void Cli::calibrate_imu_slow() {
+  auto imu_sub = MsgSubscription<ImuState>("calacc", &imu.topic);
+  ImuState imu_s;
+  float *a = &imu_s.ax;
+  MovingAverage ma[3] = {MovingAverage(100), MovingAverage(100), MovingAverage(100)};
+  float r[6][3];
+  const char axisname[3] = {'x','y','z'};
+  float *acal = &cfg.imu_cal_ax; //current a calibration
+  float *ascal = &cfg.imu_cal_asx; //current as calibration
+
+  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
+  _calibrate_imu_quick(true);
+
+  _calibrate_imu_slow_direction("horizontal",  ma, &imu_sub, &imu_s, r[4]); //r[4] = yaw
+  _calibrate_imu_slow_direction("nose down",   ma, &imu_sub, &imu_s, r[2]); //pitch
+  _calibrate_imu_slow_direction("tail down",   ma, &imu_sub, &imu_s, r[3]); //pitch-neg
+  _calibrate_imu_slow_direction("right down",  ma, &imu_sub, &imu_s, r[0]); //roll
+  _calibrate_imu_slow_direction("left down",   ma, &imu_sub, &imu_s, r[1]); //roll-neg
+  _calibrate_imu_slow_direction("upside down", ma, &imu_sub, &imu_s, r[5]); //yaw-neg
+
+  /*
+  Serial.println("Measurements:");
+  for(int i=0;i<6;i+=2) {
+    Serial.printf("     ax:%+.3f ay:%+.3f az:%+.3f\n", r[i][0], r[i][1], r[i][2]);
+  }
+  Serial.println();
+  //*/
+
+  float ascale[3];
+  float aoff[3] = {0,0,0};
+  for(int i=0;i<6;i+=2) {
+    int axis;
+    for(axis = 0; axis < 3; axis++) {
+      if(abs(r[i][axis]) > 0.8) break;
+    }
+    ascale[axis] = abs(r[i][axis] - r[i+1][axis]) / 2;
+    aoff[axis] = r[i][axis] + r[i+1][axis];
+  }
+
+  for(int axis = 0; axis < 3; axis++) {
+    Serial.printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
+  }
+  for(int axis = 0; axis < 3; axis++) {
+    Serial.printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
+  }
+	
+  //determine IMU orientation
+  float *roll = r[0];
+  float *pitch = r[2];
+  float *yaw = r[4];
+  const char* align = nullptr;
+  if(roll[0] >  0.8 && pitch[1] >  0.8 && yaw[2] >  0.8) align = "CW0";
+  if(roll[0] >  0.8 && pitch[1] < -0.8 && yaw[2] >  0.8) align = "CW90";
+  if(roll[0] < -0.8 && pitch[1] < -0.8 && yaw[2] >  0.8) align = "CW180";
+  if(roll[0] < -0.8 && pitch[1] >  0.8 && yaw[2] >  0.8) align = "CW270";
+  if(roll[1] < -0.8 && pitch[0] >  0.8 && yaw[2] < -0.8) align = "CW0FLIP";
+  if(roll[0] >  0.8 && pitch[1] >  0.8 && yaw[2] < -0.8) align = "CW90FLIP";
+  if(roll[1] >  0.8 && pitch[0] < -0.8 && yaw[2] < -0.8) align = "CW180FLIP";
+  if(roll[0] < -0.8 && pitch[1] < -0.8 && yaw[2] < -0.8) align = "CW270FLIP";
+  if(align) {
+    //Serial.printf("\nset imu_align %s\n", align);
+    Serial.print("\nset ");
+    cfg.cli_set_param("imu_align", align); //this prints 'imu_align        CW90FLIP # options: CW0,CW90,CW180,CW270,CW0FLIP,CW90FLIP,CW180FLIP,CW270FLIP'
+  }else{
+    Serial.printf("\nWARNING: Alignment could not be determined, better retry calibration... \n", align);
+  }
+
+  //apply cal values to cfg
+  for(int axis = 0; axis < 3; axis++) {
+    acal[axis] = aoff[axis];
+    ascal[axis] = ascale[axis];
+  }
+  
+  Serial.println("\nType 'save' to save these values to flash, or 'pahr' to check");
+
+  Serial.flush();
+  while(Serial.available()) Serial.read();
+}
+
+void Cli::calibrate_gyro() {
+  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
+  _calibrate_imu_quick(true);
+  Serial.println("Type 'save' to save these values to flash");
+}
+
+void Cli::calibrate_imu_quick() {
+  Serial.println("Calibrating IMU, keep horizontal and don't move vehicle, this takes a couple of seconds...");
+  _calibrate_imu_quick(false);
+  Serial.println("Type 'save' to save these values to flash");
 }
 
 //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
-void Cli::calibrate_IMU2(bool gyro_only) {
+void Cli::_calibrate_imu_quick(bool gyro_only) {
   auto imu_sub = MsgSubscription<ImuState>("calimu", &imu.topic);
   auto bar_sub = MsgSubscription<BarState>("calimu", &bar.topic);
   ImuState imu_s;
@@ -757,8 +935,10 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   const int timeout = 3000;
   Stat alt, a[3], g[3];
   const char axisname[3] = {'x','y','z'};
-  float *acal = &cfg.imu_cal_ax; //current a calibration
-  float *gcal = &cfg.imu_cal_gx; //current g calibration
+  float *gcal = &cfg.imu_cal_gx; //current gyro offset calibration
+  float *acal = &cfg.imu_cal_ax; //current acc offset calibration
+  float *ascal = &cfg.imu_cal_asx; //current acc scale calibration
+  float ascale[3] = {1,1,1}; //scale is always 1 for quick calibration
   uint32_t ts = millis();
   while(millis() - ts < timeout) {
     if(bar_sub.pull_next(&bar_s)) {
@@ -808,6 +988,9 @@ void Cli::calibrate_IMU2(bool gyro_only) {
     for(int axis = 0; axis < 3; axis++) {
       Serial.printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
     }
+    for(int axis = 0; axis < 3; axis++) {
+      Serial.printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
+    }
   }
 /*
     //only apply reasonable acc errors
@@ -827,10 +1010,9 @@ void Cli::calibrate_IMU2(bool gyro_only) {
   if (!gyro_only) {
     for(int axis = 0; axis < 3; axis++) {
       acal[axis] = aoff[axis];
+      ascal[axis] = ascale[axis];
     }
   }
-  
-  Serial.println("Type 'save' to save these values to flash");
 }
 
 void Cli::calibrate_info(int seconds) {

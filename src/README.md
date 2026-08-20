@@ -1,7 +1,6 @@
 # madflight headers
 
 - madflight.h - Default header to use in your projects, defines madflight_setup()
-- madflight_rtos.h - madflight.h extended with RTOS, defines madflight_rtos_setup()
 - madflight_modules.h - All modules without any setup
 
 # madflight modules

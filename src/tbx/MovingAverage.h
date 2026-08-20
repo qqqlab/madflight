@@ -36,8 +36,13 @@ public:
     this->len = len;
   }
 
-  ~Stat() {
+  ~MovingAverage() {
     delete x;
+  }
+
+  void clear() {
+    idx = 0;
+    n = 0;
   }
 
   void append(float val) {
@@ -45,19 +50,6 @@ public:
     idx++;
     if(n < idx) n = idx;
     if(idx >= len) idx = 0;
-
-    //record min/max
-    
-    if(max < x) max = x;
-    //shift x
-    if(n==0) {
-      k = x;
-    }
-    x -= k;
-    //gather stats
-    n++;
-    sx += x;
-    sx2 += x * x;
   }
 
   float mean() {
@@ -88,7 +80,7 @@ public:
     return m;
   }
 
-  float min() {
+  float max() {
     float m = -1e100;
     for(int i = 0; i < n; i++) if(m < x[i]) m = x[i];
     return m;
@@ -97,4 +89,4 @@ public:
   bool loaded() {
     return (n == len);
   }
-}
+};

@@ -31,3 +31,4 @@ SOFTWARE.
 #include "MsgBroker/MsgBroker.h"
 #include "MF_Schedule.h"
 #include "MF_Filter.h"
+#include "MovingAverage.h"
