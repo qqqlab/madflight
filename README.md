@@ -22,7 +22,7 @@ Download a [release version](https://github.com/qqqlab/madflight/releases) if yo
 
 ## RP2350 DJI Phantom 1 P330
 
-<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/phantom1.jpg"/>
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/phantom.jpg"/>
 
 Swapped existing NAZA flight controller with a madflight FC3 RP2350. The existing ESCs are recycled and driven in PWM 400Hz mode.
 
