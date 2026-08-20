@@ -423,6 +423,7 @@ void madflight_setup() {
   imu.config.imu_align = &cfg.imu_align; //mounting alignment
   imu.config.imu_cal_gx = &(cfg.imu_cal_gx); //gyro offset[3] [deg/sec]
   imu.config.imu_cal_ax = &(cfg.imu_cal_ax); //acc offset[3] [G]
+  imu.config.imu_cal_asx = &(cfg.imu_cal_asx); //acc scale[3] [G]
 
   // IMU - Some IMU sensors need a couple of tries...
   int tries = 10;

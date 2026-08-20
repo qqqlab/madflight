@@ -104,10 +104,11 @@ public:
 //========================================================================================================================//
 
 public:
+  void calibrate_imu_slow();
   void calibrate_gyro();
-  void calibrate_IMU();
-  void calibrate_IMU2(bool gyro_only = false);
+  void calibrate_imu_quick();
 private:
+  void _calibrate_imu_quick(bool gyro_only = false);
   void calibrate_info(int seconds = 0);
 
 //========================================================================================================================//

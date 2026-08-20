@@ -1,7 +1,7 @@
 /*==========================================================================================
 MIT License
 
-Copyright (c) 2025 https://madflight.com
+Copyright (c) 2026 https://madflight.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,72 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ===========================================================================================*/
+#include <math.h>
 
-#pragma once
+class MovingAverage {
+public:
+  int n = 0; //number of entries in x[]
+  int idx = 0; //next x[idx] to append
+  int len = 0; //moving average length
+  float *x = nullptr;
 
-#include "common.h"
-#include "RuntimeTrace.h"
-#include "ScheduleFreq.h"
-#include "tbx_crc.h"
-#include "MsgBroker/MsgBroker.h"
-#include "MF_Schedule.h"
-#include "MF_Filter.h"
-#include "MovingAverage.h"
+  MovingAverage(int len) {
+    if(len <= 0) len = 2;
+    x = new float[len];
+    this->len = len;
+  }
+
+  ~MovingAverage() {
+    delete x;
+  }
+
+  void clear() {
+    idx = 0;
+    n = 0;
+  }
+
+  void append(float val) {
+    x[idx] = val;
+    idx++;
+    if(n < idx) n = idx;
+    if(idx >= len) idx = 0;
+  }
+
+  float mean() {
+    if(n <= 0) return 0;
+    float sx = 0;
+    for(int i = 0; i < n; i++) sx += x[i];
+    return sx / n;
+  }
+
+  float var() {
+    if(n <= 1) return 0;
+    float sx = 0;
+    float sx2 = 0;
+    for(int i = 0; i < n; i++) {
+      sx += x[i];
+      sx2 += x[i] * x[i];
+    }
+    return (sx2 - sx * sx / n) / (n - 1);
+  }
+
+  float std() {
+    return sqrt(var());
+  }
+
+  float min() {
+    float m = +1e100;
+    for(int i = 0; i < n; i++) if(m > x[i]) m = x[i];
+    return m;
+  }
+
+  float max() {
+    float m = -1e100;
+    for(int i = 0; i < n; i++) if(m < x[i]) m = x[i];
+    return m;
+  }
+
+  bool loaded() {
+    return (n == len);
+  }
+};

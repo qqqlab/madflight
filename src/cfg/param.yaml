@@ -17,7 +17,7 @@
 #   comment:  Single line comment [optional]
 #   since:    Parameter exist since madflight version [optional]
 
-version: "2.4.2"
+version: "2.4.3-DEV"
 
 # Global enums
 enum:
@@ -1283,6 +1283,24 @@ param:
     type: 'i'
     comment: "Max log interval in [Hz] for PID"
 
+# v2.4.3 additions 
+  imu_cal_asx:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel x scale calibration"
+    since: v2.4.3
+  imu_cal_asy:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel y scale calibration"
+  imu_cal_asz:
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel z scale calibration"
+
 # Documentation
 pageheader: |
   # madflight v%VERSION% Configuration Parameters
@@ -1291,8 +1309,10 @@ pageheader: |
   
    - `madflight_board` string in board file: `#define MF_BOARD "brd/board_name.h"`
    - `madflight_config` string defined in main.cpp
-   - CLI `set` Command
+   - CLI Commands: `set` `defaults` `save`
    - Mavlink via Mission Planner or QGroundControl
+
+   Note: most parameters changes require `save` to become active. Calibration, alignment, and PID value changes are immediately applied and can be tested without `save`.
 
   ### Parameter Loading Logic
 
