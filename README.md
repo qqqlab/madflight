@@ -20,6 +20,44 @@ Download a [release version](https://github.com/qqqlab/madflight/releases) if yo
 
 ## What is flying with madflight?
 
+
+## RP2040 Quad with 9" Props
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/ifly.jpg"/>
+
+ - Raspberry Pi Pico
+ - MPU6500 Gyro/Acc Module
+ - BME280 Barometer Module
+ - INA226 Current Sensor Module
+ - Micro SD Card Module
+ - Mini DC-DC 12-20V to 5V 3A Buck Converter
+ - uBlox M8 GPS with QMC5883L Compass Compass
+ - ELRS receiver
+ - DJI E300 Propulsion System (9.4x4.3 props, 2212 920KV motors, 15A ESCs)
+ - Frame of a Ideafly IFLY-4 Quadcopter
+
+## ESP32-S3 Bixler 3
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/bixler.jpg"/>
+
+ - ESP32-S3 Dev Board
+ - MPU9250 Gyro/Acc/Mag Module
+ - ELRS receiver
+ - Hobbyking Bixler 3 155cm
+
+## ESP32 Dualsky Hornet 460
+
+<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/hornet.jpg"/>
+
+This build does not use the default board for ESP32. And a custom pinout is used, so that the MPU6500 board can be soldered directly with pins to the ESP32 board, and just requires the red wire for 3V. The I2C sensor boards are also soldered directly with pins, plus one black ground wire.
+
+ - Lolin ESP32 Lite
+ - MPU6500 SPI Gyro/Acc Module
+ - ELRS receiver
+ - Dualsky Hornet 460 Quadcopter minus original brain
+ - BME280 Barometer Module
+ - QMC5883L Magnetometer Module
+
 ## RP2350 DJI Phantom 1 P330
 
 <img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/phantom.jpg"/>
@@ -51,43 +89,6 @@ Lightweight frame made from 6mm bambu rods + 3D printed PETG motor mounts
  - M5Stack Stampfly
  - ELRS Nano Receiver
  - Openlog SDCard logger
-
-## ESP32-S3 Bixler 3
-
-<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/bixler.jpg"/>
-
- - ESP32-S3 Dev Board
- - MPU9250 Gyro/Acc/Mag Module
- - ELRS receiver
- - Hobbyking Bixler 3 155cm
-
-## RP2040 Quad with 9" Props
-
-<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/ifly.jpg"/>
-
- - Raspberry Pi Pico
- - MPU6500 Gyro/Acc Module
- - BME280 Barometer Module
- - INA226 Current Sensor Module
- - Micro SD Card Module
- - Mini DC-DC 12-20V to 5V 3A Buck Converter
- - uBlox M8 GPS with QMC5883L Compass Compass
- - ELRS receiver
- - DJI E300 Propulsion System (9.4x4.3 props, 2212 920KV motors, 15A ESCs)
- - Frame of a Ideafly IFLY-4 Quadcopter
-
-## ESP32 Dualsky Hornet 460
-
-<img src="https://raw.githubusercontent.com/qqqlab/madflight/refs/heads/main/extras/img/hornet.jpg"/>
-
-This build does not use the default board for ESP32. And a custom pinout is used, so that the MPU6500 board can be soldered directly with pins to the ESP32 board, and just requires the red wire for 3V. The I2C sensor boards are also soldered directly with pins, plus one black ground wire.
-
- - Lolin ESP32 Lite
- - MPU6500 SPI Gyro/Acc Module
- - ELRS receiver
- - Dualsky Hornet 460 Quadcopter minus original brain
- - BME280 Barometer Module
- - QMC5883L Magnetometer Module
 
 ## Disclaimer
 
