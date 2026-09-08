@@ -1283,6 +1283,26 @@ param:
     type: 'i'
     comment: "Max log interval in [Hz] for PID"
 
+# v2.4.3 additions (accelerometer scale calibration, for sensors with per-axis gain error)
+  imu_cal_asx:
+    since: v2.4.3
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel x scale calibration"
+  imu_cal_asy:
+    since: v2.4.3
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel y scale calibration"
+  imu_cal_asz:
+    since: v2.4.3
+    default: 1
+    datatype: float
+    type: 'f'
+    comment: "Accel z scale calibration"
+
 # Documentation
 pageheader: |
   # madflight v%VERSION% Configuration Parameters

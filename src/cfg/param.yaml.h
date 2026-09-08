@@ -252,6 +252,9 @@ namespace Cfg {
     { "pid_i_limit", (float)-1, 'f', "" },
     { "pid_angl_mult", (float)-1, 'f', "" },
     { "bbx_log_pid", (float)100, 'i', "" },
+    { "imu_cal_asx", (float)1, 'f', "" },
+    { "imu_cal_asy", (float)1, 'f', "" },
+    { "imu_cal_asz", (float)1, 'f', "" },
   }; //const param_list_t param_list[]
 }; //namespace Cfg
 
@@ -484,4 +487,7 @@ struct CfgParam {
   float pid_angl_mult = -1; /* Angle to rate multiplier */
   // v2.4.2
   int32_t bbx_log_pid = 100; /* Max log interval in [Hz] for PID */
+  float imu_cal_asx = 1; /* Accel x scale calibration */
+  float imu_cal_asy = 1; /* Accel y scale calibration */
+  float imu_cal_asz = 1; /* Accel z scale calibration */
 }; //struct CfgParam
