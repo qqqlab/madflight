@@ -58,6 +58,7 @@ struct ImuConfig {
     Cfg::imu_align_enum *imu_align = nullptr; //mounting alignment
     float* imu_cal_gx = nullptr; //gyro offset[3] [deg/sec]
     float* imu_cal_ax = nullptr; //acc offset[3] [G]
+    float* imu_cal_ax_scale = nullptr; //acc scale[3] (dimensionless, ~1.0), see cli_calibrate_accel()
 
     //config values returned by gizmo
     bool has_mag = false; //true if IMU has built-in magnetometer
@@ -125,6 +126,7 @@ class Imu : public ImuState {
 
     //convert back to raw imu data (unrotate, unbias)
     void convert_to_raw(float *gyr, float *acc); 
+    void cli_calibrate_accel(); // 6-point accelerometer scale+offset calibration, see imu.cpp
 
   private:
     RuntimeTrace runtimeTrace = RuntimeTrace("IMU");

@@ -29,6 +29,7 @@ SOFTWARE.
 #include "../hal/hal.h"
 #include "../bbx/bbx.h"
 #include "../mag/MagGizmoIMU.h"
+#include "../cli/stat.h" //for Stat, used by cli_calibrate_accel()
 
 //the "gizmos"
 #include "ImuGizmoMPUXXXX.h"
@@ -220,6 +221,16 @@ bool Imu::update() {
     gy -= config.imu_cal_gx[1];
     gz -= config.imu_cal_gx[2];
 
+    // apply accel scale factors - corrects per-axis gain error (e.g. a well-calibrated
+    // sensor should read |a|=1g in ANY static orientation; a raw scale mismatch between
+    // axes shows up as a different apparent |a| depending on which axis carries gravity).
+    // Applied here (raw sensor frame, after offset removal, before rotation) to match
+    // where offset correction happens, since scale is a property of the physical axis,
+    // not the vehicle mounting orientation. See Imu::cli_calibrate_accel().
+    ax *= config.imu_cal_ax_scale[0];
+    ay *= config.imu_cal_ax_scale[1];
+    az *= config.imu_cal_ax_scale[2];
+
     //handle imu rotation for different mounting positions (inline for speed)
     switch(*config.imu_align) {
       case Cfg::imu_align_enum::mf_CW0 :
@@ -299,6 +310,12 @@ void Imu::convert_to_raw(float *gyr, float *acc) {
         break;
     }
 
+    // un-apply accel scale factors (inverse of Imu::update()'s multiply - divide first,
+    // since offset must be un-applied last, mirroring the forward order in reverse)
+    ax /= config.imu_cal_ax_scale[0];
+    ay /= config.imu_cal_ax_scale[1];
+    az /= config.imu_cal_ax_scale[2];
+
     // un-apply zero offsets
     ax += config.imu_cal_ax[0];
     ay += config.imu_cal_ax[1];
@@ -313,6 +330,123 @@ void Imu::convert_to_raw(float *gyr, float *acc) {
     acc[0] = ax;
     acc[1] = ay;
     acc[2] = az;
+}
+
+// 6-point accelerometer scale + offset calibration.
+// Unlike the single-position offset-only calibration that runs via the
+// CLI 'calimu' command (see Cli::calibrate_IMU2), this also corrects per-axis SCALE errors -
+// which is needed because a well-calibrated accelerometer should read |a|=1g in ANY static orientation.
+//
+// This function detects which axis actually reads near +-1g each time and
+// tracks which of the 6 (axis, sign) combinations have been captured, rejecting duplicates
+// and unclear/non-stationary readings, until all 6 are found.
+void Imu::cli_calibrate_accel() {
+  if (!installed()) {
+    Serial.println("ERROR: No IMU");
+    return;
+  }
+
+  Serial.println("\n6-point accelerometer calibration.");
+  Serial.println("Rest the sensor stationary on any 6 distinct faces, one at a time, in any order.");
+  Serial.println("The axis is detected automatically.\n");
+
+  auto imu_sub = MsgSubscription<ImuState>("calacc", &imu.topic);
+
+  bool have[3][2] = {{false,false},{false,false},{false,false}}; //[axis][sign: 0=+,1=-]
+  float value[3][2];
+  int collected = 0;
+
+  while (collected < 6) {
+    Serial.printf("Need %d more orientation(s). Missing: ", 6 - collected);
+    const char* names[3] = {"axis A", "axis B", "axis C"};
+    for (int ax = 0; ax < 3; ax++) {
+      if (!have[ax][0]) Serial.printf("+%s ", names[ax]);
+      if (!have[ax][1]) Serial.printf("-%s ", names[ax]);
+    }
+    Serial.println("\nRest the sensor on a NEW face, hold still, then press any key");
+    while(Serial.available()) Serial.read(); //clear input
+
+    //live in-place preview until Enter is pressed
+    ImuState s;
+    float live[3] = {0,0,0};
+    while (!Serial.available()) {
+      if (imu_sub.pull_next(&s)) {
+        convert_to_raw(&s.gx, &s.ax);
+        live[0] = s.ax; live[1] = s.ay; live[2] = s.az;
+      }
+      Serial.printf("\r  live: ax=%+.3f ay=%+.3f az=%+.3f          ", live[0], live[1], live[2]);
+      delay(100);
+    }
+    Serial.println();
+    while(Serial.available()) Serial.read(); //consume the Enter itself
+
+    Serial.println("Recording...");
+    Stat a[3];
+    uint32_t ts = millis();
+    const int timeout = 2000; //2 seconds
+    while (millis() - ts < timeout) {
+      if (imu_sub.pull_next(&s)) {
+        convert_to_raw(&s.gx, &s.ax);
+        a[0].append(s.ax);
+        a[1].append(s.ay);
+        a[2].append(s.az);
+      }
+    }
+    if (a[0].n == 0) {
+      Serial.println("ERROR: no IMU samples received - try again.\n");
+      continue;
+    }
+    float m[3] = {a[0].mean(), a[1].mean(), a[2].mean()};
+
+    //find the dominant axis (largest |value|) - that's whichever one gravity loaded
+    int axis = 0;
+    if (fabs(m[1]) > fabs(m[axis])) axis = 1;
+    if (fabs(m[2]) > fabs(m[axis])) axis = 2;
+    float mag = fabs(m[axis]);
+    int sign = (m[axis] >= 0) ? 0 : 1;
+
+    if (mag < 0.7f || mag > 1.3f) {
+      Serial.printf("ERROR: dominant axis read %.3fg, expected ~1g - sensor wasn't flat/stationary. Try again.\n\n", mag);
+      continue;
+    }
+    if (have[axis][sign]) {
+      Serial.println("This orientation was already captured - it's a duplicate, not a new face. Try a different one.\n");
+      continue;
+    }
+
+    have[axis][sign] = true;
+    value[axis][sign] = m[axis];
+    collected++;
+    Serial.printf("  recorded: axis=%d sign=%s value=%+.4f (n=%d, stdev=%.4f/%.4f/%.4f)\n\n",
+      axis, sign == 0 ? "+" : "-", m[axis], a[0].n, a[0].std(), a[1].std(), a[2].std());
+  }
+
+  //for each axis, its own +/- pair should ideally be exactly +1.0/-1.0g.
+  //Their average gives offset (should be ~0); their difference vs the ideal 2g swing gives scale.
+  float offset[3], scale[3];
+  for (int axis = 0; axis < 3; axis++) {
+    float plus  = value[axis][0];
+    float minus = value[axis][1];
+    offset[axis] = (plus + minus) / 2.0f;
+    float swing = plus - minus; //ideally +2.0
+    scale[axis] = (swing != 0) ? (2.0f / swing) : 1.0f;
+  }
+
+  const char axisname[3] = {'x', 'y', 'z'};
+  Serial.println("Calibration complete.");
+  for (int axis = 0; axis < 3; axis++) {
+    Serial.printf("set imu_cal_a%c  %+f #config was %+f\n", axisname[axis], offset[axis], config.imu_cal_ax[axis]);
+  }
+  for (int axis = 0; axis < 3; axis++) {
+    Serial.printf("set imu_cal_as%c %+f #config was %+f\n", axisname[axis], scale[axis], config.imu_cal_ax_scale[axis]);
+  }
+  Serial.println("Type 'save' to save these values to flash");
+
+  //apply immediately, same as Cli::calibrate_IMU2() / Mag::cli_calibrate()
+  for (int axis = 0; axis < 3; axis++) {
+    config.imu_cal_ax[axis] = offset[axis];
+    config.imu_cal_ax_scale[axis] = scale[axis];
+  }
 }
 
 void Imu::statReset() {
@@ -436,3 +570,5 @@ void _imu_ll_interrupt_handler() {
     }
   }
 }
+
+

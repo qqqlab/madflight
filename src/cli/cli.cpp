@@ -552,6 +552,7 @@ void Cli::help() {
   "-- CALIBRATE --\n"
   "calinfo             Sensor info\n"
   "calimu              Calibrate IMU error\n"
+  "calacc              6-point accelerometer scale+offset calibration\n"
   "calmag              Calibrate magnetometer\n"
   "calradio            Calibrate RC Radio\n"
   );
@@ -688,6 +689,8 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
   }else if (cmd == "calimu") {
     cli_print_all(false);
     calibrate_IMU();
+  }else if (cmd == "calacc") {
+    imu.cli_calibrate_accel();
   }else if (cmd == "calmag") {
     mag.cli_calibrate();
   }else if (cmd == "calradio") {
