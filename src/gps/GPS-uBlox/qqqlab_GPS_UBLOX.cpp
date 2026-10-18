@@ -2255,7 +2255,7 @@ void AP_GPS_UBLOX::update2() {
         if (tnow - timing.last_message_time_ms > GPS_TIMEOUT_MS) {
             interface_printf("LOST CONNECTION\n");
             //memset((void *)&state, 0, sizeof(state));
-            state = {};
+            *state = {};
             state->hdop = GPS_UNKNOWN_DOP;
             state->vdop = GPS_UNKNOWN_DOP;
             // timing.last_message_time_ms = tnow;
