@@ -30,9 +30,9 @@ SOFTWARE.
 #include <hardware/uart.h>
 
 // Notes:
-// - One instance per UART. Instances do not share any state, so UART0 and UART1 can be used independently
-// - An instance is NOT thread safe: use each instance from one task/core only
-// - write() is all-or-nothing: returns 0 (and writes nothing) if there is not enough free space
+// - One instance per UART, instances share no state (UART0 and UART1 work independently).
+// - An instance is not thread safe: use write()/availableForWrite() from one task, read()/available() from one task.
+// - write() is all-or-nothing: returns 0 (and writes nothing) if there is not enough free space.
 class SerialDMA {
 public:
   //buffer size has to be a power of two, will be rounded up to next greater value: i.e. 128->128, 129->256
@@ -42,7 +42,6 @@ public:
   uint16_t read(uint8_t* data, uint16_t length);
   uint16_t available();
   uint16_t availableForWrite();
-  void service(); //optional: call periodically (from the same task as write) to push out bytes queued while a DMA chunk was in flight
 
   int readBytes(char *buf, int len) {return read((uint8_t*)buf, len);}
   void begin(int baud) {setBaud(baud);}
@@ -61,26 +60,21 @@ private:
   uint8_t rx_ctrl_dummy_write = 0;
 #endif
   int8_t rx_dma_ch = -1;
-  uint8_t rx_buf_len_pow = 0;
-  uint16_t rx_buf_len = 0;
-  uint8_t * rx_buf = nullptr; //aligned to rx_buf_len (points inside rx_raw)
-  uint8_t * rx_raw = nullptr; //pointer returned by malloc
-  uint16_t rx_user_idx = 0; // next index to read
-  uint16_t rx_dma_idx = 0;  // next index dma will write
+  uint8_t rx_buf_len_pow = 0; // 2^8 = 256 bytes
+  uint16_t rx_buf_len = 0;    // = 1 << rx_buf_len_pow
+  uint8_t * rx_buf = nullptr; // must be aligned to rx_buf_len (DMA ring)
+  uint16_t rx_user_idx = 0;   // next index to read
+  uint16_t rx_dma_idx = 0;    // next index dma will write
 
   int8_t tx_dma_ch = -1;
   uint8_t tx_buf_len_pow = 0;
   uint16_t tx_buf_len = 0;
-  uint8_t * tx_buf = nullptr; //aligned to tx_buf_len (points inside tx_raw)
-  uint8_t * tx_raw = nullptr; //pointer returned by malloc
-  uint16_t tx_user_idx = 0;  // next index to write
-  uint16_t tx_dma_idx = 0;   // start index of current/last dma transfer
-  uint16_t tx_dma_size = 0;  // size of current dma transfer
-  bool tx_dma_active = false;
+  uint8_t * tx_buf = nullptr; // must be aligned to tx_buf_len (DMA ring)
+  uint16_t tx_user_idx = 0;   // next index to write
+  uint16_t tx_dma_idx = 0;    // index where current dma transfer started
+  uint16_t tx_dma_size = 0;   // size of current dma transfer (incl. bytes appended by write())
 
-  void serviceTx();
   void stop_dma();
   void init_dma();
   uint8_t log_2(uint16_t val);
-  static uint8_t* alloc_aligned(uint16_t len, uint8_t** raw);
 };
