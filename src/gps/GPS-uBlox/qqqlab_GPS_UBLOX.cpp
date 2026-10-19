@@ -2230,7 +2230,10 @@ bool AP_GPS_UBLOX::update()
     }
     case 4: {
       //normal operation
-      update2();
+      //Note: _parse_nav_message() clears _new_position/_new_speed when it completes a solution,
+      //so returning _new_position here always reported "no new data" for receivers that send
+      //position+velocity together (NAV-PVT). Report the parse result instead.
+      _new_position = update2();
       break;
     }
     default: {
@@ -2242,7 +2245,7 @@ bool AP_GPS_UBLOX::update()
     return _new_position;
 }
 
-void AP_GPS_UBLOX::update2() {
+bool AP_GPS_UBLOX::update2() {
     // we have an active driver for this instance
     bool result = read();
     uint32_t tnow = I_millis();
@@ -2296,4 +2299,5 @@ void AP_GPS_UBLOX::update2() {
             }
         }
     }
+	return result;
 }
