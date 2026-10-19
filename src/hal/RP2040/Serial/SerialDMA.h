@@ -26,46 +26,103 @@ SOFTWARE.
 
 #pragma once
 
+#include <Arduino.h>
+#include <hardware/uart.h>
+#include <FreeRTOS.h>
+#include <semphr.h>
+
 class SerialDMA {
 public:
-  //buffer size has to be a power of two, will be rounded up to next greater value: i.e. 128->128, 129->256
-  uint32_t begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits = 8, char parity = 'N', uint8_t stop = 1, bool invert = false); //returns actual baud rate
-  uint32_t setBaud(uint32_t baudrate); //call this after begin to change baud rate, returns actual baud rate
+  SerialDMA() = default;
+  ~SerialDMA();
+
+  SerialDMA(const SerialDMA&) = delete;
+  SerialDMA& operator=(const SerialDMA&) = delete;
+
+  // Buffer sizes are rounded up to a power of two.
+  // Returns actual baud rate, or 0 on failure.
+  uint32_t begin(
+      uint8_t uart_num,
+      uint32_t baudrate,
+      int txpin,
+      int rxpin,
+      uint16_t txbuflen = 256,
+      uint16_t rxbuflen = 512,
+      uint8_t bits = 8,
+      char parity = 'N',
+      uint8_t stop = 1,
+      bool invert = false);
+
+  uint32_t setBaud(uint32_t baudrate);
+
+  // Task-context APIs only; do not call from an ISR.
   uint16_t write(const uint8_t* data, uint16_t length);
   uint16_t read(uint8_t* data, uint16_t length);
+
   uint16_t available();
   uint16_t availableForWrite();
 
-  int readBytes(char *buf, int len) {return read((uint8_t*)buf, len);}
-  void begin(int baud) {setBaud(baud);}
+  int readBytes(char* buf, int len) {
+    if (len <= 0) return 0;
+    return read(reinterpret_cast<uint8_t*>(buf),
+                static_cast<uint16_t>(
+                    len > 65535 ? 65535 : len));
+  }
 
-  void setFormat() {
+  void begin(int baud) {
+    setBaud(static_cast<uint32_t>(baud));
+  }
 
+  // Call explicitly before reinitializing if desired.
+  void end();
+
+  // Number of RX bytes discarded after buffer overrun.
+  uint32_t rxOverruns() const {
+    return rx_overruns_;
   }
 
 private:
+  static constexpr uint32_t MAX_BUFFER_SIZE = 4096;
+
   uart_inst_t* uart_ = nullptr;
+  uint8_t uart_num_ = 0;
 
-#if PICO_RP2040
-  int8_t rx_ctrl_dma_ch = -1;
-  uint8_t rx_ctrl_dummy_read;
-  uint8_t rx_ctrl_dummy_write;
-#endif
-  int8_t rx_dma_ch = -1;
-  uint8_t rx_buf_len_pow; // = 8; //2^8 = 256 bytes
-  uint16_t rx_buf_len; // = 1 << (rx_buf_len_pow);
-  uint8_t * rx_buf = nullptr; //needs to be aligned! ... static version: __attribute__((aligned(256))) uint8_t rx_buf[256];  
-  uint16_t rx_user_idx = 0; // next index to read
-  uint16_t rx_dma_idx = 0;  // next index dma will write
+  int8_t rx_dma_ch_ = -1;
+  int8_t tx_dma_ch_ = -1;
 
-  int8_t tx_dma_ch = -1;
-  uint8_t tx_buf_len_pow; // = 8; //2^8 = 256 bytes
-  uint16_t tx_buf_len; // = 1 << (tx_buf_len_pow);
-  uint8_t * tx_buf = nullptr; //needs to be aligned! ... static version: //__attribute__((aligned(256))) uint8_t tx_buf[256];
-  uint16_t tx_user_idx = 0;  // next index to write
-  uint16_t tx_dma_idx = 0;  // next index dma will read
-  uint16_t tx_dma_size = 0; // size of current dma transfer
+  uint8_t* rx_buf_ = nullptr;
+  uint8_t* tx_buf_ = nullptr;
 
-  void init_dma();
-  uint8_t log_2(uint16_t val);
+  uint16_t rx_buf_len_ = 0;
+  uint16_t tx_buf_len_ = 0;
+  uint8_t rx_buf_pow_ = 0;
+  uint8_t tx_buf_pow_ = 0;
+
+  // RX positions and accounting. Only RX API callers modify
+  // these fields, protected by rx_mutex_.
+  uint16_t rx_dma_pos_ = 0;
+  uint32_t rx_produced_ = 0;
+  uint32_t rx_consumed_ = 0;
+  uint32_t rx_overruns_ = 0;
+
+  // TX ring. Only TX API callers modify these fields,
+  // protected by tx_mutex_.
+  uint16_t tx_user_idx_ = 0;
+  uint16_t tx_dma_idx_ = 0;
+  uint16_t tx_dma_size_ = 0;
+  bool tx_dma_active_ = false;
+
+  SemaphoreHandle_t rx_mutex_ = nullptr;
+  SemaphoreHandle_t tx_mutex_ = nullptr;
+
+  bool initialized_ = false;
+
+  static bool roundBufferSize(
+      uint16_t requested,
+      uint16_t& actual,
+      uint8_t& pow);
+
+  void serviceTxLocked();
+  void updateRxLocked();
+  bool lock(SemaphoreHandle_t mutex);
 };
