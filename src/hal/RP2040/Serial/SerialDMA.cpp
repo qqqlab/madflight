@@ -26,437 +26,254 @@ SOFTWARE.
 
 #ifdef ARDUINO_ARCH_RP2040
 
-#include "SerialDMA.h"
-
 #include <hardware/dma.h>
 #include <hardware/gpio.h>
-#include <hardware/structs/dma.h>
-#include <hardware/structs/uart.h>
-#include <cstring>
-#include <cstdlib>
-#include <cstdint>
+#include <hardware/irq.h>
+#include <hardware/uart.h>
+#include <hardware/sync.h>
+#include <string.h>
+#include <stdlib.h>
 
-SerialDMA::~SerialDMA() {
-  end();
+#include "SerialDMA.h"
+
+//allocate len bytes aligned to len (len must be power of two). DMA ring wrap REQUIRES this alignment,
+//otherwise the DMA wraps at the wrong address and corrupts memory. Do not rely on aligned_alloc().
+uint8_t* SerialDMA::alloc_aligned(uint16_t len, uint8_t** raw) {
+  uint8_t* p = (uint8_t*)malloc((size_t)len * 2);
+  *raw = p;
+  if(!p) return nullptr;
+  uintptr_t a = ((uintptr_t)p + (len - 1)) & ~((uintptr_t)len - 1);
+  return (uint8_t*)a;
 }
 
-bool SerialDMA::roundBufferSize(
-    uint16_t requested,
-    uint16_t& actual,
-    uint8_t& pow) {
+uint32_t SerialDMA::begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits, char parity, uint8_t stop, bool invert) {
+  if(uart_num > 1) return 0;
+  if(txpin < 0 && rxpin < 0) return 0;
 
-  if (requested == 0 || requested > MAX_BUFFER_SIZE) {
-    return false;
-  }
-
-  uint32_t n = 1;
-  pow = 0;
-
-  while (n < requested) {
-    n <<= 1;
-    ++pow;
-  }
-
-  actual = static_cast<uint16_t>(n);
-  return true;
-}
-
-bool SerialDMA::lock(SemaphoreHandle_t mutex) {
-  return mutex &&
-      xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE;
-}
-
-uint32_t SerialDMA::begin(
-    uint8_t uart_num,
-    uint32_t baudrate,
-    int txpin,
-    int rxpin,
-    uint16_t txbuflen,
-    uint16_t rxbuflen,
-    uint8_t bits,
-    char parity,
-    uint8_t stop,
-    bool invert) {
-
-  // Reject invalid configuration before touching hardware.
-  if (uart_num > 1 || baudrate == 0 ||
-      txpin < 0 || rxpin < 0 ||
-      (bits < 5 || bits > 8) ||
-      (stop != 1 && stop != 2) ||
-      (parity != 'N' && parity != 'E' && parity != 'O')) {
-    return 0;
-  }
-
-  // This driver is deliberately RP2350-specific.
-#if PICO_RP2040
-  return 0;
-#endif
-
-  uint16_t new_tx_len = 0;
-  uint16_t new_rx_len = 0;
-  uint8_t new_tx_pow = 0;
-  uint8_t new_rx_pow = 0;
-
-  if (!roundBufferSize(txbuflen, new_tx_len, new_tx_pow) ||
-      !roundBufferSize(rxbuflen, new_rx_len, new_rx_pow)) {
-    return 0;
-  }
-
-  // Allocate before destroying a working instance.
-  auto* new_rx = static_cast<uint8_t*>(
-      aligned_alloc(new_rx_len, new_rx_len));
-  auto* new_tx = static_cast<uint8_t*>(
-      aligned_alloc(new_tx_len, new_tx_len));
-
-  if (!new_rx || !new_tx) {
-    free(new_rx);
-    free(new_tx);
-    return 0;
-  }
-
-  memset(new_rx, 0, new_rx_len);
-  memset(new_tx, 0, new_tx_len);
-
-  // Allocate mutexes before replacing the current instance.
-  SemaphoreHandle_t new_rx_mutex = xSemaphoreCreateMutex();
-  SemaphoreHandle_t new_tx_mutex = xSemaphoreCreateMutex();
-
-  if (!new_rx_mutex || !new_tx_mutex) {
-    if (new_rx_mutex) vSemaphoreDelete(new_rx_mutex);
-    if (new_tx_mutex) vSemaphoreDelete(new_tx_mutex);
-    free(new_rx);
-    free(new_tx);
-    return 0;
-  }
-
-  // Do not call begin() concurrently with read/write.
-  end();
-
-  rx_buf_ = new_rx;
-  tx_buf_ = new_tx;
-  rx_buf_len_ = new_rx_len;
-  tx_buf_len_ = new_tx_len;
-  rx_buf_pow_ = new_rx_pow;
-  tx_buf_pow_ = new_tx_pow;
-  rx_mutex_ = new_rx_mutex;
-  tx_mutex_ = new_tx_mutex;
+  //in case begin() is called twice: stop running DMA before touching buffers
+  stop_dma();
 
   uart_num_ = uart_num;
-  uart_ = (uart_num == 0) ? uart0 : uart1;
+  uart_ = UART_INSTANCE(uart_num);
 
-  // Configure UART and pins.
-  gpio_set_function(txpin, GPIO_FUNC_UART);
-  gpio_set_function(rxpin, GPIO_FUNC_UART);
+  //pins (only configure pins that are used)
+  if(txpin >= 0) {
+    gpio_set_function(txpin, GPIO_FUNC_UART);
+    gpio_set_outover(txpin, (invert ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL));
+  }
+  if(rxpin >= 0) {
+    gpio_set_function(rxpin, GPIO_FUNC_UART);
+    gpio_set_inover(rxpin, (invert ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL));
+  }
 
-  gpio_set_outover(txpin, invert ? GPIO_OVERRIDE_INVERT
-                                  : GPIO_OVERRIDE_NORMAL);
-  gpio_set_inover(rxpin, invert ? GPIO_OVERRIDE_INVERT
-                                 : GPIO_OVERRIDE_NORMAL);
-
+  //uart_init is only called here (it resets the peripheral and the format). setBaud() uses uart_set_baudrate().
   uint32_t actual_baud = uart_init(uart_, baudrate);
 
-  uart_set_format(
-      uart_,
-      bits,
-      stop,
-      parity == 'E' ? UART_PARITY_EVEN :
-      parity == 'O' ? UART_PARITY_ODD :
-                      UART_PARITY_NONE);
-
+  //properties
+  uart_set_format(uart_, bits, stop, (parity=='E' ? UART_PARITY_EVEN : ( parity=='O' ? UART_PARITY_ODD : UART_PARITY_NONE)) );
   uart_set_hw_flow(uart_, false, false);
   uart_set_fifo_enabled(uart_, true);
 
-  // Claim channels. Return them if initialization fails.
-  rx_dma_ch_ = static_cast<int8_t>(
-      dma_claim_unused_channel(false));
+  //buffers: min 4 bytes, max 32768 bytes (uint16_t)
+  rx_buf_len_pow = log_2(rxbuflen);
+  tx_buf_len_pow = log_2(txbuflen);
+  if(rx_buf_len_pow < 2) rx_buf_len_pow = 2;
+  if(tx_buf_len_pow < 2) tx_buf_len_pow = 2;
+  if(rx_buf_len_pow > 15) rx_buf_len_pow = 15;
+  if(tx_buf_len_pow > 15) tx_buf_len_pow = 15;
+  rx_buf_len = (uint16_t)1 << rx_buf_len_pow;
+  tx_buf_len = (uint16_t)1 << tx_buf_len_pow;
 
-  tx_dma_ch_ = static_cast<int8_t>(
-      dma_claim_unused_channel(false));
-
-  if (rx_dma_ch_ < 0 || tx_dma_ch_ < 0) {
-    end();
+  free(rx_raw); rx_raw = nullptr; rx_buf = nullptr;
+  free(tx_raw); tx_raw = nullptr; tx_buf = nullptr;
+  rx_buf = alloc_aligned(rx_buf_len, &rx_raw);
+  tx_buf = alloc_aligned(tx_buf_len, &tx_raw);
+  if(!rx_buf || !tx_buf) {
+    free(rx_raw); rx_raw = nullptr; rx_buf = nullptr;
+    free(tx_raw); tx_raw = nullptr; tx_buf = nullptr;
     return 0;
   }
+  memset(rx_buf, 0, rx_buf_len);
 
-  volatile void* uart_dr =
-      static_cast<volatile void*>(&uart_get_hw(uart_)->dr);
+  init_dma();
 
-  // RX: endless, DREQ-paced DMA into an aligned circular buffer.
-  dma_channel_config rc =
-      dma_channel_get_default_config(rx_dma_ch_);
-
-  channel_config_set_transfer_data_size(&rc, DMA_SIZE_8);
-  channel_config_set_read_increment(&rc, false);
-  channel_config_set_write_increment(&rc, true);
-  channel_config_set_ring(&rc, true, rx_buf_pow_);
-  channel_config_set_dreq(
-      &rc, uart_num == 0 ? DREQ_UART0_RX : DREQ_UART1_RX);
-
-  dma_channel_configure(
-      rx_dma_ch_,
-      &rc,
-      rx_buf_,
-      uart_dr,
-      dma_encode_endless_transfer_count(),
-      true);
-
-  // TX: normal DMA transfers from a circular buffer.
-  dma_channel_config tc =
-      dma_channel_get_default_config(tx_dma_ch_);
-
-  channel_config_set_transfer_data_size(&tc, DMA_SIZE_8);
-  channel_config_set_read_increment(&tc, true);
-  channel_config_set_write_increment(&tc, false);
-  channel_config_set_ring(&tc, false, tx_buf_pow_);
-  channel_config_set_dreq(
-      &tc, uart_num == 0 ? DREQ_UART0_TX : DREQ_UART1_TX);
-
-  dma_channel_configure(
-      tx_dma_ch_,
-      &tc,
-      uart_dr,
-      tx_buf_,
-      0,
-      false);
-
-  rx_dma_pos_ = 0;
-  rx_produced_ = 0;
-  rx_consumed_ = 0;
-  rx_overruns_ = 0;
-
-  tx_user_idx_ = 0;
-  tx_dma_idx_ = 0;
-  tx_dma_size_ = 0;
-  tx_dma_active_ = false;
-
-  initialized_ = true;
   return actual_baud;
 }
 
+//round up to next power of two: 255->8, 256->8, 257->9
+uint8_t SerialDMA::log_2(uint16_t val) {
+  uint8_t i = 0;
+  if(val == 0) return 0;
+  val--;
+  while(val>0) {
+    i++;
+    val>>=1;
+  }
+  return i;
+}
+
 uint32_t SerialDMA::setBaud(uint32_t baudrate) {
-  if (!initialized_ || !uart_ || baudrate == 0) {
-    return 0;
-  }
-
-  // Avoid changing UART configuration mid-transfer.
-  if (!lock(tx_mutex_)) return 0;
-  if (!lock(rx_mutex_)) {
-    xSemaphoreGive(tx_mutex_);
-    return 0;
-  }
-
-  serviceTxLocked();
-
-  // Do not reset UART with uart_init() here.
-  uint32_t actual = uart_set_baudrate(uart_, baudrate);
-
-  xSemaphoreGive(rx_mutex_);
-  xSemaphoreGive(tx_mutex_);
-  return actual;
+  if(!uart_) return 0;
+  return uart_set_baudrate(uart_, baudrate); //does not reset the uart / format
 }
 
-void SerialDMA::updateRxLocked() {
-  if (!initialized_ || rx_dma_ch_ < 0) return;
-
-  uintptr_t base = reinterpret_cast<uintptr_t>(rx_buf_);
-  uintptr_t addr = static_cast<uintptr_t>(
-      dma_channel_hw_addr(rx_dma_ch_)->write_addr);
-
-  // DMA write ring wraps the current write address at the
-  // buffer boundary. Read the live address, not TRANS_COUNT.
-  uint16_t pos = static_cast<uint16_t>(
-      (addr - base) & (rx_buf_len_ - 1));
-
-  uint16_t delta = static_cast<uint16_t>(
-      (pos - rx_dma_pos_) & (rx_buf_len_ - 1));
-
-  rx_produced_ += delta;
-  rx_dma_pos_ = pos;
-
-  uint32_t queued = rx_produced_ - rx_consumed_;
-
-  if (queued > rx_buf_len_) {
-    uint32_t lost = queued - rx_buf_len_;
-    rx_overruns_ += lost;
-    rx_consumed_ += lost;
-  }
+void SerialDMA::stop_dma() {
+  //abort running channels (keep them claimed so they can be re-used)
+#if PICO_RP2040
+  if(rx_ctrl_dma_ch >= 0) dma_channel_abort(rx_ctrl_dma_ch); //abort ctrl first, it chains to rx
+#endif
+  if(rx_dma_ch >= 0) dma_channel_abort(rx_dma_ch);
+  if(tx_dma_ch >= 0) dma_channel_abort(tx_dma_ch);
+  rx_user_idx = rx_dma_idx = 0;
+  tx_user_idx = tx_dma_idx = tx_dma_size = 0;
+  tx_dma_active = false;
 }
 
-uint16_t SerialDMA::available() {
-  if (!initialized_ || !lock(rx_mutex_)) return 0;
+void SerialDMA::init_dma() {
+  const uint rx_dreq = uart_get_dreq(uart_, false);
+  const uint tx_dreq = uart_get_dreq(uart_, true);
+  volatile void *uart_dr = (volatile void *)&uart_get_hw(uart_)->dr;
 
-  updateRxLocked();
+  rx_user_idx = 0;
+  rx_dma_idx = 0;
 
-  uint32_t n = rx_produced_ - rx_consumed_;
-  if (n > rx_buf_len_) n = rx_buf_len_;
+#if PICO_RP2040
+  // RP2040 does not have self trigger, use second dma channel to re-trigger rx channel
+  if(rx_dma_ch < 0) rx_dma_ch = dma_claim_unused_channel(true);
+  if(rx_ctrl_dma_ch < 0) rx_ctrl_dma_ch = dma_claim_unused_channel(true);
 
-  xSemaphoreGive(rx_mutex_);
-  return static_cast<uint16_t>(n);
+  // DMA control to re-trigger uart read channel (performs dummy 1 byte transfer from rx_ctrl_dummy_read to rx_ctrl_dummy_write)
+  dma_channel_config ctrl_config = dma_channel_get_default_config(rx_ctrl_dma_ch);
+  channel_config_set_transfer_data_size(&ctrl_config, DMA_SIZE_8);
+  channel_config_set_read_increment(&ctrl_config, false);
+  channel_config_set_write_increment(&ctrl_config, false);
+  channel_config_set_chain_to(&ctrl_config, rx_dma_ch);
+  channel_config_set_enable(&ctrl_config, true);
+  dma_channel_configure(rx_ctrl_dma_ch, &ctrl_config, &rx_ctrl_dummy_write, &rx_ctrl_dummy_read, 1, false);
+
+  // DMA uart read
+  dma_channel_config rx_config = dma_channel_get_default_config(rx_dma_ch);
+  channel_config_set_transfer_data_size(&rx_config, DMA_SIZE_8);
+  channel_config_set_read_increment(&rx_config, false);
+  channel_config_set_write_increment(&rx_config, true);
+  channel_config_set_ring(&rx_config, true, rx_buf_len_pow);  //true = write buffer
+  channel_config_set_dreq(&rx_config, rx_dreq);
+  channel_config_set_chain_to(&rx_config, rx_ctrl_dma_ch);
+  channel_config_set_enable(&rx_config, true);
+  // rx_buf_len<<16: fill buffer 65536 times before chaining to ctrl_ch (count is 32 bit on RP2040)
+  dma_channel_configure(rx_dma_ch, &rx_config, rx_buf, uart_dr, ((uint32_t)rx_buf_len) << 16, true);
+#else
+  // RP2350 has self trigger
+  if(rx_dma_ch < 0) rx_dma_ch = dma_claim_unused_channel(true);
+  dma_channel_config rx_config = dma_channel_get_default_config(rx_dma_ch);
+  channel_config_set_transfer_data_size(&rx_config, DMA_SIZE_8);
+  channel_config_set_read_increment(&rx_config, false);
+  channel_config_set_write_increment(&rx_config, true);
+  channel_config_set_ring(&rx_config, true, rx_buf_len_pow);  //true = write buffer
+  channel_config_set_dreq(&rx_config, rx_dreq);
+  channel_config_set_enable(&rx_config, true);
+  dma_channel_configure(rx_dma_ch, &rx_config, rx_buf, uart_dr, dma_encode_transfer_count_with_self_trigger(rx_buf_len), true);
+  dma_channel_set_irq0_enabled(rx_dma_ch, false);
+#endif
+
+  // DMA uart write (started on demand by serviceTx)
+  if(tx_dma_ch < 0) tx_dma_ch = dma_claim_unused_channel(true);
+  dma_channel_config tx_config = dma_channel_get_default_config(tx_dma_ch);
+  channel_config_set_transfer_data_size(&tx_config, DMA_SIZE_8);
+  channel_config_set_read_increment(&tx_config, true);
+  channel_config_set_write_increment(&tx_config, false);
+  channel_config_set_dreq(&tx_config, tx_dreq);
+  channel_config_set_ring(&tx_config, false, tx_buf_len_pow); //false = read buffer wraps
+  dma_channel_configure(tx_dma_ch, &tx_config, uart_dr, tx_buf, 0, false);
+
+  tx_user_idx = 0;
+  tx_dma_idx = 0;
+  tx_dma_size = 0;
+  tx_dma_active = false;
 }
 
-uint16_t SerialDMA::read(uint8_t* data, uint16_t length) {
-  if (!initialized_ || !data || length == 0 ||
-      !lock(rx_mutex_)) {
-    return 0;
+// Start a DMA transfer for all queued bytes, if DMA is idle. Never touches a transfer that is in flight.
+void SerialDMA::serviceTx() {
+  if(tx_dma_ch < 0 || !tx_buf) return;
+
+  if(tx_dma_active) {
+    if(dma_channel_is_busy(tx_dma_ch)) return;
+
+    // previous transfer completed
+    tx_dma_idx = (tx_dma_idx + tx_dma_size) & (tx_buf_len - 1);
+    tx_dma_size = 0;
+    tx_dma_active = false;
   }
 
-  updateRxLocked();
+  if(tx_user_idx == tx_dma_idx) return; // queue empty
 
-  uint32_t queued = rx_produced_ - rx_consumed_;
-  if (queued > rx_buf_len_) queued = rx_buf_len_;
+  // all queued bytes (ring wrap is handled by the DMA read ring)
+  uint16_t pending = (tx_user_idx + tx_buf_len - tx_dma_idx) & (tx_buf_len - 1);
 
-  if (length > queued) {
-    length = static_cast<uint16_t>(queued);
-  }
+  __dmb(); // make sure buffer writes are visible before DMA starts reading
 
-  uint16_t idx = static_cast<uint16_t>(
-      rx_consumed_ & (rx_buf_len_ - 1));
-
-  uint16_t first = length;
-  if (first > rx_buf_len_ - idx) {
-    first = rx_buf_len_ - idx;
-  }
-
-  memcpy(data, &rx_buf_[idx], first);
-
-  if (length > first) {
-    memcpy(data + first, rx_buf_, length - first);
-  }
-
-  rx_consumed_ += length;
-
-  xSemaphoreGive(rx_mutex_);
-  return length;
+  tx_dma_size = pending;
+  tx_dma_active = true;
+  dma_channel_set_read_addr(tx_dma_ch, &tx_buf[tx_dma_idx], false);
+  dma_channel_set_trans_count(tx_dma_ch, pending, true); //trigger
 }
 
-void SerialDMA::serviceTxLocked() {
-  if (!initialized_ || tx_dma_ch_ < 0) return;
-
-  if (tx_dma_active_) {
-    if (dma_channel_is_busy(tx_dma_ch_)) {
-      return;
-    }
-
-    tx_dma_idx_ = static_cast<uint16_t>(
-        (tx_dma_idx_ + tx_dma_size_) & (tx_buf_len_ - 1));
-
-    tx_dma_size_ = 0;
-    tx_dma_active_ = false;
-  }
-
-  if (tx_user_idx_ == tx_dma_idx_) return;
-
-  uint16_t pending = static_cast<uint16_t>(
-      (tx_user_idx_ + tx_buf_len_ - tx_dma_idx_)
-      & (tx_buf_len_ - 1));
-
-  if (pending == 0) return;
-
-  tx_dma_size_ = pending;
-  tx_dma_active_ = true;
-
-  dma_channel_set_read_addr(
-      tx_dma_ch_,
-      &tx_buf_[tx_dma_idx_],
-      false);
-
-  dma_channel_set_trans_count(
-      tx_dma_ch_,
-      pending,
-      true);
+void SerialDMA::service() {
+  serviceTx();
 }
 
 uint16_t SerialDMA::availableForWrite() {
-  if (!initialized_ || !lock(tx_mutex_)) return 0;
-
-  serviceTxLocked();
-
-  uint16_t n = static_cast<uint16_t>(
-      (tx_dma_idx_ + tx_buf_len_ - tx_user_idx_ - 1)
-      & (tx_buf_len_ - 1));
-
-  xSemaphoreGive(tx_mutex_);
-  return n;
+  if(tx_dma_ch < 0 || !tx_buf) return 0;
+  serviceTx();
+  return (tx_dma_idx + tx_buf_len - tx_user_idx - 1) & (tx_buf_len - 1);
 }
 
-uint16_t SerialDMA::write(
-    const uint8_t* data,
-    uint16_t length) {
+uint16_t SerialDMA::write(const uint8_t* data, uint16_t length) {
+  if(tx_dma_ch < 0 || !tx_buf || !data || length == 0) return 0;
 
-  if (!initialized_ || !data || length == 0 ||
-      !lock(tx_mutex_)) {
-    return 0;
-  }
+  serviceTx();
 
-  serviceTxLocked();
-
-  uint16_t avail = static_cast<uint16_t>(
-      (tx_dma_idx_ + tx_buf_len_ - tx_user_idx_ - 1)
-      & (tx_buf_len_ - 1));
-
-  if (length > avail) {
-    xSemaphoreGive(tx_mutex_);
-    return 0;
-  }
+  uint16_t avail = (tx_dma_idx + tx_buf_len - tx_user_idx - 1) & (tx_buf_len - 1);
+  if(length > avail) return 0; // not enough space, nothing written
 
   uint16_t first = length;
-  if (first > tx_buf_len_ - tx_user_idx_) {
-    first = tx_buf_len_ - tx_user_idx_;
-  }
-
-  memcpy(&tx_buf_[tx_user_idx_], data, first);
-
+  if(first > tx_buf_len - tx_user_idx) first = tx_buf_len - tx_user_idx;
+  memcpy(&tx_buf[tx_user_idx], data, first);
   uint16_t second = length - first;
-  if (second) {
-    memcpy(tx_buf_, data + first, second);
-  }
+  if(second > 0) memcpy(tx_buf, data + first, second);
 
-  tx_user_idx_ = static_cast<uint16_t>(
-      (tx_user_idx_ + length) & (tx_buf_len_ - 1));
+  tx_user_idx = (tx_user_idx + length) & (tx_buf_len - 1);
 
-  serviceTxLocked();
+  serviceTx();
 
-  xSemaphoreGive(tx_mutex_);
   return length;
 }
 
-void SerialDMA::end() {
-  // Must not be called concurrently with read/write/begin.
-  initialized_ = false;
+uint16_t SerialDMA::available() {
+  if(rx_dma_ch < 0 || !rx_buf) return 0;
 
-  if (rx_dma_ch_ >= 0) {
-    dma_channel_abort(rx_dma_ch_);
-    dma_channel_unclaim(rx_dma_ch_);
-    rx_dma_ch_ = -1;
-  }
+  // transfer_count counts down; on RP2350 the upper bits contain the trigger mode, masking removes them
+  rx_dma_idx = (rx_buf_len - dma_channel_hw_addr(rx_dma_ch)->transfer_count) & (rx_buf_len - 1);
 
-  if (tx_dma_ch_ >= 0) {
-    dma_channel_abort(tx_dma_ch_);
-    dma_channel_unclaim(tx_dma_ch_);
-    tx_dma_ch_ = -1;
-  }
+  if(rx_user_idx <= rx_dma_idx) return rx_dma_idx - rx_user_idx;
+  return rx_buf_len + rx_dma_idx - rx_user_idx;
+}
 
-  if (uart_) {
-    uart_deinit(uart_);
-    uart_ = nullptr;
-  }
+uint16_t SerialDMA::read(uint8_t* data, uint16_t length) {
+  if(!data || length == 0) return 0;
 
-  free(rx_buf_);
-  free(tx_buf_);
-  rx_buf_ = nullptr;
-  tx_buf_ = nullptr;
+  uint16_t avail = available(); // also refreshes rx_dma_idx
+  if(avail < length) length = avail;
+  if(length == 0) return 0;
 
-  rx_buf_len_ = tx_buf_len_ = 0;
+  uint16_t left = rx_buf_len - rx_user_idx; // bytes until end of ring
+  if(left > length) left = length;
+  memcpy(data, &rx_buf[rx_user_idx], left);
+  if(left < length) memcpy(&data[left], rx_buf, length - left);
 
-  if (rx_mutex_) {
-    vSemaphoreDelete(rx_mutex_);
-    rx_mutex_ = nullptr;
-  }
+  rx_user_idx = (rx_user_idx + length) & (rx_buf_len - 1);
 
-  if (tx_mutex_) {
-    vSemaphoreDelete(tx_mutex_);
-    tx_mutex_ = nullptr;
-  }
+  return length;
 }
 
 #endif //#ifdef ARDUINO_ARCH_RP2040
