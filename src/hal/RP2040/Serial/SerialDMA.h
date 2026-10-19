@@ -24,7 +24,6 @@ SOFTWARE.
 
 //based on: https://github.com/rossihwang/pico_dma_uart
 
-#ifdef ARDUINO_ARCH_RP2040
 #pragma once
 
 #include <stdint.h>
@@ -79,5 +78,3 @@ private:
   void init_dma();
   uint8_t log_2(uint16_t val);
 };
-
-#endif //#ifdef ARDUINO_ARCH_RP2040
