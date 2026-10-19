@@ -271,10 +271,10 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
 
 MF_I2C* hal_get_i2c_bus(int bus_id) { 
   //exit on invalid bus_id
-  if(bus_id < 0 || bus_id >= HAL_SER_NUM) return nullptr;
+  if(bus_id < 0 || bus_id >= HAL_I2C_NUM) return nullptr;
 
   //exit when exists
-  if(hal_i2c[bus_id]) hal_i2c[bus_id];
+  if(hal_i2c[bus_id]) return hal_i2c[bus_id];
 
   //create bus
   switch(bus_id) {
