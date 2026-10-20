@@ -26,10 +26,17 @@ SOFTWARE.
 
 #pragma once
 
+#include <stdint.h>
+#include <hardware/uart.h>
+
+// Notes:
+// - One instance per UART, instances share no state (UART0 and UART1 work independently).
+// - An instance is not thread safe: use write()/availableForWrite() from one task, read()/available() from one task.
+// - write() is all-or-nothing: returns 0 (and writes nothing) if there is not enough free space.
 class SerialDMA {
 public:
   //buffer size has to be a power of two, will be rounded up to next greater value: i.e. 128->128, 129->256
-  uint32_t begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits = 8, char parity = 'N', uint8_t stop = 1, bool invert = false); //returns actual baud rate
+  uint32_t begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits = 8, char parity = 'N', uint8_t stop = 1, bool invert = false); //returns actual baud rate (0 on error)
   uint32_t setBaud(uint32_t baudrate); //call this after begin to change baud rate, returns actual baud rate
   uint16_t write(const uint8_t* data, uint16_t length);
   uint16_t read(uint8_t* data, uint16_t length);
@@ -45,27 +52,29 @@ public:
 
 private:
   uart_inst_t* uart_ = nullptr;
+  uint8_t uart_num_ = 0;
 
 #if PICO_RP2040
   int8_t rx_ctrl_dma_ch = -1;
-  uint8_t rx_ctrl_dummy_read;
-  uint8_t rx_ctrl_dummy_write;
+  uint8_t rx_ctrl_dummy_read = 0;
+  uint8_t rx_ctrl_dummy_write = 0;
 #endif
   int8_t rx_dma_ch = -1;
-  uint8_t rx_buf_len_pow; // = 8; //2^8 = 256 bytes
-  uint16_t rx_buf_len; // = 1 << (rx_buf_len_pow);
-  uint8_t * rx_buf = nullptr; //needs to be aligned! ... static version: __attribute__((aligned(256))) uint8_t rx_buf[256];  
-  uint16_t rx_user_idx = 0; // next index to read
-  uint16_t rx_dma_idx = 0;  // next index dma will write
+  uint8_t rx_buf_len_pow = 0; // 2^8 = 256 bytes
+  uint16_t rx_buf_len = 0;    // = 1 << rx_buf_len_pow
+  uint8_t * rx_buf = nullptr; // must be aligned to rx_buf_len (DMA ring)
+  uint16_t rx_user_idx = 0;   // next index to read
+  uint16_t rx_dma_idx = 0;    // next index dma will write
 
   int8_t tx_dma_ch = -1;
-  uint8_t tx_buf_len_pow; // = 8; //2^8 = 256 bytes
-  uint16_t tx_buf_len; // = 1 << (tx_buf_len_pow);
-  uint8_t * tx_buf = nullptr; //needs to be aligned! ... static version: //__attribute__((aligned(256))) uint8_t tx_buf[256];
-  uint16_t tx_user_idx = 0;  // next index to write
-  uint16_t tx_dma_idx = 0;  // next index dma will read
-  uint16_t tx_dma_size = 0; // size of current dma transfer
+  uint8_t tx_buf_len_pow = 0;
+  uint16_t tx_buf_len = 0;
+  uint8_t * tx_buf = nullptr; // must be aligned to tx_buf_len (DMA ring)
+  uint16_t tx_user_idx = 0;   // next index to write
+  uint16_t tx_dma_idx = 0;    // index where current dma transfer started
+  uint16_t tx_dma_size = 0;   // size of current dma transfer (incl. bytes appended by write())
 
+  void stop_dma();
   void init_dma();
   uint8_t log_2(uint16_t val);
 };
