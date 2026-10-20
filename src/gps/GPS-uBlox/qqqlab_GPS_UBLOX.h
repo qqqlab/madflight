@@ -154,7 +154,7 @@ public:
 
 protected:
     //additions for this port
-    void update2();
+    bool update2(); // returns true if a complete position+velocity solution was parsed
     static const uint32_t config_baudrates[]; //baud rates to try for initblob
     uint8_t config_stage = 0;
     uint32_t config_stage_ms = 0;
