@@ -58,6 +58,7 @@ struct ImuConfig {
     Cfg::imu_align_enum *imu_align = nullptr; //mounting alignment
     float* imu_cal_gx = nullptr; //gyro offset[3] [deg/sec]
     float* imu_cal_ax = nullptr; //acc offset[3] [G]
+    float* imu_cal_asx = nullptr; //acc scale[3] [G]
 
     //config values returned by gizmo
     bool has_mag = false; //true if IMU has built-in magnetometer

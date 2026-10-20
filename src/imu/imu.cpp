@@ -220,7 +220,12 @@ bool Imu::update() {
     gy -= config.imu_cal_gx[1];
     gz -= config.imu_cal_gx[2];
 
-    //handle imu rotation for different mounting positions (inline for speed)
+    // apply scaling
+    ax *= config.imu_cal_asx[0];
+    ay *= config.imu_cal_asx[1];
+    az *= config.imu_cal_asx[2];
+
+    // rotation for different mounting positions (inline for speed)
     switch(*config.imu_align) {
       case Cfg::imu_align_enum::mf_CW0 :
         break;
@@ -298,6 +303,11 @@ void Imu::convert_to_raw(float *gyr, float *acc) {
          { float tmp; tmp=ax; ax=-ay; ay=-tmp; az=-az;   tmp=gx; gx=-gy; gy=-tmp; gz=-gz; } //unrot = same
         break;
     }
+
+    // un-apply scaling
+    ax /= config.imu_cal_asx[0];
+    ay /= config.imu_cal_asx[1];
+    az /= config.imu_cal_asx[2];
 
     // un-apply zero offsets
     ax += config.imu_cal_ax[0];
