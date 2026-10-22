@@ -27,6 +27,7 @@ SOFTWARE.
 #include <Arduino.h> //Serial
 #include "mag.h"
 #include "MagGizmoQMC5883L.h"
+#include "MagGizmoHMC5883L.h"
 #include "MagGizmoQMC6309.h"
 #include "MagGizmoRM3100.h"
 #include "MagGizmoQMC5883P.h"
@@ -57,6 +58,11 @@ int Mag::setup() {
     case Cfg::mag_gizmo_enum::mf_QMC5883 :
       if(config.i2c_bus) {
         gizmo = new MagGizmoQMC5883L(config.i2c_bus, config.i2c_adr);
+      }
+      break;
+    case Cfg::mag_gizmo_enum::mf_HMC5883L :
+      if(config.i2c_bus) {
+        gizmo = new MagGizmoHMC5883L(config.i2c_bus, config.i2c_adr); //i2c address 0x1E (or 0x1D)
       }
       break;
     case Cfg::mag_gizmo_enum::mf_QMC6309 :

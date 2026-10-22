@@ -776,6 +776,7 @@ param:
       - QMC5883P
       - MMC5603
       - BMM150
+      - HMC5883L
     comment: "Magnetometer Sensor Type"
   mag_i2c_bus:
     default: -1
@@ -807,6 +808,7 @@ param:
       - DSM
       - PPM
       - IBUS
+      - SERIAL
     comment: "Radio Receiver Type"
   rcl_ser_bus:
     default: -1

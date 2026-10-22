@@ -20,8 +20,8 @@ namespace Cfg {
   enum class imu_gizmo_enum : uint32_t { mf_NONE,mf_BMI270,mf_MPU6000,mf_MPU6050,mf_MPU6500,mf_MPU9150,mf_MPU9250,mf_ICM45686,mf_ICM42688,mf_ICM42688P,mf_AUTO,mf_LSM6DSV,mf_LSM6DSO,mf_LSM6DSV16B };
   enum class imu_align_enum : uint32_t { mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP };
   enum class led_gizmo_enum : uint32_t { mf_NONE,mf_HIGH_IS_ON,mf_LOW_IS_ON,mf_RGB };
-  enum class mag_gizmo_enum : uint32_t { mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100,mf_QMC5883L,mf_QMC5883P,mf_MMC5603,mf_BMM150 };
-  enum class rcl_gizmo_enum : uint32_t { mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS };
+  enum class mag_gizmo_enum : uint32_t { mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100,mf_QMC5883L,mf_QMC5883P,mf_MMC5603,mf_BMM150,mf_HMC5883L };
+  enum class rcl_gizmo_enum : uint32_t { mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS,mf_SERIAL };
   enum class rdr_gizmo_enum : uint32_t { mf_NONE,mf_LD2411S,mf_LD2413,mf_USD1,mf_SR04,mf_DTS6012M,mf_VL53L3CX };
   enum class imu_bus_type_enum : uint32_t { mf_SPI,mf_I2C };
   enum class mag_align_enum : uint32_t { mf_CW0,mf_CW90,mf_CW180,mf_CW270,mf_CW0FLIP,mf_CW90FLIP,mf_CW180FLIP,mf_CW270FLIP };
@@ -165,11 +165,11 @@ namespace Cfg {
     { "imu_acc_lp", (float)70, 'f', "" },
     { "imu_gyr_lp", (float)60, 'f', "" },
     { "led_gizmo", (float)Cfg::led_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_HIGH_IS_ON,mf_LOW_IS_ON,mf_RGB" },
-    { "mag_gizmo", (float)Cfg::mag_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100,mf_QMC5883L,mf_QMC5883P,mf_MMC5603,mf_BMM150" },
+    { "mag_gizmo", (float)Cfg::mag_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_QMC5883,mf_QMC6309,mf_RM3100,mf_QMC5883L,mf_QMC5883P,mf_MMC5603,mf_BMM150,mf_HMC5883L" },
     { "mag_i2c_bus", (float)-1, 'i', "" },
     { "mag_i2c_adr", (float)0, 'i', "" },
     { "mag_lp", (float)1e10, 'f', "" },
-    { "rcl_gizmo", (float)Cfg::rcl_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS" },
+    { "rcl_gizmo", (float)Cfg::rcl_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_MAVLINK,mf_CRSF,mf_SBUS,mf_SBUS_NOT_INV,mf_DSM,mf_PPM,mf_IBUS,mf_SERIAL" },
     { "rcl_ser_bus", (float)-1, 'i', "" },
     { "rcl_baud", (float)0, 'i', "" },
     { "rcl_num_ch", (float)8, 'i', "" },

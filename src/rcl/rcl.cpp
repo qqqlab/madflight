@@ -35,14 +35,12 @@ SOFTWARE.
 #include "RclGizmoDsm.h"
 #include "RclGizmoPpm.h"
 #include "RclGizmoIbus.h"
+#include "RclGizmoSerial.h"
 //#include "RclGizmoPwm.h" //not implemented
 
 //set defaults
 #ifndef RCL_TIMEOUT_US
   #define RCL_TIMEOUT_US 3000000 // lost connection timeout in microseconds
-#endif
-#ifndef RCL_THROTTLE_DEADBAND
-  #define RCL_THROTTLE_DEADBAND 60 //pwm deadband for zero throttle in microseconds
 #endif
 
 //create global Rcl class instance
@@ -120,7 +118,16 @@ int Rcl::setup() {
       if (!gizmo) {
         Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
       }
+      break;
+    }
 
+    case Cfg::rcl_gizmo_enum::mf_SERIAL : {
+      MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id, config.baud ? config.baud : 115200);
+      if(!ser_bus) {
+        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        return -1002;
+      }
+      gizmo = new RclGizmoSerial(ser_bus, pwm);
       break;
     }
   }

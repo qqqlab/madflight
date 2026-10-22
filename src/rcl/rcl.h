@@ -30,6 +30,11 @@ SOFTWARE.
 
 #define RCL_MAX_CH 20 //maximum number of channels
 
+//pwm deadband for zero throttle in microseconds
+#ifndef RCL_THROTTLE_DEADBAND
+  #define RCL_THROTTLE_DEADBAND 60
+#endif
+
 struct __attribute__((aligned(4))) RclState {
 public:
     uint32_t update_ts = 0; //update timestamp [us]
