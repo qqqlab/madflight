@@ -312,7 +312,7 @@ static void cli_pbat() {
 }
 
 static void cli_pbar() {
-  Serial.printf("BAT\talt:%.2f\t", bar.alt);
+  Serial.printf("BAR\talt:%.2f\t", bar.alt);
   Serial.printf("press:%.1f\t", bar.press);
   Serial.printf("temp:%.2f\t", bar.temp);
   Serial.printf("agl:%+.2f\t", bar.alt - bar.ground_level);
