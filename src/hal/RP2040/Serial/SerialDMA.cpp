@@ -36,6 +36,31 @@ SOFTWARE.
 
 #include "SerialDMA.h"
 
+// DMA completion interrupt used for TX. Installed as a SHARED handler. If another driver owns this
+// irq exclusively, the driver still works but queued bytes are only pushed out by write()/availableForWrite()/service().
+#define SERIALDMA_IRQ_INDEX 1
+#define SERIALDMA_IRQ       DMA_IRQ_1
+
+static SerialDMA* s_instances[2] = {nullptr, nullptr};
+static bool s_irq_registered = false;
+static bool s_irq_ok = false;
+
+void SerialDMA::dmaIrqHandler() {
+  for(int i = 0; i < 2; i++) {
+    SerialDMA* s = s_instances[i];
+    if(s) s->irqHandler();
+  }
+}
+
+void SerialDMA::irqHandler() {
+  if(tx_dma_ch < 0 || !tx_irq_ok) return;
+  if(dma_irqn_get_channel_status(SERIALDMA_IRQ_INDEX, tx_dma_ch)) {
+    dma_irqn_acknowledge_channel(SERIALDMA_IRQ_INDEX, tx_dma_ch); //acknowledge first: a completion after this re-raises the flag
+    uint32_t save = spin_lock_blocking(tx_lock);
+    tx_kick();
+    spin_unlock(tx_lock, save);
+  }
+}
 
 uint32_t SerialDMA::begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits, char parity, uint8_t stop, bool invert) {
   if(uart_num > 1) return 0;
@@ -88,6 +113,11 @@ uint32_t SerialDMA::begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rx
   }
   memset(rx_buf, 0, rx_buf_len);
 
+  if(!tx_lock) {
+    int n = spin_lock_claim_unused(true);
+    tx_lock = spin_lock_init(n);
+  }
+
   init_dma();
 
   return actual_baud;
@@ -111,7 +141,11 @@ uint32_t SerialDMA::setBaud(uint32_t baudrate) {
 }
 
 void SerialDMA::stop_dma() {
-  //abort running channels (channels stay claimed so they can be re-used)
+  //abort running channels (channels stay claimed so they can be re-used). Only done at (re)initialisation.
+  if(tx_dma_ch >= 0 && tx_irq_ok) {
+    dma_irqn_set_channel_enabled(SERIALDMA_IRQ_INDEX, tx_dma_ch, false);
+  }
+  tx_irq_ok = false;
 #if PICO_RP2040
   if(rx_ctrl_dma_ch >= 0) dma_channel_abort(rx_ctrl_dma_ch); //abort ctrl first, it chains to rx
 #endif
@@ -119,6 +153,7 @@ void SerialDMA::stop_dma() {
   if(tx_dma_ch >= 0) dma_channel_abort(tx_dma_ch);
   rx_user_idx = rx_dma_idx = 0;
   tx_user_idx = tx_dma_idx = tx_dma_size = 0;
+  tx_active = false;
 }
 
 void SerialDMA::init_dma() {
@@ -170,7 +205,7 @@ void SerialDMA::init_dma() {
   dma_channel_set_irq0_enabled(rx_dma_ch, false);
 #endif
 
-  /// DMA uart write (started by write())
+  /// DMA uart write (started on demand by tx_kick)
   if(tx_dma_ch < 0) tx_dma_ch = dma_claim_unused_channel(true);
   dma_channel_config tx_config = dma_channel_get_default_config(tx_dma_ch);
   channel_config_set_transfer_data_size(&tx_config, DMA_SIZE_8);
@@ -183,47 +218,95 @@ void SerialDMA::init_dma() {
   tx_user_idx = 0;
   tx_dma_idx = 0;
   tx_dma_size = 0;
+  tx_active = false;
+
+  //TX completion interrupt (shared handler; falls back to polling if the irq is owned exclusively by someone else)
+  s_instances[uart_num_] = this;
+  if(!s_irq_registered) {
+    s_irq_registered = true;
+    if(irq_get_exclusive_handler(SERIALDMA_IRQ) == nullptr) {
+      irq_add_shared_handler(SERIALDMA_IRQ, SerialDMA::dmaIrqHandler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+      irq_set_enabled(SERIALDMA_IRQ, true);
+      s_irq_ok = true;
+    }
+  }
+  if(s_irq_ok) {
+    dma_irqn_acknowledge_channel(SERIALDMA_IRQ_INDEX, tx_dma_ch);
+    dma_irqn_set_channel_enabled(SERIALDMA_IRQ_INDEX, tx_dma_ch, true);
+    tx_irq_ok = true;
+  }
+}
+
+// Free space in the tx ring. Call with tx_lock held.
+// Bytes of the running transfer that were already sent are free again (transfer_count counts down, so reading it
+// while the dma runs can only under-estimate the free space).
+uint16_t SerialDMA::tx_free_locked() {
+  uint32_t consumed = 0;
+  if(tx_active) {
+    uint32_t remaining = dma_channel_hw_addr(tx_dma_ch)->transfer_count;
+    if(remaining <= tx_dma_size) consumed = tx_dma_size - remaining;
+  }
+  return (tx_dma_idx + consumed + tx_buf_len - tx_user_idx - 1) & (tx_buf_len - 1);
+}
+
+// Start a transfer for all queued bytes if the dma is idle. NEVER touches a running transfer.
+// Call with tx_lock held (from task or from the dma interrupt).
+void SerialDMA::tx_kick() {
+  if(tx_active) {
+    if(dma_channel_is_busy(tx_dma_ch)) return;
+
+    // previous transfer completed
+    tx_dma_idx = (tx_dma_idx + tx_dma_size) & (tx_buf_len - 1);
+    tx_dma_size = 0;
+    tx_active = false;
+  }
+
+  uint16_t pending = (tx_user_idx + tx_buf_len - tx_dma_idx) & (tx_buf_len - 1);
+  if(pending == 0) return;
+
+  __dmb(); //buffer writes must be visible before the dma starts reading
+
+  tx_dma_size = pending;
+  tx_active = true;
+  dma_channel_set_read_addr(tx_dma_ch, &tx_buf[tx_dma_idx], false);
+  dma_channel_set_trans_count(tx_dma_ch, pending, true); //trigger
+}
+
+void SerialDMA::service() {
+  if(tx_dma_ch < 0 || !tx_buf) return;
+  uint32_t save = spin_lock_blocking(tx_lock);
+  tx_kick();
+  spin_unlock(tx_lock, save);
 }
 
 uint16_t SerialDMA::availableForWrite() {
   if(tx_dma_ch < 0 || !tx_buf) return 0;
-  // transfer_count = bytes the dma still has to send. It can only shrink while we look, so the result is conservative.
-  uint32_t pending = dma_channel_hw_addr(tx_dma_ch)->transfer_count;
-  if(pending > (uint32_t)(tx_buf_len - 1)) return 0;
-  return (uint16_t)(tx_buf_len - 1 - pending);
+  uint32_t save = spin_lock_blocking(tx_lock);
+  if(!tx_irq_ok) tx_kick(); //polling fallback
+  uint16_t avail = tx_free_locked();
+  spin_unlock(tx_lock, save);
+  return avail;
 }
 
 uint16_t SerialDMA::write(const uint8_t* data, uint16_t length) {
   if(tx_dma_ch < 0 || !tx_buf || !data || length == 0) return 0;
 
-  uint16_t avail = availableForWrite();
-  if(length > avail) return 0; // not enough space to write, nothing written
+  uint32_t save = spin_lock_blocking(tx_lock);
+  uint16_t avail = tx_free_locked();
+  spin_unlock(tx_lock, save);
+  if(length > avail) return 0; // not enough space, nothing written
 
-  //copy to dma buffer. This only touches the free area, which the dma is not reading.
+  //copy into the free area. The dma/interrupt never reads there: it only reads up to tx_user_idx, which is published below.
   uint16_t first = length;
   if(first > tx_buf_len - tx_user_idx) first = tx_buf_len - tx_user_idx;
   memcpy(&tx_buf[tx_user_idx], data, first);
   if(length > first) memcpy(tx_buf, data + first, length - first);
+
+  //publish the bytes and start the dma if it is idle (otherwise the completion interrupt starts the next transfer)
+  save = spin_lock_blocking(tx_lock);
   tx_user_idx = (tx_user_idx + length) & (tx_buf_len - 1);
-
-  __dmb(); //buffer writes must be visible before the dma (re)starts reading
-
-  //extend the running transfer by restarting it:
-  //1. stop the channel first (abort waits for an in-flight byte to complete)
-  //2. only THEN read transfer_count - it is exact now (reading it before the abort would be stale,
-  //   some bytes could already have been sent, and would be sent again after the restart)
-  dma_channel_hw_t *hw = dma_channel_hw_addr(tx_dma_ch);
-  if(dma_channel_is_busy(tx_dma_ch)) {
-    dma_channel_abort(tx_dma_ch);
-  }
-  uint32_t bytes_remaining = hw->transfer_count;               // 0 if the previous transfer already completed
-  uint32_t bytes_sent = tx_dma_size - bytes_remaining;         // bytes of the previous transfer that were sent
-  tx_dma_idx = (tx_dma_idx + bytes_sent) & (tx_buf_len - 1);
-  tx_dma_size = bytes_remaining + length;
-
-  //restart: channel config (ring, dreq, ...) is untouched by the abort
-  dma_channel_set_read_addr(tx_dma_ch, &tx_buf[tx_dma_idx], false);
-  dma_channel_set_trans_count(tx_dma_ch, tx_dma_size, true); //trigger
+  tx_kick();
+  spin_unlock(tx_lock, save);
 
   return length;
 }

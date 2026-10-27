@@ -28,11 +28,14 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <hardware/uart.h>
+#include <hardware/sync.h>
 
 // Notes:
 // - One instance per UART, instances share no state (UART0 and UART1 work independently).
-// - An instance is not thread safe: use write()/availableForWrite() from one task, read()/available() from one task.
+// - Use write()/availableForWrite() from one task (single producer), read()/available() from one task.
 // - write() is all-or-nothing: returns 0 (and writes nothing) if there is not enough free space.
+// - TX never aborts or re-programs a running DMA transfer: new data is queued in the ring and the next
+//   transfer is started when the previous one completes (DMA completion interrupt).
 class SerialDMA {
 public:
   //buffer size has to be a power of two, will be rounded up to next greater value: i.e. 128->128, 129->256
@@ -42,6 +45,7 @@ public:
   uint16_t read(uint8_t* data, uint16_t length);
   uint16_t available();
   uint16_t availableForWrite();
+  void service(); //only needed if the DMA interrupt could not be installed (see irqActive()): pushes queued bytes out
 
   int readBytes(char *buf, int len) {return read((uint8_t*)buf, len);}
   void begin(int baud) {setBaud(baud);}
@@ -50,7 +54,12 @@ public:
 
   }
 
+  bool irqActive() { return tx_irq_ok; } //true: TX uses the DMA completion interrupt, false: polling fallback
+
 private:
+  void irqHandler();           //handles TX completion for this instance (called from dmaIrqHandler)
+  static void dmaIrqHandler(); //shared DMA interrupt handler (all instances)
+
   uart_inst_t* uart_ = nullptr;
   uint8_t uart_num_ = 0;
 
@@ -70,9 +79,15 @@ private:
   uint8_t tx_buf_len_pow = 0;
   uint16_t tx_buf_len = 0;
   uint8_t * tx_buf = nullptr; // must be aligned to tx_buf_len (DMA ring)
-  uint16_t tx_user_idx = 0;   // next index to write
-  uint16_t tx_dma_idx = 0;    // index where current dma transfer started
-  uint16_t tx_dma_size = 0;   // size of current dma transfer (incl. bytes appended by write())
+  uint16_t tx_user_idx = 0;   // next index to write (producer)
+  uint16_t tx_dma_idx = 0;    // index where the current dma transfer started
+  uint16_t tx_dma_size = 0;   // size of current dma transfer
+  bool tx_active = false;     // a dma transfer was started and not yet reaped
+  bool tx_irq_ok = false;     // completion interrupt installed
+  spin_lock_t* tx_lock = nullptr;
+
+  uint16_t tx_free_locked();
+  void tx_kick();             // call with tx_lock held
 
   void stop_dma();
   void init_dma();
