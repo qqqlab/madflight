@@ -134,8 +134,8 @@ void SerialDMA::init_dma() {
 #if PICO_RP2040
   // RP2040 does not have self trigger, use second dma channel to re-trigger rx channel
   // DMA uart read
-  rx_dma_ch = dma_claim_unused_channel(true);
-  rx_ctrl_dma_ch = dma_claim_unused_channel(true);
+  if(rx_dma_ch < 0) rx_dma_ch = dma_claim_unused_channel(true);
+  if(rx_ctrl_dma_ch < 0) rx_ctrl_dma_ch = dma_claim_unused_channel(true);
 
   // DMA control to re-trigger uart read channel (performs dummy 1 byte transfer from rx_ctrl_dummy_read to rx_ctrl_dummy_write)
   dma_channel_config ctrl_config = dma_channel_get_default_config(rx_ctrl_dma_ch);
@@ -159,7 +159,7 @@ void SerialDMA::init_dma() {
 #else
   // RP2350 has self trigger
   // DMA uart read
-  rx_dma_ch = dma_claim_unused_channel(true);
+  if(rx_dma_ch < 0) rx_dma_ch = dma_claim_unused_channel(true);
   dma_channel_config rx_config = dma_channel_get_default_config(rx_dma_ch);
   channel_config_set_transfer_data_size(&rx_config, DMA_SIZE_8);
   channel_config_set_read_increment(&rx_config, false);
@@ -173,7 +173,7 @@ void SerialDMA::init_dma() {
   rx_dma_hw = dma_channel_hw_addr(rx_dma_ch);
 
   // DMA uart write
-  tx_dma_ch = dma_claim_unused_channel(true);
+  if(tx_dma_ch < 0) tx_dma_ch = dma_claim_unused_channel(true);
   dma_channel_config tx_config = dma_channel_get_default_config(tx_dma_ch);
   channel_config_set_transfer_data_size(&tx_config, DMA_SIZE_8);
   channel_config_set_read_increment(&tx_config, true);

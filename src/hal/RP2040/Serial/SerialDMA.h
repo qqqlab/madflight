@@ -40,8 +40,6 @@ public:
   //additions for madflight
   int readBytes(char *buf, int len) {return read((uint8_t*)buf, len);}
   void begin(int baud) {setBaud(baud);}
-  void setFormat() {}
-
 
   //buffer size has to be a power of two, will be rounded up to next greater value: i.e. 128->128, 129->256
  uint32_t begin(uint8_t uart_num, uint32_t baudrate, int txpin, int rxpin, uint16_t txbuflen, uint16_t rxbuflen, uint8_t bits = 8, char parity = 'N', uint8_t stop = 1, bool invert = false); //returns actual baud rate (0 on error)
