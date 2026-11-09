@@ -212,23 +212,16 @@ uint16_t SerialDMA::write(const uint8_t* data, uint16_t length) {
   if(length > first) memcpy(tx_buf, data + first, length - first);
   tx_user_idx = (tx_user_idx + length) & (tx_buf_len - 1);
 
-  //save ctrl register
-  uint32_t ctrl = tx_dma_hw->al1_ctrl;
+  //dma abort (this is a no-op if dma transfer is completed)
+  tx_dma_hw->al1_ctrl &= ~DMA_CH0_CTRL_TRIG_EN_BITS; //disable trigger (and keep chain_to disabled) - fix for RP2350-E5 bug, does not hurt for RP2040.
+  dma_channel_abort(tx_dma_ch); //complete transfers in flight, resets transfer_count to 0 but read_addr is preserved
+  tx_dma_hw->al1_ctrl |= DMA_CH0_CTRL_TRIG_EN_BITS; //enable trigger
 
-  //abort
-  tx_dma_hw->al1_ctrl = 0; //EN=0 -> pause the current transfer sequence (i.e. BUSY will remain high if already high)
-  dma_channel_abort(tx_dma_ch); //complete transfers in flight, set transfer_count = 0
-
-  //set new transfer_count
-  tx_dma_hw->transfer_count = (tx_user_idx - tx_dma_hw->read_addr) & (tx_buf_len - 1);
-
-  //(re)start
-  tx_dma_hw->ctrl_trig = ctrl;
+  //dma (re)start with new transfer_count
+  tx_dma_hw->al1_transfer_count_trig = (tx_user_idx - tx_dma_hw->read_addr) & (tx_buf_len - 1);
 
   return length;
 }
-
-
 
 uint16_t SerialDMA::available() {
   if (!rx_dma_hw) return 0;
