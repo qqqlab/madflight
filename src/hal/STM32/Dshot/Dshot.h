@@ -1,3 +1,6 @@
+#include "../../../tbx/MF_printf.h"
+#include <stdint.h>
+
 class Dshot {
 public:
   bool setup( int* pins, uint8_t cnt, int freq_khz = 300) {
