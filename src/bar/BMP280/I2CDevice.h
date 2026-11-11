@@ -24,10 +24,8 @@ SOFTWARE.
 
 #pragma once
 
-#include <Arduino.h>
-//#include <Wire.h>
-
 #include "../../hal/MF_I2C.h"
+#include "../../tbx/MF_printf.h"
 
 #ifndef I2C_BUFFER_LENGTH
     #define I2C_BUFFER_LENGTH 128  // Default size, if none is set using Wire::setBuffersize(size_t)
@@ -337,14 +335,14 @@ bool Adafruit_I2CDevice::setSpeed(uint32_t desiredclk) {
 
   if ((F_CPU / 18) < desiredclk) {
 #ifdef DEBUG_SERIAL
-    Serial.println(F("I2C.setSpeed too high."));
+    MF_printf(F("I2C.setSpeed too high.\n"));
 #endif
     return false;
   }
   uint32_t atwbr = ((F_CPU / desiredclk) - 16) / 2;
   if (atwbr > 16320) {
 #ifdef DEBUG_SERIAL
-    Serial.println(F("I2C.setSpeed too low."));
+    MF_printf(F("I2C.setSpeed too low.\n"));
 #endif
     return false;
   }
@@ -365,10 +363,8 @@ bool Adafruit_I2CDevice::setSpeed(uint32_t desiredclk) {
   TWBR = atwbr;
 
 #ifdef DEBUG_SERIAL
-  Serial.print(F("TWSR prescaler = "));
-  Serial.println(pow(4, TWSR));
-  Serial.print(F("TWBR = "));
-  Serial.println(atwbr);
+  MF_printf("TWSR prescaler = %i\n", pow(4, TWSR));
+  MF_printf("TWBR = %i\n", atwbr);
 #endif
   return true;
 #elif (ARDUINO >= 157) && !defined(ARDUINO_STM32_FEATHER) &&                   \

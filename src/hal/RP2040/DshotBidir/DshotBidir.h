@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include "../../../tbx/MF_printf.h"
 #include "DshotBidirPio.h"
 
 class DshotBidir {
@@ -11,13 +11,13 @@ public:
     //check pins
     for(int i = 0; i < cnt - 1; i++) {
       if(pins[i] + 1 != pins[i + 1]) {
-        Serial.println("OUT: ERROR dshot pins should be sequential");
+        MF_printf("OUT: ERROR dshot pins should be sequential\n");
         return false;
       }
     }
     
     if(!dshot_impl.begin(pins[0], cnt, freq_khz)) {
-      Serial.println("OUT: ERROR dshot init failed");
+      MF_printf("OUT: ERROR dshot init failed\n");
       return false;
     }
     return true;

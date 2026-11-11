@@ -37,9 +37,9 @@ GPS gps(buffer, sizeof(buffer));
 while(1) {
 while(Serial2.available()) {
     char c = Serial2.read();
-    Serial.print(c);
+    MF_printf("%c", c);
     if (gps.process(c)) { 
-        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d galt:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d", gps.time, gps.fix, gps.lat, gps.lon, gps.alt, gps.sep, gps.sog, gps.cog, gps.sat, gps.hacc, gps.vacc);
+        MF_printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d galt:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d", gps.time, gps.fix, gps.lat, gps.lon, gps.alt, gps.sep, gps.sog, gps.cog, gps.sat, gps.hacc, gps.vacc);
     }
 }
 ------------------------------------------------------------------------------------------*/

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #define MF_MOD "MAG"
 
-#include <Arduino.h> //Serial
+#include "../tbx/MF_printf.h"
 #include "mag.h"
 #include "MagGizmoQMC5883L.h"
 #include "MagGizmoQMC6309.h"
@@ -212,20 +212,20 @@ void Mag::convert_to_raw(float m[3]) {
 void Mag::cli_calibrate() {
   float bias[3], scale[3];
 
-  Serial.printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
+  MF_printf("Magnetometer %s calibration. Rotate the IMU about all axes until complete.\n", mag.name());
   if ( _calibrate(bias, scale) ) {
-    Serial.println("Calibration Successful!");
-    Serial.printf("set mag_cal_x  %+f #config was %+f\n", bias[0], config.mag_cal_x[0]);
-    Serial.printf("set mag_cal_y  %+f #config was %+f\n", bias[1], config.mag_cal_x[1]);
-    Serial.printf("set mag_cal_z  %+f #config was %+f\n", bias[2], config.mag_cal_x[2]);
-    Serial.printf("set mag_cal_sx %+f #config was %+f\n", scale[0], config.mag_cal_sx[0]);
-    Serial.printf("set mag_cal_sy %+f #config was %+f\n", scale[1], config.mag_cal_sx[1]);
-    Serial.printf("set mag_cal_sz %+f #config was %+f\n", scale[2], config.mag_cal_sx[2]);
-    Serial.println("Note: type 'save' to save these values to flash");
-    Serial.println(" ");
-    Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
+    MF_printf("Calibration Successful!\n");
+    MF_printf("set mag_cal_x  %+f #config was %+f\n", bias[0], config.mag_cal_x[0]);
+    MF_printf("set mag_cal_y  %+f #config was %+f\n", bias[1], config.mag_cal_x[1]);
+    MF_printf("set mag_cal_z  %+f #config was %+f\n", bias[2], config.mag_cal_x[2]);
+    MF_printf("set mag_cal_sx %+f #config was %+f\n", scale[0], config.mag_cal_sx[0]);
+    MF_printf("set mag_cal_sy %+f #config was %+f\n", scale[1], config.mag_cal_sx[1]);
+    MF_printf("set mag_cal_sz %+f #config was %+f\n", scale[2], config.mag_cal_sx[2]);
+    MF_printf("Note: type 'save' to save these values to flash\n");
+    MF_printf("\n");
+    MF_printf("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.\n");
   } else {
-    Serial.println("ERROR: No magnetometer");
+    MF_printf("ERROR: No magnetometer\n");
   }
 
   //save new calibration values
@@ -297,7 +297,7 @@ bool Mag::_calibrate(float bias[3], float scale[3]) {
     //print progress
     if (millis() - progress_time > 1000) {
       progress_time = millis();
-      Serial.printf("done:%2d%%\txmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", counter * 100 / maxCounts, m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
+      MF_printf("done:%2d%%\txmin:%+.2f\txmax:%+.2f\tymin:%+.2f\tymax:%+.2f\tzmin:%+.2f\tzmax:%+.2f\n", counter * 100 / maxCounts, m_min[0], m_max[0], m_min[1], m_max[1], m_min[2], m_max[2]);
     }
   }
 

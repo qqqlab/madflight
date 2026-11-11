@@ -338,13 +338,7 @@ void Adafruit_SPIDevice::transfer(uint8_t *buffer, size_t len) {
     uint8_t reply = 0;
     uint8_t send = buffer[i];
 
-    /*
-    Serial.print("\tSending software SPI byte 0x");
-    Serial.print(send, HEX);
-    Serial.print(" -> 0x");
-    */
 
-    // Serial.print(send, HEX);
     for (uint8_t b = startbit; b != 0;
          b = (_dataOrder == SPI_BITORDER_LSBFIRST) ? b << 1 : b >> 1) {
 

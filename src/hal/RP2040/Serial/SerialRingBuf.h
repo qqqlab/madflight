@@ -85,14 +85,14 @@ public:
     if (data_len <= remaining) {
       memcpy(buf + head, data, data_len);
       if(data_len == remaining) {
-        //Serial.printf("nowrap1 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+        //MF_printf("nowrap1 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
         head = 0;
       }else{
-        //Serial.printf("nowrap2 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+        //MF_printf("nowrap2 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
         head += data_len;
       }
     }else{
-      //Serial.printf("wrap    data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+      //MF_printf("wrap    data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
       memcpy(buf + head, data, remaining);
       memcpy(buf, data + remaining, data_len - remaining);
       head = data_len - remaining;
@@ -126,14 +126,14 @@ public:
     if (data_len <= remaining) {
       memcpy(data, buf + tail, data_len);
       if(data_len == remaining) {
-        //Serial.printf("nowrap1 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+        //MF_printf("nowrap1 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
         tail = 0;
       }else{
-        //Serial.printf("nowrap2 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+        //MF_printf("nowrap2 data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
         tail += data_len;
       }
     }else{
-      //Serial.printf("wrap    data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
+      //MF_printf("wrap    data_len=%d head=%d tail=%d remaining=%d\n", data_len, head, tail, remaining);
       memcpy(data, buf + tail, remaining);
       memcpy(data + remaining, buf, data_len - remaining);
       tail = data_len - remaining;

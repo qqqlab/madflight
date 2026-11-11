@@ -111,10 +111,10 @@ class AK8963 {
 
         for(int i = 0; i < 3; i++) {
             int ASA = AK8963_ReadReg(AK8963_ASAX + i);
-            //Serial.printf("ASA%d=%d\n",i,ASA);
+            //MF_printf("ASA%d=%d\n",i,ASA);
             mag_multiplier[i] = 1.0;
             if(ASA>=0) mag_multiplier[i] = (((float)ASA+128)/256) * AK8963_uT_per_LSB;
-            //Serial.printf("mag_multiplier%d=%f\n",i,mag_multiplier[i]);
+            //MF_printf("mag_multiplier%d=%f\n",i,mag_multiplier[i]);
         }
         AK8963_WriteReg(AK8963_CNTL1, 0x00); // set AK8963 to Power Down
         delayMicroseconds(1000); // datasheet: 100us

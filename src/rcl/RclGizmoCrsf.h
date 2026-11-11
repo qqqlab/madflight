@@ -25,10 +25,10 @@ class RclGizmoCrsf : public RclGizmo {
       while(ser_bus->available()) {
         int c = ser_bus->read();
         //print received data
-        //if(c == CRSF_ADDRESS_FLIGHT_CONTROLLER) Serial.printf("\nreceived: "); Serial.printf("%02x ",c);
+        //if(c == CRSF_ADDRESS_FLIGHT_CONTROLLER) MF_printf("\nreceived: "); MF_printf("%02x ",c);
         if(crsf->update(c)) {
           //print decoded rc data
-          //Serial.print(" decoded RC: "); for(int i=0;i<16;i++) Serial.printf("%d:%d ",i,rcl_crsf.channel[i]); Serial.println();
+          //MF_printf(" decoded RC: "); for(int i=0;i<16;i++) MF_printf("%d:%d ",i,rcl_crsf.channel[i]); MF_printf("\n");
           rv = true;
         }
       }

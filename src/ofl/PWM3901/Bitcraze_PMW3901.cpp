@@ -76,6 +76,7 @@ void pmw3901ReadMotion(uint32_t csPin, motionBurst_t *motion)
  */
 
 #include "Bitcraze_PMW3901.h"
+#include <Arduino.h> //pinMode, delay
 
 #define CHIP_ID         0x49  // 01001001
 #define CHIP_ID_INVERSE 0xB6  // 10110110

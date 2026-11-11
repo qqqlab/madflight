@@ -19,12 +19,12 @@ static void cli_spinmotors() {
 
   //exit if no motors found
   if(mot_cnt == 0) {
-     Serial.println("Spin motors - no motors configured, exiting");
+     MF_printf("Spin motors - no motors configured, exiting\n");
      return;
   }
 
   //prompt for 'go', exit on anything else
-  Serial.println("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.");
+  MF_printf("Spin motors - REMOVE PROPS - Type 'go' to continue, or enter to exit.\n");
   while(Serial.available()) Serial.read(); //clear input 
   char c;
   while(!Serial.available());
@@ -58,7 +58,7 @@ static void cli_spinmotors() {
         i++;
         if(i >= OUT_SIZE) i = 0;
       } while(!out.is_motor(i));
-      Serial.printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.pin(i));
+      MF_printf("Spinning motor pin_out%d GPIO%d - press enter to exit\n", i, out.pin(i));
       Serial.flush();
       speed = 0;
       stage = 1;
@@ -91,7 +91,7 @@ static void cli_spinmotors() {
   }
   out.testmotor_enable(false);
 
-  Serial.println("Spin motors - DONE");
+  MF_printf("Spin motors - DONE\n");
 
   //enable IMU interrupt
   imu.onUpdate = onUpdate_saved;
@@ -102,7 +102,7 @@ static void cli_spinmotors() {
 static void cli_serial(int bus_id) {
   MF_Serial *ser = hal_get_ser_bus(bus_id);
   if(!ser) {
-     Serial.printf("serial - Error: serial port %d not configured.\n", bus_id);
+     MF_printf("serial - Error: serial port %d not configured.\n", bus_id);
      return;
   }
 
@@ -111,55 +111,55 @@ static void cli_serial(int bus_id) {
   imu.onUpdate = nullptr;
 
   int cnt = 0;
-  Serial.println("serial - Dumping serial data, press enter to exit.");
+  MF_printf("serial - Dumping serial data, press enter to exit.\n");
   while(Serial.available()) Serial.read(); //clear input 
   while(!Serial.available()) {
     int d = ser->read();
     if(d>=0) {
-      Serial.printf("%02X ",d);
+      MF_printf("%02X ",d);
       cnt++;
       if(cnt==32) {
-        Serial.println();
+        MF_printf("\n");
         cnt=0;
       }
     }
   }
   while(Serial.available()) Serial.read(); //clear input
 
-  Serial.println("\nserial - DONE");
+  MF_printf("\nserial - DONE\n");
 
   //enable IMU interrupt
   imu.onUpdate = onUpdate_saved;
 }
 
 static void cli_po() {
-  Serial.printf("rcl.pwm%d:%d\t", 1, rcl.pwm[0]);
-  Serial.printf("rcl.roll:%+.2f\t", rcl.roll);
-  Serial.printf("ahr.gx:%+.2f\t", ahr.gx);
-  Serial.printf("ahr.ax:%+.2f\t", ahr.ax);
-  Serial.printf("mag.mx:%+.2f\t", mag.mx);
-  Serial.printf("ahr.roll:%+.1f\t", ahr.roll);
-  Serial.printf("pid.roll:%+.3f\t", pid.roll);
-  Serial.printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
-  Serial.printf("gps.sats:%d\t", (int)gps.sat);
-  Serial.printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
-  Serial.printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
+  MF_printf("rcl.pwm%d:%d\t", 1, rcl.pwm[0]);
+  MF_printf("rcl.roll:%+.2f\t", rcl.roll);
+  MF_printf("ahr.gx:%+.2f\t", ahr.gx);
+  MF_printf("ahr.ax:%+.2f\t", ahr.ax);
+  MF_printf("mag.mx:%+.2f\t", mag.mx);
+  MF_printf("ahr.roll:%+.1f\t", ahr.roll);
+  MF_printf("pid.roll:%+.3f\t", pid.roll);
+  MF_printf("out.%c%d:%1.0f\t", out.type(0), 0, 100*out.get_output(0));
+  MF_printf("gps.sats:%d\t", (int)gps.sat);
+  MF_printf("imu.miss_cnt:%d\t", (int)(imu.interrupt_cnt-imu.update_cnt));
+  MF_printf("imu.upd_cnt:%d\t", (int)imu.update_cnt);
 }
 
 static void cli_ppwm() {
-  for(int i=0;i<cfg.rcl_num_ch;i++) Serial.printf("pwm%d:%d\t",i+1,rcl.pwm[i]);
+  for(int i=0;i<cfg.rcl_num_ch;i++) MF_printf("pwm%d:%d\t",i+1,rcl.pwm[i]);
 }
 
 static void cli_prcl() {
-  Serial.printf("rcl.throttle:%.2f\t", rcl.throttle);
-  Serial.printf("roll:%+.2f\t", rcl.roll);
-  Serial.printf("pitch:%+.2f\t", rcl.pitch);
-  Serial.printf("yaw:%+.2f\t", rcl.yaw);
-  Serial.printf("armed:%d\t", rcl.armed);
-  Serial.printf("fm_sw:%d\t", rcl.flightmode_idx);
-  Serial.printf("fm:%s\t", veh.flightmode_name());
-  Serial.printf("connected:%d\t",rcl.connected());
-  Serial.printf("upd_count:%d\t", rcl.update_count());
+  MF_printf("rcl.throttle:%.2f\t", rcl.throttle);
+  MF_printf("roll:%+.2f\t", rcl.roll);
+  MF_printf("pitch:%+.2f\t", rcl.pitch);
+  MF_printf("yaw:%+.2f\t", rcl.yaw);
+  MF_printf("armed:%d\t", rcl.armed);
+  MF_printf("fm_sw:%d\t", rcl.flightmode_idx);
+  MF_printf("fm:%s\t", veh.flightmode_name());
+  MF_printf("connected:%d\t",rcl.connected());
+  MF_printf("upd_count:%d\t", rcl.update_count());
 
   static uint32_t ts_last = 0;
   static int cnt_last = 0;
@@ -170,105 +170,105 @@ static void cli_prcl() {
   if(dt>0) hz = (float)(cnt - cnt_last)/dt;
   cnt_last = cnt;
   ts_last = ts;
-  Serial.printf("upd_freq:%d\t",(int)hz);
+  MF_printf("upd_freq:%d\t",(int)hz);
 }
 
 static void cli_pgyr() {
-  Serial.printf("GYRO\tgx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahr.gx, ahr.gy, ahr.gz);
+  MF_printf("GYRO\tgx:%+.2f\tgy:%+.2f\tgz:%+.2f\t", ahr.gx, ahr.gy, ahr.gz);
 }
 
 static void cli_pacc() {
-  Serial.printf("ACC\tax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahr.ax, ahr.ay, ahr.az);
+  MF_printf("ACC\tax:%+.2f\tay:%+.2f\taz:%+.2f\t", ahr.ax, ahr.ay, ahr.az);
 }
 
 static void cli_pmag() {
-  Serial.printf("MAG\tmx:%+.1f\tmy:%+.1f\tmz:%+.1f\ttotal:%+.1f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz));
+  MF_printf("MAG\tmx:%+.1f\tmy:%+.1f\tmz:%+.1f\ttotal:%+.1f\t", mag.mx, mag.my, mag.mz, sqrtf(mag.mx*mag.mx + mag.my*mag.my + mag.mz*mag.mz));
   float yaw = -atan2(mag.my, mag.mx) * 180 / M_PI;
-  Serial.printf("compass:%+.1f\t", yaw);
+  MF_printf("compass:%+.1f\t", yaw);
 }
 
 static void cli_pahr() {
   const char* roll_str = (ahr.roll >= 0.0) ? "right" : "left";
   const char* pitch_str = (ahr.pitch >= 0.0) ? "up" : "down";
   const char* yaw_str = (ahr.yaw >= 0.0) ? "right" : "left";
-  Serial.printf("AHRS\troll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
+  MF_printf("AHRS\troll:%+.1f (roll %s)\tpitch:%+.1f (pitch %s)\tyaw:%+.1f (yaw %s)\t", ahr.roll, roll_str, ahr.pitch, pitch_str, ahr.yaw, yaw_str);
 }
 
 static void cli_pah() {
-  Serial.printf("AHRS\troll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
+  MF_printf("AHRS\troll:%+.1f\tpitch:%+.1f\tyaw:%+.1f\t", ahr.roll, ahr.pitch, ahr.yaw);
 }
 
 static void cli_ppid() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("PID\troll:%+.3f\t",pid_s.roll.sum);
-  Serial.printf("pitch:%+.3f\t",pid_s.pitch.sum);
-  Serial.printf("yaw:%+.3f\t",pid_s.yaw.sum);
-  Serial.printf("throttle:%+.3f\t",pid_s.throttle.sum);
+  MF_printf("PID\troll:%+.3f\t",pid_s.roll.sum);
+  MF_printf("pitch:%+.3f\t",pid_s.pitch.sum);
+  MF_printf("yaw:%+.3f\t",pid_s.yaw.sum);
+  MF_printf("throttle:%+.3f\t",pid_s.throttle.sum);
 }
 
 static void cli_ppidr() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("PIDROLL\tsum:%+.3f\t",pid_s.roll.sum);
-  Serial.printf("P:%+.3f\t",pid_s.roll.p);
-  Serial.printf("I:%+.3f\t",pid_s.roll.i);
-  Serial.printf("D:%+.3f\t",pid_s.roll.d);
-  Serial.printf("A:%+.3f\t",pid_s.roll.a);
-  Serial.printf("B:%+.3f\t",pid_s.roll.b);
-  Serial.printf("set:%+.3f\t",pid_s.roll.setpoint);
-  Serial.printf("act:%+.3f\t",pid_s.roll.actual);
+  MF_printf("PIDROLL\tsum:%+.3f\t",pid_s.roll.sum);
+  MF_printf("P:%+.3f\t",pid_s.roll.p);
+  MF_printf("I:%+.3f\t",pid_s.roll.i);
+  MF_printf("D:%+.3f\t",pid_s.roll.d);
+  MF_printf("A:%+.3f\t",pid_s.roll.a);
+  MF_printf("B:%+.3f\t",pid_s.roll.b);
+  MF_printf("set:%+.3f\t",pid_s.roll.setpoint);
+  MF_printf("act:%+.3f\t",pid_s.roll.actual);
 }
 
 static void cli_ppidp() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("PIDPITCH\tsum:%+.3f\t",pid.pitch.sum);
-  Serial.printf("P:%+.3f\t",pid_s.pitch.p);
-  Serial.printf("I:%+.3f\t",pid_s.pitch.i);
-  Serial.printf("D:%+.3f\t",pid_s.pitch.d);
-  Serial.printf("A:%+.3f\t",pid_s.pitch.a);
-  Serial.printf("B:%+.3f\t",pid_s.pitch.b);
-  Serial.printf("set:%+.3f\t",pid_s.pitch.setpoint);
-  Serial.printf("act:%+.3f\t",pid_s.pitch.actual);
+  MF_printf("PIDPITCH\tsum:%+.3f\t",pid.pitch.sum);
+  MF_printf("P:%+.3f\t",pid_s.pitch.p);
+  MF_printf("I:%+.3f\t",pid_s.pitch.i);
+  MF_printf("D:%+.3f\t",pid_s.pitch.d);
+  MF_printf("A:%+.3f\t",pid_s.pitch.a);
+  MF_printf("B:%+.3f\t",pid_s.pitch.b);
+  MF_printf("set:%+.3f\t",pid_s.pitch.setpoint);
+  MF_printf("act:%+.3f\t",pid_s.pitch.actual);
 }
 
 static void cli_ppidy() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("PIDYAW\tsum:%+.3f\t",pid_s.yaw.sum);
-  Serial.printf("P:%+.3f\t",pid_s.yaw.p);
-  Serial.printf("I:%+.3f\t",pid_s.yaw.i);
-  Serial.printf("D:%+.3f\t",pid_s.yaw.d);
-  Serial.printf("A:%+.3f\t",pid_s.yaw.a);
-  Serial.printf("B:%+.3f\t",pid_s.yaw.b);
-  Serial.printf("set:%+.3f\t",pid_s.yaw.setpoint);
-  Serial.printf("act:%+.3f\t",pid_s.yaw.actual);
+  MF_printf("PIDYAW\tsum:%+.3f\t",pid_s.yaw.sum);
+  MF_printf("P:%+.3f\t",pid_s.yaw.p);
+  MF_printf("I:%+.3f\t",pid_s.yaw.i);
+  MF_printf("D:%+.3f\t",pid_s.yaw.d);
+  MF_printf("A:%+.3f\t",pid_s.yaw.a);
+  MF_printf("B:%+.3f\t",pid_s.yaw.b);
+  MF_printf("set:%+.3f\t",pid_s.yaw.setpoint);
+  MF_printf("act:%+.3f\t",pid_s.yaw.actual);
 }
 
 static void cli_ppidt() {
   PidState pid_s;
   pid.topic.pull_latest(&pid_s); //get a consistent copy
-  Serial.printf("PIDTHROTTLE\tsum:%+.3f\t",pid_s.throttle.sum);
-  Serial.printf("P:%+.3f\t",pid_s.throttle.p);
-  Serial.printf("I:%+.3f\t",pid_s.throttle.i);
-  Serial.printf("D:%+.3f\t",pid_s.throttle.d);
-  Serial.printf("A:%+.3f\t",pid_s.throttle.a);
-  Serial.printf("B:%+.3f\t",pid_s.throttle.b);
-  Serial.printf("set:%+.3f\t",pid_s.throttle.setpoint);
-  Serial.printf("act:%+.3f\t",pid_s.throttle.actual);
+  MF_printf("PIDTHROTTLE\tsum:%+.3f\t",pid_s.throttle.sum);
+  MF_printf("P:%+.3f\t",pid_s.throttle.p);
+  MF_printf("I:%+.3f\t",pid_s.throttle.i);
+  MF_printf("D:%+.3f\t",pid_s.throttle.d);
+  MF_printf("A:%+.3f\t",pid_s.throttle.a);
+  MF_printf("B:%+.3f\t",pid_s.throttle.b);
+  MF_printf("set:%+.3f\t",pid_s.throttle.setpoint);
+  MF_printf("act:%+.3f\t",pid_s.throttle.actual);
 }
 
 static void cli_pout() {
-  Serial.printf("OUT\tarmed:%d\t", (int)out.mode());
+  MF_printf("OUT\tarmed:%d\t", (int)out.mode());
   for(int i = 0; i < OUT_SIZE; i++) {
     if(out.type(i)) {
-      Serial.printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
+      MF_printf("%c%d:%1.0f\t", out.type(i), i, 100*out.get_output(i));
     }
   }
   for(int i = 0; i < OUT_SIZE; i++) {
     if(out.rpm(i) != -1) {
-      Serial.printf("rpm%d:%d\t", i, out.rpm(i));
+      MF_printf("rpm%d:%d\t", i, out.rpm(i));
     }
   }
 }
@@ -285,69 +285,69 @@ static void cli_pimu() {
   ts_last = now;
 
   int hz = imu.config.sample_rate;
-  Serial.printf("IMU\tsamp_hz:%d\t", hz);
+  MF_printf("IMU\tsamp_hz:%d\t", hz);
 
   if(dt == 0) dt = 1;
-  Serial.printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
+  MF_printf("loop_hz:%.0f\t", (float)delta_upd/(dt*1e-6));
 
   int stat_cnt = 1;
   if(imu.stat_cnt > 0) stat_cnt = imu.stat_cnt;
-  Serial.printf("latency_us:%d\t", (int)(imu.stat_latency / stat_cnt));
-  Serial.printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime / stat_cnt));
-  Serial.printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime) / stat_cnt));
-  Serial.printf("rt_us:%d\t", (int)(imu.stat_runtime / stat_cnt));
-  Serial.printf("rt%%:%d\t", (int)(imu.stat_runtime / stat_cnt) * hz / 10000);
-  Serial.printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
-  Serial.printf("rt_max%%:%d\t", (int)imu.stat_runtime_max * hz / 10000);
-  Serial.printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
-  Serial.printf("miss_cnt:%d\t", (int)miss_cnt);
+  MF_printf("latency_us:%d\t", (int)(imu.stat_latency / stat_cnt));
+  MF_printf("rt_io_us:%d\t", (int)(imu.stat_io_runtime / stat_cnt));
+  MF_printf("rt_imu_loop_us:%d\t", (int)((imu.stat_runtime - imu.stat_io_runtime) / stat_cnt));
+  MF_printf("rt_us:%d\t", (int)(imu.stat_runtime / stat_cnt));
+  MF_printf("rt%%:%d\t", (int)(imu.stat_runtime / stat_cnt) * hz / 10000);
+  MF_printf("rt_max_us:%d\t", (int)imu.stat_runtime_max);
+  MF_printf("rt_max%%:%d\t", (int)imu.stat_runtime_max * hz / 10000);
+  MF_printf("int_cnt:%d\t", (int)imu.interrupt_cnt);
+  MF_printf("miss_cnt:%d\t", (int)miss_cnt);
   imu.statReset();
 }
 
 static void cli_pbat() {
-  Serial.printf("BAT\tv:%.2f\t",bat.v);
-  Serial.printf("i:%+.2f\t",bat.i);
-  Serial.printf("mah:%+.2f\t",bat.mah);
-  Serial.printf("wh:%+.2f\t",bat.wh); 
+  MF_printf("BAT\tv:%.2f\t",bat.v);
+  MF_printf("i:%+.2f\t",bat.i);
+  MF_printf("mah:%+.2f\t",bat.mah);
+  MF_printf("wh:%+.2f\t",bat.wh); 
 }
 
 static void cli_pbar() {
-  Serial.printf("BAR\talt:%.2f\t", bar.alt);
-  Serial.printf("press:%.1f\t", bar.press);
-  Serial.printf("temp:%.2f\t", bar.temp);
-  Serial.printf("agl:%+.2f\t", bar.alt - bar.ground_level);
+  MF_printf("BAR\talt:%.2f\t", bar.alt);
+  MF_printf("press:%.1f\t", bar.press);
+  MF_printf("temp:%.2f\t", bar.temp);
+  MF_printf("agl:%+.2f\t", bar.alt - bar.ground_level);
 }
 
 static void cli_palt() {
-  Serial.print("ALT\t");
+  MF_printf("ALT\t");
   char s[100];
   alt.toString(s);
-  Serial.print(s);
-  Serial.printf("h:%+.2f\t", alt.getH());
-  Serial.printf("v:%+.2f\t", alt.getV());
-  Serial.printf("a:%+.2f\t", ahr.getAccelUp());
+  MF_printf("%s", s);
+  MF_printf("h:%+.2f\t", alt.getH());
+  MF_printf("v:%+.2f\t", alt.getV());
+  MF_printf("a:%+.2f\t", ahr.getAccelUp());
 }
 
 static void cli_pgps() {
-  Serial.printf("GPS\ttime:%d\t", (int)gps.time);
-  Serial.printf("fix:%d\t", (int)gps.fix);
-  Serial.printf("sat:%d\t", (int)gps.sat);
-  Serial.printf("lat:%d\t", (int)gps.lat);
-  Serial.printf("lon:%d\t", (int)gps.lon);
-  Serial.printf("alt:%.3f\t", (float)gps.alt/1000.0);
+  MF_printf("GPS\ttime:%d\t", (int)gps.time);
+  MF_printf("fix:%d\t", (int)gps.fix);
+  MF_printf("sat:%d\t", (int)gps.sat);
+  MF_printf("lat:%d\t", (int)gps.lat);
+  MF_printf("lon:%d\t", (int)gps.lon);
+  MF_printf("alt:%.3f\t", (float)gps.alt/1000.0);
 }
 
 static void cli_prdr() {
-  Serial.printf("RDR\tdist:%.3f\t", rdr.dist);
-  Serial.printf("upd_cnt:%d\t", (int)rdr.update_cnt);  
+  MF_printf("RDR\tdist:%.3f\t", rdr.dist);
+  MF_printf("upd_cnt:%d\t", (int)rdr.update_cnt);  
 }
 
 static void cli_pofl() {
-  Serial.printf("OFL\tdx:%.3f\t", ofl.dx);
-  Serial.printf("dy:%.3f\t", ofl.dy);
-  Serial.printf("x:%.3f\t", ofl.x);
-  Serial.printf("y:%.3f\t", ofl.y);
-  Serial.printf("upd_cnt:%d\t", (int)ofl.update_cnt);
+  MF_printf("OFL\tdx:%.3f\t", ofl.dx);
+  MF_printf("dy:%.3f\t", ofl.dy);
+  MF_printf("x:%.3f\t", ofl.x);
+  MF_printf("y:%.3f\t", ofl.y);
+  MF_printf("upd_cnt:%d\t", (int)ofl.update_cnt);
 }
 
 struct cli_print_s {
@@ -406,7 +406,7 @@ void Cli::begin() {
 
 void Cli::banner() {
   if(ser_buf_size < 255) {
-    Serial.printf("CLI: WARNING Serial transmit buffer (%d bytes) is small\n", ser_buf_size);
+    MF_printf("CLI: WARNING Serial transmit buffer (%d bytes) is small\n", ser_buf_size);
   }
 }
 
@@ -502,9 +502,9 @@ bool Cli::update() {
 }
 
 void Cli::help() {
-  Serial.println(MADFLIGHT_VERSION " on " HAL_ARDUINO_STR);
+  MF_printf(MADFLIGHT_VERSION " on " HAL_ARDUINO_STR "\n");
 
-  Serial.printf(
+  MF_printf(
   "-- TOOLS --\n"
   "help or ?           This info\n"
   "ps                  Task list\n"
@@ -518,24 +518,24 @@ void Cli::help() {
   "pall                Print all\n"
   );
   for(int i=0;i<CLI_PRINT_FLAG_COUNT;i++) {
-    Serial.print(cli_print_options[i].cmd);
+    MF_printf("%s", cli_print_options[i].cmd);
     for(int j = strlen(cli_print_options[i].cmd); j < 19; j++) {
-      Serial.print(' ');
+      MF_printf(" ");
     }
-    Serial.print(' ');
-    Serial.print(cli_print_options[i].info);
-    Serial.println();
+    MF_printf(" ");
+    MF_printf("%s", cli_print_options[i].info);
+    MF_printf("\n");
   }
   for(int i=0;i<cli_print_extern_count;i++) {
-    Serial.print(cli_print_extern[i].cmd);
+    MF_printf("%s", cli_print_extern[i].cmd);
     for(int j = strlen(cli_print_extern[i].cmd); j < 19; j++) {
-      Serial.print(' ');
+      MF_printf(" ");
     }
-    Serial.print(' ');
-    Serial.print(cli_print_extern[i].info);
-    Serial.println();
+    MF_printf(" ");
+    MF_printf("%s", cli_print_extern[i].info);
+    MF_printf("\n");
   }  
-  Serial.printf(
+  MF_printf(
   "-- BLACK BOX --\n"
   "bbstart             Start logging\n"
   "bbstop              Stop logging\n"
@@ -621,9 +621,8 @@ void Cli::processCmd() {
   cmd.trim();
   cmdline = ""; //clear command line
 
-  //Serial.println( "> " + cmd + " " + arg1 + " " + arg2 );
   this->executeCmd(cmd, arg1, arg2);
-  Serial.print( "> ");
+  MF_printf( "> ");
   Serial.flush();  
 }
 
@@ -698,7 +697,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_print_all(false);
     cfg.cli_defaults(arg1.c_str());
     if(arg1 != "") cfg.cli_dump(arg1.c_str());
-    Serial.println("Parameters reset to defaults, type 'save' to save... ");
+    MF_printf("Parameters reset to defaults, type 'save' to save...\n");
   }else if (cmd == "save") {
     cli_print_all(false);
     cfg.cli_save();
@@ -730,7 +729,7 @@ void Cli::executeCmd(String cmd, String arg1, String arg2) {
     cli_print_all(false);
     print_resources();
   }else if (cmd != "") {
-    Serial.printf("ERROR Unknown command '%s' - Type help for help\n", cmd.c_str());
+    MF_printf("ERROR Unknown command '%s' - Type help for help\n", cmd.c_str());
   }
 }
 
@@ -745,16 +744,16 @@ void Cli::print_i2cScan() {
       uint32_t clock = i2c->getClock();
       i2c->setClock(100000);
       //do scan
-      Serial.printf("I2C: Scanning i2c_bus:%d - ", bus_i);
+      MF_printf("I2C: Scanning i2c_bus:%d - ", bus_i);
       int count = 0;
       for (byte i = 1; i < 128; i++) {
         i2c->beginTransmission(i);          // Begin I2C transmission Address (i)
         if (i2c->endTransmission() == 0) {  // Receive 0 = success (ACK response) 
-          Serial.printf("0x%02X(%d) ", i, i);
+          MF_printf("0x%02X(%d) ", i, i);
           count++;
         }
       }
-      Serial.printf("- Found %d device(s)\n", count);
+      MF_printf("- Found %d device(s)\n", count);
       //restore original clock speed
       i2c->setClock(clock);
     }
@@ -776,7 +775,7 @@ static void _calibrate_imu_slow_direction(const char *msg, MovingAverage ma[3], 
   while(!ma[0].loaded()) {
     if(imu_sub->pull_next(imu_s)) {
       imu.convert_to_raw(&imu_s->gx, a);
-      //Serial.printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
+      //MF_printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
       for(int i=0;i<3;i++) ma[i].append(a[i]);
     }
   }
@@ -796,8 +795,8 @@ static void _calibrate_imu_slow_direction(const char *msg, MovingAverage ma[3], 
         ma[i].append(a[i]);
       }
       if(sch.expired()) {
-        Serial.printf("Keep %s, press key when ready ...", msg);
-        Serial.printf("    ax:%+.3f  y:%+.3f  z:%+.3f\n", ma[0].mean(), ma[1].mean(), ma[2].mean());
+        MF_printf("Keep %s, press key when ready ...", msg);
+        MF_printf("    ax:%+.3f  y:%+.3f  z:%+.3f\n", ma[0].mean(), ma[1].mean(), ma[2].mean());
       } 
     }
   }
@@ -808,14 +807,14 @@ static void _calibrate_imu_slow_direction(const char *msg, MovingAverage ma[3], 
 
 
 /*
-          //Serial.printf("111 idx=%d n=%d\t",ma[0].idx,ma[0].n);
-          //Serial.printf("111. %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
+          //MF_printf("111 idx=%d n=%d\t",ma[0].idx,ma[0].n);
+          //MF_printf("111. %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
 
   bool found = false;
   while(1){//!found) {
     if(imu_sub->pull_next(imu_s)) {
       imu.convert_to_raw(&imu_s->gx, a);
-      //Serial.printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
+      //MF_printf("aa x:%+.3f\ty:%+.3f\tz:%+.3f\n", a[0],a[1],a[2]);
       found = true;
       for(int i=0;i<3;i++) {
         ma[i].append(a[i]);
@@ -824,8 +823,8 @@ static void _calibrate_imu_slow_direction(const char *msg, MovingAverage ma[3], 
 		    if(found && abs(avg[i]) > eps2 && abs(avg[i]) - 1 > eps2) found = false;
       }
       if(sch.expired()) {
-        Serial.printf("idx=%d n=%d\t",ma[0].idx,ma[0].n);
-        Serial.printf("... %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
+        MF_printf("idx=%d n=%d\t",ma[0].idx,ma[0].n);
+        MF_printf("... %s   x:%+.3f\ty:%+.3f\tz:%+.3f\n", msg, avg[0], avg[1], avg[2]);
       } 
     }
   }
@@ -843,7 +842,7 @@ void Cli::calibrate_imu_slow() {
   float *acal = &cfg.imu_cal_ax; //current a calibration
   float *ascal = &cfg.imu_cal_asx; //current as calibration
 
-  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
+  MF_printf("Calibrating gyro, don't move vehicle, this takes a couple of seconds...\n");
   _calibrate_imu_quick(true);
 
   _calibrate_imu_slow_direction("horizontal",  ma, &imu_sub, &imu_s, r[4]); //r[4] = yaw
@@ -854,11 +853,11 @@ void Cli::calibrate_imu_slow() {
   _calibrate_imu_slow_direction("upside down", ma, &imu_sub, &imu_s, r[5]); //yaw-neg
 
   /*
-  Serial.println("Measurements:");
+  MF_printf("Measurements:\n");
   for(int i=0;i<6;i+=2) {
-    Serial.printf("     ax:%+.3f ay:%+.3f az:%+.3f\n", r[i][0], r[i][1], r[i][2]);
+    MF_printf("     ax:%+.3f ay:%+.3f az:%+.3f\n", r[i][0], r[i][1], r[i][2]);
   }
-  Serial.println();
+  MF_printf("\n");
   //*/
 
   float ascale[3];
@@ -873,10 +872,10 @@ void Cli::calibrate_imu_slow() {
   }
 
   for(int axis = 0; axis < 3; axis++) {
-    Serial.printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
+    MF_printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
   }
   for(int axis = 0; axis < 3; axis++) {
-    Serial.printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
+    MF_printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
   }
 	
   //determine IMU orientation
@@ -893,11 +892,11 @@ void Cli::calibrate_imu_slow() {
   if(roll[1] >  0.8 && pitch[0] < -0.8 && yaw[2] < -0.8) align = "CW180FLIP";
   if(roll[0] < -0.8 && pitch[1] < -0.8 && yaw[2] < -0.8) align = "CW270FLIP";
   if(align) {
-    //Serial.printf("\nset imu_align %s\n", align);
-    Serial.print("\nset ");
+    //MF_printf("\nset imu_align %s\n", align);
+    MF_printf("\nset ");
     cfg.cli_set_param("imu_align", align); //this prints 'imu_align        CW90FLIP # options: CW0,CW90,CW180,CW270,CW0FLIP,CW90FLIP,CW180FLIP,CW270FLIP'
   }else{
-    Serial.printf("\nWARNING: Alignment could not be determined, better retry calibration... \n", align);
+    MF_printf("\nWARNING: Alignment could not be determined, better retry calibration... \n", align);
   }
 
   //apply cal values to cfg
@@ -906,22 +905,22 @@ void Cli::calibrate_imu_slow() {
     ascal[axis] = ascale[axis];
   }
   
-  Serial.println("\nType 'save' to save these values to flash, or 'pahr' to check");
+  MF_printf("\nType 'save' to save these values to flash, or 'pahr' to check\n");
 
   Serial.flush();
   while(Serial.available()) Serial.read();
 }
 
 void Cli::calibrate_gyro() {
-  Serial.println("Calibrating gyro, don't move vehicle, this takes a couple of seconds...");
+  MF_printf("Calibrating gyro, don't move vehicle, this takes a couple of seconds...\n");
   _calibrate_imu_quick(true);
-  Serial.println("Type 'save' to save these values to flash");
+  MF_printf("Type 'save' to save these values to flash\n");
 }
 
 void Cli::calibrate_imu_quick() {
-  Serial.println("Calibrating IMU, keep horizontal and don't move vehicle, this takes a couple of seconds...");
+  MF_printf("Calibrating IMU, keep horizontal and don't move vehicle, this takes a couple of seconds...\n");
   _calibrate_imu_quick(false);
-  Serial.println("Type 'save' to save these values to flash");
+  MF_printf("Type 'save' to save these values to flash\n");
 }
 
 //Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
@@ -958,7 +957,7 @@ void Cli::_calibrate_imu_quick(bool gyro_only) {
   //save ground level
   if(alt.n > 0) {
     bar.ground_level = alt.mean();
-    Serial.printf("BAR: Ground level: %.3fm (%d samples, stdev: %.3fm)\n", alt.mean(), alt.n, alt.std());
+    MF_printf("BAR: Ground level: %.3fm (%d samples, stdev: %.3fm)\n", alt.mean(), alt.n, alt.std());
   }
 
   float aoff[3], goff[3]; //measured offsets
@@ -971,7 +970,7 @@ void Cli::_calibrate_imu_quick(bool gyro_only) {
   }
 
   for(int axis = 0; axis < 3; axis++) {
-    Serial.printf("set imu_cal_g%c %+f #config was %+f\n", axisname[axis], goff[axis], gcal[axis]);
+    MF_printf("set imu_cal_g%c %+f #config was %+f\n", axisname[axis], goff[axis], gcal[axis]);
   }
 
   bool apply_gyro = true;
@@ -986,10 +985,10 @@ void Cli::_calibrate_imu_quick(bool gyro_only) {
     );
   }else{
     for(int axis = 0; axis < 3; axis++) {
-      Serial.printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
+      MF_printf("set imu_cal_a%c %+f #config was %+f\n", axisname[axis], aoff[axis], acal[axis]);
     }
     for(int axis = 0; axis < 3; axis++) {
-      Serial.printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
+      MF_printf("set imu_cal_a%cs %+f #config was %+f\n", axisname[axis], ascale[axis], ascal[axis]);
     }
   }
 /*
@@ -1004,7 +1003,7 @@ void Cli::_calibrate_imu_quick(bool gyro_only) {
       gcal[axis] = goff[axis];
     }
   }else{
-     Serial.println("=== Not applying gyro correction, out of tolerance ===");
+     MF_printf("=== Not applying gyro correction, out of tolerance ===\n");
   }
 
   if (!gyro_only) {
@@ -1019,7 +1018,7 @@ void Cli::calibrate_info(int seconds) {
   bool report_spikes = (seconds >= 0);
   if(seconds < 0) seconds = -seconds;
   if(seconds == 0) seconds = 3;
-  Serial.printf("Gathering sensor statistics, please wait %d seconds ...\n\n", seconds);
+  MF_printf("Gathering sensor statistics, please wait %d seconds ...\n\n", seconds);
 
   //keep up to 1000 samples of history
   const int hist = 1000;
@@ -1076,54 +1075,54 @@ void Cli::calibrate_info(int seconds) {
   } 
 
   if(report_spikes) {
-    Serial.printf("### SENSOR SPIKE REPORT - " MADFLIGHT_VERSION " ###\n\n");
-    Serial.printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
+    MF_printf("### SENSOR SPIKE REPORT - " MADFLIGHT_VERSION " ###\n\n");
+    MF_printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
     gx.print_spikes("gx[deg/s]     ");
     gy.print_spikes("gy[deg/s]     ");
     gz.print_spikes("gz[deg/s]     ");
-    Serial.printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
+    MF_printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c?"I2C":"SPI"));
     ax.print_spikes("ax[g]         ");
     ay.print_spikes("ay[g]         ");
     az.print_spikes("az[g]         ");
     if(sp.n > 0) {
-      Serial.printf("=== %s Barometer I2C ===\n", bar.name());
+      MF_printf("=== %s Barometer I2C ===\n", bar.name());
       sa.print_spikes("Altitude[m]   ");
       sp.print_spikes("Pressure[Pa]  ");
       st.print_spikes("Temperature[C]");
     }
     if(mx.n > 0) {
-      Serial.printf("=== %s Magnetometer I2C ===\n", mag.name());
+      MF_printf("=== %s Magnetometer I2C ===\n", mag.name());
       mx.print_spikes("mx[uT]        ");
       my.print_spikes("my[uT]        ");
       mz.print_spikes("mz[uT]        ");
     }
-    Serial.println();
+    MF_printf("\n");
   }
 
-  Serial.printf("### SENSOR STATISTICS REPORT - " MADFLIGHT_VERSION " ###\n\n");
-  Serial.printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
+  MF_printf("### SENSOR STATISTICS REPORT - " MADFLIGHT_VERSION " ###\n\n");
+  MF_printf("=== %s Gyro %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
   gx.print("gx[deg/s]     ", seconds);
   gy.print("gy[deg/s]     ", seconds);
   gz.print("gz[deg/s]     ", seconds);
-  Serial.printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
+  MF_printf("=== %s Accelerometer %s ===\n", imu.name(), (imu.config.uses_i2c ? "I2C" : "SPI"));
   ax.print("ax[g]         ", seconds);
   ay.print("ay[g]         ", seconds);
   az.print("az[g]         ", seconds);
   if(sp.n > 0) {
-    Serial.printf("=== %s Barometer I2C ===\n", bar.name());
+    MF_printf("=== %s Barometer I2C ===\n", bar.name());
     sa.print("Altitude[m]   ", seconds);
     sp.print("Pressure[Pa]  ", seconds);
     st.print("Temperature[C]", seconds);
   }
   if(mx.n > 0) {
     float f = sqrt(mx.mean() * mx.mean() + my.mean() * my.mean() + mz.mean() * mz.mean());
-    Serial.printf("=== %s Magnetometer I2C - Field Strength: %.2f uT===\n", mag.name(), f);
+    MF_printf("=== %s Magnetometer I2C - Field Strength: %.2f uT===\n", mag.name(), f);
     mx.print("mx[uT]        ", seconds);
     my.print("my[uT]        ", seconds);
     mz.print("mz[uT]        ", seconds);
   }
 
-  Serial.println("\ncalinfo completed\n");
+  MF_printf("\ncalinfo completed\n\n");
 }
 
 //========================================================================================================================//
@@ -1139,7 +1138,7 @@ void Cli::cli_print_loop() {
   if (micros() - cli_print_time > cli_print_interval) {
     cli_print_time = micros();
     bool cli_print_need_newline = false;
-    //Serial.printf("loop_time:%d\t",loop_time); //print loop time stamp
+    //MF_printf("loop_time:%d\t",loop_time); //print loop time stamp
     for(int i=0;i<cli_print_extern_count;i++) {
       if(cli_print_flag_extern[i]) {
         cli_print_extern[i].function();
@@ -1152,7 +1151,7 @@ void Cli::cli_print_loop() {
         cli_print_need_newline = true;
       }
     }
-    if (cli_print_need_newline) Serial.println();
+    if (cli_print_need_newline) MF_printf("\n");
     imu.stat_runtime_max = 0; //reset maximum runtime
   }
 }
@@ -1161,7 +1160,7 @@ void Cli::ps() {
   MsgBroker::top();
   RuntimeTraceGroup::print();
   freertos_ps();
-  Serial.println();
+  MF_printf("\n");
   hal_meminfo();
 }
 
@@ -1179,7 +1178,7 @@ void Cli::print_resources() {
   for(int i=0;i<2;i++) {
     MF_I2C* i2c = hal_get_i2c_bus(i);
     if(i2c) {
-      Serial.printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
+      MF_printf("I2C: bus:%d clock:%d\n", i, (int)i2c->getClock());
     }
   }
 

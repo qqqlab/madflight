@@ -68,10 +68,10 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
   // but as this are the only parser, we can use the mavlink buffer mav_rxmsg and avoid copying data
   if(MAVLINK_FRAMING_OK == mavlink_frame_char_buffer(&mav_rxmsg, &mav_status, c, nullptr, nullptr)) {
     rv = process_result_enum::MSG;
-    //Serial.printf("MAV: %d\n",mav_rxmsg.msgid);
+    //MF_printf("MAV: %d\n",mav_rxmsg.msgid);
     switch (mav_rxmsg.msgid) {
       case MAVLINK_MSG_ID_HEARTBEAT: { //0
-        //Serial.println("Received HEARTBEAT");
+        //MF_printf("Received HEARTBEAT\n");
         break;
       }
 
@@ -79,7 +79,7 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
         if(pwm) {
           mavlink_rc_channels_override_t m;
           mavlink_msg_rc_channels_override_decode(&mav_rxmsg, &m);
-          //Serial.printf("Received RC_CHANNELS_OVERRIDE: ch1:%d ch2:%d ch3:%d ch4:%d\n", (int)m.chan1_raw, (int)m.chan2_raw, (int)m.chan3_raw, (int)m.chan4_raw);
+          //MF_printf("Received RC_CHANNELS_OVERRIDE: ch1:%d ch2:%d ch3:%d ch4:%d\n", (int)m.chan1_raw, (int)m.chan2_raw, (int)m.chan3_raw, (int)m.chan4_raw);
           pwm[0] = m.chan1_raw;
           pwm[1] = m.chan2_raw;
           pwm[2] = m.chan3_raw;
@@ -104,7 +104,7 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
       }
 
       case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: { //21
-        //Serial.println("Received PARAM_REQUEST_LIST");
+        //MF_printf("Received PARAM_REQUEST_LIST\n");
         telem_param_value_enable();
         break; 
       }
@@ -138,7 +138,7 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
       case MAVLINK_MSG_ID_RADIO_STATUS: { //109
         //mavlink_radio_status_t m;
         //mavlink_msg_radio_status_decode(&mav_rxmsg, &m);
-        //Serial.printf("Received RADIO_STATUS: rssi:%d\n",(int)m.rssi);
+        //MF_printf("Received RADIO_STATUS: rssi:%d\n",(int)m.rssi);
         break; 
       }
 
@@ -148,7 +148,7 @@ RclGizmoMavlink::process_result_enum RclGizmoMavlink::process_char(uint8_t c) {
       }
 
       default: {
-        //Serial.printf("MAV: rx %d\n", mav_rxmsg.msgid);
+        //MF_printf("MAV: rx %d\n", mav_rxmsg.msgid);
         break; 
       }
     }
@@ -177,7 +177,7 @@ bool RclGizmoMavlink::telem_send(mavlink_message_t *pmsg, uint16_t timeout_ms) {
       }
     } while(millis() - start < timeout_ms);
     xSemaphoreGive(tx_mux);
-    //Serial.printf("MAV: tx %d\n", pmsg->msgid);
+    //MF_printf("MAV: tx %d\n", pmsg->msgid);
   }
   return rv;
 }

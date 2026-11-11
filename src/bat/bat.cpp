@@ -24,7 +24,7 @@ SOFTWARE.
 
 #define MF_MOD "BAT"
 
-#include <Arduino.h> //Serial
+#include "../tbx/MF_printf.h"
 #include "bat.h"
 #include "BatGizmoADC.h"
 #include "BatGizmoINA226.h"

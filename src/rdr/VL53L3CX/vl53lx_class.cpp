@@ -37,7 +37,6 @@
 
 /* Includes */
 #include <stdlib.h>
-#include "Arduino.h"
 #include "vl53lx_class.h"
 
 

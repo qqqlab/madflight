@@ -30,6 +30,7 @@ SOFTWARE.
 #endif
 
 #include "RuntimeTrace.h"
+#include "../tbx/MF_printf.h"
 
 #if MF_USE_RUNTIMETRACE
 //-----------------------------------------------------------------------------
@@ -70,7 +71,7 @@ void RuntimeTrace::print(uint32_t now, float *perc, float *perc1) {
   float hz1 = 1e6f * n1 / reset_dt;
   *perc1 = 100.0f * dt1 / reset_dt;
   float rt1 = (n1 == 0 ? 0 : (float)dt1 / n1);
-  Serial.printf("%-8s %8.0fHz  %6.2f%%   %9.2fus %8.0fHz  %6.2f%%   %9.2fus\n", name, hz, *perc, rt,  hz1, *perc1, rt1);
+  MF_printf("%-8s %8.0fHz  %6.2f%%   %9.2fus %8.0fHz  %6.2f%%   %9.2fus\n", name, hz, *perc, rt,  hz1, *perc1, rt1);
 }
 
 //-----------------------------------------------------------------------------
@@ -92,9 +93,9 @@ void RuntimeTraceGroup::print() {
   if(!arr[0]) return;
   volatile uint32_t now = micros();
   uint32_t reset_dt = (now - arr[0]->reset_ts);
-  Serial.printf("\n=== Wallclock Runtime - Measurement Period: %.2f seconds ===\n\n", 1e-6 * reset_dt);
+  MF_printf("\n=== Wallclock Runtime - Measurement Period: %.2f seconds ===\n\n", 1e-6 * reset_dt);
 
-  Serial.printf("Module        Calls  Wallclock     Rt/call    Updates  Wallclock      Rt/upd\n");
+  MF_printf("Module        Calls  Wallclock     Rt/call    Updates  Wallclock      Rt/upd\n");
 
   //show traces
   float perc_sum = 0;
@@ -108,7 +109,7 @@ void RuntimeTraceGroup::print() {
     perc1_sum += perc1;
   }
 
-  Serial.printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", perc_sum, perc1_sum);
+  MF_printf("Total  ------------  %6.2f%%  -----------------------  %6.2f%%  ------------\n", perc_sum, perc1_sum);
 
   reset();
 }

@@ -28,15 +28,13 @@ ScheduleFreq schedule_10Hz = ScheduleFreq(10);
 
 void loop() {
   if(schedule_10Hz.expired()) {
-    Serial.println("schedule"); //this is executed at exactly 10Hz (as long as loop() is called often enough)
+    MF_printf("schedule\n"); //this is executed at exactly 10Hz (as long as loop() is called often enough)
   }
 }
 
 */
 
 #pragma once
-
-#include <Arduino.h>
 
 class ScheduleFreq {
   public:

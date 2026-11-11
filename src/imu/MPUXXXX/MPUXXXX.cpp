@@ -57,30 +57,30 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
     //check whoami
     int wai = whoami();
     if(_type == MPU6000 && wai != 0x68) {
-        Serial.printf("IMU: WARNING: MPU6000 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        MF_printf("IMU: WARNING: MPU6000 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
         _type = AUTO;
     }  
     if(_type == MPU6050 && wai != 0x68) {
-        Serial.printf("IMU: WARNING: MPU6050 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        MF_printf("IMU: WARNING: MPU6050 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
         _type = AUTO;
     }
     if(_type == MPU60X0 && wai != 0x68) {
-        Serial.printf("IMU: WARNING: MPU60X0 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        MF_printf("IMU: WARNING: MPU60X0 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
         _type = AUTO;
     }    
     if(_type == MPU6500 && wai != 0x70) {
-        Serial.printf("IMU: WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70, attempting autodetect\n",wai);
+        MF_printf("IMU: WARNING: MPU6500 whoami mismatch, got:0x%02X expected:0x70, attempting autodetect\n",wai);
         _type = AUTO;
     }
     if(_type == MPU9150 && wai != 0x68) {
-        Serial.printf("IMU: WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
+        MF_printf("IMU: WARNING: MPU9150 whoami mismatch, got:0x%02X expected:0x68, attempting autodetect\n",wai);
         _type = AUTO;
     }  
     if(_type == MPU9250 && wai != 0x71 && wai != 0x73) {  // MPU9250 -> 0x71, MPU9255 -> 0x73
         if(wai == 0x70) {
-            Serial.printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500, attempting autodetect\n",wai);
+            MF_printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71 - this is probably a relabelled MPU6500, attempting autodetect\n",wai);
         }else{
-            Serial.printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71, attempting autodetect\n",wai);
+            MF_printf("IMU: WARNING: MPU9250 whoami mismatch, got:0x%02X expected:0x71, attempting autodetect\n",wai);
         }
         _type = AUTO;
     }
@@ -101,7 +101,7 @@ int MPUXXXX::begin(MPU_Type type, SensorDevice *dev, int gyro_scale_dps, int acc
             default:
                 return -99; //autodetect error
         }
-        Serial.printf("IMU: Autodetected %s\n", type_name());
+        MF_printf("IMU: Autodetected %s\n", type_name());
     }
 
     //config
@@ -196,7 +196,7 @@ void MPUXXXX::set_acc_resolution() {
         //rev 0.4 and 1.x have half acc resolution
         acc_resolution = ( (rev1 == 0 && rev2 == 4) || (rev1 == 1) ? 16384 : 32786);
 
-        Serial.printf("IMU: MPU60X0 revision:%d.%d\n",(int)rev1,(int)rev2);
+        MF_printf("IMU: MPU60X0 revision:%d.%d\n",(int)rev1,(int)rev2);
     }else{
         acc_resolution = 32786;
     }

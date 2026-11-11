@@ -33,7 +33,7 @@ SOFTWARE.
 class AltEst_Bar : public AltEst {
 public:
   void setup(float alt) {
-    Serial.printf("ALT: BARO\n");
+    MF_printf("ALT: BARO\n");
 
     float sample_rate = bar.config.sample_rate;
     float filterHHertz = 2.0;

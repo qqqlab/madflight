@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "../hal/MF_I2C.h"
 #include "../cfg/cfg.h"
-#include "../tbx/tbx.h" //MF_Schedule, RuntimeTrace, MsgBroker
+#include "../tbx/tbx.h" //MF_Schedule, RuntimeTrace, MsgBroker, MF_printf
 
 struct __attribute__((aligned(4))) BarState {
   public:

@@ -70,7 +70,7 @@ Bbx bbx;
 
 #else
   void Bbx::gizmo_create_sd() {
-    Serial.println("\n" MF_MOD ": ERROR BBX not available for this processor\n");
+    MF_printf("\n" MF_MOD ": ERROR BBX not available for this processor\n\n");
   }
 #endif
 

@@ -38,7 +38,7 @@ public:
     setup2(alt, 0.4, 0.03, 0.1, 12); //baroAltitude[m], sigmaBaro[m], sigmaAccel[m/s2], accelThreshold[m/s2], ZUPT_SIZE[n]);
     ts = 0;
 
-    //Serial.printf("ALT: COMP gain=%f,%f\n", gain0, gain1);
+    //MF_printf("ALT: COMP gain=%f,%f\n", gain0, gain1);
   }
 
   //a: accel up in [m/s^2], ts: timestamp in [us]

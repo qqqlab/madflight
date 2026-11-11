@@ -24,7 +24,7 @@ SOFTWARE.
 
 //BinLog uses 32bit microsecond timestamps (good for 1 hour of recording before wrap-around)
 
-#include <Arduino.h> //Serial
+#include "../tbx/MF_printf.h"
 #include "bbx.h"
 #include "../hal/hal.h" //FreeRtos
 #include "BinLogWriter.h"
@@ -77,7 +77,7 @@ namespace BinLogWriter {
     queue = xQueueCreate(QUEUE_LENGTH, sizeof(msg_t));
 
     if(xTaskCreate(bbx_task, "mf_BBX", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
-      Serial.println("BBX: Task creation failed");
+      MF_printf("BBX: Task creation failed\n");
     }
   }
 

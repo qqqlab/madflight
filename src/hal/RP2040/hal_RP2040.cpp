@@ -88,7 +88,7 @@ void hal_eeprom_begin() {
   if(begin_called) return;
   begin_called = true;
   #ifdef DEBUG_EEPROM
-    Serial.printf("hal_eeprom_begin()\n");
+    MF_printf("hal_eeprom_begin()\n");
   #endif 
   EEPROM.begin(4096);
 }
@@ -96,21 +96,21 @@ void hal_eeprom_begin() {
 uint8_t hal_eeprom_read(uint32_t adr) {
   uint8_t val =EEPROM.read(adr);
   #ifdef DEBUG_EEPROM
-    Serial.printf("EEr %04X:%02X\n", adr, val);
+    MF_printf("EEr %04X:%02X\n", adr, val);
   #endif  
   return val;
 }
 
 void hal_eeprom_write(uint32_t adr, uint8_t val) {
   #ifdef DEBUG_EEPROM
-    Serial.printf("EEw %04X:%02X\n", adr, val);
+    MF_printf("EEw %04X:%02X\n", adr, val);
   #endif
   EEPROM.write(adr, val);
 }
 
 void hal_eeprom_commit() {
   #ifdef DEBUG_EEPROM
-    Serial.printf("hal_eeprom_commit()\n");
+    MF_printf("hal_eeprom_commit()\n");
   #endif 
   EEPROM.commit();
 }
@@ -144,7 +144,7 @@ int hal_get_pin_number(String val) {
 }
 
 void hal_print_pin_name(int pinnum) {
-  Serial.printf("%d",pinnum);
+  MF_printf("%d",pinnum);
 }
 
 MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert) {
@@ -166,7 +166,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       bits = 8; parity='E'; stop=2;
       break;
     default:
-      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
       return nullptr;
       break;
   }
@@ -221,7 +221,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     case 2: {
       int pin_tx = cfg.pin_ser2_tx;
       int pin_rx = cfg.pin_ser2_rx;
-      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
       if(pin_tx >= 0 || pin_rx >= 0) {
         auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
         ser->begin(baud);
@@ -232,7 +232,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     case 3: {
       int pin_tx = cfg.pin_ser3_tx;
       int pin_rx = cfg.pin_ser3_rx;
-      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);
       if(pin_tx >= 0 || pin_rx >= 0) {
         auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
         ser->begin(baud);
@@ -243,7 +243,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     case 4: {
       int pin_tx = cfg.pin_ser4_tx;
       int pin_rx = cfg.pin_ser4_rx;
-      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
       if(pin_tx >= 0 || pin_rx >= 0) {
         auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
         ser->begin(baud);
@@ -254,7 +254,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     case 5: {
       int pin_tx = cfg.pin_ser5_tx;
       int pin_rx = cfg.pin_ser5_rx;
-      if(mode != MF_SerialMode::mf_SERIAL_8N1) Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
+      if(mode != MF_SerialMode::mf_SERIAL_8N1) MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode (PIO driver only supports 8N1)\n\n", bus_id);      
       if(pin_tx >= 0 || pin_rx >= 0) {
         auto *ser = new SerialPioIRQ((pin_tx>=0 ? pin_tx : 0xFF), (pin_rx>=0 ? pin_rx : 0xFF), 256, 256);
         ser->begin(baud);
@@ -338,26 +338,26 @@ void hal_meminfo() {
     const int avail = 262144; //256K
   #endif
   int used = avail - rp2040.getFreeHeap();
-  Serial.printf("MEM: Used %.1f%% RAM (used %d of %d bytes)\n", 100.f * used / avail, used, avail);
+  MF_printf("MEM: Used %.1f%% RAM (used %d of %d bytes)\n", 100.f * used / avail, used, avail);
 }
 
 void hal_print_businfo() {
-  Serial.println("\n=== BUS INFO ===\n");
+  MF_printf("\n=== BUS INFO ===\n\n");
 #if MF_SERIAL_DMA  
-  Serial.printf("SER bus 0 is hardware DMA uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("SER bus 1 is hardware DMA uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+  MF_printf("SER bus 0 is hardware DMA uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  MF_printf("SER bus 1 is hardware DMA uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
 #else
-  Serial.printf("SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+  MF_printf("SER bus 0 is hardware uart0 with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  MF_printf("SER bus 1 is hardware uart1 with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
 #endif
-  Serial.printf("SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
-  Serial.printf("SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
-  Serial.printf("SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
-  Serial.printf("SER bus 5 is pio uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
-  Serial.printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-  Serial.printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-  Serial.printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-  Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+  MF_printf("SER bus 2 is pio uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
+  MF_printf("SER bus 3 is pio uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
+  MF_printf("SER bus 4 is pio uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
+  MF_printf("SER bus 5 is pio uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
+  MF_printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+  MF_printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+  MF_printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+  MF_printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
 }
 
 BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,

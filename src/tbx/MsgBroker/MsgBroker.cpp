@@ -25,7 +25,7 @@ SOFTWARE.
 #include "MsgBroker.h"
 
 
-//#define DEBUG_PRINTF(...) Serial.printf( __VA_ARGS__ )
+//#define DEBUG_PRINTF(...) MF_printf( __VA_ARGS__ )
 
 #ifndef DEBUG_PRINTF
   #define DEBUG_PRINTF(...)
@@ -59,15 +59,15 @@ int MsgBroker::topic_count() {
 
 void MsgBroker::top() {
   float dt = 1e-6 * (micros() - _stat_ts);
-  Serial.printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
+  MF_printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = _topic_list[i];
     if(t) {
       uint32_t t_dgen = t->get_generation() - t->_stat_start_gen;
-      Serial.printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->get_generation(), (int)t_dgen);
+      MF_printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->get_generation(), (int)t_dgen);
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->_sub_list[j];
-        if(s) Serial.printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->_stat_pull_cnt / dt, (int)s->_sub_gen, (int)s->_stat_pull_cnt, (int)(t_dgen - s->_stat_pull_cnt));
+        if(s) MF_printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->_stat_pull_cnt / dt, (int)s->_sub_gen, (int)s->_stat_pull_cnt, (int)(t_dgen - s->_stat_pull_cnt));
       } 
     }
   }

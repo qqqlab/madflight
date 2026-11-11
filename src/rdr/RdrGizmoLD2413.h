@@ -107,7 +107,7 @@ public:
         case 13:
           if(b==0xF5) {
             state->dist = data.f * 0.001f; //sensor reports distance in [mm]
-            //Serial.println(data.f);
+            //MF_printf("%f\n", data.f);
             rv = true;
           }
           pos = 0;
@@ -115,7 +115,7 @@ public:
         default:
           pos = 0;
       }
-      //Serial.printf("%02X ",b);
+      //MF_printf("%02X ",b);
     }
     return rv;
   }

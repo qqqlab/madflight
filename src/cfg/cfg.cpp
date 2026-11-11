@@ -88,12 +88,12 @@ bool CfgClass::getOptionString(uint16_t param_idx, int32_t param_val, char out_o
 //print all parameters for module_name on single line
 void CfgClass::printModule(const char* module_name, printModuleMode mode) {
   if(mode == printModuleMode::CFG_ERROR) {
-    Serial.println();
+    MF_printf("\n");
   }
   
   String modname = String(module_name);
   modname.toUpperCase();
-  Serial.printf("%s: ", modname.c_str());
+  MF_printf("%s: ", modname.c_str());
   modname.toLowerCase();
   String modname_ = modname + '_';
 
@@ -102,62 +102,59 @@ void CfgClass::printModule(const char* module_name, printModuleMode mode) {
   int gizmo_i = getIndex(type_name);
   if(gizmo_i >= 0) {
     printValue(gizmo_i);
-    Serial.print(" ");
+    MF_printf(" ");
   }
 
   if(mode == printModuleMode::GIZMO) {
-    Serial.println();
+    MF_printf("\n");
     return;
   }
 
   if(mode == printModuleMode::GIZMO_NO_CR) {
-    Serial.print("- ");
+    MF_printf("- ");
     return;
   }
 
   if(mode == printModuleMode::CFG_ERROR) {
-    Serial.print("ERROR check pin/bus config: ");
+    MF_printf("ERROR check pin/bus config: ");
   }
 
   //print config
   for(int i = 0; i < paramCount(); i++) {
     if(strncmp(Cfg::param_list[i].name, modname_.c_str(), modname_.length()) == 0 && i != gizmo_i) { //starts with module_name + '_', omit gizmo
-      Serial.print(Cfg::param_list[i].name);
-      Serial.print(':');
+      MF_printf("%s:", Cfg::param_list[i].name);
       printValue(i);
-      Serial.print(' ');
+      MF_printf(" ");
     }
   }
   //print module pins
   String pinname = "pin_" + modname; 
   for(int i = 0; i < paramCount(); i++) {
     if(strncmp(Cfg::param_list[i].name, pinname.c_str(), pinname.length()) == 0) { //starts with 'pin_' + module_name
-      Serial.print(Cfg::param_list[i].name);
-      Serial.print(':');
+      MF_printf("%s:", Cfg::param_list[i].name);
       printValue(i);
-      Serial.print(' ');
+      MF_printf(" ");
     }
   }
-  Serial.println();
+  MF_printf("\n");
 
   if(mode == printModuleMode::CFG_ERROR) {
-    Serial.println();
+    MF_printf("\n");
   }
 }
 
 //print "<name> <value> # options: <options>" for given param_index
 void CfgClass::printNameAndValue(uint16_t i, const char* comment) {
   if(i>paramCount()) return;
-  Serial.printf("%-16s", Cfg::param_list[i].name);
-  Serial.print(' ');
+  MF_printf("%-16s ", Cfg::param_list[i].name);
   printValue(i);
-  if(comment) Serial.printf(" # %s", comment);
+  if(comment) MF_printf(" # %s", comment);
   const char *options = Cfg::param_list[i].options;
   if(options && options[0] != 0) {
-    Serial.printf(" # options: ");
+    MF_printf(" # options: ");
     _print_options(options);
   }
-  Serial.println();
+  MF_printf("\n");
 }
 
 //print param value
@@ -168,23 +165,23 @@ void CfgClass::printValue(uint16_t i) {
     case 'e': { //enum
       char option[20];
       if(getOptionString(i, val, option)) {
-        Serial.print(option);
+        MF_printf("%s",option);
       }else{
-        Serial.printf("%d", (int)val); //option lookup failed, print numeric value
+        MF_printf("%d", (int)val); //option lookup failed, print numeric value
       }
       break;
     }
     case 'f': //float
-      Serial.printf("%f", val);
+      MF_printf("%f", val);
       break;
     case 'i': //integer
-      Serial.printf("%d", (int)val);
+      MF_printf("%d", (int)val);
       break;
     case 'p': //pinnumber/pinname
       hal_print_pin_name(val);
       break;
     default:
-      Serial.printf("ERROR invalid type '%c'", Cfg::param_list[i].type);
+      MF_printf("ERROR invalid type '%c'", Cfg::param_list[i].type);
   }
 }
 
@@ -219,7 +216,7 @@ void CfgClass::cli_diff(const char* filter) {
 
 //sort by pin number (using inefficient sort)
 void CfgClass::printPins() {
-  Serial.println("\n=== PINOUT ===\n");
+  MF_printf("\n=== PINOUT ===\n\n");
   for(int pinno = 0; pinno < 128; pinno++) {
     int cnt = 0;
     for(int i = 0; i < paramCount(); i++) {
@@ -258,17 +255,17 @@ bool CfgClass::cli_set_param(String name_filter, String val) {
 }
 
 bool CfgClass::_cli_set_param(String namestr, String val) {
-  //Serial.printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
+  //MF_printf("cfg.setParam %s %s\n", namestr.c_str(), val.c_str());
   namestr.trim();
   val.trim();
   if(namestr == "") return false;
   if(val == "") {
-    Serial.printf("CFG: WARNING - No value for param '%s'\n", namestr.c_str());
+    MF_printf("CFG: WARNING - No value for param '%s'\n", namestr.c_str());
     return false;
   }
   int i = getIndex(namestr);
   if(i < 0) {
-    Serial.printf("CFG: WARNING - Param '%s' not found\n", namestr.c_str());
+    MF_printf("CFG: WARNING - Param '%s' not found\n", namestr.c_str());
     return false;
   }
   switch(Cfg::param_list[i].type) {
@@ -278,9 +275,9 @@ bool CfgClass::_cli_set_param(String namestr, String val) {
         _set_param(i, enum_idx);
         return true;
       }else{
-        Serial.printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: ", namestr.c_str(), val.c_str());
+        MF_printf("CFG: WARNING - Param '%s' has no '%s' option. Available options: ", namestr.c_str(), val.c_str());
         _print_options(Cfg::param_list[i].options);
-        Serial.println();
+        MF_printf("\n");
         return false;
       }
       break;
@@ -394,7 +391,7 @@ void CfgClass::cli_defaults(const char* filter) {
 }
 
 void CfgClass::cli_save() {
-  Serial.println("Saving and rebooting, please wait... ");
+  MF_printf("Saving and rebooting, please wait...\n");
   cfg.save();
   delay(1000);
   hal_reboot();
@@ -416,7 +413,7 @@ void CfgClass::save() {
   if(_is_board_and_config_loaded) hdr.board_and_config_crc = _calc_board_and_config_crc();
   //hdr._reserved1 = 0,0,0,...
 
-  Serial.printf("CFG: Saving to EEPROM: board_and_config_crc=%X\n", hdr.board_and_config_crc);
+  MF_printf("CFG: Saving to EEPROM: board_and_config_crc=%X\n", hdr.board_and_config_crc);
 
   //write header
   for(uint32_t i=0; i<sizeof(CfgHeader); i++) {
@@ -441,7 +438,7 @@ void CfgClass::save() {
     pos++;
   }
   hal_eeprom_commit();
-  Serial.println("CFG: EEPROM written");
+  MF_printf("CFG: EEPROM written\n");
 }
 
 void CfgClass::_load_from_string(const char *batch) {
@@ -450,11 +447,11 @@ void CfgClass::_load_from_string(const char *batch) {
   String cmdline = "";
   while(1) {
     char c = batch[pos];
-    //if(c) Serial.print(c);
+    //if(c) MF_printf("%c", c);
     if ( c=='\r' || c=='\n' || c==0 ) { //end of line, or end of string
       lineno++;
       if(!_load_cmdline(cmdline)) {
-        Serial.printf("=== ERROR while processing line number %d: %s\n", lineno, cmdline.c_str());
+        MF_printf("=== ERROR while processing line number %d: %s\n", lineno, cmdline.c_str());
       }
       cmdline = "";
       if(c==0) return;
@@ -491,7 +488,7 @@ void CfgClass::_load() {
 
   #ifdef MF_DEBUG_CFG1
     #define MF_DEBUG_DUMP() cfg.cli_dump("rcl_gizmo")
-    Serial.printf("\nDEBUG: After load_defaults()\n");
+    MF_printf("\nDEBUG: After load_defaults()\n");
     MF_DEBUG_DUMP();
   #endif
 
@@ -503,7 +500,7 @@ void CfgClass::_load() {
   uint8_t *buf = (uint8_t*)&eeprom_hdr;
   for(uint32_t i = 0; i < sizeof(CfgHeader); i++) {
     buf[i] = hal_eeprom_read(i);
-    //Serial.printf("%02X ",buf[i]);
+    //MF_printf("%02X ",buf[i]);
   }
 
   //check header
@@ -513,7 +510,7 @@ void CfgClass::_load() {
   || eeprom_hdr.header3 != CFG_HDR3 
   || eeprom_hdr.len < sizeof(CfgHeader) + 8 
   || eeprom_hdr.len > 4096) {
-    Serial.println("CFG: Loading EEPROM skipped (Header invalid)");
+    MF_printf("CFG: Loading EEPROM skipped (Header invalid)\n");
   }else{
     uint32_t eeprom_datalen = eeprom_hdr.len - 4; //length of header+param (4=crc)
     uint32_t eeprom_paramlen = eeprom_datalen - sizeof(CfgHeader); //length of param
@@ -530,7 +527,7 @@ void CfgClass::_load() {
       crc_eeprom_buf[i] = hal_eeprom_read(eeprom_datalen + i);
     }
     if(crc != crc_eeprom) {
-      Serial.print("CFG: Loading EEPROM skipped (CRC invalid)");
+      MF_printf("CFG: Loading EEPROM skipped (CRC invalid)\n");
       eeprom_hdr.board_and_config_crc = 0;
     }else{
       //load param from eeprom
@@ -541,12 +538,12 @@ void CfgClass::_load() {
       for(uint32_t i = 0; i<num_bytes; i++) {
         param_buf[i] = hal_eeprom_read(sizeof(CfgHeader) + i);
       }
-      Serial.println("CFG: Loading EEPROM OK");
+      MF_printf("CFG: Loading EEPROM OK\n");
     }
   }
 
   #ifdef MF_DEBUG_CFG1
-    Serial.printf("\nDEBUG: After _load_from_eeprom()\n");
+    MF_printf("\nDEBUG: After _load_from_eeprom()\n");
     MF_DEBUG_DUMP();
   #endif
 
@@ -555,45 +552,45 @@ void CfgClass::_load() {
   //====================================
   //check board+config crc against board+config crc stored in eeprom
   uint32_t prog_crc = _calc_board_and_config_crc();
-  Serial.printf("CFG: board_and_config_crc eeprom=%X program=%X\n", eeprom_hdr.board_and_config_crc, prog_crc);
+  MF_printf("CFG: board_and_config_crc eeprom=%X program=%X\n", eeprom_hdr.board_and_config_crc, prog_crc);
   if(eeprom_hdr.board_and_config_crc == prog_crc) {
     //the board+config parameters were already applied (and potentially modified since, so do not re-apply)
-    Serial.println("CFG: madflight_board + madflight_config skipped (EEPROM is newer)");
+    MF_printf("CFG: madflight_board + madflight_config skipped (EEPROM is newer)\n");
   }else{
     //load board + config
     if(_board && _board[0]) {
-      Serial.println("CFG: Loading madflight_board");
+      MF_printf("CFG: Loading madflight_board\n");
       _load_from_string(_board);
     }
     if(_config && _config[0]) {
-      Serial.println("CFG: Loading madflight_config");
+      MF_printf("CFG: Loading madflight_config\n");
       _load_from_string(_config);
     }
-    Serial.println("CFG: madflight_board + madflight_config OK");
+    MF_printf("CFG: madflight_board + madflight_config OK\n");
 
     #ifdef MF_DEBUG_CFG2
       // debug crc
-      Serial.printf("\n");
-      Serial.printf("eeprom_board_and_config_crc = %X\n", eeprom_board_and_config_crc);
-      Serial.printf("madflight_board+config_crc  = %X\n", crc);
-      Serial.printf("%s\n", (hdr.board_and_config_crc == crc ? "MATCHED" : "NOT MATCHED"));
+      MF_printf("\n");
+      MF_printf("eeprom_board_and_config_crc = %X\n", eeprom_board_and_config_crc);
+      MF_printf("madflight_board+config_crc  = %X\n", crc);
+      MF_printf("%s\n", (hdr.board_and_config_crc == crc ? "MATCHED" : "NOT MATCHED"));
       if(_board && _board[0]) {
         uint32_t crc = 0xFFFFFFFF;
         crc = tbx_crc32((const uint8_t*)_board, strlen(_board), crc);
-        Serial.printf("_board: crc=%X len=%d start=\"", crc, strlen(_board));
-        for(int i=0;i<40;i++) Serial.print(_board[i]);
-        Serial.print("\"\n");
+        MF_printf("_board: crc=%X len=%d start=\"", crc, strlen(_board));
+        for(int i=0;i<40;i++) MF_printf("%c", _board[i]);
+        MF_printf("\"\n");
       }
       if(_config && _config[0]) {
         uint32_t crc = 0xFFFFFFFF;
         crc = tbx_crc32((const uint8_t*)_config, strlen(_config), crc);
-        Serial.printf("config:crc=%X len=%d start=\"",crc, strlen(_config));
-        for(int i=0;i<40;i++) Serial.print(_config[i]);
-        Serial.print("\"\n");
+        MF_printf("config:crc=%X len=%d start=\"",crc, strlen(_config));
+        for(int i=0;i<40;i++) MF_printf("%c",_config[i]);
+        MF_printf("\"\n");
       }
     #endif
     #ifdef MF_DEBUG_CFG1
-      Serial.printf("\nDEBUG: final\n");
+      MF_printf("\nDEBUG: final\n");
       MF_DEBUG_DUMP();
     #endif
   }
@@ -656,10 +653,10 @@ void CfgClass::_print_options(const char *str)
   while(*p) {
     p2 = strstr(p, "mf_");
     if(!p2) {
-      Serial.print(p);
+      MF_printf("%s", p);
       return;
     }
-    for(const char *c = p; c < p2; c++) Serial.print(*c);
+    for(const char *c = p; c < p2; c++) MF_printf("%c", *c);
     p = p2 + 3;
   }
 }

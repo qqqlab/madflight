@@ -5,9 +5,6 @@
 #include <functional>
 
 
-//#include <Arduino.h>
-//#include "../../hal/MF_Serial.h"
-
 class MspProcessor
 {
 public:

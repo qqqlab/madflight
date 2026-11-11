@@ -38,7 +38,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "Arduino.h"
+#include <Arduino.h> //pinMode
 #include "../../hal/MF_I2C.h"
 #include "RangeSensor.h"
 #include "vl53lx_def.h"

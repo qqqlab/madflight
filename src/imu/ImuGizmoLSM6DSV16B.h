@@ -61,7 +61,7 @@ class ImuGizmoLSM6DSV16B : public ImuGizmo {
       if(rv < 0) {
           delete sensor;
           delete dev;
-          Serial.printf("IMU: LSM6DSV16B init failed, rv=%d\n", rv);
+          MF_printf("IMU: LSM6DSV16B init failed, rv=%d\n", rv);
           return nullptr;
       }
 
@@ -72,7 +72,7 @@ class ImuGizmoLSM6DSV16B : public ImuGizmo {
       gizmo->dev = dev;
       //return config
       config->sample_rate = sensor->actual_sample_rate_hz;
-      Serial.printf("IMU: LSM6DSV16B started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
+      MF_printf("IMU: LSM6DSV16B started, sample_rate:%d\n", sensor->actual_sample_rate_hz);
       return gizmo;
   }
 

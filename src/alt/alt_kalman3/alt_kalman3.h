@@ -45,7 +45,7 @@ public:
     float accCov = 0.05;  
     float biasCov = 0.0005; 
 
-    Serial.printf("ALT: KALMAN3  altCov=%f accCov=%f biasCov=%f\n", altCov, accCov, biasCov);
+    MF_printf("ALT: KALMAN3  altCov=%f accCov=%f biasCov=%f\n", altCov, accCov, biasCov);
 
     filter.setup(altCov, accCov, biasCov);
     filter.h = alt;

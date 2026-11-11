@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "BbxGizmoSdcard_RP2.h"
 #include "../hal/hal.h"
-#include <Arduino.h> //Serial
+#include "../tbx/MF_printf.h"
 #include <SPI.h>
 #include <SdFat.h> //pico-arduino bundled version, alternative: #include "SdFat_Adafruit_Fork.h" //use adafruit lib
 
@@ -40,14 +40,14 @@ static bool sdcard_begin(BbxConfig *config) {
   switch(config->gizmo) {
     case Cfg::bbx_gizmo_enum::mf_SDSPI :
       if (config->spi_cs <= 0 || !config->spi_bus) {
-        Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
+        MF_printf("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus\n");
         return false;
       }
       if (!sd.begin( SdSpiConfig(config->spi_cs, SHARED_SPI, SD_SCK_MHZ(50), config->spi_bus) )) return false;
       break;
     case Cfg::bbx_gizmo_enum::mf_SDMMC :
       if (config->pin_mmc_clk < 0 || config->pin_mmc_cmd < 0 || config->pin_mmc_dat < 0) {
-       Serial.println("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins");
+       MF_printf("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins\n");
        return false;
       }
       if (!sd.begin( SdioConfig(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat) )) return false;
@@ -163,9 +163,9 @@ bool BbxGizmoSdcard::sd_setup() {
 //setup the file system
 void BbxGizmoSdcard::setup() {
   if(sd_setup()) {
-    //Serial.printf("BBX: SDCARD size:%d MB  free:%d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000), (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
+    //MF_printf("BBX: SDCARD size:%d MB  free:%d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000), (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
   }else{
-    //Serial.printf("BBX: SDCARD not found\n");
+    //MF_printf("BBX: SDCARD not found\n");
   }
 }
 
@@ -180,15 +180,15 @@ bool BbxGizmoSdcard::writeOpen() {
 
       sd_logOpen(BB_LOG_DIR_NAME);
       if(file) {
-        Serial.printf("BBX:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
+        MF_printf("BBX:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
         return true;
       }
     }
 
-    Serial.println("BBX:   start retry");
+    MF_printf("BBX:   start retry\n");
     setup_done = false; //force setup to re-run
   }
-  Serial.println("BBX:   start FAILED");
+  MF_printf("BBX:   start FAILED\n");
   return false;
 }
 
@@ -223,7 +223,7 @@ void BbxGizmoSdcard::close() {
     int len = file.size();
     file.close();
     file = {};
-    Serial.printf("BBX:   stop file=%s len=%d\n", filename.c_str(), len);
+    MF_printf("BBX:   stop file=%s len=%d\n", filename.c_str(), len);
   }
 }
 
@@ -254,7 +254,7 @@ void BbxGizmoSdcard::bench() {
     FsFile file;
     buf = (uint8_t*)malloc(512);
     if(!buf) {
-        Serial.println("BBX: bench - malloc failed");
+        MF_printf("BBX: bench - malloc failed\n");
         return;
     }
 
@@ -264,19 +264,19 @@ void BbxGizmoSdcard::bench() {
 
     file = sd.open(path, FILE_WRITE);
     if(!file){
-        Serial.println("BBX: Failed to open file for writing");
+        MF_printf("BBX: Failed to open file for writing\n");
         free(buf);
         return;
     }
 
     if(!file.preAllocate(pre_allocate_len)) {
-        Serial.println("BBX: preAllocate() failed");
+        MF_printf("BBX: preAllocate() failed\n");
     }
 
     size_t i;
     for(i=0;i<512;i++) buf[i] = i%64<63 ? '0' + i%64 - 1 : '\n';
 
-    Serial.printf("BBX: writing %u bytes to %s ...\n", (int)flen, path);
+    MF_printf("BBX: writing %u bytes to %s ...\n", (int)flen, path);
     Serial.flush();
     start = millis();
     for(i=0; i<sectors; i++){
@@ -286,11 +286,11 @@ void BbxGizmoSdcard::bench() {
     }
     file.close();
     end = millis() - start;
-    Serial.printf("BBX: %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    MF_printf("BBX: %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
 
     file = sd.open(path);
     if(!file){
-        Serial.println("BBX: bench - Failed to open file for reading");
+        MF_printf("BBX: bench - Failed to open file for reading\n");
         free(buf);
         return;
     }
@@ -306,7 +306,7 @@ void BbxGizmoSdcard::bench() {
         len -= toRead;
     }
     end = millis() - start;
-    Serial.printf("BBX: %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    MF_printf("BBX: %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
 
     free(buf);
@@ -315,40 +315,40 @@ void BbxGizmoSdcard::bench() {
 void BbxGizmoSdcard::info() {
   // 0 - SD V1, 1 - SD V2, or 3 - SDHC/SDXC
   // print the type of card
-  Serial.print("Card type:      ");
+  MF_printf("Card type:      ");
   switch (sd.card()->type()) {
     case 0:
-      Serial.println("SD1");
+      MF_printf("SD1\n");
       break;
     case 1:
-      Serial.println("SD2");
+      MF_printf("SD2\n");
       break;
     case 3:
-      Serial.println("SDHC/SDXC");
+      MF_printf("SDHC/SDXC\n");
       break;
     default:
-      Serial.println("Unknown");
+      MF_printf("Unknown\n");
   }
-  Serial.printf("Volume type:    FAT%d\n", sd.fatType());
-  Serial.printf("Cluster size:   %d\n", sd.bytesPerCluster());
-  Serial.printf("Volume size:    %d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000));
-  Serial.printf("Free:           %d MB\n", (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
+  MF_printf("Volume type:    FAT%d\n", sd.fatType());
+  MF_printf("Cluster size:   %d\n", sd.bytesPerCluster());
+  MF_printf("Volume size:    %d MB\n", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000));
+  MF_printf("Free:           %d MB\n", (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
 
-  Serial.println();
+  MF_printf("\n");
 
   sd_listDir("/");
 }
 
 bool BbxGizmoSdcard::sd_listDir(const char * dirname, uint8_t levels) {
-    Serial.printf("Listing directory: %s\n", dirname);
+    MF_printf("Listing directory: %s\n", dirname);
 
     FsFile root = sd.open(dirname);
     if(!root){
-        Serial.println("Failed to open directory");
+        MF_printf("Failed to open directory\n");
         return false;
     }
     if(!root.isDirectory()){
-        Serial.println("Not a directory");
+        MF_printf("Not a directory\n");
         return true;
     }
 
@@ -357,12 +357,12 @@ bool BbxGizmoSdcard::sd_listDir(const char * dirname, uint8_t levels) {
     while(file){
         file.getName(fn,200);
         if(file.isDirectory()){
-            Serial.printf("%-25s <DIR>\n", fn);
+            MF_printf("%-25s <DIR>\n", fn);
             if(levels){
                 sd_listDir(fn, levels -1);
             }
         } else {
-            Serial.printf("%-21s %9d\n", fn, (int)file.size());
+            MF_printf("%-21s %9d\n", fn, (int)file.size());
         }
         file = root.openNextFile();
     }
@@ -387,17 +387,17 @@ void BbxGizmoSdcard::sd_logOpen(const char * dirname){
   FsFile root = sd.open(dirname);
   if(!root){
       if(!sd.mkdir(dirname)){
-        Serial.println("BBX:   mkdir /log failed");
+        MF_printf("BBX:   mkdir /log failed\n");
         return;
     }
     root = sd.open(dirname);
     if(!root) {
-        Serial.println("BBX:  mkdir /log failed");
+        MF_printf("BBX:  mkdir /log failed\n");
         return;
     }
   }
   if(!root.isDirectory()){
-      Serial.println("BBX:   /log is not a directory");
+      MF_printf("BBX:   /log is not a directory\n");
       return;
   }
 
@@ -414,10 +414,10 @@ void BbxGizmoSdcard::sd_logOpen(const char * dirname){
     dirfile = root.openNextFile();
   }
   filename = String(dirname) + '/' + String(maxnr+1) + ".bin";
-  Serial.println(filename);
+  MF_printf("%s\n", filename);
   file = sd.open(filename, FILE_WRITE);
   if(!file.preAllocate(pre_allocate_len)) {
-      Serial.println("BBX: preAllocate() failed");
+      MF_printf("BBX: preAllocate() failed\n");
   }
   sectors_written = 0;
 }
@@ -438,17 +438,17 @@ int BbxGizmoSdcard::read(const char* filename, uint8_t **data) {
 }
 
 void BbxGizmoSdcard::printSummary() {
-  Serial.printf("BBX: SDCARD - ");
+  MF_printf("BBX: SDCARD - ");
   if(sd.clusterCount() > 0) {
-    Serial.printf("Size: %d MB, ", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000));
-    Serial.printf("Free: %d MB, ", (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
+    MF_printf("Size: %d MB, ", (int)((float)sd.clusterCount()*sd.bytesPerCluster()/1000000));
+    MF_printf("Free: %d MB, ", (int)((float)sd.freeClusterCount()*sd.bytesPerCluster()/1000000));
   } else {
-    Serial.printf("No card inserted, ");
+    MF_printf("No card inserted, ");
   }
   #ifdef USE_TINYUSB
-    Serial.printf("TinyUSB Mass Storage available\n");
+    MF_printf("TinyUSB Mass Storage available\n");
   #else
-    Serial.printf("No TinyUSB Mass Storage\n");
+    MF_printf("No TinyUSB Mass Storage\n");
   #endif
 }
 

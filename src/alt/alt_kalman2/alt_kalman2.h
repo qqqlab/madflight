@@ -34,7 +34,7 @@ public:
     float altCov = 0.2;  //measured stdev BME280 = 0.4 [m]
     float accCov = 0.01; //measured stdev MPU6500 @ 16G = 0.003 [G]
 
-    Serial.printf("ALT: KALMAN2  altCov=%f accCov=%f\n", altCov, accCov);
+    MF_printf("ALT: KALMAN2  altCov=%f accCov=%f\n", altCov, accCov);
 
     filter.setup(altCov, accCov);
     filter.h = alt;

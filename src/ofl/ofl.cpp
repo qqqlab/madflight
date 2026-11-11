@@ -24,7 +24,6 @@ SOFTWARE.
 
 #define MF_MOD "OFL"
 
-#include <Arduino.h> //Serial
 #include "ofl.h"
 
 //the gizmos

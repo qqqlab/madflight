@@ -1,7 +1,7 @@
 #ifndef DPSREGISTER_H_INCLUDED
 #define DPSREGISTER_H_INCLUDED
 
-#include <Arduino.h>
+#include "stdlib.h"
 
 typedef struct
 {

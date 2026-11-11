@@ -79,19 +79,19 @@ void hal_setup()
     static bool begin_called = false;
     if(begin_called) return;
     begin_called = true;
-    Serial.println("EEPROM: using Unbuffered IO");
+    MF_printf("EEPROM: using Unbuffered IO\n");
     //EEPROM.begin(); //STM does not use size in begin() call
   }
 
   uint8_t hal_eeprom_read(uint32_t adr) {
     uint8_t val = EEPROM.read(adr);
-    //Serial.printf("EEPROM.read(%d) = 0x%02X\n", adr, val);
+    //MF_printf("EEPROM.read(%d) = 0x%02X\n", adr, val);
     return val;
   }
 
   void hal_eeprom_write(uint32_t adr, uint8_t val) {
     EEPROM.update(adr, val); //update only writes when changed
-    //Serial.printf("EEPROM.write(%d, 0x%02X)\n", adr, val);
+    //MF_printf("EEPROM.write(%d, 0x%02X)\n", adr, val);
   }
 
   void hal_eeprom_commit() {
@@ -107,28 +107,28 @@ void hal_setup()
     (void)(EEPROM); //keep compiler happy
     static bool begin_called = false;
     if(begin_called) return;
-    Serial.println("EEPROM: using Buffered IO");
-    //Serial.println("START reading from flash");Serial.flush();
+    MF_printf("EEPROM: using Buffered IO\n");
+    //MF_printf("START reading from flash\n");Serial.flush();
     eeprom_buffer_fill(); //Copy the data from the flash to the buffer
-    //Serial.println("DONE reading");Serial.flush();
+    //MF_printf("DONE reading\n");Serial.flush();
   }
 
   uint8_t hal_eeprom_read(uint32_t adr) {
     uint8_t val = eeprom_buffered_read_byte(adr); //read from buffer
-    //Serial.printf("hal_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
+    //MF_printff("hal_eeprom_read(%d) = 0x%02X\n", adr, val);Serial.flush();
     return val;
   }
 
   void hal_eeprom_write(uint32_t adr, uint8_t val) {
-    //Serial.printf("hal_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
+    //MF_printf("hal_eeprom_write(%d, 0x%02X)\n", adr, val);Serial.flush();
     eeprom_buffered_write_byte(adr, val); //write to buffer
   }
 
   void hal_eeprom_commit() {
-    //Serial.println("START writing to flash");Serial.flush();
+    //MF_printf("START writing to flash\n");Serial.flush();
     eeprom_buffer_flush(); //Copy the data from the buffer to the flash
     eeprom_buffer_flush(); //TODO: calling flush twice seems to do the trick???
-    //Serial.println("DONE writing");Serial.flush();
+    //MF_printf("DONE writing\n");Serial.flush();
   } 
 #endif
 
@@ -168,9 +168,9 @@ int hal_get_pin_number(String s) {
 
 void hal_print_pin_name(int pinnum) {
   if(pinnum<0) {
-    Serial.printf("%d",pinnum);
+    MF_printf("%d",pinnum);
   }else{
-    Serial.printf("P%c%d", pinnum / 16 + 'A', pinnum % 16);
+    MF_printf("P%c%d", pinnum / 16 + 'A', pinnum % 16);
   }
 }
 
@@ -220,7 +220,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       config = SERIAL_8E2;
       break;
     default:
-      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
       return nullptr;
       break;
   }
@@ -298,7 +298,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
     digitalWrite(pin_inv, (invert ? HIGH : LOW) );
   }
   if(invert && pin_inv < 0) {
-    Serial.printf("\nERROR: Serial bus %d requested inverted, but does not have an inverter pin\n\n");
+    MF_printf("\nERROR: Serial bus %d requested inverted, but does not have an inverter pin\n\n");
   }
 
   return hal_ser[bus_id];
@@ -371,20 +371,20 @@ SPIClass* hal_get_spi_bus(int bus_id) {
 void hal_meminfo() {}
 
 void hal_print_businfo() {
-  Serial.println("\n=== BUS INFO ===\n");
-  Serial.printf("Notice: availability of hardware busses depends on chip used, and is not checked here.\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("SER bus 0 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
-  Serial.printf("SER bus 1 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
-  Serial.printf("SER bus 2 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
-  Serial.printf("SER bus 3 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
-  Serial.printf("SER bus 4 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
-  Serial.printf("SER bus 5 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
-  Serial.printf("SER bus 6 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser6_tx, cfg.pin_ser6_rx);
-  Serial.printf("SER bus 7 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser7_tx, cfg.pin_ser7_rx);
-  Serial.printf("I2C bus 0 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
-  Serial.printf("I2C bus 1 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
-  Serial.printf("SPI bus 0 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
-  Serial.printf("SPI bus 1 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
+  MF_printf("\n=== BUS INFO ===\n\n");
+  MF_printf("Notice: availability of hardware busses depends on chip used, and is not checked here.\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  MF_printf("SER bus 0 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser0_tx, cfg.pin_ser0_rx);
+  MF_printf("SER bus 1 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser1_tx, cfg.pin_ser1_rx);
+  MF_printf("SER bus 2 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser2_tx, cfg.pin_ser2_rx);
+  MF_printf("SER bus 3 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser3_tx, cfg.pin_ser3_rx);
+  MF_printf("SER bus 4 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser4_tx, cfg.pin_ser4_rx);
+  MF_printf("SER bus 5 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser5_tx, cfg.pin_ser5_rx);
+  MF_printf("SER bus 6 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser6_tx, cfg.pin_ser6_rx);
+  MF_printf("SER bus 7 is hardware uart with TX:%d RX:%d\n", cfg.pin_ser7_tx, cfg.pin_ser7_rx);
+  MF_printf("I2C bus 0 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c0_sda, cfg.pin_i2c0_scl);
+  MF_printf("I2C bus 1 is hardware i2c with SDA:%d SCL:%d\n", cfg.pin_i2c1_sda, cfg.pin_i2c1_scl);
+  MF_printf("SPI bus 0 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi0_miso, cfg.pin_spi0_sclk, cfg.pin_spi0_mosi);
+  MF_printf("SPI bus 1 is hardware spi with MISO:%d SCLK:%d MOSI:%d\n", cfg.pin_spi1_miso, cfg.pin_spi1_sclk, cfg.pin_spi1_mosi);
 
 }
 

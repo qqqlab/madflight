@@ -24,7 +24,7 @@ SOFTWARE.
 
 #pragma once
 
-#include <Arduino.h> //Serial
+#include "../tbx/MF_printf.h"
 #include "BinLogWriter.h"
 
 // prototypes for BinLog
@@ -176,14 +176,14 @@ private:
     FMT_msglen += datalen;
     if (FMT_msglen >= MAX_MSG_LEN) {
       error = true;
-      Serial.printf("BinLog: ERROR data too long for msg %s\n", FMT.name);
+      MF_printf("BinLog: ERROR data too long for msg %s\n", FMT.name);
       return;
     }
     
     //datatype
     if (FMT_fmt >= 16) {
       error = true;
-      Serial.printf("BinLog: ERROR too many fields for msg %s\n", FMT.name);
+      MF_printf("BinLog: ERROR too many fields for msg %s\n", FMT.name);
       return;
     }
     FMT.format[FMT_fmt] = fmt;
@@ -214,7 +214,7 @@ private:
     int lbl_len = strlen(label);
     if (FMT_lbl + 1 + lbl_len > 64) {
       FMT.format[0]=0;
-      Serial.printf("BB:   ERROR labels too long for msg %s\n", FMT.name);
+      MF_printf("BB:   ERROR labels too long for msg %s\n", FMT.name);
       return;
     }
     if (FMT_lbl) FMT.labels[FMT_lbl++] = ',';

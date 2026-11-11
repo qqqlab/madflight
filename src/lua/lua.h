@@ -22,16 +22,16 @@ public:
   void begin() {
     int len = bbx.read("/madflight.lua", &LuaClass::code);
     if(len <= 0) {
-      Serial.println("LUA: madflight.lua not found");
+      MF_printf("LUA: madflight.lua not found\n");
       return;
     }
     
     if(xTaskCreate(lua_task, "mf_LUA", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
-      Serial.println("LUA: Task creation failed");
+      MF_printf("LUA: Task creation failed\n");
       return;
     }
 
-    Serial.println("LUA: executing madflight.lua");
+    MF_printf("LUA: executing madflight.lua\n");
   }
 };
 

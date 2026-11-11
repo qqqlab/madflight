@@ -144,7 +144,7 @@ public:
       tries--;
     }
     if(!tries) {
-      Serial.printf("MAG: ERROR could not configure QMC6309. wai:0x%02X(expected 0x%02X), status:0x%02X(0x%02X), ctrl2:0x%02X(0x%02X), ctrl1:0x%02X(0x%02X)\n", wai, QMC6309_WAI_VALUE, stat, QMC6309_STAT_DRDY, ctrl2, ctrl2_val, ctrl1, ctrl1_val);
+      MF_printf("MAG: ERROR could not configure QMC6309. wai:0x%02X(expected 0x%02X), status:0x%02X(0x%02X), ctrl2:0x%02X(0x%02X), ctrl1:0x%02X(0x%02X)\n", wai, QMC6309_WAI_VALUE, stat, QMC6309_STAT_DRDY, ctrl2, ctrl2_val, ctrl1, ctrl1_val);
     }
 
     /* //DEBUG 
@@ -160,7 +160,7 @@ public:
         }
       }
       
-      Serial.println("=== Magnetometer (external) ===");
+      MF_printf("=== Magnetometer (external) ===\n");
       mx.print("mx");
       my.print("my");
       mz.print("mz");

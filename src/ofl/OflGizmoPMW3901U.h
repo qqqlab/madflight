@@ -57,12 +57,12 @@ public:
   static OflGizmoPMW3901U* create(OflConfig *config, OflState *state) {
       //get serial bus
       if(config->ofl_ser_bus<0) {
-        Serial.println("OFL: ERROR PMW3901U ofl_ser_bus not configured");
+        MF_printf("OFL: ERROR PMW3901U ofl_ser_bus not configured\n");
         return nullptr;
       }
       MF_Serial *ser_bus = hal_get_ser_bus(config->ofl_ser_bus);
       if(!ser_bus) {
-        Serial.printf("OFL: ERROR PMW3901U pin_ser%d_tx not configured\n", config->ofl_ser_bus);
+        MF_printf("OFL: ERROR PMW3901U pin_ser%d_tx not configured\n", config->ofl_ser_bus);
         return nullptr;
       }
       int baud = config->ofl_baud;
@@ -96,7 +96,7 @@ public:
     for(int i = 0; i < n; i++) { //only process current bytes, not bytes received while processing!
       ser_bus->read(&b, 1);
 
-      //Serial.printf("%02X\n", b);
+      //MF_printf("%02X\n", b);
 
       switch(_parserState) {
         case 0: //byte0: header (0xFE)

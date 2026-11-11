@@ -34,7 +34,7 @@ extern bool cli_execute(String cmd, String arg1, String arg2) __attribute__((wea
 /* example cli command extension
 bool cli_execute(String cmd, String arg1, String arg2) {
   if(cmd == "mycommand") {
-    Serial.println("ASDFASDFASDF");
+    MF_printf("ASDFASDFASDF\n");
     return true;
   }
   return false;

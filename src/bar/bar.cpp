@@ -24,7 +24,6 @@ SOFTWARE.
 
 #define MF_MOD "BAR"
 
-#include <Arduino.h> //Serial
 #include "bar.h"
 #include "BarGizmoBMP280.h"
 #include "BarGizmoBMP390.h"
@@ -32,7 +31,7 @@ SOFTWARE.
 #include "BarGizmoHP203B.h"
 #include "BarGizmoBMP580.h"
 #include "BarGizmoDPS310.h"
-#include <math.h>
+#include "../tbx/MF_printf.h"
 
 //create global module instance
 Bar bar;
@@ -100,7 +99,7 @@ int Bar::setup() {
     if(update()) n++;
   }
   ground_level = alt;
-  Serial.printf("BAR: Ground Level: %.2f m\n", ground_level);
+  MF_printf("BAR: Ground Level: %.2f m\n", ground_level);
 
   return 0;
 }

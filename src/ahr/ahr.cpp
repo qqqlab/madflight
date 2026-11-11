@@ -138,7 +138,7 @@ void Ahr::getQFromMag(float *q) {
     q[1] = 0;
     q[2] = 0;
     q[3] = 0;
-    Serial.println("AHR: No Magnetometer, yaw:0.00");
+    MF_printf("AHR: No Magnetometer, yaw:0.00\n");
   }else{
     float yaw_rad = -atan2(my, mx);
     yaw = yaw_rad * rad_to_deg;
@@ -148,7 +148,7 @@ void Ahr::getQFromMag(float *q) {
     q[1] = 0;
     q[2] = 0;
     q[3] = sin(yaw_rad/2);
-    Serial.printf("AHR: Estimated yaw:%+.2f\n", yaw);
+    MF_printf("AHR: Estimated yaw:%+.2f\n", yaw);
   }
   
   //set dt,ts

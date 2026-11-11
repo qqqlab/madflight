@@ -14,7 +14,7 @@ public:
     //calibrate
     RclCalibrate *cal = new RclCalibrate();
     if(!cal->_calibrate()) {
-      Serial.println("\n==== Radio Calibration Aborted ====");
+      MF_printf("\n==== Radio Calibration Aborted ====\n\n");
     }
     
     //enable IMU interrupt
@@ -64,7 +64,7 @@ bool do_events(bool *event_key = nullptr) {
 
 //wait for key, returns false if 'q' was pressed
 bool prompt(const char *msg) {
-  Serial.println(msg);
+  MF_printf("%s\n", msg);
 
   //empty receive buffer
   while(Serial.available()) Serial.read();
@@ -81,17 +81,17 @@ bool prompt(const char *msg) {
 
 void printpwm() {
   for(int i=0;i<cfg.rcl_num_ch;i++) {
-    Serial.printf("ch%d:%4d ", i, rcl.pwm[i]);
+    MF_printf("ch%d:%4d ", i, rcl.pwm[i]);
   }
-  Serial.println();
+  MF_printf("\n");
 }
 
 void printpwm(const char *msg, int16_t *p) {
-  Serial.printf(msg);
+  MF_printf(msg);
   for(int i=0;i<cfg.rcl_num_ch;i++) {
-    Serial.printf(" ch%d:%4d", i, p[i]);
+    MF_printf(" ch%d:%4d", i, p[i]);
   }
-  Serial.println();
+  MF_printf("\n");
 }
 
 void setVal(int16_t *p, int16_t v) {
@@ -161,21 +161,21 @@ bool findStick(stick_t &stk) {
 
 protected:
 bool _calibrate() {
-  Serial.println("\n==== Radio Calibration ====");
+  MF_printf("\n==== Radio Calibration ====\n");
 
   //check connected
   if(!rcl.connected()) {
-    Serial.println("ERROR: radio not connected. Connect and try again");
+    MF_printf("ERROR: radio not connected. Connect and try again\n");
     return false;
   }
 
-  Serial.println("During calibration type 'q' to quit");
+  MF_printf("During calibration type 'q' to quit\n");
 
   //prompt DISARMED
   if(!prompt("\n--- Step 1: Start Calibration ---\nSet arm switch to DISARMED and CENTER all sticks including throttle, then press ENTER to continue")) return false;
 
   //get armed switch
-  Serial.println("\n--- Step 2: Arm Switch Calibration ---\nSwitch to ARMED, or press enter for no arm switch");
+  MF_printf("\n--- Step 2: Arm Switch Calibration ---\nSwitch to ARMED, or press enter for no arm switch\n");
   bool event_key = false;
   set_prev_pwm();
   int c = 0;
@@ -207,37 +207,37 @@ bool _calibrate() {
     }
     assigned_ch[arm.ch] = true;
   }
-  Serial.printf("==> Arm Switch: ch=%d from=%d to=%d\n", arm.ch+1, arm.min, arm.max);
+  MF_printf("==> Arm Switch: ch=%d from=%d to=%d\n", arm.ch+1, arm.min, arm.max);
 
   //get throttle
-  Serial.println("\n--- Step 3: Throttle Stick Calibration ---\nFirst pull throttle idle, then full throttle, then back to center, then toggle arm switch or press enter");
+  MF_printf("\n--- Step 3: Throttle Stick Calibration ---\nFirst pull throttle idle, then full throttle, then back to center, then toggle arm switch or press enter\n");
   if(!findStick(thr)) return false;
-  Serial.printf("==> Throttle: ch=%d pull=%d mid=%d push=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
+  MF_printf("==> Throttle: ch=%d pull=%d mid=%d push=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
 
   //get pitch
-  Serial.println("\n--- Step 4: Pitch Stick Calibration ---\nFirst pull pitch stick back, then push forward, then back to center, then toggle arm switch or press enter");
+  MF_printf("\n--- Step 4: Pitch Stick Calibration ---\nFirst pull pitch stick back, then push forward, then back to center, then toggle arm switch or press enter\n");
   if(!findStick(pit)) return false;
-  Serial.printf("==> Pitch: ch=%d pull=%d mid=%d push=%d\n", pit.ch+1, pit.left_pull, pit.mid, pit.right_push);
+  MF_printf("==> Pitch: ch=%d pull=%d mid=%d push=%d\n", pit.ch+1, pit.left_pull, pit.mid, pit.right_push);
 
   //get roll
-  Serial.println("\n--- Step 5: Roll Stick Calibration ---\nFirst move roll stick left, then right, then back to center, then toggle arm switch or press enter");
+  MF_printf("\n--- Step 5: Roll Stick Calibration ---\nFirst move roll stick left, then right, then back to center, then toggle arm switch or press enter\n");
   if(!findStick(rol)) return false;
-  Serial.printf("  ==> Roll: ch=%d left=%d mid=%d right=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
+  MF_printf("  ==> Roll: ch=%d left=%d mid=%d right=%d\n", rol.ch+1, rol.left_pull, rol.mid, rol.right_push);
 
   //get yaw
-  Serial.println("\n--- Step 6: Yaw Stick Calibration ---\nFirst move yaw stick left, then right, then back to center, then toggle arm switch or press enter");
+  MF_printf("\n--- Step 6: Yaw Stick Calibration ---\nFirst move yaw stick left, then right, then back to center, then toggle arm switch or press enter\n");
   if(!findStick(yaw)) return false;
-  Serial.printf("  ==> Yaw: ch=%d left=%d mid=%d right=%d\n", yaw.ch+1, yaw.left_pull, yaw.mid, yaw.right_push);
+  MF_printf("  ==> Yaw: ch=%d left=%d mid=%d right=%d\n", yaw.ch+1, yaw.left_pull, yaw.mid, yaw.right_push);
 
   //get flight mode
-  Serial.println("\n--- Step 7: Flight Mode Switch Calibration ---\nSelect min and max flight modes, then toggle arm switch or press enter");
-  Serial.println("  -or- Press 'q' for no flight mode switch");
+  MF_printf("\n--- Step 7: Flight Mode Switch Calibration ---\nSelect min and max flight modes, then toggle arm switch or press enter\n");
+  MF_printf("  -or- Press 'q' for no flight mode switch\n");
   if(!findStick(flt)) {
     flt.ch = -1;
     flt.min = 0;
     flt.max = 0;
   }
-  Serial.printf("  ==> Flight Mode Switch: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
+  MF_printf("  ==> Flight Mode Switch: ch=%d from=%d to=%d\n", flt.ch+1, flt.min, flt.max);
 
   //set config
   cfg.rcl_thr_ch    = thr.ch + 1; //config channels are 1-based
@@ -268,10 +268,10 @@ bool _calibrate() {
   cfg.rcl_flt_min   = flt.min;
   cfg.rcl_flt_max   = flt.max;
 
-  Serial.println();
+  MF_printf("\n");
   rcl.setup(); //restart rcl to reload config (outputs RCL messages)
 
-  Serial.printf("\n=== Radio Calibration Completed ===\nNow use 'prcl' to check, 'save' to save config, or 'reboot' to restart with old config.\n");
+  MF_printf("\n=== Radio Calibration Completed ===\nNow use 'prcl' to check, 'save' to save config, or 'reboot' to restart with old config.\n");
   return true;
 }
 

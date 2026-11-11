@@ -5,7 +5,7 @@
 #define DEBUG_I2C 0
 
 #if DEBUG_I2C
-  #include <Arduino.h>
+  #include "../tbx/MF_printf.h"
 #endif
 
 class MF_I2C {
@@ -91,16 +91,16 @@ class MF_I2C {
         //requestFrom already called endTransmission(), don't call again here 
       }
       #if DEBUG_I2C
-        Serial.printf("MF_I2C::transceive adr=0x%02X ", adr);
+        MF_printf("MF_I2C::transceive adr=0x%02X ", adr);
         if(wlen > 0) {
-          Serial.printf("tx=");
-          for(int i=0;i<wlen;i++) Serial.printf("%02X ", wbuf[i]);
+          MF_printf("tx=");
+          for(int i=0;i<wlen;i++) MF_printf("%02X ", wbuf[i]);
         }
         if(rlen > 0) {
-          Serial.printf("rx=");
-          for(int i=0;i<rv;i++) Serial.printf("%02X ", rbuf[i]);
+          MF_printf("rx=");
+          for(int i=0;i<rv;i++) MF_printf("%02X ", rbuf[i]);
         }
-        Serial.printf("\n");
+        MF_printf("\n");
       #endif
       return rv;
     }

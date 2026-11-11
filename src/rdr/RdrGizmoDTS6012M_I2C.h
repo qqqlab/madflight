@@ -56,7 +56,7 @@ public:
       gizmo->state = state;
       gizmo->dts6012m_i2c = new DTS6012M_I2C();
       if(!gizmo->dts6012m_i2c->begin(i2c_bus, config->rdr_i2c_adr)) {
-        Serial.println("RDR: ERROR: DTS6012M_I2C init failed.");
+        MF_printf("RDR: ERROR: DTS6012M_I2C init failed.\n");
         delete gizmo->dts6012m_i2c;
         delete gizmo;
         return nullptr;

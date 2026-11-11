@@ -36,8 +36,6 @@ if(schedule.interval(1000)) {
 
 #pragma once
 
-#include <Arduino.h>
-
 class MF_Schedule {
 private:
   uint32_t ts = 0;

@@ -91,7 +91,7 @@ private:
     const uint8_t wai_exp = 0x50;
     uint8_t wai = dev->readReg(0x01);
     if( wai != wai_exp) {
-      Serial.printf("BAR: WARNING: BMP580 got incorrect WAI 0x%02X, expected 0x%02X\n", wai, wai_exp);
+      MF_printf("BAR: WARNING: BMP580 got incorrect WAI 0x%02X, expected 0x%02X\n", wai, wai_exp);
     }
 
     // software reset
@@ -113,7 +113,7 @@ private:
     while(micros() - ts < 50000) {
       if(data_ready()) return true;
     }
-    Serial.println("\nBAR: ERROR: BMP580 no samples received, disabling sensor\n\n");
+    MF_printf("\nBAR: ERROR: BMP580 no samples received, disabling sensor\n\n");
     return false;
   }
 

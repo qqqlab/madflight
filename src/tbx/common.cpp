@@ -23,7 +23,7 @@ SOFTWARE.
 ===========================================================================================*/
 
 #include "common.h"
-#include <Arduino.h>
+#include "../tbx/MF_printf.h"
 #include "../led/led.h"
 #include "../rcl/rcl.h"
 #include "../cli/cli.h"
@@ -32,7 +32,7 @@ SOFTWARE.
 void madflight_panic(String msg) {
   out.emergency_stop();
   led.enabled = false;
-  Serial.print("\nFATAL ERROR: " + msg + " - Type 'help' for help...\n");
+  MF_printf("\nFATAL ERROR: %s - Type 'help' for help...\n", msg.c_str());
   while(1) {
     led.color_override(0xFF8C00); //dark orange
     delay(50);
@@ -43,9 +43,9 @@ void madflight_panic(String msg) {
 
 void debug_print_bytes(uint8_t *d, int len, char *header) {
   if(header) {
-    Serial.print(header);
-    Serial.print(": ");
+    MF_printf("%s: ", header);
+
   }
-  for(int i = 0; i < len; i++) Serial.printf("%02X ", d[i]);
-  Serial.println();
+  for(int i = 0; i < len; i++) MF_printf("%02X ", d[i]);
+  MF_printf("\n");
 }

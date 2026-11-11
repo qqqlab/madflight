@@ -68,7 +68,7 @@ class ImuGizmoMPUXXXX : public ImuGizmo {
       MPUXXXX* sensor = new MPUXXXX();
       int rv = sensor->begin(mpu_type, dev, 16, 2000, config->sample_rate_requested);
       if(rv < 0) {
-        if(config->gizmo != Cfg::imu_gizmo_enum::mf_AUTO) Serial.printf("IMU: ERROR creating MPU sensor, rv=%d\n",rv);
+        if(config->gizmo != Cfg::imu_gizmo_enum::mf_AUTO) MF_printf("IMU: ERROR creating MPU sensor, rv=%d\n",rv);
         delete sensor;
         delete dev;
         return nullptr;

@@ -14,16 +14,15 @@ public:
     (void) sample_rate; //TODO use sample_rate
     unsigned status;
     status = bar_BMP280.begin(i2c, i2c_adr, BMP280_CHIPID);
-    Serial.printf("BAR: BMP280 i2c_adr=0x%02X SensorID=0x%02X\n", i2c_adr, bar_BMP280.sensorID());
+    MF_printf("BAR: BMP280 i2c_adr=0x%02X SensorID=0x%02X\n", i2c_adr, bar_BMP280.sensorID());
 
     if (!status) {
-      Serial.println(F("Could not find a valid BMP280 gizmo, check wiring or try a different address!"));
-      Serial.print("SensorID was: 0x");
-      Serial.println(bar_BMP280.sensorID(),16);
-      Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
-      Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
-      Serial.print("        ID of 0x60 represents a BME 280.\n");
-      Serial.print("        ID of 0x61 represents a BME 680.\n");
+      MF_printf("Could not find a valid BMP280 gizmo, check wiring or try a different address!\n");
+      MF_printf("SensorID was: 0x%X\n", bar_BMP280.sensorID());
+      MF_printf("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
+      MF_printf("   ID of 0x56-0x58 represents a BMP 280,\n");
+      MF_printf("        ID of 0x60 represents a BME 280.\n");
+      MF_printf("        ID of 0x61 represents a BME 680.\n");
     }
 
     

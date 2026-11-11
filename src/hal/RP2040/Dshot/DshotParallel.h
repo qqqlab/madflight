@@ -50,8 +50,8 @@ madflight v2.2.1: modified to zero: 5H 11L (520ns high), one: 12H 4L (1250ns hig
 #pragma once
 
 #include "../pio_registry.h"
-
 #include "dshot_parallel.pio.h"
+#include "../../../tbx/MF_printf.h"
 
 class DshotParallel {
 private:
@@ -83,7 +83,7 @@ public:
         //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_parallel_program, &pio, &sm, &offset, pin, pin_count, true);
         bool success = pio_registry_claim("Dshot", &dshot_parallel_program, &pio, &sm, &offset, pin, pin_count, true);
         if(!success) {
-            Serial.println("ERROR: no free PIO for dshot");
+            MF_printf("ERROR: no free PIO for dshot\n");
             return false;
         }
 
