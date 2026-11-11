@@ -17,7 +17,7 @@
 #   comment:  Single line comment [optional]
 #   since:    Parameter exist since madflight version [optional]
 
-version: "2.4.3"
+version: "2.4.4"
 
 # Global enums
 enum:
