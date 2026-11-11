@@ -391,7 +391,7 @@ void CfgClass::cli_defaults(const char* filter) {
 }
 
 void CfgClass::cli_save() {
-  MF_printf("Saving and rebooting, please wait...\n\n");
+  MF_printf("Saving and rebooting, please wait...\n");
   cfg.save();
   delay(1000);
   hal_reboot();

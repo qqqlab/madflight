@@ -27,6 +27,7 @@ Each ALT_USE_xxx section in this file defines a specific altimeter estimator cla
 =================================================================================================*/
 
 #include "alt.h" //declares AltEst - Altimeter Estimator base class
+#include "../tbx/MF_printf.h"
 
 //=================================================================================================
 // None or undefined
