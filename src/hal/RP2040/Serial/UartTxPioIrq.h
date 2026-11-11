@@ -73,7 +73,7 @@ private:
 
     bool panic(const char* s) {
         end();
-        Serial.println(s);
+        MF_printf("%s\n", s);
         return false;
     }
 

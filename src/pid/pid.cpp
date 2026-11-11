@@ -25,7 +25,7 @@ SOFTWARE.
 #include "pid.h"
 #include "PidGizmoEXPERIMENTAL.h"
 #include "PidGizmoBASIC.h"
-#include <Arduino.h>
+#include "../tbx/MF_printf.h"
 
 void Pid::setup() {
     delete gizmo;
@@ -39,9 +39,9 @@ void Pid::setup() {
             break;
     }
     if(!gizmo) {
-        Serial.printf("PID: ERROR invalid pid_gizmo\n");
+        MF_printf("PID: ERROR invalid pid_gizmo\n");
     }else{
-        Serial.printf("PID: %s\n",gizmo->name());
+        MF_printf("PID: %s\n",gizmo->name());
     }
 }
 

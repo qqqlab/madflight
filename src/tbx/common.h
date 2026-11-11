@@ -24,7 +24,7 @@ SOFTWARE.
 
 #pragma once
 
-#include <Arduino.h> //String+Serial
+#include <Arduino.h> //String
 
 void madflight_panic(String msg);
 

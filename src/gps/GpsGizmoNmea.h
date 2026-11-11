@@ -20,14 +20,14 @@ void gps_debug() {
   while(1) {
     if(millis() - gps_ts > 1000) {
       gps_ts = millis();
-      Serial.println("Waiting for GPS data...");
+      MF_printf("Waiting for GPS data...\n");
     }    
     while(gps_Serial.available()) {
       gps_ts = millis();
       char c = gps_Serial.read();
-      Serial.print(c);
+      MF_printf("%c", c);
       if (gps.process(c)) {
-        Serial.printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", (int)gps.time, (int)gps.fix, (int)gps.lat, (int)gps.lon, (int)gps.alt, (int)gps.sep, (int)gps.sog, (int)gps.cog, (int)gps.sat, (int)gps.hacc, (int)gps.vacc, (int)gps.veld);
+        MF_printf("\n---> time:%d fix:%d lat:%d lon:%d alt:%d sep:%d sog:%d cog:%d sats:%d hacc:%d vacc:%d veld:%d", (int)gps.time, (int)gps.fix, (int)gps.lat, (int)gps.lon, (int)gps.alt, (int)gps.sep, (int)gps.sog, (int)gps.cog, (int)gps.sat, (int)gps.hacc, (int)gps.vacc, (int)gps.veld);
       }
     }
   }

@@ -86,7 +86,7 @@ void setup() {
 
   setup_motors();
 
-  Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
+  MF_printf("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug\n");
 }
 
 //========================================================================================================================//
@@ -136,7 +136,7 @@ void out_KillSwitchAndFailsafe() {
   //Change to ARMED when rcl is armed (by switch or stick command)
   if (!out.armed() && rcl.armed) {
     out.set_armed(true);
-    Serial.println("OUT: ARMED");
+    MF_printf("OUT: ARMED\n");
     bbx.start(); //start blackbox logging
   }
 
@@ -144,10 +144,10 @@ void out_KillSwitchAndFailsafe() {
   if (out.armed() && (!rcl.armed || !rcl.connected())) {
     out.set_armed(false);
     if(!rcl.armed) {
-      Serial.println("OUT: DISARMED");
+      MF_printf("OUT: DISARMED\n");
       bbx.stop(); //stop blackbox logging
     }else{
-      Serial.println("OUT: DISARMED due to lost radio connection");
+      MF_printf("OUT: DISARMED due to lost radio connection\n");
       //keep on logging to document the crash...
     }
   }

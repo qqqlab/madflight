@@ -58,9 +58,9 @@ class ImuGizmoAuto : public ImuGizmo {
         }
 
         if(!gizmo) {
-          Serial.println("IMU: AUTO no sensor detected");
+          MF_printf("IMU: AUTO no sensor detected\n");
         }else{
-          Serial.printf("IMU: AUTO detected %s\n", gizmo->name());
+          MF_printf("IMU: AUTO detected %s\n", gizmo->name());
         }
 
         return gizmo;

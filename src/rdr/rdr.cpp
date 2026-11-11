@@ -24,7 +24,6 @@ SOFTWARE.
 
 #define MF_MOD "RDR"
 
-#include <Arduino.h> //Serial
 #include "rdr.h"
 
 //the gizmos
@@ -63,7 +62,7 @@ int Rdr::setup() {
     case Cfg::rdr_gizmo_enum::mf_DTS6012M :
       if(config.rdr_ser_bus >= 0) {
         if(config.rdr_i2c_bus >= 0) {
-          Serial.println("RDR: WARNING - DTS6012M both RDR_SER_BUS and RDR_I2C_BUS configured, using SER_BUS");
+          MF_printf("RDR: WARNING - DTS6012M both RDR_SER_BUS and RDR_I2C_BUS configured, using SER_BUS\n");
         }
         gizmo = RdrGizmoDTS6012M_UART::create(&config, (RdrState*)this);
       }else{

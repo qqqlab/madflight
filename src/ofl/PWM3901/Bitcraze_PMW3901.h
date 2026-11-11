@@ -25,9 +25,7 @@
 #ifndef __BITCRAZE_PMW3901_H__
 #define __BITCRAZE_PMW3901_H__
 
-#include "Arduino.h"
 #include <SPI.h>
-
 #include <stdint.h>
 
 class Bitcraze_PMW3901 {

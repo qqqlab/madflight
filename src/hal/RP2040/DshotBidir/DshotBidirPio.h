@@ -69,6 +69,7 @@ See https://brushlesswhoop.com/dshot-and-bidirectional-dshot/ for full details o
 #include "hardware/gpio.h"
 #include "hardware/pio.h"
 #include "dshot_bidir.pio.h"
+#include "../../../tbx/MF_printf.h"
 
 class DshotBidirPio {
 private:
@@ -123,7 +124,7 @@ public:
         //bool success = pio_claim_free_sm_and_add_program_for_gpio_range(&dshot_bidir_program, &pio, &sm, &offset, pin, pin_count, true);
         bool success = pio_registry_claim("DshotBi", &dshot_bidir_program, &pio, &sm, &offset, pin, pin_count, true);
         if(!success) {
-          Serial.println("ERROR: no free PIO for dshotbidir");
+          MF_printf("ERROR: no free PIO for dshotbidir\n");
           dma_channel_unclaim(dma_ch);
           return false;
         }
@@ -213,7 +214,7 @@ public:
         // set dma buffer, and start dma
         dma_channel_set_write_addr(dma_ch, dma_buf, true);
 
-        //Serial.printf("a_dma_busy=%d\n", dma_channel_is_busy(dma_ch));
+        //MF_printf("a_dma_busy=%d\n", dma_channel_is_busy(dma_ch));
 
         //enable PIO to send our frames in parallel
         pio_sm_set_enabled(pio, sm, true); 
@@ -259,12 +260,12 @@ public:
         uint8_t mask = 1 << channel;
 
         /* print dma buffer
-        Serial.printf("ch%d:", channel);
+        MF_printf("ch%d:", channel);
         for(int i = 0; i < DSHOT_DMA_BUF_SIZE * 4; i++) {
             uint8_t bit = (byte_buf[i] & mask ? 0 : 1); //bit value
-            Serial.print(bit ? '1' : '-');
+            MF_printf("%c", bit ? '1' : '-');
         }
-        Serial.println(); 
+        MF_printf("\n"); 
         //*/
 
         //over sampling rates * 100

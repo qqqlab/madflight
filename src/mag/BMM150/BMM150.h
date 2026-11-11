@@ -11,17 +11,14 @@
 #ifndef __BMM150_H__
 #define __BMM150_H__
 #include "BMM150_defs.h"
-#include "Arduino.h"
 #include <stdlib.h>
 #include <SPI.h>
 #include "../../hal/MF_I2C.h"
-#include <math.h>
-
 
 //#define ENABLE_DBG                //< Open this macro to see the program running in detail
 
 #ifdef ENABLE_DBG
-#define DBG(...) {Serial.print("[");Serial.print(__FUNCTION__); Serial.print("(): "); Serial.print(__LINE__); Serial.print(" ] "); Serial.println(__VA_ARGS__);}
+#define DBG(...) {MF_printf("[");MF_printf(__FUNCTION__); MF_printf("(): "); MF_printf(__LINE__); MF_printf(" ] "); MF_printf(__VA_ARGS__); MF_printf("\n");}
 #else
 #define DBG(...)
 #endif

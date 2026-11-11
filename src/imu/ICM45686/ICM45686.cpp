@@ -185,7 +185,7 @@ int ICM45686::read() {
     // get sample count and sample in a single SPI transaction
     //dev->write_read_blocking((uint8_t*)&fifobuf.tx_reg, (uint8_t*)&fifobuf.rx_start, sizeof(fifobuf)-1); // FAST: hardware optimized - uses the same buffer for reading and writing with one byte offset to preserve fifobuf.tx_reg between calls
     dev->readRegs(ICM45686_REG_FIFO_COUNTH, (uint8_t*)&fifobuf.n_samples, sizeof(fifobuf)-2); // SLOW: arduino standard
-    //for(uint i=0;i<sizeof(fifobuf);i++) Serial.printf("%02X ",((uint8_t*)&fifobuf)[i]); Serial.println();
+    //for(uint i=0;i<sizeof(fifobuf);i++) MF_printf("%02X ",((uint8_t*)&fifobuf)[i]); MF_printf("\n");
 
     // store sample count on first iteration
     if(sample_count == 0) sample_count = fifobuf.n_samples; 
@@ -229,7 +229,7 @@ bool ICM45686::write_reg(uint16_t reg, uint8_t mask, uint8_t value) {
     new_val = read_bank(reg);
   }
   bool ok = (write_val == new_val);
-  //Serial.printf("write_reg reg:%04X mask:%02X val:%02X -> old:%02X new:%02X ok:%d\n", reg, mask, value, old_val, new_val, ok );
+  //MF_printf("write_reg reg:%04X mask:%02X val:%02X -> old:%02X new:%02X ok:%d\n", reg, mask, value, old_val, new_val, ok );
   if(!ok && error_code == 0) error_code = 3000000 + reg;
   return ok;
 }

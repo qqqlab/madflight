@@ -244,8 +244,8 @@ void madflight_setup() {
 
   // Delay - 6 second startup delay
   for(int i = 12; i > 0; i--) {
-    Serial.printf(MADFLIGHT_VERSION " starting %d ...\n", i);
-        Serial.flush();
+    MF_printf(MADFLIGHT_VERSION " starting %d ...\n", i);
+    Serial.flush();
     #ifndef MF_DEBUG 
       delay(500);
     #else
@@ -253,65 +253,65 @@ void madflight_setup() {
     #endif
   } 
 
-  Serial.println("Arduino library: " HAL_ARDUINO_STR);
+  MF_printf("Arduino library: " HAL_ARDUINO_STR "\n");
   #ifdef MF_BOARD
-    Serial.println("Board File (MF_BOARD): " MF_BOARD);
+    MF_printf("Board File (MF_BOARD): " MF_BOARD "\n");
   #endif
   #ifdef MF_BOARD_NAME
-    Serial.println("Board Name (MF_BOARD_NAME): " MF_BOARD_NAME);
+    MF_printf("Board Name (MF_BOARD_NAME): " MF_BOARD_NAME "\n");
   #endif
   #ifdef MF_MCU_NAME
-    Serial.println("Processor (MF_MCU_NAME): " MF_MCU_NAME);
+    MF_printf("Processor (MF_MCU_NAME): " MF_MCU_NAME "\n");
   #endif
 
   //MF_XXX compiler options
-  Serial.print("Compiler Flags:");
+  MF_printf("Compiler Flags:");
   #ifdef MF_APPROX_MATH
-    Serial.print(" MF_APPROX_MATH=on");
+    MF_printf(" MF_APPROX_MATH=on");
   #else
-    Serial.print(" MF_APPROX_MATH=off");
+    MF_printf(" MF_APPROX_MATH=off");
   #endif
-  Serial.println();
+  MF_printf("\n");
 
   //arduino defines
-  Serial.print("Arduino Flags:");
+  MF_printf("Arduino Flags:");
   #ifdef ARDUINO_BOARD
-    Serial.print(" ARDUINO_BOARD=" ARDUINO_BOARD );
+    MF_printf(" ARDUINO_BOARD=" ARDUINO_BOARD );
   #endif
   #ifdef ARDUINO_VARIANT
-    Serial.print(" ARDUINO_VARIANT=" ARDUINO_VARIANT );
+    MF_printf(" ARDUINO_VARIANT=" ARDUINO_VARIANT );
   #endif
   #ifdef ARDUINO_HOST_OS
-    Serial.print(" ARDUINO_HOST_OS=" ARDUINO_HOST_OS ); //only arduino IDE, not PlatformIO
+    MF_printf(" ARDUINO_HOST_OS=" ARDUINO_HOST_OS ); //only arduino IDE, not PlatformIO
   #endif
   #ifdef ARDUINO_FQBN
-    Serial.print(" ARDUINO_FQBN=" ARDUINO_FQBN ); //only arduino IDE, not PlatformIO
+    MF_printf(" ARDUINO_FQBN=" ARDUINO_FQBN ); //only arduino IDE, not PlatformIO
   #endif
   #ifdef ARDUINO
-    Serial.print(" ARDUINO=" mf_str(ARDUINO));
+    MF_printf(" ARDUINO=" mf_str(ARDUINO));
   #endif
   #ifdef CORE_DEBUG_LEVEL
-    Serial.print(" CORE_DEBUG_LEVEL=" mf_str(CORE_DEBUG_LEVEL));
+    MF_printf(" CORE_DEBUG_LEVEL=" mf_str(CORE_DEBUG_LEVEL));
   #endif
   #ifdef ARDUINO_RUNNING_CORE
-    Serial.print(" ARDUINO_RUNNING_CORE=" mf_str(ARDUINO_RUNNING_CORE));
+    MF_printf(" ARDUINO_RUNNING_CORE=" mf_str(ARDUINO_RUNNING_CORE));
   #endif
   #ifdef ARDUINO_EVENT_RUNNING_CORE
-    Serial.print(" ARDUINO_EVENT_RUNNING_CORE=" mf_str(ARDUINO_EVENT_RUNNING_CORE));
+    MF_printf(" ARDUINO_EVENT_RUNNING_CORE=" mf_str(ARDUINO_EVENT_RUNNING_CORE));
   #endif
   #ifdef ARDUINO_USB_MODE
-    Serial.print(" ARDUINO_USB_MODE=" mf_str(ARDUINO_USB_MODE));
+    MF_printf(" ARDUINO_USB_MODE=" mf_str(ARDUINO_USB_MODE));
   #endif
   #ifdef ARDUINO_USB_CDC_ON_BOOT
-    Serial.print(" ARDUINO_USB_CDC_ON_BOOT=" mf_str(ARDUINO_USB_CDC_ON_BOOT));
+    MF_printf(" ARDUINO_USB_CDC_ON_BOOT=" mf_str(ARDUINO_USB_CDC_ON_BOOT));
   #endif
   #ifdef ARDUINO_USB_MSC_ON_BOOT
-    Serial.print(" ARDUINO_USB_MSC_ON_BOOT=" mf_str(ARDUINO_USB_MSC_ON_BOOT));
+    MF_printf(" ARDUINO_USB_MSC_ON_BOOT=" mf_str(ARDUINO_USB_MSC_ON_BOOT));
   #endif
   #ifdef ARDUINO_USB_DFU_ON_BOOT
-    Serial.print(" ARDUINO_USB_DFU_ON_BOOT=" mf_str(ARDUINO_USB_DFU_ON_BOOT));
+    MF_printf(" ARDUINO_USB_DFU_ON_BOOT=" mf_str(ARDUINO_USB_DFU_ON_BOOT));
   #endif
-  Serial.println();
+  MF_printf("\n");
 
   // INFO - Rerun CFG to show output after startup delay
   cfg.setup(madflight_board, madflight_config);
@@ -431,7 +431,7 @@ void madflight_setup() {
     int rv = imu.setup(); //request 1000 Hz sample rate, returns 0 on success, positive on error, negative on warning
     if(rv<=0) break;
     tries--;
-    Serial.printf("IMU: WARNING init failed rv=%d\n", rv);
+    MF_printf("IMU: WARNING init failed rv=%d\n", rv);
   }
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_panic("IMU install failed.");
@@ -441,7 +441,7 @@ void madflight_setup() {
   if(imu.config.has_mag && !mag.gizmo) {
     mag.gizmo = new MagGizmoIMU();
     imu.config.pmag = &mag;
-    Serial.println("IMU: magnetometer installed");
+    MF_printf("IMU: magnetometer installed\n");
   }
 
   // AHR - setup low pass filters for AHRS filters (needs imu+mag to be configured first)
@@ -461,7 +461,7 @@ void madflight_setup() {
       madflight_panic(String("IMU interrupt not firing. Is pin_imu_int GPIO" + String(cfg.pin_imu_int) + String(" connected?")));
     }
 
-    if(!imu_loop) Serial.println("IMU: WARNING 'void imu_loop()' not defined.");
+    if(!imu_loop) MF_printf("IMU: WARNING 'void imu_loop()' not defined.\n");
     imu.onUpdate = imu_loop;
 
     #ifndef MF_DEBUG

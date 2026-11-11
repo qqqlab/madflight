@@ -38,7 +38,7 @@ public:
   static MagGizmoRM3100* create(MF_I2C *i2c) {
     uint8_t probe_adr = RM3100::probe(i2c);
     if(probe_adr == 0) {
-      Serial.printf("MAG: ERROR: RM3100 not detected\n");
+      MF_printf("MAG: ERROR: RM3100 not detected\n");
       return nullptr;
     }
 
@@ -46,7 +46,7 @@ public:
     auto gizmo = new MagGizmoRM3100();
     uint16_t cycle_count = 294; //cycle_count=294 gives approx 100Hz update rate
     gizmo->sensor = new RM3100(i2c, probe_adr, cycle_count);
-    Serial.printf("MAG: RM3100 detected - i2c_adr:0x%02X cycle_count:%d resolution:%d nT/LSB\n", probe_adr, cycle_count, (int)(gizmo->sensor->scale_uT*1000));
+    MF_printf("MAG: RM3100 detected - i2c_adr:0x%02X cycle_count:%d resolution:%d nT/LSB\n", probe_adr, cycle_count, (int)(gizmo->sensor->scale_uT*1000));
     return gizmo;
   }
 

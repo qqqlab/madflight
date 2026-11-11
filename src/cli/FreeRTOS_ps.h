@@ -61,6 +61,4 @@ TID Name           CPU%  Free St Pr Ni Core
 
 #pragma once
 
-#include <Arduino.h>
-
-void freertos_ps(Print &p = Serial);
+void freertos_ps();

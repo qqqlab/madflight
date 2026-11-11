@@ -50,19 +50,19 @@ public:
   static OflGizmoPMW3901* create(OflConfig *config, OflState *state) {
       //get spi bus
       if(config->pin_ofl_cs < 0) {
-        Serial.println("OFL: ERROR PMW3901 pin_ofl_cs not defined");
+        MF_printf("OFL: ERROR PMW3901 pin_ofl_cs not defined\n");
         return nullptr;
       }
       SPIClass *spi_bus = hal_get_spi_bus(config->ofl_spi_bus);
       if(!spi_bus) {
-        Serial.println("OFL: ERROR PMW3901 spi_bus_id not defined");
+        MF_printf("OFL: ERROR PMW3901 spi_bus_id not defined\n");
         return nullptr;
       }
 
       //try to start sensor
       Bitcraze_PMW3901 *sensor = new Bitcraze_PMW3901(spi_bus, config->pin_ofl_cs);
       if(!sensor->begin()) {
-        Serial.println("OFL: ERROR PMW3901 wai incorrect, check wiring");
+        MF_printf("OFL: ERROR PMW3901 wai incorrect, check wiring\n");
         delete sensor;
         sensor = nullptr;
         return nullptr;

@@ -50,7 +50,7 @@ Rcl rcl;
 
 int Rcl::setup() {
   cfg.printModule("rcl", CfgClass::printModuleMode::GIZMO_NO_CR);
-  Serial.printf("Channels: roll:%d pitch:%d throttle:%d yaw:%d armed:%d flightmode:%d\n", (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_thr_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
+  MF_printf("Channels: roll:%d pitch:%d throttle:%d yaw:%d armed:%d flightmode:%d\n", (int)cfg.rcl_rol_ch, (int)cfg.rcl_pit_ch, (int)cfg.rcl_thr_ch, (int)cfg.rcl_yaw_ch, (int)cfg.rcl_arm_ch, (int)cfg.rcl_flt_ch);
 
   //clear vars
   throttle = 0;
@@ -73,7 +73,7 @@ int Rcl::setup() {
     case Cfg::rcl_gizmo_enum::mf_MAVLINK : {
       MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
       if(!ser_bus) {
-        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        MF_printf("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n\n");
         return -1002;
       }
       gizmo = new RclGizmoMavlink(ser_bus, config.baud, pwm);
@@ -83,7 +83,7 @@ int Rcl::setup() {
     case Cfg::rcl_gizmo_enum::mf_CRSF : {
       MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
       if(!ser_bus) {
-        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        MF_printf("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n\n");
         return -1002;
       }
       gizmo = new RclGizmoCrsf(ser_bus, config.baud, pwm);
@@ -103,7 +103,7 @@ int Rcl::setup() {
     case Cfg::rcl_gizmo_enum::mf_DSM : {
       MF_Serial* ser_bus = hal_get_ser_bus(config.ser_bus_id);
       if(!ser_bus) {
-        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        MF_printf("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n\n");
         return -1002;
       }
       gizmo = new RclGizmoDsm(ser_bus, config.baud, pwm);
@@ -118,7 +118,7 @@ int Rcl::setup() {
     case Cfg::rcl_gizmo_enum::mf_IBUS : {
       gizmo = RclGizmoIbus::create(config.ser_bus_id, pwm, config.baud);
       if (!gizmo) {
-        Serial.println("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n");
+        MF_printf("\n" MF_MOD ": ERROR Serial bus not connected, check pins.\n\n");
       }
 
       break;

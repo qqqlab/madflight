@@ -39,7 +39,7 @@ public:
     if(config->bbx_baud <= 0) config->bbx_baud = 115200;
     MF_Serial *ser = hal_get_ser_bus(config->bbx_ser_bus, config->bbx_baud);
     if(!ser) {
-      Serial.println("BBX: ERROR invalid serial port");
+      MF_printf("BBX: ERROR invalid serial port\n");
       return nullptr;
     }
     auto gizmo = new BbxGizmoOpenlog();
@@ -54,7 +54,7 @@ public:
   }
 
   void printSummary() override {
-    Serial.printf("BBX: OPENLOG - bus:serial%d baud:%d written:%d bytes\n", config->bbx_ser_bus, config->bbx_baud, bytesWritten);
+    MF_printf("BBX: OPENLOG - bus:serial%d baud:%d written:%d bytes\n", config->bbx_ser_bus, config->bbx_baud, bytesWritten);
   }
 
   void info() override {
@@ -90,6 +90,6 @@ public:
 private:
   void notSupported() {
     printSummary();
-    Serial.printf("BBX: OPENLOG - command not supported\n");
+    MF_printf("BBX: OPENLOG - command not supported\n");
   }
 };

@@ -57,7 +57,7 @@ public:
       gizmo->state = state;
       gizmo->dts6012m_uart = new DTS6012M_UART();
       if(!gizmo->dts6012m_uart->begin(ser_bus, config->rdr_baud)) {
-        Serial.println("RDR: ERROR: DTS6012M_UART init failed.");
+        MF_printf("RDR: ERROR: DTS6012M_UART init failed.\n");
         delete gizmo->dts6012m_uart;
         delete gizmo;
         return nullptr;

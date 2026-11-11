@@ -32,3 +32,4 @@ SOFTWARE.
 #include "MF_Schedule.h"
 #include "MF_Filter.h"
 #include "MovingAverage.h"
+#include "MF_printf.h"

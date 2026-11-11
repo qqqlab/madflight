@@ -182,7 +182,7 @@ class ImuGizmoBMI270 : public ImuGizmo {
 
         //check config
         if(config->uses_i2c || !config->spi_bus || config->spi_cs < 0) {
-          //Serial.println("IMU: ERROR check config - BMI270 SPI sensor with invalid imu_bus_type, imu_spi_bus and/or pin_imu_cs");
+          //MF_printf("IMU: ERROR check config - BMI270 SPI sensor with invalid imu_bus_type, imu_spi_bus and/or pin_imu_cs\n");
           return nullptr;
         }
 

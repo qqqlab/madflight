@@ -16,7 +16,7 @@ void setup() {
   // Setup madflight modules, start madflight RTOS tasks, Serial.begin(11520)
   madflight_setup();
 
-  Serial.println("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug");
+  MF_printf("Setup completed, CLI started - Type 'help' for help, or 'diff' to debug\n");
 }
 
 void loop() {

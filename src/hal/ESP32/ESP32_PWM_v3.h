@@ -51,7 +51,7 @@ class PWM
   public:
     PWM() {};
     bool begin(int pin, int freq, float min_us, float max_us) {
-      //Serial.printf("PWM::begin(pin=%d,freq=%d,min_us=%f,max_us=%f)\n",pin,freq,min_us,max_us);
+      //MF_printf("PWM::begin(pin=%d,freq=%d,min_us=%f,max_us=%f)\n",pin,freq,min_us,max_us);
       this->req_freq = freq;
       this->pin = pin; 
       this->min_us = min_us;
@@ -69,7 +69,7 @@ class PWM
       //calc maximum number of bits
       int maxbits = log(PWM_CLK_FREQ / freq) / log(2) - 1;
       if(maxbits > LEDC_TIMER_BIT_MAX - 1) maxbits = LEDC_TIMER_BIT_MAX - 1;
-      //Serial.printf("maxbits=%d\n",maxbits);
+      //MF_printf("maxbits=%d\n",maxbits);
 
       //find maximum number of bits, or exit if less than 7
       int act_freq = freq; //TODO
@@ -91,12 +91,12 @@ class PWM
       this->ch = ch; //set ch last, this enables writeMicroseconds()
       channels[ch] = this;
 
-      //Serial.printf("-->OK ch=%d bits=%d max_duty=%d resolution=%d ns\n",this->ch,this->bits,this->max_duty,(int)(1e9/((float)this->act_freq*this->max_duty)));
+      //MF_printf("-->OK ch=%d bits=%d max_duty=%d resolution=%d ns\n",this->ch,this->bits,this->max_duty,(int)(1e9/((float)this->act_freq*this->max_duty)));
       return true;
     };
     
     void writeMicroseconds(float us) {
-      //Serial.printf("PWM::writeMicroseconds(us=%f))",us);
+      //MF_printf("PWM::writeMicroseconds(us=%f))",us);
       if(ch < 0) return; //exit if channel not configured
       if(us < min_us) us = min_us;
       if(us > max_us) us = max_us;
@@ -104,7 +104,7 @@ class PWM
       if(duty < 0) duty = 0;
       if(duty > max_duty) duty = max_duty;
       ledcWriteChannel(ch, duty);
-      //Serial.printf("out.writeMicroseconds --> ch=%d us=%f duty=%d/%d)\n", ch, us, duty, max_duty);
+      //MF_printf("out.writeMicroseconds --> ch=%d us=%f duty=%d/%d)\n", ch, us, duty, max_duty);
     };
     
     void writeFactor(float f) {

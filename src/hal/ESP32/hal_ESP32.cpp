@@ -101,7 +101,7 @@ void startLoop1Task() {
 #ifndef CONFIG_FREERTOS_UNICORE
   //start setup1() and loop1() on second core
   if(setup1 || loop1) {
-    Serial.println("Starting task mf_loop1");
+    MF_printf("Starting task mf_loop1\n");
     xTaskCreateUniversal(loop1Task, "mf_loop1", getArduinoLoopTaskStackSize(), NULL, 1, &loop1TaskHandle, ((ARDUINO_RUNNING_CORE)+1)%2);
   }
 #endif
@@ -150,7 +150,7 @@ int hal_get_pin_number(String val) {
 }
 
 void hal_print_pin_name(int pinnum) {
-  Serial.printf("%d",pinnum);
+  MF_printf("%d",pinnum);
 }
 
 
@@ -186,7 +186,7 @@ MF_Serial* hal_get_ser_bus(int bus_id, int baud, MF_SerialMode mode, bool invert
       config = SERIAL_8E2;
       break;
     default:
-      Serial.printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
+      MF_printf("\nERROR: hal_get_ser_bus bus_id=%d invalid mode\n\n", bus_id);
       return nullptr;
       break;
   }
@@ -292,17 +292,17 @@ SPIClass* hal_get_spi_bus(int bus_id) {
 }
 
 void hal_meminfo() {
-  Serial.printf("MEM: %d bytes minimum free RAM\n", (int)esp_get_minimum_free_heap_size());
+  MF_printf("MEM: %d bytes minimum free RAM\n", (int)esp_get_minimum_free_heap_size());
 }
 
 void hal_print_businfo() {
-  Serial.println("\n=== BUS INFO ===\n");
-  Serial.printf("SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", (int)cfg.pin_ser0_tx, (int)cfg.pin_ser0_rx);
-  Serial.printf("SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", (int)cfg.pin_ser1_tx, (int)cfg.pin_ser1_rx);
-  Serial.printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c0_sda, (int)cfg.pin_i2c0_scl);
-  Serial.printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c1_sda, (int)cfg.pin_i2c1_scl);
-  Serial.printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi0_miso, (int)cfg.pin_spi0_sclk, (int)cfg.pin_spi0_mosi);
-  Serial.printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
+  MF_printf("\n=== BUS INFO ===\n\n");
+  MF_printf("SER bus 0 is hardware Serial1 with TX:%d RX:%d\n", (int)cfg.pin_ser0_tx, (int)cfg.pin_ser0_rx);
+  MF_printf("SER bus 1 is hardware Serial2 with TX:%d RX:%d\n", (int)cfg.pin_ser1_tx, (int)cfg.pin_ser1_rx);
+  MF_printf("I2C bus 0 is hardware i2c0 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c0_sda, (int)cfg.pin_i2c0_scl);
+  MF_printf("I2C bus 1 is hardware i2c1 with SDA:%d SCL:%d\n", (int)cfg.pin_i2c1_sda, (int)cfg.pin_i2c1_scl);
+  MF_printf("SPI bus 0 is hardware spi0 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi0_miso, (int)cfg.pin_spi0_sclk, (int)cfg.pin_spi0_mosi);
+  MF_printf("SPI bus 1 is hardware spi1 with MISO:%d SCLK:%d MOSI:%d\n", (int)cfg.pin_spi1_miso, (int)cfg.pin_spi1_sclk, (int)cfg.pin_spi1_mosi);
 }
 
 BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,

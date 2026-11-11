@@ -59,12 +59,12 @@ int Imu::setup() {
 
   //check bus config
   if (!config.uses_i2c && (!config.spi_bus || config.spi_cs < 0)) {
-    Serial.println("IMU: ERROR SPI sensor without imu_spi_bus and/or pin_imu_cs");
+    MF_printf("IMU: ERROR SPI sensor without imu_spi_bus and/or pin_imu_cs\n");
     cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1;
   }
   if (config.uses_i2c && !config.i2c_bus) {
-    Serial.println("IMU: ERROR I2C sensor without imu_i2c_bus");
+    MF_printf("IMU: ERROR I2C sensor without imu_i2c_bus\n");
     cfg.printModule(MF_MOD, CfgClass::printModuleMode::CFG_ERROR);
     return -1;
   }
@@ -116,7 +116,7 @@ int Imu::setup() {
 
   //check gizmo
   if(!gizmo && config.gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
-    Serial.println("\nIMU: ERROR sensor not configured, check pin/bus/bus_type config\n");
+    MF_printf("\nIMU: ERROR sensor not configured, check pin/bus/bus_type config\n\n");
     return -1001;
   }
 
@@ -396,10 +396,10 @@ void _imu_ll_interrupt_handler();
           #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
         #endif
 
-        Serial.printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
+        MF_printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
       #else
         xTaskCreate(_imu_ll_task, "mf_IMU", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
-        Serial.println("IMU: IMU_EXEC_FREERTOS");
+        MF_printf("IMU: IMU_EXEC_FREERTOS\n");
       #endif
     }
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
@@ -415,7 +415,7 @@ void _imu_ll_interrupt_handler();
 #elif IMU_EXEC == IMU_EXEC_IRQ
 
   void _imu_ll_interrupt_setup(int interrupt_pin) {
-    Serial.println("IMU: IMU_EXEC_IRQ");
+    MF_printf("IMU: IMU_EXEC_IRQ\n");
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
     #if MF_HACK_STM32_INTERRUPT_PRIORITY
       // (#79) on stm32, set the interrupt to the highest priority, otherwise it does not get called

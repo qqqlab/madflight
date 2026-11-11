@@ -23,7 +23,7 @@ Initializing the sensor is done by calling *begin*, it returns *true* if the sen
 
 ``` C++
   if (!flow.begin()) {
-    Serial.println("Initialization of the flow sensor failed");
+    MF_printf("Initialization of the flow sensor failed\n");
     while(1) { }
   }
 ```

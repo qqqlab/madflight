@@ -45,7 +45,7 @@ uint8_t RM3100::probe(MF_I2C *i2c) {
     dev.adr = RM3100_BASE_ADDRESS + i;
     uint8_t revid = 0;
     dev.readReg(RM3100_REG_REVID, &revid, 1); //readReg returns 1 when data was received
-    //Serial.printf("RM3100.probe(0x%02X) = 0x%02X\n", dev.adr, revid);
+    //MF_printf("RM3100.probe(0x%02X) = 0x%02X\n", dev.adr, revid);
     if(revid == 0x22) return dev.adr;
   }
   return 0;
@@ -95,7 +95,7 @@ bool RM3100::dataReady() {
 void RM3100::readRaw(int32_t *xyz) {
   uint8_t d[9];
   dev->readReg(RM3100_REG_MX, d, 9);
-  //Serial.printf("RM3100.readRaw() %02X%02X%02X %02X%02X%02X %02X%02X%02X\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
+  //MF_printf("RM3100.readRaw() %02X%02X%02X %02X%02X%02X %02X%02X%02X\n", d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8]);
 
   int j = 0;
   for(int i=0;i<3;i++) {
@@ -103,7 +103,7 @@ void RM3100::readRaw(int32_t *xyz) {
     if(xyz[i] & 0x00800000) xyz[i] |= 0xFF000000; //24bit sign expansion
     j+=3;
   }
-  //Serial.printf("RM3100.readRaw() %d %d %d %f\n", (int)xyz[0], (int)xyz[1], (int)xyz[2], scale_uT);
+  //MF_printf("RM3100.readRaw() %d %d %d %f\n", (int)xyz[0], (int)xyz[1], (int)xyz[2], scale_uT);
 }
 
 

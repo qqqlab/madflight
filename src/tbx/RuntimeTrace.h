@@ -26,7 +26,7 @@ SOFTWARE.
 
 #define RUNTIMETRACE_NUM 20
 
-#include <Arduino.h>
+#include <Arduino.h> //micros
 
 class RuntimeTrace {
   friend class RuntimeTraceGroup;

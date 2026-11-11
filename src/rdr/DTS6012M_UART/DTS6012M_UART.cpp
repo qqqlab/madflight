@@ -1,6 +1,8 @@
 //modified for madflight: MF_Serial, retry on init, stricter parser
 
 #include "DTS6012M_UART.h"
+#include "string.h" //memcpy
+#include <Arduino.h> //delay, millis
 
 /**
  * @brief Constructor for the DTS6012M_UART class.
@@ -76,7 +78,7 @@ bool DTS6012M_UART::update()
 
   for(int i = 0; i < n; i++)
   {
-    byte incomingByte = _serial->read();
+    uint8_t incomingByte = _serial->read();
 
     if (_rxBufferIndex >= DTS_RESPONSE_FRAME_LENGTH) {
       _rxBufferIndex = 0;
@@ -134,7 +136,7 @@ bool DTS6012M_UART::parseFrame()
       _rxBuffer[2] != DTS_DEVICE_TYPE ||
       _rxBuffer[3] != DTS_CMD_START_STREAM)
   {
-    // Serial.println("Debug: Frame header/ID/CMD mismatch"); // Optional Debugging
+    // MF_printf("Debug: Frame header/ID/CMD mismatch\n\n"); // Optional Debugging
     return false; // Invalid frame structure
   }
 
@@ -142,8 +144,8 @@ bool DTS6012M_UART::parseFrame()
   uint16_t dataLength = ((uint16_t)_rxBuffer[5] << 8) | _rxBuffer[6];
   if (dataLength != DTS_DATA_LENGTH_EXPECTED)
   {
-    // Serial.print("Debug: Frame length mismatch. Expected: "); Serial.print(DTS_DATA_LENGTH_EXPECTED); // Optional Debugging
-    // Serial.print(" Got: "); Serial.println(dataLength); // Optional Debugging
+    // MF_printf("Debug: Frame length mismatch. Expected: "); MF_printf(DTS_DATA_LENGTH_EXPECTED); // Optional Debugging
+    // MF_printf(" Got: "); MF_printf(dataLength); // Optional Debugging
     return false; // Incorrect payload length
   }
 
@@ -158,8 +160,8 @@ bool DTS6012M_UART::parseFrame()
 
     if (calculatedCRC != receivedCRC)
     {
-      // Serial.print("Debug: CRC FAIL! Calc: 0x"); Serial.print(calculatedCRC, HEX); // Optional Debugging
-      // Serial.print(" Recv: 0x"); Serial.println(receivedCRC, HEX); // Optional Debugging
+      // MF_printf("Debug: CRC FAIL! Calc: 0x%X", calculatedCRC); // Optional Debugging
+      // MF_printf(" Recv: 0x%x\n", receivedCRC); // Optional Debugging
       return false; // CRC check failed, data corrupted
     }
   }
@@ -247,15 +249,15 @@ void DTS6012M_UART::disableSensor()
 
 /**
  * @brief Sends a command frame to the sensor.
- * @param cmd The command byte code (e.g., DTS_CMD_STOP_STREAM).
+ * @param cmd The command uint8_t code (e.g., DTS_CMD_STOP_STREAM).
  * @param dataPayload Pointer to the data bytes to include in the frame (NULL if none).
  * @param payloadLength The number of bytes in dataPayload.
  */
-void DTS6012M_UART::sendCommand(byte cmd, const byte *dataPayload, uint16_t payloadLength)
+void DTS6012M_UART::sendCommand(uint8_t cmd, const uint8_t *dataPayload, uint16_t payloadLength)
 {
   // Calculate required frame size: Fixed parts (7) + payload + CRC (2)
   int frameSize = 9 + payloadLength;
-  byte frame[frameSize]; // Consider dynamic allocation or a max-size buffer if payloadLength can be very large
+  uint8_t frame[frameSize]; // Consider dynamic allocation or a max-size buffer if payloadLength can be very large
   int frameIndex = 0;
 
   // 1. Build Frame Header & Info
@@ -263,7 +265,7 @@ void DTS6012M_UART::sendCommand(byte cmd, const byte *dataPayload, uint16_t payl
   frame[frameIndex++] = DTS_DEVICE_NO;
   frame[frameIndex++] = DTS_DEVICE_TYPE;
   frame[frameIndex++] = cmd;
-  frame[frameIndex++] = 0x00;                        // Reserved byte (usually 0x00)
+  frame[frameIndex++] = 0x00;                        // Reserved uint8_t (usually 0x00)
   frame[frameIndex++] = (payloadLength >> 8) & 0xFF; // Length MSB
   frame[frameIndex++] = payloadLength & 0xFF;        // Length LSB
 
@@ -290,11 +292,11 @@ void DTS6012M_UART::sendCommand(byte cmd, const byte *dataPayload, uint16_t payl
 
 /**
  * @brief Calculates the Modbus CRC-16 checksum using a lookup table for speed.
- * @param data Pointer to the byte array.
+ * @param data Pointer to the uint8_t array.
  * @param len The number of bytes in the array to checksum.
  * @return The calculated 16-bit CRC value.
  */
-uint16_t DTS6012M_UART::calculateCRC16(const byte *data, int len)
+uint16_t DTS6012M_UART::calculateCRC16(const uint8_t *data, int len)
 {
   // CRC-16/MODBUS Lookup Table
   // Polynomial: 0x8005 (becomes 0xA001 when reflected for LSB-first processing)
@@ -339,14 +341,14 @@ uint16_t DTS6012M_UART::calculateCRC16(const byte *data, int len)
 
   for (int i = 0; i < len; i++)
   {
-    byte index = (byte)(crc ^ data[i]); // LSB of CRC XORed with current data byte
+    uint8_t index = (uint8_t)(crc ^ data[i]); // LSB of CRC XORed with current data uint8_t
     crc = (uint16_t)((crc >> 8) ^ crc_table[index]); // For non-AVR, access directly
   }
   return crc; // No final XOR for standard Modbus CRC
 }
 
 bool DTS6012M_UART::sendCommandBaud(int baudRate) {
-  byte b = 0;
+  uint8_t b = 0;
   switch(baudRate) {
     case 9600: b = 0x00; break;
     case 14400: b = 0x01; break;
@@ -369,7 +371,7 @@ bool DTS6012M_UART::sendCommandBaud(int baudRate) {
 
 //set frame rate, returns actual frame rate
 int DTS6012M_UART::sendCommandFrameRate(int framerate) {
-  byte b = 0;
+  uint8_t b = 0;
   int rv = 0;
   if(framerate <= 50) {
     b = 0x00;

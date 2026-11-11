@@ -99,13 +99,13 @@ public:
           //got echo
           state->dist = (_RdrGizmoSR04_irq_echo_ts2 - _RdrGizmoSR04_irq_echo_ts1) * 171; // integer math echo_us -> distance in [m] with speed of sound 342 [m/s]
           ustate = ustate_enum::INTERVAL_WAIT;
-          //Serial.printf("ECHO %d\n",*dist);
+          //MF_printf("ECHO %d\n",*dist);
           return true;
         }
         //fall thru
       case ustate_enum::INTERVAL_WAIT:
         if(micros() - ustate_ts > SR04_TIMEOUT_US) {
-          //if(ustate == ustate_enum::ECHO_WAIT) Serial.printf("SR04 TIMEOUT\n");
+          //if(ustate == ustate_enum::ECHO_WAIT) MF_printf("SR04 TIMEOUT\n");
           ustate = ustate_enum::TRIG_START;
         }
         break;

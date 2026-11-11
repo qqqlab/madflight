@@ -86,7 +86,7 @@ public:
 
       //detect
       if(!detect(config)) {
-        Serial.println("RDR: WARNING - VL53L3CX not detected");
+        MF_printf("RDR: WARNING - VL53L3CX not detected\n");
       }
 
       //configure sensor
@@ -95,7 +95,7 @@ public:
       //sensor->VL53LX_Off(); //only needed when changing i2c address from default 0x29, needs XSHUT pins to shut down other VL53L sensors
       error = sensor->InitSensor(config->rdr_i2c_adr << 1); //driver expects adr * 2
       if(error != VL53LX_ERROR_NONE) {
-        Serial.printf("RDR: VL53L3CX init failed. error=%d\n", (int)error);
+        MF_printf("RDR: VL53L3CX init failed. error=%d\n", (int)error);
         delete sensor;
         return nullptr;
       }

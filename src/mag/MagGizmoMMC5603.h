@@ -65,7 +65,7 @@ private:
     //check who-am-i
     uint8_t wai = dev->readReg(0x39);
     if( wai != 0x10) {
-      Serial.printf("MAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n", wai);
+      MF_printf("MAG: WARNING: MMC5603 got incorrect WAI 0x%02X, expected 0x10\n", wai);
     }
 
     /* CONTINUOUS MODE
@@ -91,7 +91,7 @@ private:
       if(update_raw()) return true;
     }
 
-    Serial.println("\nMAG: ERROR: MMC5603 no samples received, disabling magnetometer\n\n");
+    MF_printf("\nMAG: ERROR: MMC5603 no samples received, disabling magnetometer\n\n");
     return false;
   }
 

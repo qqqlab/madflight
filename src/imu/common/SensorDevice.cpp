@@ -39,6 +39,6 @@ SensorDevice* SensorDevice::createImuDevice(ImuConfig *config) {
     }else if(config->i2c_bus) {
         dev = new SensorDeviceI2C(config->i2c_bus, config->i2c_adr);
     }
-    if(!dev) Serial.println("asdfasdf");
+    if(!dev) MF_printf("ERROR: Could not create SensorDevice\n");
     return dev;
 }

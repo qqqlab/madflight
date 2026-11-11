@@ -21,12 +21,12 @@ public:
     int tries = 5;
     while(!ms5611.begin(i2c, MS5611_ULTRA_HIGH_RES))
     {
-      Serial.println("BAR: MS5611 failed, retry...\n");
+      MF_printf("BAR: MS5611 failed, retry...\n\n");
       delay(500);
       tries--;
       if(tries<=0) return;
     }
-    Serial.printf("BAR: MS5611 I2C_ADR=0x77 refresh_rate=%dHz\n", (int)1000000/ms5611.getDelayUs());
+    MF_printf("BAR: MS5611 I2C_ADR=0x77 refresh_rate=%dHz\n", (int)1000000/ms5611.getDelayUs());
   }
 
   bool update(float *press, float *temp) override {

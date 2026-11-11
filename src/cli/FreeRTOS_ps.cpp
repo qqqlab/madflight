@@ -28,9 +28,10 @@ SOFTWARE.
 
 #include "FreeRTOS_ps.h"
 #include "../hal/hal.h" //#include <FreeRTOS.h> and #include <task.h> (different platforms use different headers...)
+#include "../tbx/MF_printf.h"
 
 #if configUSE_TRACE_FACILITY != 1
-void freertos_ps(Print &p) {
+void freertos_ps() {
   p.println("FreeRTOS_ps() needs configUSE_TRACE_FACILITY = 1 for uxTaskGetSystemState()");
 }
 #else
@@ -47,7 +48,7 @@ static char freertos_taskStatusChar(eTaskState eCurrentState) {
   }
 }
 
-void freertos_ps(Print &p)
+void freertos_ps()
 {
   static struct taskarr_s {
     TaskStatus_t pxTaskStatusArray[FREERTOS_PS_MAX_TASKS];
@@ -69,12 +70,12 @@ void freertos_ps(Print &p)
   uint32_t totalRunTime = tanew.ulTotalRunTime - taold.ulTotalRunTime;
   uint64_t tot = 0;
 
-  p.printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
-  p.print("TID Name            CPU%  Free St Pr Ni");
+  MF_printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
+  MF_printf("TID Name            CPU%  Free St Pr Ni");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
-    p.print(" Core");
+    MF_printf(" Core");
   #endif
-  p.println();
+  MF_printf("\n");
 
   float perc_sum = 0;
   for( uint32_t i = 0; i < tanew.uxArraySize; i++ )
@@ -90,7 +91,7 @@ void freertos_ps(Print &p)
     }
     float perc = (float)runtime / totalRunTime * 100;
     perc_sum += perc;
-    p.printf("%3d %-12s%7.2f%% %5d  %c %2d %2d",
+    MF_printf("%3d %-12s%7.2f%% %5d  %c %2d %2d",
       (int)t.xTaskNumber,
       t.pcTaskName,
       (float)perc,
@@ -100,14 +101,14 @@ void freertos_ps(Print &p)
       (int)t.uxCurrentPriority
     );
     #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
-      p.printf("  ");
+      MF_printf("  ");
       for(int core = 0; core < configNUMBER_OF_CORES; core++ ) {
-        p.printf("%c", (t.uxCoreAffinityMask & (1 << core) ? '0' + core : '_') );
+        MF_printf("%c", (t.uxCoreAffinityMask & (1 << core) ? '0' + core : '_') );
       }
     #endif
-    p.printf("\n");
+    MF_printf("\n");
     tot += runtime;
   }
-  p.printf("    Total       %7.2f%%\n", perc_sum);
+  MF_printf("    Total       %7.2f%%\n", perc_sum);
 }
 #endif //configUSE_TRACE_FACILITY != 1

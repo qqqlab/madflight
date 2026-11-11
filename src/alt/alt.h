@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <stdint.h>
+
 #ifndef ALT_USE
   #define ALT_USE ALT_USE_BAR
   //#define ALT_USE ALT_USE_KALMAN3

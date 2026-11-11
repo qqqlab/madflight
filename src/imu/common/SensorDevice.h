@@ -140,7 +140,7 @@ class SensorDeviceI2C : public SensorDevice{
         _i2c->write(data[i]);
       }
       _i2c->endTransmission();
-      //Serial.printf("WriteReg(reg0x%02X, data=0x%02X) --> ", reg, data); ReadReg(reg);
+      //MF_printf("WriteReg(reg0x%02X, data=0x%02X) --> ", reg, data); ReadReg(reg);
       return 0;
     }
 
@@ -152,7 +152,7 @@ class SensorDeviceI2C : public SensorDevice{
       if(bytesReceived == n) {
         _i2c->readBytes(data, bytesReceived);
       }
-      //Serial.printf("ReadRegs(reg=0x%02X, n=%d) --> data[%d]=0x%02X\n", reg, n, bytesReceived, data[0]);
+      //MF_printf("ReadRegs(reg=0x%02X, n=%d) --> data[%d]=0x%02X\n", reg, n, bytesReceived, data[0]);
     }
 
     bool isSPI() {

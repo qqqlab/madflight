@@ -1,7 +1,6 @@
 #pragma once
 
-#include <math.h>
-#include <Arduino.h>
+#include "../tbx/MF_printf.h"
 
 //Algorithms for calculating variance, Computing shifted data: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 class Stat {
@@ -60,9 +59,9 @@ public:
   }
 
   void print(const char *hdr, float dt = 0) {
-    Serial.printf("%s\tmean:%+f\tstdev:%f\tmin:%+f\tmax:%+f\tn:%d", hdr, mean(), std(), min, max, n);
-    if(dt > 0) Serial.printf("\trate:%.0fHz\tnoise:%f", n / dt, std() / sqrt(n / dt));
-    Serial.println();
+    MF_printf("%s\tmean:%+f\tstdev:%f\tmin:%+f\tmax:%+f\tn:%d", hdr, mean(), std(), min, max, n);
+    if(dt > 0) MF_printf("\trate:%.0fHz\tnoise:%f", n / dt, std() / sqrt(n / dt));
+    MF_printf("\n");
   }
 
   //print spikes that are more than 4*std away from mean
@@ -70,25 +69,25 @@ public:
     if(hist_len == 0) return;
     float m = mean();
     float limit = 4 * std();
-    Serial.printf("Spikes outside %f to %f for %s", m - limit, m + limit, hdr);
+    MF_printf("Spikes outside %f to %f for %s", m - limit, m + limit, hdr);
     int i = 2;
     bool none = true;
     while(i < hist_cnt() - 2) {
       if(fabs(hist[i] - m) > limit) {
         if(none) {
-          Serial.println();
+          MF_printf("\n");
           none = false;
         }
-        Serial.printf("%6d: %f %f -->", i-2, hist[i-2],  hist[i-1]); //before
+        MF_printf("%6d: %f %f -->", i-2, hist[i-2],  hist[i-1]); //before
         while(fabs(hist[i] - m) > limit) {
-          Serial.printf(" %f", hist[i]); //more than limit off mean
+          MF_printf(" %f", hist[i]); //more than limit off mean
           i++;
         }
-        Serial.printf(" <-- %f %f\n", hist[i], hist[i+1]); //after
+        MF_printf(" <-- %f %f\n", hist[i], hist[i+1]); //after
       }
       i++;
     }
-    if(none) Serial.println(" : No spikes");
+    if(none) MF_printf(" : No spikes\n");
   }
 
 };

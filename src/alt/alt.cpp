@@ -26,7 +26,6 @@ SOFTWARE.
 Each ALT_USE_xxx section in this file defines a specific altimeter estimator class
 =================================================================================================*/
 
-#include <Arduino.h>
 #include "alt.h" //declares AltEst - Altimeter Estimator base class
 
 //=================================================================================================
@@ -38,7 +37,7 @@ class AltEst_None : public AltEst {
 public:
   void setup(float alt) {
     (void)alt;
-    Serial.printf("ALT: NONE\n");
+    MF_printf("ALT: NONE\n");
   }
   void updateAccelUp(float a, uint32_t ts) {(void)a;(void)ts;};
   void updateBarAlt(float alt, uint32_t ts) {(void)alt;(void)ts;} 

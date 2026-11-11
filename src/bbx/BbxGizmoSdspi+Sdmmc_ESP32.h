@@ -67,7 +67,8 @@ private:
 public:
   //setup the file system
   void setup() override {
-    Serial.println(_BB_SETUP_STR);
+    MF_printf(_BB_SETUP_STR);
+    MF_printf("\n");
     sd_setup();
   }
 
@@ -82,14 +83,14 @@ public:
 
         sd_logOpen(BB_LOG_DIR_NAME);
         if(file) {
-          Serial.printf("BBX:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
+          MF_printf("BBX:   start OK - attempt=%d file=%s\n", attempt, filename.c_str());
           return true;
         }
       }
 
       setup_done = false; //force setup to re-run
     }
-    Serial.println("BBX:   start FAILED");
+    MF_printf("BBX:   start FAILED\n");
     return false;
   }
 
@@ -147,13 +148,13 @@ public:
     
     buf = (uint8_t*)malloc(512);
     if(!buf) {
-        Serial.println("BBX:   bench - malloc failed");
+        MF_printf("BBX:   bench - malloc failed\n");
         return;
     }
     
     file = _BB_SDFS.open(path, FILE_WRITE);
     if(!file){
-        Serial.println("BBX:   bench - Failed to open file for writing");
+        MF_printf("BBX:   bench - Failed to open file for writing\n");
         free(buf);
         return;
     }
@@ -168,12 +169,12 @@ public:
     }
     end = millis() - start;
     flen = 2048 * 512;
-    Serial.printf("BBX:   %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    MF_printf("BBX:   %s %u bytes written in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
     
     file = _BB_SDFS.open(path);
     if(!file){
-        Serial.println("BBX:   bench - Failed to open file for reading");
+        MF_printf("BBX:   bench - Failed to open file for reading\n");
         free(buf);
         return;
     }        
@@ -189,7 +190,7 @@ public:
         len -= toRead;
     }
     end = millis() - start;
-    Serial.printf("BBX:   %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
+    MF_printf("BBX:   %s %u bytes read in %u ms %f kbps\r\n", path, (int)flen, (int)end, (float)flen/end);
     file.close();
 
     free(buf);
@@ -198,25 +199,25 @@ public:
   void info() override {
     uint8_t cardType = _BB_SDFS.cardType();
     if(cardType == CARD_NONE){
-      Serial.println("No SD card attached");
+      MF_printf("No SD card attached\n");
       return;
     }
-    Serial.print("CardType: ");
+    MF_printf("CardType: ");
     if(cardType == CARD_MMC){
-        Serial.print("MMC");
+        MF_printf("MMC");
     } else if(cardType == CARD_SD){
-        Serial.print("SD");
+        MF_printf("SD");
     } else if(cardType == CARD_SDHC){
-        Serial.print("SDHC");
+        MF_printf("SDHC");
     } else {
-        Serial.print("UNKNOWN");
+        MF_printf("UNKNOWN");
     }
-    Serial.println();
-    //Serial.printf("SectorSize: %d\n", _BB_SDFS.sectorSize()); //'class fs::SDMMCFS' has no member named 'sectorSize'
-    Serial.printf("CardSize: %lluMB\n", _BB_SDFS.cardSize() / (1024 * 1024));
-    Serial.printf("used: %lluMB\n", _BB_SDFS.usedBytes()/ (1024 * 1024));
-    Serial.printf("free: %lluMB\n", (_BB_SDFS.totalBytes() - _BB_SDFS.usedBytes()) / (1024 * 1024));
-    Serial.println();
+    MF_printf("\n");
+    //MF_printf("SectorSize: %d\n", _BB_SDFS.sectorSize()); //'class fs::SDMMCFS' has no member named 'sectorSize'
+    MF_printf("CardSize: %lluMB\n", _BB_SDFS.cardSize() / (1024 * 1024));
+    MF_printf("used: %lluMB\n", _BB_SDFS.usedBytes()/ (1024 * 1024));
+    MF_printf("free: %lluMB\n", (_BB_SDFS.totalBytes() - _BB_SDFS.usedBytes()) / (1024 * 1024));
+    MF_printf("\n");
   }
 
   int read(const char* filename, uint8_t **data) override {
@@ -242,28 +243,28 @@ private:
  
     #ifdef BBX_USE_MMC
       if (config->pin_mmc_clk < 0 || config->pin_mmc_cmd < 0 || config->pin_mmc_dat < 0) {
-        Serial.println("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins");
+        MF_printf("BBX: SDMMC Setup Failed, missing clk/cmd/dat pins\n");
         return false;
       }
       _BB_SDFS.setPins(config->pin_mmc_clk, config->pin_mmc_cmd, config->pin_mmc_dat);
       if (!_BB_SDFS.begin("/sdcard", true, true, SDMMC_FREQ_DEFAULT, 5)) {
-        Serial.println("BBX: SDMMC Card Mount Failed");
+        MF_printf("BBX: SDMMC Card Mount Failed\n");
         return false;
       }
     #else
       if (config->spi_cs <= 0 || !config->spi_bus) {
-        Serial.println("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus");
+        MF_printf("BBX: SDSPI Setup Failed, missing cs pin or missing SPI bus\n");
         return false;
       }
       if (!_BB_SDFS.begin(config->spi_cs, *config->spi_bus)) {
-        Serial.println("BBX: SDSPI Card Mount Failed");
+        MF_printf("BBX: SDSPI Card Mount Failed\n");
         return false;
       }
     #endif
 
     uint8_t cardType = _BB_SDFS.cardType();
     if(cardType == CARD_NONE){
-      Serial.println("BBX:   No SD card attached");
+      MF_printf("BBX:   No SD card attached\n");
       return false;
     }
 
@@ -272,27 +273,27 @@ private:
   }
 
   bool sd_listDir(const char * dirname, uint8_t levels = 0){
-    Serial.printf("Listing directory: %s\n", dirname);
+    MF_printf("Listing directory: %s\n", dirname);
 
     File root = _BB_SDFS.open(dirname);
     if(!root){
-        Serial.println("Failed to open directory");
+        MF_printf("Failed to open directory\n");
         return false;
     }
     if(!root.isDirectory()){
-        Serial.println("Not a directory");
+        MF_printf("Not a directory\n");
         return true;
     }
 
     File file = root.openNextFile();
     while(file){
         if(file.isDirectory()){
-            Serial.printf("%-18s <DIR>\n",file.name());
+            MF_printf("%-18s <DIR>\n",file.name());
             if(levels){
                 sd_listDir(file.path(), levels -1);
             }
         } else {
-            Serial.printf("%-14s %9d\n",file.name(),file.size());
+            MF_printf("%-14s %9d\n",file.name(),file.size());
         }
         file = root.openNextFile();
     }
@@ -317,17 +318,17 @@ private:
     File root = _BB_SDFS.open(dirname);
     if(!root){
        if(!_BB_SDFS.mkdir(dirname)){
-          Serial.println("BBX:   mkdir /log failed");
+          MF_printf("BBX:   mkdir /log failed\n");
           return;
       }
       root = _BB_SDFS.open(dirname);
       if(!root) {
-          Serial.println("BBX:   mkdir /log failed");
+          MF_printf("BBX:   mkdir /log failed\n");
           return;
       }
     }
     if(!root.isDirectory()){
-        Serial.println("BBX:   /log is not a directory");
+        MF_printf("BBX:   /log is not a directory\n");
         return;
     }
 
@@ -342,7 +343,7 @@ private:
       dirfile = root.openNextFile();
     }
     filename = String(dirname) + '/' + String(maxnr+1) + ".bin";
-    Serial.println(filename);
+    MF_printf("%s\n", filename);
     file = _BB_SDFS.open(filename, FILE_WRITE, true);
   }
 };

@@ -161,16 +161,16 @@ private:
         uint8_t buf[65];
         int len = CRSF_Telemetry::telemetry_flight_mode(buf, flight_mode);
         if((int)ser_bus->availableForWrite() >= len) ser_bus->write(buf, len);
-        //Serial.printf("\nFM(len=%d) ",len);
-        //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
+        //MF_printf("\nFM(len=%d) ",len);
+        //for(int i=0;i<len;i++) MF_printf("%02X ",buf[i]);
     }
 
     void telem_attitude(float pitch, float roll, float yaw) {
         uint8_t buf[65];
         int len = CRSF_Telemetry::telemetry_attitude(buf, pitch, roll, yaw);
         if((int)ser_bus->availableForWrite() >= len) ser_bus->write(buf, len);
-        //Serial.printf("\natt(len=%d) ",len);
-        //for(int i=0;i<len;i++) Serial.printf("%02X ",buf[i]);
+        //MF_printf("\natt(len=%d) ",len);
+        //for(int i=0;i<len;i++) MF_printf("%02X ",buf[i]);
     }
 
     void telem_battery(float voltage_V, float current_A, int fuel_mAh, uint8_t remaining) {

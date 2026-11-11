@@ -25,6 +25,7 @@ SOFTWARE.
 #ifdef ARDUINO_ARCH_RP2040
 
 #include "pio_registry.h"
+#include "../../tbx/MF_printf.h"
 
 void pio_registry_unclaim_unnamed();
 void pio_registry_register(PIO pio, uint sm, const char* name, int8_t len);
@@ -95,56 +96,56 @@ void pio_registry_register(PIO pio, uint sm, const char* name, int8_t len) {
 
 //show list of SM
 void pio_registry_print() {
-    Serial.printf("\n=== PIO RESOURCES ===\n\n");
-    Serial.printf("PIO  SM   Name    En Base PLen   Freq     ClkDiv  GPIO-Out   GPIO-Set   GPIO-Side  Wrap   ExecCtrl  PinCtrl\n");
+    MF_printf("\n=== PIO RESOURCES ===\n\n");
+    MF_printf("PIO  SM   Name    En Base PLen   Freq     ClkDiv  GPIO-Out   GPIO-Set   GPIO-Side  Wrap   ExecCtrl  PinCtrl\n");
     for(uint p = 0; p < NUM_PIOS; p++) {
         PIO pio = PIO_INSTANCE(p);
         for(uint sm = 0; sm < NUM_PIO_STATE_MACHINES; sm++) {
             int base = pio_get_gpio_base(pio);
             bool claimed = pio_sm_is_claimed(pio, sm);
-            Serial.printf("PIO%d-SM%d  ", p, sm);
-            Serial.printf("%-7s  ", (claimed ? pio_registry[p][sm] : "-Free-") );
-            Serial.printf("%c  ", ((pio->ctrl >> sm) & 1 ? 'Y' : '-'));
-            Serial.printf("%2d  ", base);
+            MF_printf("PIO%d-SM%d  ", p, sm);
+            MF_printf("%-7s  ", (claimed ? pio_registry[p][sm] : "-Free-") );
+            MF_printf("%c  ", ((pio->ctrl >> sm) & 1 ? 'Y' : '-'));
+            MF_printf("%2d  ", base);
             if(claimed) {
-                Serial.printf("%2d  ", prog_len[p][sm]);
+                MF_printf("%2d  ", prog_len[p][sm]);
                 float mhz = (float)clock_get_hz(clk_sys) * 65536e-6 / pio->sm[sm].clkdiv;
-                Serial.printf("%6.2fMHz  ", mhz);
-                Serial.printf("%7.2f  ", pio->sm[sm].clkdiv / 65536.0);
+                MF_printf("%6.2fMHz  ", mhz);
+                MF_printf("%7.2f  ", pio->sm[sm].clkdiv / 65536.0);
                 int out_cnt = (pio->sm[sm].pinctrl & 0x03f00000) >> 20;
                 if(out_cnt) {
-                    Serial.printf("%2d", base + ((pio->sm[sm].pinctrl & 0x0000001f) >> 0)); //0x0000001f [4:0]   OUT_BASE
-                    Serial.printf("(cnt=%1d)  ", out_cnt);
-                } else Serial.printf("           ");
+                    MF_printf("%2d", base + ((pio->sm[sm].pinctrl & 0x0000001f) >> 0)); //0x0000001f [4:0]   OUT_BASE
+                    MF_printf("(cnt=%1d)  ", out_cnt);
+                } else MF_printf("           ");
                 int set_cnt = (pio->sm[sm].pinctrl & 0x1c000000) >> 26; //0x1c000000 [28:26] SET_COUNT
                 if(set_cnt) {
-                    Serial.printf("%2d", base + ((pio->sm[sm].pinctrl & 0x000003e0) >> 5)); //0x000003e0 [9:5]   SET_BASE
-                    Serial.printf("(cnt=%1d)  ", set_cnt);
-                } else Serial.printf("           ");
+                    MF_printf("%2d", base + ((pio->sm[sm].pinctrl & 0x000003e0) >> 5)); //0x000003e0 [9:5]   SET_BASE
+                    MF_printf("(cnt=%1d)  ", set_cnt);
+                } else MF_printf("           ");
                 int side_cnt = (pio->sm[sm].pinctrl & 0xe0000000) >> 29; //0xe0000000 [31:29] SIDESET_COUNT
                 if(side_cnt) {
-                    Serial.printf("%2d", base + ((pio->sm[sm].pinctrl & 0x00007c00) >> 10)); //0x00007c00 [14:10] SIDESET_BASE
-                    Serial.printf("(cnt=%1d)  ", side_cnt);
-                } else Serial.printf("           ");
-                Serial.printf("%2d-", (pio->sm[sm].execctrl & 0x00000f80) >> 7);  // 0x00000f80 [11:7]  WRAP_BOTTOM  (0x00) After reaching wrap_top, execution is wrapped to this address
-                Serial.printf("%-2d  ", (pio->sm[sm].execctrl & 0x0001f000) >> 12); // 0x0001f000 [16:12] WRAP_TOP     (0x1f) After reaching this address, execution is wrapped to wrap_bottom
-                Serial.printf("%08X  ", pio->sm[sm].execctrl);
-                Serial.printf("%08X  ", pio->sm[sm].pinctrl);
+                    MF_printf("%2d", base + ((pio->sm[sm].pinctrl & 0x00007c00) >> 10)); //0x00007c00 [14:10] SIDESET_BASE
+                    MF_printf("(cnt=%1d)  ", side_cnt);
+                } else MF_printf("           ");
+                MF_printf("%2d-", (pio->sm[sm].execctrl & 0x00000f80) >> 7);  // 0x00000f80 [11:7]  WRAP_BOTTOM  (0x00) After reaching wrap_top, execution is wrapped to this address
+                MF_printf("%-2d  ", (pio->sm[sm].execctrl & 0x0001f000) >> 12); // 0x0001f000 [16:12] WRAP_TOP     (0x1f) After reaching this address, execution is wrapped to wrap_bottom
+                MF_printf("%08X  ", pio->sm[sm].execctrl);
+                MF_printf("%08X  ", pio->sm[sm].pinctrl);
             }
-            Serial.println();
+            MF_printf("\n");
         }
     }
-    Serial.printf("\n=== DMA RESOURCES ===\n\n");
-    Serial.printf("DMA   Status  State Treq   TxCnt  CtrlTrig\n");
+    MF_printf("\n=== DMA RESOURCES ===\n\n");
+    MF_printf("DMA   Status  State Treq   TxCnt  CtrlTrig\n");
     for(uint ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
-        Serial.printf("DMA%-2d ", ch);
-        Serial.printf("%-7s  ", (dma_channel_is_claimed(ch) ? "Claimed" : "-Free-"));
-        Serial.printf("%s  ", (dma_channel_is_busy(ch) ? "Busy" : "Idle"));
-        Serial.printf("%2d  ", (dma_hw->ch[ch].ctrl_trig & 0x007e0000) >> 17);//0x007e0000 [22:17] TREQ_SEL     (0x00) Select a Transfer Request signal
-        Serial.printf("%5d*", dma_hw->ch[ch].transfer_count & 0x0fffffff ); 
-        Serial.printf("%1d  ", (int)pow(2, (dma_hw->ch[ch].ctrl_trig & 0x0000000c) >> 2 ));//0x0000000c [3:2]   DATA_SIZE    (0x0) Set the size of each bus transfer (byte/halfword/word)
-        Serial.printf("%08X  ", dma_hw->ch[ch].ctrl_trig);
-        Serial.println();
+        MF_printf("DMA%-2d ", ch);
+        MF_printf("%-7s  ", (dma_channel_is_claimed(ch) ? "Claimed" : "-Free-"));
+        MF_printf("%s  ", (dma_channel_is_busy(ch) ? "Busy" : "Idle"));
+        MF_printf("%2d  ", (dma_hw->ch[ch].ctrl_trig & 0x007e0000) >> 17);//0x007e0000 [22:17] TREQ_SEL     (0x00) Select a Transfer Request signal
+        MF_printf("%5d*", dma_hw->ch[ch].transfer_count & 0x0fffffff ); 
+        MF_printf("%1d  ", (int)pow(2, (dma_hw->ch[ch].ctrl_trig & 0x0000000c) >> 2 ));//0x0000000c [3:2]   DATA_SIZE    (0x0) Set the size of each bus transfer (byte/halfword/word)
+        MF_printf("%08X  ", dma_hw->ch[ch].ctrl_trig);
+        MF_printf("\n");
     }
 }
 

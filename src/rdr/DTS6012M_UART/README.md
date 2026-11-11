@@ -88,10 +88,10 @@ void setup() {
 
   // 4. Initialize the sensor library (starts Serial1 at 921600 default)
   if (!dtsSensor.begin()) {
-    Serial.println("Failed to initialize sensor!");
+    MF_printf("Failed to initialize sensor!\n");
     while (1); // Halt
   }
-  Serial.println("Sensor initialized.");
+  MF_printf("Sensor initialized.\n");
 
   // --- Optional: Disable CRC Check ---
   // For maximum performance, you can disable the CRC check.
@@ -113,15 +113,13 @@ void loop() {
     uint16_t distance = dtsSensor.getDistance(); // in mm
     uint16_t intensity = dtsSensor.getIntensity();
 
-    Serial.print("Distance: ");
+    MF_printf("Distance: ");
     if (distance == 0xFFFF) {
-      Serial.print("Invalid/OOR");
+      MF_printf("Invalid/out-of-range");
     } else {
-      Serial.print(distance);
-      Serial.print(" mm");
+      MF_printf("%d mm", distance);
     }
-    Serial.print("\t Intensity: ");
-    Serial.println(intensity);
+    MF_printf("\t Intensity: %i", intensity);
   }
 
   // Do other things...

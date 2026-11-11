@@ -12,7 +12,7 @@ class MagGizmoQMC5883L: public MagGizmo {
     const char* name() override {return "QMC5883L";}
     MagGizmoQMC5883L(MF_I2C *i2c, int8_t i2c_adr) {
       sensor.begin(i2c, i2c_adr);
-      Serial.printf("MAG: QMC5883L detect=%d\n", sensor.detect());
+      MF_printf("MAG: QMC5883L detect=%d\n", sensor.detect());
       //return (mag_QMC5883L.detect() ? 0 : 1);
     }
 

@@ -12,32 +12,31 @@
 #ifndef DTS6012M_UART_H
 #define DTS6012M_UART_H
 
-#include <Arduino.h>
 #include "../../hal/MF_Serial.h"
 
 // --- Constants based on datasheet ---
 // Protocol constants
-const byte DTS_HEADER = 0xA5;
-const byte DTS_DEVICE_NO = 0x03;
-const byte DTS_DEVICE_TYPE = 0x20; // Example type from datasheet
+const uint8_t DTS_HEADER = 0xA5;
+const uint8_t DTS_DEVICE_NO = 0x03;
+const uint8_t DTS_DEVICE_TYPE = 0x20; // Example type from datasheet
 
 // Command codes
-const byte DTS_CMD_START_STREAM = 0x01;
-const byte DTS_CMD_STOP_STREAM = 0x02;
-const byte DTS_CMD_GET_VERSION = 0x0A;
-const byte DTS_CMD_SET_BAUD = 0x10;  //write 1 byte: 0:9600, 1:14400, 2:19200, 3:38400, 4:43000, 5:57600, 6:76800, 7:115200, 8:12800, 9:230400, 0x0A:256000, 0x0B:460800, 0x0E:921600
-const byte DTS_CMD_GET_BAUD = 0x11;
-const byte DTS_CMD_SET_I2C_ADDR = 0x12;
-const byte DTS_CMD_GET_I2C_ADDR = 0x13;
-const byte DTS_CMD_SET_FRAME_RATE = 0x1A; //write 1 byte: 0:50, 1:100, 2:250 fps (default 100 fps)
-const byte DTS_CMD_GET_FRAME_RATE = 0x1B;
+const uint8_t DTS_CMD_START_STREAM = 0x01;
+const uint8_t DTS_CMD_STOP_STREAM = 0x02;
+const uint8_t DTS_CMD_GET_VERSION = 0x0A;
+const uint8_t DTS_CMD_SET_BAUD = 0x10;  //write 1 uint8_t: 0:9600, 1:14400, 2:19200, 3:38400, 4:43000, 5:57600, 6:76800, 7:115200, 8:12800, 9:230400, 0x0A:256000, 0x0B:460800, 0x0E:921600
+const uint8_t DTS_CMD_GET_BAUD = 0x11;
+const uint8_t DTS_CMD_SET_I2C_ADDR = 0x12;
+const uint8_t DTS_CMD_GET_I2C_ADDR = 0x13;
+const uint8_t DTS_CMD_SET_FRAME_RATE = 0x1A; //write 1 uint8_t: 0:50, 1:100, 2:250 fps (default 100 fps)
+const uint8_t DTS_CMD_GET_FRAME_RATE = 0x1B;
 
 
 // Response frame structure constants for start_stream command (0x01)
 const int DTS_RESPONSE_FRAME_LENGTH = 23; // Full frame size: Header(1)+DevNo(1)+DevType(1)+CMD(1)+Res(1)+Len(2)+Data(14)+CRC(2)
 const int DTS_DATA_LENGTH_EXPECTED = 14;  // Expected data payload size
 
-// Indices within the 14-byte data payload (LSB first ordering)
+// Indices within the 14-uint8_t data payload (LSB first ordering)
 const int DTS_IDX_SEC_DIST = 0; // Secondary Target Distance (2 bytes)
 const int DTS_IDX_SEC_CORR = 2; // Secondary Target Correction (2 bytes)
 const int DTS_IDX_SEC_INT = 4;  // Secondary Target Intensity (2 bytes)
@@ -77,9 +76,9 @@ public:
 
   // Send Command: Allows sending other commands defined in the datasheet (e.g., stop stream, set baud).
   // cmd: The command code (e.g., DTS_CMD_STOP_STREAM).
-  // dataPayload: Pointer to byte array containing data for the command (if any).
+  // dataPayload: Pointer to uint8_t array containing data for the command (if any).
   // payloadLength: Number of bytes in dataPayload.
-  void sendCommand(byte cmd, const byte *dataPayload = NULL, uint16_t payloadLength = 0);
+  void sendCommand(uint8_t cmd, const uint8_t *dataPayload = nullptr, uint16_t payloadLength = 0);
 
   // Enable/Disable CRC Check: Controls whether the CRC checksum is validated on incoming frames.
   // Disabling improves performance but risks accepting corrupted data. Enabled by default.
@@ -95,7 +94,7 @@ private:
   // --- Private Members ---
   MF_Serial *_serial; // Reference to the hardware serial port instance
 
-  byte _rxBuffer[DTS_RESPONSE_FRAME_LENGTH]; // Buffer to hold incoming frame bytes
+  uint8_t _rxBuffer[DTS_RESPONSE_FRAME_LENGTH]; // Buffer to hold incoming frame bytes
   int _rxBufferIndex;                        // Current position in the rx buffer
 
   // Variables to store the latest valid measurement data
@@ -116,7 +115,7 @@ private:
   bool parseFrame();
 
   // calculateCRC16: Computes the Modbus CRC-16 checksum for given data.
-  uint16_t calculateCRC16(const byte *data, int len);
+  uint16_t calculateCRC16(const uint8_t *data, int len);
 };
 
 #endif // DTS6012M_UART_H
