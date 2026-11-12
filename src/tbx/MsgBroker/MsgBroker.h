@@ -24,6 +24,9 @@ SOFTWARE.
 
 #pragma once
 
+#ifndef MF_MSGBROKER_STAT
+  #define MF_MSGBROKER_STAT 1 //enable statistics
+#endif
 #ifndef MF_MSGTOPIC_LIST_SIZE
   #define MF_MSGTOPIC_LIST_SIZE 40 //max number of topics. Used only for top() statistics
 #endif
@@ -32,6 +35,9 @@ SOFTWARE.
 #endif
 
 #include "../../hal/hal.h" //STM32 FreeRTOS
+#if MF_MSGBROKER_STAT
+      #include <Arduino.h> //micros
+#endif 
 
 class MsgBroker;
 class MsgSubscriptionBase;
@@ -74,7 +80,14 @@ class MsgTopicBase {
     template <class T> friend class MsgTopic;
     template <class T> friend class MsgTopicMPMS;
 
+#if MF_MSGBROKER_STAT
     uint32_t _stat_start_gen = 0; //starting generation for statistics
+    uint32_t _stat_push_dt = 0; //runtime
+    uint32_t _stat_push_retry_cnt = 0; //number of push retries
+    uint32_t _stat_pull_retry_cnt = 0; //number of pull retries
+    uint32_t _stat_msglen = 0; //length of message
+#endif
+
     MsgSubscriptionBase* _sub_list[MF_MSGSUB_LIST_SIZE] = {}; //subscriptions for this topic
 
     virtual ~MsgTopicBase() {}
@@ -108,8 +121,12 @@ class MsgSubscriptionBase {
     friend class MsgBroker;
     template <class T> friend class MsgSubscription;
 
-    uint32_t _sub_gen = 0; //last pulled topic generation 
+    uint32_t _sub_gen = 0; //last pulled topic generation
+
+#if MF_MSGBROKER_STAT
     uint32_t _stat_pull_cnt = 0; //pull counter
+    uint32_t _stat_pull_dt = 0; //runtime
+#endif
 
     virtual ~MsgSubscriptionBase() {
       topic->remove_subscription(this);
@@ -136,21 +153,33 @@ class MsgSubscription : public MsgSubscriptionBase {
     // Pull next (oldest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
     bool pull_next(T *msg) {
+#if MF_MSGBROKER_STAT
+        uint32_t t_start = micros();
+#endif
         uint32_t gen_to_get = _sub_gen + 1; //get next msg
         if(!topic->_pull(msg, MsgTopicBase::PullOp::FIRST_GREATER_EQUAL, &gen_to_get)) return false;
         _sub_gen = gen_to_get;
+#if MF_MSGBROKER_STAT
         _stat_pull_cnt++;
+        _stat_pull_dt += micros() - t_start;
+#endif
         return true;
     }
 
     // Pull latest (newest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
     bool pull_latest(T *msg) {
+#if MF_MSGBROKER_STAT
+        uint32_t t_start = micros();
+#endif
         uint32_t gen_to_get = topic->get_generation();
         if(gen_to_get == _sub_gen) return false; //last msg in fifo was already pulled
         if(!topic->_pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get)) return false;
         _sub_gen = gen_to_get;
+#if MF_MSGBROKER_STAT
         _stat_pull_cnt++;
+        _stat_pull_dt += micros() - t_start;
+#endif
         return true;
     }
 };

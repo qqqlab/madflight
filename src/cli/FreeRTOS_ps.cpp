@@ -71,7 +71,7 @@ void freertos_ps()
   uint64_t tot = 0;
 
   MF_printf("\n=== FreeRTOS Tasks - Measurement Period: %.2f seconds ===\n\n", dt);
-  MF_printf("TID Name            CPU%  Free St Pr Ni");
+  MF_printf("TID Name            CPU%%  Free St Pr Ni");
   #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUMBER_OF_CORES > 1 ) )
     MF_printf(" Core");
   #endif
