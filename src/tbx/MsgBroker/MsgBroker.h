@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 
 #ifndef MF_MSGBROKER_STAT
-  #define MF_MSGBROKER_STAT 0 //enable statistics
+  #define MF_MSGBROKER_STAT 1 //enable statistics
 #endif
 #ifndef MF_MSGTOPIC_LIST_SIZE
   #define MF_MSGTOPIC_LIST_SIZE 40 //max number of topics. Used only for top() statistics
