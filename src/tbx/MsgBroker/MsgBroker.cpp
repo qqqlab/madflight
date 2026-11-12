@@ -35,7 +35,10 @@ SOFTWARE.
 // MsgBroker
 //=============================================================================
 MsgTopicBase* MsgBroker::_topic_list[MF_MSGTOPIC_LIST_SIZE] = {};
+
+#if MF_MSGBROKER_STAT
 uint32_t MsgBroker::_stat_ts = micros();
+#endif
 
 void MsgBroker::add_topic(MsgTopicBase *topic) {
   DEBUG_PRINTF("MsgBroker::add_topic(%d)", topic->name);
@@ -58,34 +61,64 @@ int MsgBroker::topic_count() {
 }
 
 void MsgBroker::top() {
+#if MF_MSGBROKER_STAT  
   float dt = 1e-6 * (micros() - _stat_ts);
   MF_printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
+  MF_printf(" Type:Name           Freq      Gen    Count  Runtime\n");
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = _topic_list[i];
     if(t) {
-      uint32_t t_dgen = t->get_generation() - t->_stat_start_gen;
-      MF_printf("topic:%-12s freq:%4.0fHz  gen:%8d   pubs:%8d\n", t->name, t_dgen / dt, (int)t->get_generation(), (int)t_dgen);
+      uint32_t push_cnt = t->get_generation() - t->_stat_start_gen;
+      MF_printf(
+        "topic:%-12s %4.0fHz %8d %8d %5.1fus  retries:%d %d  msglen:%d\n"
+        , t->name
+        , push_cnt / dt
+        , (int)t->get_generation()
+        , (int)push_cnt
+        , (push_cnt==0 ? 0.0 : (float)t->_stat_push_dt / push_cnt)
+        , (int)t->_stat_push_retry_cnt
+        , (int)t->_stat_pull_retry_cnt
+        , (int)t->_stat_msglen
+      );
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->_sub_list[j];
-        if(s) MF_printf("  sub:%-12s freq:%4.0fHz  gen:%8d  pulls:%8d  misses:%8d\n", s->name, s->_stat_pull_cnt / dt, (int)s->_sub_gen, (int)s->_stat_pull_cnt, (int)(t_dgen - s->_stat_pull_cnt));
+        if(s) MF_printf(
+          "  sub:%-12s %4.0fHz %8d %8d %5.1fus\n"
+          , s->name
+          , s->_stat_pull_cnt / dt
+          , (int)s->_sub_gen
+          , (int)s->_stat_pull_cnt
+          , (s->_stat_pull_cnt==0 ? 0.0 : (float)s->_stat_pull_dt / s->_stat_pull_cnt)
+        );
       } 
     }
   }
   reset_stats();
+#else
+  MF_printf("\n=== Message Broker statistics disabled, use MF_MSGBROKER_STAT=1 to enable ===\n");
+#endif
 }
 
 void MsgBroker::reset_stats() {
+#if MF_MSGBROKER_STAT
   _stat_ts = micros();
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = _topic_list[i];
     if(t) {
       t->_stat_start_gen = t->get_generation();
+      t->_stat_push_dt = 0;
+      t->_stat_push_retry_cnt = 0;
+      t->_stat_pull_retry_cnt = 0;
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->_sub_list[j];
-        if(s) s->_stat_pull_cnt = 0;
+        if(s) {
+          s->_stat_pull_cnt = 0;
+          s->_stat_pull_dt = 0;
+        }
       }       
     }
   }
+#endif
 }
 
 //=============================================================================

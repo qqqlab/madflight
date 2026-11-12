@@ -46,6 +46,9 @@ class MsgTopic : public MsgTopicBase {
       memset(buf, 0, buflen * (bufdepth_1 + 1)); //clear buffer (not really needed)
       bufin = buf + buflen;
       buflast = buf + bufdepth_1 * buflen;
+#if MF_MSGBROKER_STAT
+      _stat_msglen = sizeof(T);
+#endif
     }
 
     uint32_t get_generation() override {
@@ -53,7 +56,14 @@ class MsgTopic : public MsgTopicBase {
     }
 
     uint32_t publish(T *msg) {
-      return _publish((void*) msg);
+#if MF_MSGBROKER_STAT
+      uint32_t t_start = micros();
+#endif
+      uint32_t rv = _publish((void*) msg);
+#if MF_MSGBROKER_STAT
+      _stat_push_dt += micros() - t_start;
+#endif
+      return rv; 
     }
 
     //pull latest message from topic
@@ -65,9 +75,15 @@ class MsgTopic : public MsgTopicBase {
   protected:  
     //publish a message, returns the published message generation
     uint32_t _publish(void *msg) override {
+#if MF_MSGBROKER_STAT
+        uint32_t t_start = micros();
+#endif
       memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
       _topic_gen = _topic_gen + 1; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
+#if MF_MSGBROKER_STAT
+      _stat_push_dt += micros() - t_start;
+#endif      
       return _topic_gen;
     }
 
@@ -99,6 +115,9 @@ class MsgTopic : public MsgTopicBase {
         }
         //the message got updated while we were memcpy'ing it, try again...
         //note: maybe increase subscriber_gen to look for next message and hopefully have a greater change of getting it
+#if MF_MSGBROKER_STAT
+        _stat_pull_retry_cnt++; //number of retries
+#endif
       }while(--tries);
       return false;
     }

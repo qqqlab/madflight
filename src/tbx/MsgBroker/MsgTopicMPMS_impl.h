@@ -65,6 +65,9 @@ public:
       buf[i].gen.store(i - buffer_size, std::memory_order_relaxed); 
     }
     _topic_gen.store(0, std::memory_order_relaxed);
+#if MF_MSGBROKER_STAT
+    _stat_msglen = sizeof(T);
+#endif
   }
 
   ~MsgTopicMPMS() {
@@ -80,7 +83,14 @@ public:
   }
 
   uint32_t publish(T *msg) {
-    return _publish((void*) msg);
+#if MF_MSGBROKER_STAT
+      uint32_t t_start = micros();
+#endif
+      uint32_t rv = _publish((void*) msg);
+#if MF_MSGBROKER_STAT
+      _stat_push_dt += micros() - t_start;
+#endif
+      return rv; 
   }
 
   //pull latest message from topic
@@ -103,6 +113,9 @@ protected:
           return tgen + 1; //return the topic_gen
         };
       }
+#if MF_MSGBROKER_STAT
+      _stat_push_retry_cnt++; //number of retries
+#endif
     }
   }
 
@@ -136,6 +149,9 @@ protected:
           return true; 
         }
       }
+#if MF_MSGBROKER_STAT
+      _stat_pull_retry_cnt++; //number of retries
+#endif
     }
   }
 
