@@ -48,7 +48,7 @@ Parameters are saved to EEPROM (i.e. flash). They can be modified with:
 
 |Parameter|Description|Default|Options|
 |-|-|-|-|
-|`ahr_gizmo`|AHRS Algorithm<br>_since v2.0.0_|MAHONY|MAHONY<br>MAHONY_BF<br>MADGWICK<br>VQF|
+|`ahr_gizmo`|AHRS Algorithm<br>_since v2.0.0_|MAHONY|MAHONY<br>MAHONY_BF<br>MADGWICK<br>VQF<br>INSLIB|
 
 ## <a id="bar"></a>BAR - Barometer Sensors
 

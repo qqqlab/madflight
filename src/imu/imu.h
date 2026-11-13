@@ -29,6 +29,8 @@ SOFTWARE.
 #define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
 #define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
 
+#define IMU_TASK_STACK_SIZE 20 * HAL_FREERTOS_STACK_1KB //need 20k bytes for INSLIB
+
 #include "../hal/MF_I2C.h"
 #include <SPI.h>
 #include "../cfg/cfg.h"

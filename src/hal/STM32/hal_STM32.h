@@ -26,7 +26,7 @@
 #include "DshotBidir/DshotBidir.h"
 
 #include <STM32FreeRTOS.h>
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 1024 //stack size in 32bit words
+#define HAL_FREERTOS_STACK_1KB 256 //stack size is in 32bit words
 
 //Arduino version string
 #define df2xstr(s)              #s

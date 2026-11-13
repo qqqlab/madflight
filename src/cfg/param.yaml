@@ -592,6 +592,7 @@ param:
       - MAHONY_BF
       - MADGWICK
       - VQF
+      - INSLIB
     comment: "AHRS Algorithm"
 
 # BAR - Barometer
