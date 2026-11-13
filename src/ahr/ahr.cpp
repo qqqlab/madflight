@@ -28,6 +28,7 @@ SOFTWARE.
 #include "AhrGizmoMahony.h"
 #include "AhrGizmoMadgwick.h"
 #include "AhrGizmoVqf.h"
+#include "AhrGizmoINSLIB.h"
 #include "../tbx/quaternion.h"
 
 //create global module instance
@@ -57,6 +58,9 @@ int Ahr::setup() {
     case Cfg::ahr_gizmo_enum::mf_VQF :
       gizmo = new AhrGizmoVqf(this);
       break;
+    case Cfg::ahr_gizmo_enum::mf_INSLIB :
+      gizmo = new AhrGizmoINSLIB(this);
+      break;
     default:
       gizmo = new AhrGizmoMahony(this, false);
       break;
@@ -66,57 +70,65 @@ int Ahr::setup() {
 }
 
 bool Ahr::update() {
+  bool updated = true;
   runtimeTrace.start();
 
-  // get sensor data from imu and mag
-  // correct the sensor data with the calibration values
-  // use simple first-order low-pass filter to get rid of high frequency noise
-  // store filtered data in ax ay az gx gy gz mx my mz
-  // call the sensor fusion algorithm to update q
-  // compute euler angles from q
+  if(config.gizmo == Cfg::ahr_gizmo_enum::mf_INSLIB) {
+    //update dt and ts for use by gizmo
+    dt = (config.pimu->ts - ts) * 1e-6;
+    ts = config.pimu->ts;
 
-  //Low-pass filtered, corrected accelerometer data
-  ax = acc_filter[0]->apply(config.pimu->ax);
-  ay = acc_filter[1]->apply(config.pimu->ay);
-  az = acc_filter[2]->apply(config.pimu->az);
-
-  //Low-pass filtered, corrected gyro data
-  gx = gyr_filter[0]->apply(config.pimu->gx);
-  gy = gyr_filter[1]->apply(config.pimu->gy);
-  gz = gyr_filter[2]->apply(config.pimu->gz);
-
-  //Magnetometer (External chip, or internal in IMU chip) 
-  if(config.pmag) {
-    float _mx = config.pmag->mx;
-    float _my = config.pmag->my;
-    float _mz = config.pmag->mz;
-    //update the mag values
-    if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
-      //Low-pass filtered magnetometer data
-      mx = mag_filter[0]->apply(_mx);
-      my = mag_filter[1]->apply(_my);
-      mz = mag_filter[2]->apply(_mz);
-    }
+    //call gizmo to update q
+    updated = gizmo->update();
   }else{
-    mx = 0;
-    my = 0;
-    mz = 0;
+    // get sensor data from imu and mag (correted with calibration values)
+    // use simple first-order low-pass filter to get rid of high frequency noise
+    // store filtered data in ax ay az gx gy gz mx my mz
+    // call the sensor fusion algorithm to update q
+    // compute euler angles from q
+
+    //Low-pass filtered, corrected accelerometer data
+    ax = acc_filter[0]->apply(config.pimu->ax);
+    ay = acc_filter[1]->apply(config.pimu->ay);
+    az = acc_filter[2]->apply(config.pimu->az);
+
+    //Low-pass filtered, corrected gyro data
+    gx = gyr_filter[0]->apply(config.pimu->gx);
+    gy = gyr_filter[1]->apply(config.pimu->gy);
+    gz = gyr_filter[2]->apply(config.pimu->gz);
+
+    //Magnetometer (External chip, or internal in IMU chip) 
+    if(config.pmag) {
+      float _mx = config.pmag->mx;
+      float _my = config.pmag->my;
+      float _mz = config.pmag->mz;
+      //update the mag values
+      if( ! (_mx == 0 && _my == 0 && _mz == 0) ) {
+        //Low-pass filtered magnetometer data
+        mx = mag_filter[0]->apply(_mx);
+        my = mag_filter[1]->apply(_my);
+        mz = mag_filter[2]->apply(_mz);
+      }
+    }else{
+      mx = 0;
+      my = 0;
+      mz = 0;
+    }
+
+    //update dt and ts for use by gizmo
+    dt = (config.pimu->ts - ts) * 1e-6;
+    ts = config.pimu->ts;
+
+    //call gizmo to update q
+    gizmo->update();
+
+    //update euler angles
+    quaternion_to_euler_deg(&roll, q);
   }
 
-  //update dt and ts for use by gizmo
-  dt = (config.pimu->ts - ts) * 1e-6;
-  ts = config.pimu->ts;
-
-  //call gizmo to update q
-  gizmo->update();
-
-  //update euler angles
-  quaternion_to_euler_deg(&roll, q);
-
-  topic.publish(this);
-
-  runtimeTrace.stop(true);
-  return true;
+  if(updated) topic.publish(this);
+  runtimeTrace.stop(updated);
+  return updated;
 }
 
 void Ahr::getQFromMag(float *q) {

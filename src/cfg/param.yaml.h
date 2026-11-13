@@ -12,7 +12,7 @@ namespace Cfg {
   const uint16_t param_cnt = 218; //number of parameters
 
   //enums for madflight library parameters (prefixed with 'mf_' to prevent macro expansion of global #defines like ADC or ICM45686)
-  enum class ahr_gizmo_enum : uint32_t { mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF };
+  enum class ahr_gizmo_enum : uint32_t { mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF,mf_INSLIB };
   enum class bar_gizmo_enum : uint32_t { mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B,mf_BMP580,mf_DPS310 };
   enum class bat_gizmo_enum : uint32_t { mf_NONE,mf_ADC,mf_INA226,mf_INA228 };
   enum class bbx_gizmo_enum : uint32_t { mf_NONE,mf_SDSPI,mf_SDMMC,mf_OPENLOG };
@@ -143,7 +143,7 @@ namespace Cfg {
     { "pin_mmc_clk", (float)-1, 'p', "" },
     { "pin_mmc_cmd", (float)-1, 'p', "" },
     { "pin_rcl_ppm", (float)-1, 'p', "" },
-    { "ahr_gizmo", (float)Cfg::ahr_gizmo_enum::mf_MAHONY, 'e', "mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF" },
+    { "ahr_gizmo", (float)Cfg::ahr_gizmo_enum::mf_MAHONY, 'e', "mf_MAHONY,mf_MAHONY_BF,mf_MADGWICK,mf_VQF,mf_INSLIB" },
     { "bar_gizmo", (float)Cfg::bar_gizmo_enum::mf_NONE, 'e', "mf_NONE,mf_BMP280,mf_BMP388,mf_BMP390,mf_MS5611,mf_HP203B,mf_BMP580,mf_DPS310" },
     { "bar_i2c_bus", (float)-1, 'i', "" },
     { "bar_i2c_adr", (float)0, 'i', "" },

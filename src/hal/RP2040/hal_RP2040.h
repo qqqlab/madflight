@@ -35,7 +35,7 @@ SOFTWARE.
 #endif
 
 #ifndef IMU_FREERTOS_TASK_PRIORITY
-  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 2) // =6; prio 7 is used for IdleCode0,1 tasks for flash operations; prio4 is used for CORE0,1 (loop,loop1) tasks
+  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 2) // =30; prio 31 is used for IdleCode0,1 tasks for flash operations; prio 16 is used for CORE0,1 (loop,loop1) tasks
 #endif
 
 #define HAL_SER_NUM 2
@@ -51,7 +51,7 @@ SOFTWARE.
 #include "DshotBidir/DshotBidir.h"
 #include "pio_registry.h"
 
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 1024 //stack size in 32bit words
+#define HAL_FREERTOS_STACK_1KB 256 //stack size is in 32bit words 
 
 //Arduino-pico version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR

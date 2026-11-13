@@ -26,7 +26,7 @@ public:
       return;
     }
     
-    if(xTaskCreate(lua_task, "mf_LUA", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
+    if(xTaskCreate(lua_task, "mf_LUA", 4 * HAL_FREERTOS_STACK_1KB, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       MF_printf("LUA: Task creation failed\n");
       return;
     }
