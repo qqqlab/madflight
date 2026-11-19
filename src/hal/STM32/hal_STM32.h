@@ -11,8 +11,8 @@
   IRQn_Type hal_get_irqn_from_pin(int pin);
 #endif  
 
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_IRQ //Use IMU as interrupt by default
+#ifndef MF_IMU_EXEC
+  #define MF_IMU_EXEC MF_IMU_EXEC_IRQ //Use IMU as interrupt by default
 #endif
 
 #define HAL_SER_NUM 8
@@ -26,9 +26,11 @@
 #include "DshotBidir/DshotBidir.h"
 
 #include <STM32FreeRTOS.h>
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 1024 //stack size in 32bit words
+#define HAL_FREERTOS_STACK_1KB 256 //stack size is in 32bit words
 
 //Arduino version string
 #define df2xstr(s)              #s
 #define df2str(s)               df2xstr(s)
 #define HAL_ARDUINO_STR "Arduino_Core_STM32 v" df2str(STM32_CORE_VERSION_MAJOR) "." df2str(STM32_CORE_VERSION_MINOR) "." df2str(STM32_CORE_VERSION_PATCH)
+
+#define HAL_FASTFUNC(x) x

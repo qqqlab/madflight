@@ -26,6 +26,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "../../hal/hal.h" //hal_memcpy
+
 template <class T>
 class MsgTopic : public MsgTopicBase {
   private:
@@ -51,11 +53,11 @@ class MsgTopic : public MsgTopicBase {
 #endif
     }
 
-    uint32_t get_generation() override {
+    uint32_t inline get_generation() override {
         return _topic_gen;
     }
 
-    uint32_t publish(T *msg) {
+    uint32_t HAL_FASTFUNC(publish)(T *msg) {
 #if MF_MSGBROKER_STAT
       uint32_t t_start = micros();
 #endif
@@ -67,18 +69,18 @@ class MsgTopic : public MsgTopicBase {
     }
 
     //pull latest message from topic
-    bool pull_latest(T* msg) {
+    bool HAL_FASTFUNC(pull_latest)(T* msg) {
       uint32_t gen_to_get = get_generation();
       return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
     }
 
   protected:  
     //publish a message, returns the published message generation
-    uint32_t _publish(void *msg) override {
+    uint32_t HAL_FASTFUNC(_publish)(void *msg) override {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif
-      memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
+      hal_memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
       _topic_gen = _topic_gen + 1; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
 #if MF_MSGBROKER_STAT
@@ -87,7 +89,7 @@ class MsgTopic : public MsgTopicBase {
       return _topic_gen;
     }
 
-   bool _pull(void* msg, PullOp op, uint32_t *gen_to_pull) override {
+   bool HAL_FASTFUNC(_pull)(void* msg, PullOp op, uint32_t *gen_to_pull) override {
       if(!_topic_gen) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
       uint8_t tries = 5;
       do {
@@ -107,10 +109,10 @@ class MsgTopic : public MsgTopicBase {
         }
 
         //get msg at depth
-        uint8_t* bufout = buf + ((tgen - depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
-        memcpy(msg, bufout, msglen); //copy the message
-        if((_topic_gen - tgen) < (bufdepth_1 - depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
-          *gen_to_pull = tgen - depth; //update the subscriber generation
+        uint8_t* bufout = buf + ((tgen - (uint32_t)depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
+        hal_memcpy(msg, bufout, msglen); //copy the message
+        if((_topic_gen - tgen) < (bufdepth_1 - (uint32_t)depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
+          *gen_to_pull = tgen - (uint32_t)depth; //update the subscriber generation
           return true;
         }
         //the message got updated while we were memcpy'ing it, try again...

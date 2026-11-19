@@ -30,7 +30,7 @@ SOFTWARE.
 
 #include <atomic>
 #include <cassert>
-#include <cstring> //memcpy
+#include "../../hal/hal.h" //hal_memcpy
 
 template <typename T>
 class MsgTopicMPMS : public MsgTopicBase {
@@ -108,7 +108,7 @@ protected:
       uint32_t cgen = cell->gen.load(std::memory_order_acquire);
       if (cgen + buf_mask + 1 == tgen) { //cgen should be buf_size behind tgen (buf_size = buf_mask + 1), if not then another thread published while we read tgen and cgen
         if (_topic_gen.compare_exchange_weak(tgen, tgen + 1, std::memory_order_relaxed)) { //increase topic_gen, this invalidates buf[tgen].gen
-          memcpy(&cell->msg, msg, sizeof(T)); //write msg data to cell
+          hal_memcpy(&cell->msg, msg, sizeof(T)); //write msg data to cell
           cell->gen.store(tgen, std::memory_order_release); //write valid buf[tgen].gen
           return tgen + 1; //return the topic_gen
         };
@@ -142,7 +142,7 @@ protected:
       cell_t* cell = &buf[tgen & buf_mask]; 
       uint32_t cgen1 = cell->gen.load(std::memory_order_acquire);
       if(cgen1 == tgen) { //check cell.gen
-        memcpy(msg, &cell->msg, sizeof(T)); //retrieve msg data from cell
+        hal_memcpy(msg, &cell->msg, sizeof(T)); //retrieve msg data from cell
         uint32_t cgen2 = cell->gen.load(std::memory_order_acquire);
         if(cgen2 == tgen) { //if cell.gen did not change, then msg is consistent
           *gen_to_pull = tgen + 1; //set subscriber_gen to the topic_gen we retrieved

@@ -379,4 +379,20 @@ BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
   }
 }
 
+void * HAL_FASTFUNC(hal_memcpy)(void *dest, const void *src, size_t n) {
+    // If there's any misalignment or too small, use regular memcpy which can handle it
+    if ((n < 16) || (((uint32_t)dest) | ((uint32_t)src) | n) & 3) {
+        return memcpy(dest, src, n);
+    }
+
+    uint32_t* pSrc = (uint32_t*)src;
+    uint32_t* pDst = (uint32_t*)dest;
+    n = n >> 2;
+    do {
+		  *pDst = *pSrc;
+		  pDst++;
+		  pSrc++;
+	  }while(--n);
+    return dest;
+}
 #endif //#ifdef ARDUINO_ARCH_RP2040

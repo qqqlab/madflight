@@ -29,19 +29,17 @@ SOFTWARE.
   #define MF_SERIAL_DMA 1
 #endif
 
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_FREERTOS_OTHERCORE
-  //#define IMU_EXEC IMU_EXEC_FREERTOS
+#ifndef MF_IMU_EXEC
+  #define MF_IMU_EXEC MF_IMU_EXEC_2TASK_OTHERCORE // MF_IMU_EXEC_IRQ_TASK_OTHERCORE
 #endif
 
 #ifndef IMU_FREERTOS_TASK_PRIORITY
-  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 2) // =6; prio 7 is used for IdleCode0,1 tasks for flash operations; prio4 is used for CORE0,1 (loop,loop1) tasks
+  #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 2) // =30; prio 31 is used for IdleCode0,1 tasks for flash operations; prio 16 is used for CORE0,1 (loop,loop1) tasks
 #endif
 
 #define HAL_SER_NUM 2
 #define HAL_I2C_NUM 2
 #define HAL_SPI_NUM 2
-
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
@@ -51,7 +49,7 @@ SOFTWARE.
 #include "DshotBidir/DshotBidir.h"
 #include "pio_registry.h"
 
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 1024 //stack size in 32bit words
+#define HAL_FREERTOS_STACK_1KB 256 //stack size is in 32bit words 
 
 //Arduino-pico version string
 #define HAL_ARDUINO_STR "Arduino-Pico v" ARDUINO_PICO_VERSION_STR
@@ -78,3 +76,5 @@ SOFTWARE.
 #if !__FREERTOS
   #error "FreeRTOS required - Arduino IDE menu: Tools->Operating System = FreeRTOS SMP - PlatformIO add: build_flags = -DPIO_FRAMEWORK_ARDUINO_ENABLE_FREERTOS"
 #endif
+
+#define HAL_FASTFUNC(x) __no_inline_not_in_flash_func(x)

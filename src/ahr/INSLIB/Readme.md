@@ -1,0 +1,1 @@
+All the INSLIB library files come from https://github.com/jnz/INSLIB/ and https://github.com/jnz/KFCoreKFCore version 1.1, commit https://github.com/jnz/KFCore/commit/26b53c6de31873ce9725407bf3e88112f88595a9INSLIB release 1.4.2 https://github.com/jnz/INSLIB/releases/tag/v1.4.2

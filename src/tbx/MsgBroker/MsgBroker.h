@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "../../hal/hal.h" //HAL_FASTFUNC(x)
+
 #ifndef MF_MSGBROKER_STAT
   #define MF_MSGBROKER_STAT 1 //enable statistics
 #endif
@@ -152,12 +154,12 @@ class MsgSubscription : public MsgSubscriptionBase {
 
     // Pull next (oldest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
-    bool pull_next(T *msg) {
+    bool HAL_FASTFUNC(pull_next)(T *msg) {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif
         uint32_t gen_to_get = _sub_gen + 1; //get next msg
-        if(!topic->_pull(msg, MsgTopicBase::PullOp::FIRST_GREATER_EQUAL, &gen_to_get)) return false;
+        if(!topic->_pull((void*)msg, MsgTopicBase::PullOp::FIRST_GREATER_EQUAL, &gen_to_get)) return false;
         _sub_gen = gen_to_get;
 #if MF_MSGBROKER_STAT
         _stat_pull_cnt++;
@@ -168,13 +170,13 @@ class MsgSubscription : public MsgSubscriptionBase {
 
     // Pull latest (newest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
-    bool pull_latest(T *msg) {
+    bool HAL_FASTFUNC(pull_latest)(T *msg) {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif
         uint32_t gen_to_get = topic->get_generation();
         if(gen_to_get == _sub_gen) return false; //last msg in fifo was already pulled
-        if(!topic->_pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get)) return false;
+        if(!topic->_pull((void*)msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get)) return false;
         _sub_gen = gen_to_get;
 #if MF_MSGBROKER_STAT
         _stat_pull_cnt++;

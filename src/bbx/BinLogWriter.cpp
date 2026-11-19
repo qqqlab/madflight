@@ -76,7 +76,7 @@ namespace BinLogWriter {
     //queue = xQueueCreateStatic(QUEUE_LENGTH, sizeof(msg_t), ucQueueStorageArea, &xStaticQueue); //not available for STM32
     queue = xQueueCreate(QUEUE_LENGTH, sizeof(msg_t));
 
-    if(xTaskCreate(bbx_task, "mf_BBX", MF_FREERTOS_DEFAULT_STACK_SIZE, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
+    if(xTaskCreate(bbx_task, "mf_BBX", 4 * HAL_FREERTOS_STACK_1KB, NULL, uxTaskPriorityGet(NULL), &xHandle) != pdPASS ){
       MF_printf("BBX: Task creation failed\n");
     }
   }

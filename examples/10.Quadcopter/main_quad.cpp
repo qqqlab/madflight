@@ -108,16 +108,17 @@ void imu_loop() {
   led_Blink();
 
   // Sensor fusion: update ahr.roll, ahr.pitch, and ahr.yaw angle estimates (degrees) from IMU data
-  ahr.update(); 
+  if(ahr.update()) {
 
-  //PID Controller
-  pid.controller();
+    //PID Controller
+    pid.controller();
 
-  //Updates out.arm, the output armed flag
-  out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
+    //Updates out.arm, the output armed flag
+    out_KillSwitchAndFailsafe(); //Cut all motor outputs if DISARMED or failsafe triggered.
 
-  //Actuator mixing
-  out_Mixer(); //Mixes PID outputs and sends command pulses to the motors, if mot.arm == true
+    //Actuator mixing
+    out_Mixer(); //Mixes PID outputs and sends command pulses to the motors, if mot.arm == true
+  }
 }
 
 //========================================================================================================================

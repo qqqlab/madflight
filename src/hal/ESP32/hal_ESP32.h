@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
+#ifndef MF_IMU_EXEC
+  #define MF_IMU_EXEC MF_IMU_EXEC_TASK //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
 #endif
 #ifndef IMU_FREERTOS_TASK_PRIORITY
   #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 1) //IMU Interrupt task priority, higher number is higher priority.
@@ -29,7 +29,7 @@
 #include "Dshot/Dshot.h"
 #include "DshotBidir/DshotBidir.h"
 
-#define MF_FREERTOS_DEFAULT_STACK_SIZE 4096 //stack size on ESP32 is in bytes, not in 32bit words
+#define HAL_FREERTOS_STACK_1KB 1024 //stack size on ESP32 is in bytes, not in 32bit words
 
 //Arduino version string
 #ifndef ESP_ARDUINO_VERSION_MAJOR
@@ -54,3 +54,8 @@
     #define MF_MCU_NAME "ESP32 (unknown type)"
   #endif
 #endif
+
+#define HAL_FASTFUNC(x) x
+
+//TODO: try this
+//#define HAL_FASTFUNC(x) IRAM_ATTR x
