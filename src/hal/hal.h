@@ -65,3 +65,5 @@ BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
                             UBaseType_t uxPriority,
                             TaskHandle_t * const pvCreatedTask,
                             const int xCoreID);
+
+void * hal_memcpy(void *dest, const void *src, size_t n);

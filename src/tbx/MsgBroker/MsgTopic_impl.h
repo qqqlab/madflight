@@ -26,6 +26,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "../../hal/hal.h" //hal_memcpy
+
 template <class T>
 class MsgTopic : public MsgTopicBase {
   private:
@@ -78,7 +80,7 @@ class MsgTopic : public MsgTopicBase {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif
-      memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
+      hal_memcpy(bufin, msg, buflen); //use buflen for speed (reading potentially some garbage at the end of msg)
       _topic_gen = _topic_gen + 1; //update as soon as data is in buf
       if(bufin < buflast) bufin += buflen; else bufin = buf; //calc next bufin
 #if MF_MSGBROKER_STAT
@@ -108,7 +110,7 @@ class MsgTopic : public MsgTopicBase {
 
         //get msg at depth
         uint8_t* bufout = buf + ((tgen - depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
-        memcpy(msg, bufout, msglen); //copy the message
+        hal_memcpy(msg, bufout, msglen); //copy the message
         if((_topic_gen - tgen) < (bufdepth_1 - depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
           *gen_to_pull = tgen - depth; //update the subscriber generation
           return true;

@@ -30,11 +30,12 @@ SOFTWARE.
 #define MF_IMU_EXEC_TASK_OTHERCORE 3      //load and process imu data in mf_IMU task on second core (works on RP2040)
 #define MF_IMU_EXEC_IRQ_TASK 4            //load imu data in IRQ, process in mf_AHR task
 #define MF_IMU_EXEC_IRQ_TASK_OTHERCORE 5  //load imu data in IRQ, process in mf_AHR task (run task on other core)
-//#define MF_IMU_EXEC_2TASK 6               //load imu data in mf_IMU task, process in mf_AHR task
-//#define MF_IMU_EXEC_2TASK_OTHERCORE 7     //load imu data in mf_IMU task, process in mf_AHR task (run tasks on other core)
+#define MF_IMU_EXEC_2TASK 6               //load imu data in mf_IMU task, process in mf_AHR task
+#define MF_IMU_EXEC_2TASK_OTHERCORE 7     //load imu data in mf_IMU task, process in mf_AHR task (run tasks on other core)
 
 
-#define IMU_TASK_STACK_SIZE 20 * HAL_FREERTOS_STACK_1KB //need 20k bytes for INSLIB
+#define MF_IMU_TASK_STACK_SIZE 4 * HAL_FREERTOS_STACK_1KB
+#define MF_AHR_TASK_STACK_SIZE 20 * HAL_FREERTOS_STACK_1KB //need 20k bytes for INSLIB
 
 #include "../hal/MF_I2C.h"
 #include <SPI.h>

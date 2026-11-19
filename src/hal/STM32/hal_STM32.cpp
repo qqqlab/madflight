@@ -398,4 +398,7 @@ BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
   return xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
 }
 
+inline void * hal_memcpy(void *dest, const void *src, size_t n) {
+  return memcpy(dest, src, n);
+}
 #endif //#ifdef ARDUINO_ARCH_STM32

@@ -64,7 +64,7 @@ void MsgBroker::top() {
 #if MF_MSGBROKER_STAT  
   float dt = 1e-6 * (micros() - _stat_ts);
   MF_printf("\n=== Message Broker - Measurement Period: %.2f seconds ===\n\n", dt);
-  MF_printf(" Type:Name           Freq      Gen    Count  Runtime\n");
+  MF_printf(" Type:Name           Freq      Gen    Count  Rt/msg\n");
   for(int i = 0; i < MF_MSGTOPIC_LIST_SIZE; i++) {
     MsgTopicBase *t = _topic_list[i];
     if(t) {

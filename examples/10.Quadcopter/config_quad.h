@@ -116,7 +116,8 @@ rcl_flt5 ANGLE
 //pin_led       -1
 
 //--- AHR --- AHRS (keep MAHONY, unless you want to experiment)
-//ahr_gizmo      MAHONY // options: MAHONY, MAHONY_BF, MADGWICK, VQF
+//ahr_gizmo      MAHONY // options: MAHONY, MAHONY_BF, MADGWICK, VQF, INSLIB
+ahr_gizmo      INSLIB
 
 //--- Serial bus 0 ---
 //pin_ser0_rx   -1

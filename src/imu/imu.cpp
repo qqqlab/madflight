@@ -390,7 +390,7 @@ void _imu_ll_interrupt_handler();
         int coreID = -1; //any core
         MF_printf("IMU: MF_IMU_EXEC_TASK\n");
       #endif
-      hal_xTaskCreate(_imu_ll_task, "mf_IMU", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
+      hal_xTaskCreate(_imu_ll_task, "mf_IMU", MF_IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
     }
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
   }
@@ -444,7 +444,7 @@ void Imu::_interrupt_handler() {
         int coreID = -1; //any core
         MF_printf("IMU: MF_IMU_EXEC_IRQ_TASK\n");
       #endif
-      hal_xTaskCreate(_imu_ll_task, "mf_AHR", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
+      hal_xTaskCreate(_imu_ll_task, "mf_AHR", MF_AHR_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
     }
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
   }
@@ -458,6 +458,76 @@ void Imu::_interrupt_handler() {
     imu.stat_io_runtime += micros() - start; //runtime imu.update (i.e. of SPI/I2C transfer)
 
     //notify RTOS task _imu_ll_task to handle processing of imu data
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+//-------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------
+#elif MF_IMU_EXEC == MF_IMU_EXEC_2TASK || MF_IMU_EXEC == MF_IMU_EXEC_2TASK_OTHERCORE
+//load imu data in imu task, process data in ahr task
+
+  TaskHandle_t _imu_ll_task_handle = NULL;
+  TaskHandle_t _imu_ll_task2_handle = NULL;  
+
+//this function executes whenever the imu task is triggered
+void HAL_FASTFUNC(Imu::_interrupt_handler)() {
+  //latency between start of low level interrupt handler and start of this method
+  stat_latency += micros() - _imu_ll_interrupt_ts;
+
+  //start of task timestamp
+  uint32_t task_ts = micros();
+
+  //update sensor data
+  update();
+
+  this->stat_io_runtime += micros() - task_ts; //runtime of SPI/I2C transfer
+
+  //call external update event handler
+  //if(onUpdate) onUpdate();
+  vTaskNotifyGiveFromISR(_imu_ll_task2_handle, NULL);
+
+  uint32_t rt = micros() - task_ts; //runtime of full update including external event handler
+  this->stat_runtime += rt;
+  if(this->stat_runtime_max < rt) this->stat_runtime_max = rt; //max runtime
+  this->stat_cnt++;
+}
+
+  void HAL_FASTFUNC(_imu_ll_task)(void*) {
+    attachInterrupt(digitalPinToInterrupt(imu.config.pin_int), _imu_ll_interrupt_handler, RISING);
+    for(;;) {
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+      imu._interrupt_handler();
+    }
+  }
+
+  void HAL_FASTFUNC(_imu_ll_task2)(void*) {
+    for(;;) {
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+      //call external update event handler
+      if(imu.onUpdate) imu.onUpdate();
+    }
+  }
+
+  void _imu_ll_interrupt_setup(int interrupt_pin) {
+    if(!_imu_ll_task_handle) {
+      #if MF_IMU_EXEC == MF_IMU_EXEC_2TASK_OTHERCORE
+        int callcore = hal_get_core_num();
+        int coreID = (callcore + 1) % 2;
+        MF_printf("IMU: MF_IMU_EXEC_2TASK_OTHERCORE call_core=%d imu_core=%d\n", callcore, coreID);
+      #else
+        int coreID = -1; //any core
+        MF_printf("IMU: MF_IMU_EXEC_2TASK\n");
+      #endif
+      hal_xTaskCreate(_imu_ll_task,  "mf_IMU", MF_IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY   /*priority 0=lowest*/, &_imu_ll_task_handle,  coreID);
+      hal_xTaskCreate(_imu_ll_task2, "mf_AHR", MF_AHR_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY-1 /*priority 0=lowest*/, &_imu_ll_task2_handle, coreID);
+    }
+  }
+  
+  void HAL_FASTFUNC(_imu_ll_interrupt_handler2)() {
+    //let RTOS task _imu_ll_task handle the interrupt
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -486,7 +556,7 @@ void Imu::_interrupt_handler() {
 #endif
 
 //main IRQ handler - timestamp + busy wrapper around _imu_ll_interrupt_handler2()
-void _imu_ll_interrupt_handler() {
+void HAL_FASTFUNC(_imu_ll_interrupt_handler)() {
   _imu_ll_interrupt_ts = micros();
   if(_imu_ll_interrupt_enabled) {
     imu.interrupt_cnt = imu.interrupt_cnt + 1; //NOTE: "imu.interrupt_cnt++" gives warning: '++' expression of 'volatile'-qualified type is deprecated

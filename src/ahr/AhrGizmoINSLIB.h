@@ -12,7 +12,7 @@
 // Configuration
 //---------------------------------------------------------------------------------
 struct InsFusionConfig {
-  uint32_t samples_per_epoch = 4; // IMU samples per INS epoch. 1 = every IMU sample goes straight to the filter (no averaging).
+  uint32_t samples_per_epoch = 8; // IMU samples per INS epoch. 1 = every IMU sample goes straight to the filter (no averaging).
   float gnss_rx_latency_ms = 100; // receiver internal latency before the PVT message is sent. VERIFY/tune
   uint8_t gnss_min_sats = 6;
   float gnss_max_vel_acc_mps = 2.0f;
@@ -64,7 +64,6 @@ public:
   bool update() {
     //drain imu FIFO, average imu data, and feed ahr filter
     if (!started) return false;
-    if (!imu_sub) imu_sub = new MsgSubscription<ImuState>("inslib", &imu.topic);
     ImuState s;
 
     uint32_t ts = 0;
@@ -110,6 +109,7 @@ public:
 
   // Returns 0 on success
   int setup() {
+    started = false;
     if (!imu.installed()) return -1;
 
     // nav_suite_t is large (history ring buffers + several Kalman filters): keep it static, zero-initialised.
@@ -129,6 +129,11 @@ public:
     // gnss_max_*_stddev, imu_*_misalignment, imu_acc_fixed_bias (use your accel calibration), etc.
 
     if (nav_suite_init(&ns, &init, &opt) != 0) return -2;
+
+    if (!imu_sub) imu_sub = new MsgSubscription<ImuState>("inslib", &imu.topic);
+    if (!mag_sub) mag_sub = new MsgSubscription<MagState>("inslib", &mag.topic);
+    if (!bar_sub) bar_sub = new MsgSubscription<BarState>("inslib", &bar.topic);
+    if (!gps_sub) gps_sub = new MsgSubscription<GpsState>("inslib", &gps.topic);
 
     started = true;
     MF_printf("AHR: nav_suite_t = %u bytes\n", (unsigned)sizeof(nav_suite_t));
@@ -179,32 +184,37 @@ private:
       m.gyr.data[i] = gyr[i] * D2R; // deg/s -> rad/s
     }
 
+    state->gnss_used = false;
+//*
     // ---- 2. magnetometer (new sample only) ----
     if (insconfig.use_mag) {
       MagState ms;
-      if (mag.topic.pull_latest(&ms) && ms.ts != last_mag_ts && !(ms.mx == 0 && ms.my == 0 && ms.mz == 0)) {
+      if (mag_sub->pull_latest(&ms) && ms.ts != last_mag_ts && !(ms.mx == 0 && ms.my == 0 && ms.mz == 0)) {
         last_mag_ts = ms.ts;
         m.mag.is_valid = true; // VERIFY: sign/axes of mag vs. IMU (nose north, level: mx large positive, mz positive in the northern hemisphere)
         m.mag.data[0] = ms.mx; m.mag.data[1] = ms.my; m.mag.data[2] = ms.mz;
       }
     }
+//*/
 
+//*
     // ---- 3. barometer (new sample only) ----
     {
       BarState bs;
-      if (bar.topic.pull_latest(&bs) && bs.ts != last_bar_ts && bs.press > 30000.0f && bs.press < 110000.0f) {
+      if (bar_sub->pull_latest(&bs) && bs.ts != last_bar_ts && bs.press > 30000.0f && bs.press < 110000.0f) {
         last_bar_ts = bs.ts;
         m.baro.is_valid = true;
         m.baro.pressure_pa = bs.press;
         m.baro.stddev_m = 0.0f; // consumer default
       }
     }
+//*/
 
+//*
     // ---- 4. GNSS (new fix only) ----
-    state->gnss_used = false;
     {
       GpsState g;
-      if (gps.installed() && gps.topic.pull_latest(&g) && g.time != last_gps_itow && g.fix >= GPS_OK_FIX_3D) {
+      if (gps.installed() && gps_sub->pull_latest(&g) && g.time != last_gps_itow && g.fix >= GPS_OK_FIX_3D) {
         last_gps_itow = g.time;
         float vacc = g.have_vel_acc ? g.vel_acc * 1e-3f : 1.0f; // mm/s -> m/s
         if (g.sat >= insconfig.gnss_min_sats && vacc > 0 && vacc < insconfig.gnss_max_vel_acc_mps) {
@@ -253,6 +263,7 @@ private:
         }
       }
     }
+//*/
 
     // ---- 5. run the filters ----
     nav_suite_update(&ns, &m);
@@ -311,19 +322,6 @@ private:
     if (last_step_us > max_step_us) max_step_us = last_step_us;
     return true;
   }
-
-/*  
-  // FreeRTOS task: 16 KB+ of stack needed (INSLIB reports ~13 KB worst case on x86-64, VERIFY with uxTaskGetStackHighWaterMark)
-  static void task(void* pv) {
-    InsFusion* self = (InsFusion*)pv;
-    TickType_t last = xTaskGetTickCount();
-    const TickType_t period = pdMS_TO_TICKS(self->insconfig.period_ms);
-    for (;;) {
-      self->step();
-      vTaskDelayUntil(&last, period);
-    }
-  }
-*/
 
   // Best available climb rate [m/s]: GNSS-aided INS when it is ready and in FULL mode, else the baro/accel filter.
   float getV() {
@@ -427,6 +425,9 @@ private:
 private:
   nav_suite_t ns; // lives inside the object: declare the InsFusion instance as a global, never on a task stack
   MsgSubscription<ImuState>* imu_sub = nullptr;
+  MsgSubscription<MagState>* mag_sub = nullptr;
+  MsgSubscription<BarState>* bar_sub = nullptr;
+  MsgSubscription<GpsState>* gps_sub = nullptr;
   TaskHandle_t task_handle = nullptr;
   bool started = false, have_t_prev = false, mag_model_set = false;
   int64_t t_prev64 = 0, t_unwrapped = 0;
