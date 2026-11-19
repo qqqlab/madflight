@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_FREERTOS //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
+#ifndef MF_IMU_EXEC
+  #define MF_IMU_EXEC MF_IMU_EXEC_TASK //ESP32 always uses FreeRTOS on core0 (can't used float on core1)
 #endif
 #ifndef IMU_FREERTOS_TASK_PRIORITY
   #define IMU_FREERTOS_TASK_PRIORITY (configMAX_PRIORITIES - 1) //IMU Interrupt task priority, higher number is higher priority.

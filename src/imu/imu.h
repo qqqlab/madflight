@@ -25,9 +25,14 @@ SOFTWARE.
 #pragma once
 
 //Available excecution methods (not all platforms support all methods)
-#define IMU_EXEC_IRQ 1            //execute in IRQ context on first core (works on STM32. Does NOT work on ESP32, RP2040)
-#define IMU_EXEC_FREERTOS 2       //execute as IRQ triggered high priority FreeRTOS task on same core as setup() (works on ESP32, RP2040)
-#define IMU_EXEC_FREERTOS_OTHERCORE 3 //execute as IRQ triggered high priority FreeRTOS task on second core (works on RP2040)
+#define MF_IMU_EXEC_IRQ 1                 //load and process imu data in IRQ on first core (works on STM32. Does NOT work on ESP32, RP2040)
+#define MF_IMU_EXEC_TASK 2                //load and process imu data in mf_IMU task on same core as setup() (works on ESP32, RP2040)
+#define MF_IMU_EXEC_TASK_OTHERCORE 3      //load and process imu data in mf_IMU task on second core (works on RP2040)
+#define MF_IMU_EXEC_IRQ_TASK 4            //load imu data in IRQ, process in mf_AHR task
+#define MF_IMU_EXEC_IRQ_TASK_OTHERCORE 5  //load imu data in IRQ, process in mf_AHR task (run task on other core)
+//#define MF_IMU_EXEC_2TASK 6               //load imu data in mf_IMU task, process in mf_AHR task
+//#define MF_IMU_EXEC_2TASK_OTHERCORE 7     //load imu data in mf_IMU task, process in mf_AHR task (run tasks on other core)
+
 
 #define IMU_TASK_STACK_SIZE 20 * HAL_FREERTOS_STACK_1KB //need 20k bytes for INSLIB
 
@@ -35,7 +40,7 @@ SOFTWARE.
 #include <SPI.h>
 #include "../cfg/cfg.h"
 #include "../mag/mag.h"
-#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker
+#include "../tbx/tbx.h" //RuntimeTrace, MsgBroker, MF_Mutex
 
 //default settings
 #ifndef IMU_GYRO_DPS

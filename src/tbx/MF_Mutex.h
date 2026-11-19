@@ -31,17 +31,21 @@ class MF_Mutex
     std::atomic_flag lockflag{};
  
   public:
+    //returns true if lock was acquired
     bool try_lock() {
         return !lockflag.test_and_set(std::memory_order_acquire);
     }
+
     void unlock() {
         lockflag.clear(std::memory_order_release);
     }
+
+    //returns true if lock was acquired, false on timeout
     bool lock(uint32_t timeout_us) {
         if(try_lock()) return true;
-        uint32_t ts = millis();
+        uint32_t ts = micros();
         while(!try_lock()) {
-          if(millis() - ts >= timeout_us) return false;
+          if(micros() - ts >= timeout_us) return false;
         }
         return true;
     }

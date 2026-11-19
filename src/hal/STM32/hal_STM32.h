@@ -11,8 +11,8 @@
   IRQn_Type hal_get_irqn_from_pin(int pin);
 #endif  
 
-#ifndef IMU_EXEC
-  #define IMU_EXEC IMU_EXEC_IRQ //Use IMU as interrupt by default
+#ifndef MF_IMU_EXEC
+  #define MF_IMU_EXEC MF_IMU_EXEC_IRQ //Use IMU as interrupt by default
 #endif
 
 #define HAL_SER_NUM 8

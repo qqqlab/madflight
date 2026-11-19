@@ -436,6 +436,8 @@ void madflight_setup() {
   if(!imu.installed() && (Cfg::imu_gizmo_enum)cfg.imu_gizmo != Cfg::imu_gizmo_enum::mf_NONE) {
     madflight_panic("IMU install failed.");
   }
+  uint32_t imu_start_gen = imu.topic.get_generation();
+  uint32_t imu_start_ts = micros();
 
   // IMU - Connect imu internal magnetometer to mag
   if(imu.config.has_mag && !mag.gizmo) {
@@ -473,6 +475,9 @@ void madflight_setup() {
       // Calibrate for zero gyro readings, assuming vehicle not moving when powered up. Comment out to only use cfg values. (Use CLI to calibrate acc.)
       cli.calibrate_gyro();
     #endif
+
+    //report actual imu frequency
+    MF_printf("IMU: actual sampling frequency: %.0fHz\n", 1000000.0f * (imu.topic.get_generation() - imu_start_gen) / (micros() - imu_start_ts));
   }
 
   // PID - After IMU

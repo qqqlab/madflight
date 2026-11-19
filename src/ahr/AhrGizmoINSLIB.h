@@ -6,14 +6,13 @@
 #include <madflight_modules.h> // modules only - madflight.h must be included exactly once (in main.cpp)
 #include <math.h>
 
-#include "non-MIT-INSLIB/nav_suite.h" // INSLIB (has its own extern "C" guards)
+#include "INSLIB/nav_suite.h" // INSLIB (has its own extern "C" guards)
 
 //---------------------------------------------------------------------------------
 // Configuration
 //---------------------------------------------------------------------------------
 struct InsFusionConfig {
-  uint32_t samples_per_epoch = 8; // IMU samples per INS epoch. 1 = every IMU sample goes straight to the filter (no averaging).
-  //uint32_t period_ms = 10;        // only for the optional INS task (start_task): how often it drains the IMU topic
+  uint32_t samples_per_epoch = 4; // IMU samples per INS epoch. 1 = every IMU sample goes straight to the filter (no averaging).
   float gnss_rx_latency_ms = 100; // receiver internal latency before the PVT message is sent. VERIFY/tune
   uint8_t gnss_min_sats = 6;
   float gnss_max_vel_acc_mps = 2.0f;
@@ -63,21 +62,36 @@ public:
 //---------------------------------------------------------------------------------
 
   bool update() {
-    //if (feed_) {
-      Imu* i = config->pimu; // raw (calibrated, unfiltered) IMU sample
-      return feed(i->ax, i->ay, i->az, i->gx, i->gy, i->gz, i->ts);
-      //if (ins_->state->att_valid) for (int k = 0; k < 4; k++) ahr_->q[k] = ins_->state->q[k];
-    //} else {
-      //InsFusionState s; // consistent copy: the INS task publishes concurrently
-      //if (ins_->topic.pull_latest(&s) && s.att_valid) for (int k = 0; k < 4; k++) ahr_->q[k] = s.q[k];
-    //}
-    //return true;
+    //drain imu FIFO, average imu data, and feed ahr filter
+    if (!started) return false;
+    if (!imu_sub) imu_sub = new MsgSubscription<ImuState>("inslib", &imu.topic);
+    ImuState s;
+
+    uint32_t ts = 0;
+    while (imu_sub->pull_next(&s)) {
+      avg_acc[0] += s.ax;
+      avg_acc[1] += s.ay;
+      avg_acc[2] += s.az;
+      avg_gyr[0] += s.gx;
+      avg_gyr[1] += s.gy;
+      avg_gyr[2] += s.gz;
+      ts = s.ts;
+      avg_n++;
+    }
+    if(avg_n < insconfig.samples_per_epoch ) return false;
+    const float inv_n = 1.0f / (float)avg_n;
+    for (int i = 0; i < 3; i++) {
+      avg_acc[i] *= inv_n;
+      avg_gyr[i] *= inv_n;
+    }
+    bool rv = feed(avg_acc, avg_gyr, ts);
+    for (int i = 0; i < 3; i++) {
+      avg_acc[i] = 0;
+      avg_gyr[i] = 0;;
+    }
+    avg_n = 0;
+    return rv;
   }
-
-
-
-
-
 
 //---------------------------------------------------------------------------------
 // Module
@@ -121,38 +135,15 @@ public:
     return 0;
   }
 
-  // Drain the IMU topic and feed every sample to the filter. Use this from the optional INS task (start_task).
-  // Returns true if at least one epoch was processed.
-  bool step() {
-    if (!started) return false;
-    if (!imu_sub) imu_sub = new MsgSubscription<ImuState>("ins_imu", &imu.topic);
-    ImuState s;
-    bool any = false;
-    while (imu_sub->pull_next(&s)) any |= feed(s.ax, s.ay, s.az, s.gx, s.gy, s.gz, s.ts);
-    return any;
-  }
-
+private:
   // Feed ONE raw IMU sample (madflight units/frame: [g], [deg/s], ts in [us]).
-  // With insconfig.samples_per_epoch == 1 every sample is one filter epoch (no averaging); with N > 1 the samples are
-  // averaged over N. Call from exactly one context (the IMU task via the AHR gizmo / imu_loop(), OR the INS task).
   // Returns true if an epoch was processed.
-  bool feed(float ax, float ay, float az, float gx, float gy, float gz, uint32_t ts) {
+  bool feed(float acc[3], float gyr[3], uint32_t ts) {
     if (!started) return false;
-    acc_sum[0] += ax; acc_sum[1] += ay; acc_sum[2] += az;
-    gyr_sum[0] += gx; gyr_sum[1] += gy; gyr_sum[2] += gz;
-    n_acc++;
-    n_imu_samples++;
-    if (n_acc < insconfig.samples_per_epoch) return false;
 
-    uint32_t t0 = micros();
-    float sum_a[3] = {acc_sum[0], acc_sum[1], acc_sum[2]};
-    float sum_g[3] = {gyr_sum[0], gyr_sum[1], gyr_sum[2]};
-    const int n = (int)n_acc;
-    const uint32_t ts_end = ts;
-    for (int i = 0; i < 3; i++) acc_sum[i] = gyr_sum[i] = 0;
-    n_acc = 0;
+    volatile uint32_t t0 = micros();
 
-    int64_t t_end64 = unwrap(ts_end);
+    int64_t t_end64 = unwrap(ts);
     if (!have_t_prev) { // first epoch: just establish time base
       t_prev64 = t_end64;
       have_t_prev = true;
@@ -168,7 +159,6 @@ public:
     if (dt_mean_us > 0 && dt_us > 1.5f * dt_mean_us) n_gap++;
     dt_mean_us = (dt_mean_us == 0) ? (float)dt_us : dt_mean_us + 0.01f * ((float)dt_us - dt_mean_us);
 
-    const float inv_n = 1.0f / (float)n;
     const float G = 9.80665f;
     const float D2R = 0.017453292519943295f;
 
@@ -181,11 +171,13 @@ public:
     // INSLIB: specific force in [m/s^2], FRD, -9.8 on z when level. => negate. VERIFY with dbg_acc_ins.
     m.acc.is_valid = true;
     for (int i = 0; i < 3; i++) {
-      m.acc.data[i] = -sum_a[i] * inv_n * G;
+      m.acc.data[i] = -acc[i] * G;
       dbg_acc_ins[i] = m.acc.data[i];
     }
     m.gyr.is_valid = true;
-    for (int i = 0; i < 3; i++) m.gyr.data[i] = sum_g[i] * inv_n * D2R; // deg/s -> rad/s
+    for (int i = 0; i < 3; i++) {
+      m.gyr.data[i] = gyr[i] * D2R; // deg/s -> rad/s
+    }
 
     // ---- 2. magnetometer (new sample only) ----
     if (insconfig.use_mag) {
@@ -245,7 +237,7 @@ public:
           // How old is the fix relative to this epoch? Message arrival is last_gps_time_ms (system ms, VERIFY it is
           // stamped when the PVT message is parsed), plus receiver latency before it was sent.
           uint32_t arrival_us = g.last_gps_time_ms * 1000u;
-          int32_t age_us = (int32_t)(ts_end - arrival_us) + (int32_t)(insconfig.gnss_rx_latency_ms * 1000.0f);
+          int32_t age_us = (int32_t)(ts - arrival_us) + (int32_t)(insconfig.gnss_rx_latency_ms * 1000.0f);
           if (age_us < 0) age_us = 0;
           m.gnss_delay_ms = age_us / 1000;
           m.gnss_delay_us = age_us % 1000;
@@ -267,7 +259,7 @@ public:
     n_epochs++;
 
     // ---- 6. publish ----
-    state->ts = ts_end;
+    state->ts = ts;
     state->mode = (uint8_t)nav_suite_get_mode(&ns);
     state->ready = ins_is_ready(&ns.ins);
 
@@ -440,11 +432,12 @@ private:
   int64_t t_prev64 = 0, t_unwrapped = 0;
   uint32_t t_last32 = 0, last_mag_ts = 0, last_bar_ts = 0, last_gps_itow = 0xFFFFFFFFu;
   bool unwrap_init = false;
-  float acc_sum[3] = {0}, gyr_sum[3] = {0};
-  uint32_t n_acc = 0;
   float dt_mean_us = 0;
   float undulation_m = 0;   // geoid undulation (MSL - ellipsoid) from the last accepted GNSS fix
   float home_h = 0;
+
+  float avg_acc[3] = {0}, avg_gyr[3] = {0};
+  uint32_t avg_n = 0;
 
   int64_t unwrap(uint32_t t) {
     if (!unwrap_init) { t_unwrapped = t; t_last32 = t; unwrap_init = true; return t_unwrapped; }

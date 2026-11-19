@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include "./imu.h"
 #include "../cfg/cfg.h"
-#include "../hal/hal.h"
+#include "../hal/hal.h" //#define MF_IMU_EXEC
 #include "../bbx/bbx.h"
 #include "../mag/MagGizmoIMU.h"
 
@@ -42,7 +42,7 @@ Imu imu;
 
 void _imu_ll_interrupt_setup(int interrupt_pin); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
-volatile bool _imu_ll_interrupt_busy = false;
+MF_Mutex _imu_ll_interrupt_busy;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
 //returns 0 on success, positive on error, negative on warning
@@ -131,7 +131,7 @@ int Imu::setup() {
   //==============================================================
   //_imu_ll_interrupt_enabled = false; //already done
   onUpdate = NULL;
-  _imu_ll_interrupt_busy = false;
+  _imu_ll_interrupt_busy.unlock();
   _imu_ll_interrupt_ts = 0;
   overrun_cnt = 0;
   dt = 0;
@@ -334,7 +334,7 @@ void Imu::statReset() {
     stat_reset_ts = micros(); //last time statReset() was called
 }
 
-
+#if MF_IMU_EXEC == MF_IMU_EXEC_TASK || MF_IMU_EXEC == MF_IMU_EXEC_TASK_OTHERCORE || MF_IMU_EXEC == MF_IMU_EXEC_IRQ
 //this function executes whenever the imu task is triggered
 void Imu::_interrupt_handler() {
   //latency between start of low level interrupt handler and start of this method
@@ -356,18 +356,20 @@ void Imu::_interrupt_handler() {
   if(this->stat_runtime_max < rt) this->stat_runtime_max = rt; //max runtime
   this->stat_cnt++;
 }
+#endif
 
 //========================================================================================================================//
 // _IMU_LL_ IMU Low Level Interrrupt Handler
 //========================================================================================================================//
-// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with IMU_EXEC_FREERTOS the 
+// This runs the IMU updates triggered from pin HW_PIN_IMU_EXTI interrupt. When using FreeRTOS with MF_IMU_EXEC_TASK the 
 // IMU update is not executed directly in the interrupt handler, but a high priority task is used. This prevents FreeRTOS 
 // watchdog resets. The delay (latency) from rising edge INT pin to handler is approx. 10 us on ESP32 and 50 us on RP2040.
 
 void _imu_ll_interrupt_handler();
 
 //-------------------------------------------------------------------------------------------------------------------------
-#if IMU_EXEC == IMU_EXEC_FREERTOS || IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
+#if MF_IMU_EXEC == MF_IMU_EXEC_TASK || MF_IMU_EXEC == MF_IMU_EXEC_TASK_OTHERCORE
+//load and process imu data in task
 
   TaskHandle_t _imu_ll_task_handle = NULL;
 
@@ -380,27 +382,15 @@ void _imu_ll_interrupt_handler();
 
   void _imu_ll_interrupt_setup(int interrupt_pin) {
     if(!_imu_ll_task_handle) {
-      //
-      #if IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE
+      #if MF_IMU_EXEC == MF_IMU_EXEC_TASK_OTHERCORE
         int callcore = hal_get_core_num();
-        int othercore = (callcore + 1) % 2;
-        
-        //MF_TODO move this to hal
-        #if defined ARDUINO_ARCH_ESP32
-          //note: probably don't what to use this because of single FPU context switching issues...
-          xTaskCreatePinnedToCore(_imu_ll_task, "mf_IMU", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, othercore); //[ESP32 only]
-        #elif defined ARDUINO_ARCH_RP2040
-          xTaskCreate(_imu_ll_task, "mf_IMU", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
-          vTaskCoreAffinitySet(_imu_ll_task_handle, (1<<othercore)); //[RP2040 only] Sets the core affinity mask for a task, i.e. the cores on which a task can run.
-        #else
-          #error "IMU_EXEC == IMU_EXEC_FREERTOS_OTHERCORE not supported on this processor"
-        #endif
-
-        MF_printf("IMU: IMU_EXEC_FREERTOS_OTHERCORE call_core=%d imu_core=%d\n", callcore, othercore);
+        int coreID = (callcore + 1) % 2;
+        MF_printf("IMU: MF_IMU_EXEC_TASK_OTHERCORE call_core=%d imu_core=%d\n", callcore, coreID);
       #else
-        xTaskCreate(_imu_ll_task, "mf_IMU", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle);
-        MF_printf("IMU: IMU_EXEC_FREERTOS\n");
+        int coreID = -1; //any core
+        MF_printf("IMU: MF_IMU_EXEC_TASK\n");
       #endif
+      hal_xTaskCreate(_imu_ll_task, "mf_IMU", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
     }
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
   }
@@ -412,10 +402,72 @@ void _imu_ll_interrupt_handler();
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 //-------------------------------------------------------------------------------------------------------------------------
-#elif IMU_EXEC == IMU_EXEC_IRQ
+#elif MF_IMU_EXEC == MF_IMU_EXEC_IRQ_TASK || MF_IMU_EXEC == MF_IMU_EXEC_IRQ_TASK_OTHERCORE
+//load imu data in interrupt, process data in task
+
+
+//this function executes whenever the imu task is triggered
+void Imu::_interrupt_handler() {
+  //latency between start of low level interrupt handler and start of this method
+  stat_latency += micros() - _imu_ll_interrupt_ts;
+
+  //start of task timestamp
+  uint32_t task_ts = micros();
+
+  //call external update event handler
+  if(onUpdate) onUpdate();
+
+  uint32_t rt = micros() - task_ts; //runtime of full update including external event handler
+  this->stat_runtime += rt;
+  if(this->stat_runtime_max < rt) this->stat_runtime_max = rt; //max runtime
+  this->stat_cnt++;
+}
+
+  TaskHandle_t _imu_ll_task_handle = NULL;
+
+  void _imu_ll_task(void*) {
+    for(;;) {
+      //wait for notify
+      ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+      
+      imu._interrupt_handler();
+    }
+  }
 
   void _imu_ll_interrupt_setup(int interrupt_pin) {
-    MF_printf("IMU: IMU_EXEC_IRQ\n");
+    if(!_imu_ll_task_handle) {
+      #if MF_IMU_EXEC == MF_IMU_EXEC_IRQ_TASK_OTHERCORE
+        int callcore = hal_get_core_num();
+        int coreID = (callcore + 1) % 2;
+        MF_printf("IMU: MF_IMU_EXEC_IRQ_TASK_OTHERCORE call_core=%d imu_core=%d\n", callcore, coreID);
+      #else
+        int coreID = -1; //any core
+        MF_printf("IMU: MF_IMU_EXEC_IRQ_TASK\n");
+      #endif
+      hal_xTaskCreate(_imu_ll_task, "mf_AHR", IMU_TASK_STACK_SIZE, NULL, IMU_FREERTOS_TASK_PRIORITY /*priority 0=lowest*/, &_imu_ll_task_handle, coreID);
+    }
+    attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
+  }
+  
+  inline void _imu_ll_interrupt_handler2() {
+    uint32_t start = micros();
+
+    //update sensor data
+    imu.update();
+
+    imu.stat_io_runtime += micros() - start; //runtime imu.update (i.e. of SPI/I2C transfer)
+
+    //notify RTOS task _imu_ll_task to handle processing of imu data
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(_imu_ll_task_handle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+//-------------------------------------------------------------------------------------------------------------------------
+#elif MF_IMU_EXEC == MF_IMU_EXEC_IRQ
+//load and process imu data in interrupt
+
+  void _imu_ll_interrupt_setup(int interrupt_pin) {
+    MF_printf("IMU: MF_IMU_EXEC_IRQ\n");
     attachInterrupt(digitalPinToInterrupt(interrupt_pin), _imu_ll_interrupt_handler, RISING);
     #if MF_HACK_STM32_INTERRUPT_PRIORITY
       // (#79) on stm32, set the interrupt to the highest priority, otherwise it does not get called
@@ -427,9 +479,10 @@ void _imu_ll_interrupt_handler();
       //call interrupt handler directly from interrupt context
       imu._interrupt_handler();
   }
+
 //-------------------------------------------------------------------------------------------------------------------------
 #else
-  #error #define IMU_EXEC is needed, see imu.h for available options
+  #error #define MF_IMU_EXEC is needed, see imu.h for available options
 #endif
 
 //main IRQ handler - timestamp + busy wrapper around _imu_ll_interrupt_handler2()
@@ -437,12 +490,11 @@ void _imu_ll_interrupt_handler() {
   _imu_ll_interrupt_ts = micros();
   if(_imu_ll_interrupt_enabled) {
     imu.interrupt_cnt = imu.interrupt_cnt + 1; //NOTE: "imu.interrupt_cnt++" gives warning: '++' expression of 'volatile'-qualified type is deprecated
-    if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
-      imu.overrun_cnt++;
-    } else {
-      _imu_ll_interrupt_busy = true;
+    if (_imu_ll_interrupt_busy.try_lock()) {
       _imu_ll_interrupt_handler2();
-      _imu_ll_interrupt_busy = false;
+      _imu_ll_interrupt_busy.unlock();
+    }else{
+      imu.overrun_cnt++;
     }
   }
 }
