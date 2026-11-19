@@ -46,6 +46,7 @@ public:
   }
 
   static MagGizmoMMC5603* create(MagConfig *config, MagState *state) {
+    (void *)state;
     if(!config->i2c_bus) return nullptr;
     MagGizmoMMC5603 *gizmo = new MagGizmoMMC5603(config->i2c_bus);
     if(!gizmo->begin()) {

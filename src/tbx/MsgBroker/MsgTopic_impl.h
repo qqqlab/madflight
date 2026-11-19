@@ -109,10 +109,10 @@ class MsgTopic : public MsgTopicBase {
         }
 
         //get msg at depth
-        uint8_t* bufout = buf + ((tgen - depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
+        uint8_t* bufout = buf + ((tgen - (uint32_t)depth) % (bufdepth_1 + 1)) * buflen; //get pointer to message at this depth
         hal_memcpy(msg, bufout, msglen); //copy the message
-        if((_topic_gen - tgen) < (bufdepth_1 - depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
-          *gen_to_pull = tgen - depth; //update the subscriber generation
+        if((_topic_gen - tgen) < (bufdepth_1 - (uint32_t)depth)) { //if the message at depth did not get overwitten by publish(), then we have a consistent copy
+          *gen_to_pull = tgen - (uint32_t)depth; //update the subscriber generation
           return true;
         }
         //the message got updated while we were memcpy'ing it, try again...

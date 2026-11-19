@@ -42,7 +42,7 @@ Imu imu;
 
 void _imu_ll_interrupt_setup(int interrupt_pin); //prototype
 volatile bool _imu_ll_interrupt_enabled = false;
-MF_Mutex _imu_ll_interrupt_busy;
+bool _imu_ll_interrupt_busy = false;
 volatile uint32_t _imu_ll_interrupt_ts = 0;
 
 //returns 0 on success, positive on error, negative on warning
@@ -131,7 +131,7 @@ int Imu::setup() {
   //==============================================================
   //_imu_ll_interrupt_enabled = false; //already done
   onUpdate = NULL;
-  _imu_ll_interrupt_busy.unlock();
+  _imu_ll_interrupt_busy = false;
   _imu_ll_interrupt_ts = 0;
   overrun_cnt = 0;
   dt = 0;
@@ -560,11 +560,12 @@ void HAL_FASTFUNC(_imu_ll_interrupt_handler)() {
   _imu_ll_interrupt_ts = micros();
   if(_imu_ll_interrupt_enabled) {
     imu.interrupt_cnt = imu.interrupt_cnt + 1; //NOTE: "imu.interrupt_cnt++" gives warning: '++' expression of 'volatile'-qualified type is deprecated
-    if (_imu_ll_interrupt_busy.try_lock()) {
-      _imu_ll_interrupt_handler2();
-      _imu_ll_interrupt_busy.unlock();
-    }else{
+    if (_imu_ll_interrupt_busy) { //note: time difference between check/update of _imu_ll_interrupt_busy can cause a race condition...
       imu.overrun_cnt++;
+    }else{
+      _imu_ll_interrupt_busy = true;
+      _imu_ll_interrupt_handler2();
+      _imu_ll_interrupt_busy = false;
     }
   }
 }
