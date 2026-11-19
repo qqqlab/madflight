@@ -319,7 +319,7 @@ BaseType_t hal_xTaskCreate( TaskFunction_t pvTaskCode,
   }
 }
 
-inline void * hal_memcpy(void *dest, const void *src, size_t n) {
+void * hal_memcpy(void *dest, const void *src, size_t n) {
   return memcpy(dest, src, n);
 }
 
