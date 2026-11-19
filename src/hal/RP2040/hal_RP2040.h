@@ -41,7 +41,6 @@ SOFTWARE.
 #define HAL_I2C_NUM 2
 #define HAL_SPI_NUM 2
 
-
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -77,3 +76,5 @@ SOFTWARE.
 #if !__FREERTOS
   #error "FreeRTOS required - Arduino IDE menu: Tools->Operating System = FreeRTOS SMP - PlatformIO add: build_flags = -DPIO_FRAMEWORK_ARDUINO_ENABLE_FREERTOS"
 #endif
+
+#define HAL_FASTFUNC(x) __no_inline_not_in_flash_func(x)

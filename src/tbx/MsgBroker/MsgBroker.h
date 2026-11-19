@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "../../hal/hal.h" //HAL_FASTFUNC(x)
+
 #ifndef MF_MSGBROKER_STAT
   #define MF_MSGBROKER_STAT 1 //enable statistics
 #endif
@@ -152,7 +154,7 @@ class MsgSubscription : public MsgSubscriptionBase {
 
     // Pull next (oldest) message from fifo, which is newer than the previous message pulled
     // Returns true if found, false if no new message available
-    bool pull_next(T *msg) {
+    bool HAL_FASTFUNC(pull_next)(T *msg) {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif

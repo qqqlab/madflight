@@ -54,3 +54,8 @@
     #define MF_MCU_NAME "ESP32 (unknown type)"
   #endif
 #endif
+
+#define HAL_FASTFUNC(x) x
+
+//TODO: try this
+//#define HAL_FASTFUNC(x) IRAM_ATTR x

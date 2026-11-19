@@ -69,6 +69,7 @@ void MsgBroker::top() {
     MsgTopicBase *t = _topic_list[i];
     if(t) {
       uint32_t push_cnt = t->get_generation() - t->_stat_start_gen;
+      dt = 1e-6 * (micros() - _stat_ts); //recalculate dt because MF_printf can be slow
       MF_printf(
         "topic:%-12s %4.0fHz %8d %8d %5.1fus  retries:%d %d  msglen:%d\n"
         , t->name
@@ -82,6 +83,7 @@ void MsgBroker::top() {
       );
       for(int j = 0; j < MF_MSGSUB_LIST_SIZE; j++) {
         MsgSubscriptionBase *s = t->_sub_list[j];
+        dt = 1e-6 * (micros() - _stat_ts); //recalculate dt because MF_printf can be slow
         if(s) MF_printf(
           "  sub:%-12s %4.0fHz %8d %8d %5.1fus\n"
           , s->name

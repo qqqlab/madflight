@@ -51,11 +51,11 @@ class MsgTopic : public MsgTopicBase {
 #endif
     }
 
-    uint32_t get_generation() override {
+    uint32_t inline get_generation() override {
         return _topic_gen;
     }
 
-    uint32_t publish(T *msg) {
+    uint32_t HAL_FASTFUNC(publish)(T *msg) {
 #if MF_MSGBROKER_STAT
       uint32_t t_start = micros();
 #endif
@@ -67,14 +67,14 @@ class MsgTopic : public MsgTopicBase {
     }
 
     //pull latest message from topic
-    bool pull_latest(T* msg) {
+    bool HAL_FASTFUNC(pull_latest)(T* msg) {
       uint32_t gen_to_get = get_generation();
       return _pull(msg, MsgTopicBase::PullOp::LAST_GREATER_EQUAL, &gen_to_get);
     }
 
   protected:  
     //publish a message, returns the published message generation
-    uint32_t _publish(void *msg) override {
+    uint32_t HAL_FASTFUNC(_publish)(void *msg) override {
 #if MF_MSGBROKER_STAT
         uint32_t t_start = micros();
 #endif
@@ -87,7 +87,7 @@ class MsgTopic : public MsgTopicBase {
       return _topic_gen;
     }
 
-   bool _pull(void* msg, PullOp op, uint32_t *gen_to_pull) override {
+   bool HAL_FASTFUNC(_pull)(void* msg, PullOp op, uint32_t *gen_to_pull) override {
       if(!_topic_gen) return false; //will miss a pull every 4,000,000,000 publishes, but don't need additional vars/checks...
       uint8_t tries = 5;
       do {
